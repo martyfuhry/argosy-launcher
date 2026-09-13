@@ -1543,11 +1543,13 @@ class LibretroActivity : ComponentActivity() {
                         activeMenuHandler = InGameFrameScreen(
                             manager = manager,
                             isOffline = false,
-                            adjustable = videoSettings.frameIsAdjustable,
+                            adjustable = videoSettings.isFrameAdjustable(manager.selectedFrameId),
                             adjusting = frameAdjustMode,
                             onToggleAdjust = { frameAdjustMode = !frameAdjustMode },
-                            onAdjust = { dx, dy, zoom -> videoSettings.adjustFrame(dx, dy, zoom) },
-                            onResetAdjust = { videoSettings.resetFrameAdjustment() },
+                            onAdjust = { dx, dy, zoom ->
+                                videoSettings.adjustFrame(manager.selectedFrameId, dx, dy, zoom)
+                            },
+                            onResetAdjust = { videoSettings.resetFrameAdjustment(manager.selectedFrameId) },
                             onConfirm = ::confirmInGameFrameEditor,
                             onDismiss = ::closeInGameFrameEditor
                         )
@@ -2631,13 +2633,21 @@ class LibretroActivity : ComponentActivity() {
 
     private fun openInGameFrameEditor() {
         val registry = frameRegistry
+        var shownFrameId = videoSettings.currentFrame
         val manager = FrameManager(
             frameRegistry = registry,
             frameDownloader = FrameDownloader(registry),
             platformSlug = platformSlug,
             scope = lifecycleScope,
             initialFrameId = videoSettings.currentFrame,
-            onFrameChanged = { frameId -> videoSettings.applyFrame(frameId) }
+            onFrameChanged = { frameId ->
+                if (frameId == shownFrameId) {
+                    videoSettings.applyFrame(frameId)
+                } else {
+                    shownFrameId = frameId
+                    videoSettings.resetFrameAdjustment(frameId)
+                }
+            }
         )
         inGameFrameManager = manager
         retroView.enablePreviewMode()
@@ -3044,15 +3054,14 @@ class LibretroActivity : ComponentActivity() {
             ?.displayAffinityHelper
             ?.hasSecondaryDisplay == true
 
-    /**
-     * The display the second screen belongs on: any usable display that is not the game's own.
-     */
     private fun secondScreenDisplay(): android.view.Display? {
+        val affinity = com.nendo.argosy.DualScreenManagerHolder.instance?.displayAffinityHelper
+            ?: return null
         val displayManager = getSystemService(android.content.Context.DISPLAY_SERVICE)
             as android.hardware.display.DisplayManager
         val gameDisplayId = windowManager.defaultDisplay.displayId
         return displayManager.displays.firstOrNull {
-            it.displayId != gameDisplayId && it.isValid
+            it.displayId != gameDisplayId && it.isValid && affinity.isPhysicalDisplay(it.displayId)
         }
     }
 

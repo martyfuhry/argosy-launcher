@@ -132,6 +132,15 @@ data class HomeLayoutSettings(
             HomeLayoutKind.CUSTOM_GRID -> customGrid
         }
 
+    /**
+     * Whether a game row carries its whole library rather than a leading slice and a way into the
+     * library screen. Only the auto grid offers this: a carousel walks one cover at a time, so an
+     * uncapped rail there is a corridor rather than a shortcut. Both displays answer this one value,
+     * or the option would only work on whichever screen happened to be looked at.
+     */
+    val showsEveryGame: Boolean
+        get() = selected == HomeLayoutKind.AUTO_GRID && autoGrid.showAllGames
+
     fun toJson(): String = JSONObject().apply {
         put(KEY_SELECTED, selected.name)
         put(

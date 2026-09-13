@@ -80,6 +80,29 @@ interface GameDao {
 
     @Query("""
         SELECT * FROM games
+        WHERE platformId = :platformId
+        AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        ORDER BY
+            CASE
+                WHEN localPath IS NOT NULL AND isFavorite = 1 THEN 0
+                WHEN localPath IS NOT NULL THEN 1
+                WHEN isFavorite = 1 THEN 2
+                ELSE 3
+            END,
+            CASE WHEN upper(substr(sortTitle, 1, 1)) BETWEEN 'A' AND 'Z' THEN 1 ELSE 0 END,
+            sortTitle COLLATE NOCASE ASC,
+            id ASC
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getByPlatformTitleOrdered(
+        platformId: Long,
+        ownerUserId: Long?,
+        limit: Int,
+        offset: Int
+    ): List<GameEntity>
+
+    @Query("""
+        SELECT * FROM games
         WHERE NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         ORDER BY sortTitle ASC
     """)

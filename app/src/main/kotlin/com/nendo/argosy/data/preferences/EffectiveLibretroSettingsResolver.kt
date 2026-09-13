@@ -68,7 +68,7 @@ class EffectiveLibretroSettingsResolver @Inject constructor(
         if (!framesEnabled) return null
         return when (platformOverride) {
             null -> frameRegistry.getFramesForPlatform(platformSlug).firstOrNull()?.id
-            "none" -> null
+            FrameRegistry.NO_FRAME_ID -> null
             else -> platformOverride
         }
     }

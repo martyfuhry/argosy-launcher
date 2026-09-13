@@ -50,6 +50,7 @@ fun LibretroSettingsSection(
     enablePicker: Boolean = true,
     pickerTokenFor: (LibretroSettingDef) -> Int = { 0 },
     trailingContent: @Composable (() -> Unit)? = null,
+    trailingFocusCount: Int = 0,
     trailingItems: (androidx.compose.foundation.lazy.LazyListScope.() -> Unit)? = null
 ) {
     val isPerPlatform = platformSlug != null
@@ -78,11 +79,21 @@ fun LibretroSettingsSection(
         }
     }
 
-    val sections = remember(flatItems, visibleSettings) {
-        buildFlatItemSections(flatItems, visibleSettings)
-    }
-
     val trailingContentOffset = if (trailingContent != null) 1 else 0
+
+    val sections = remember(flatItems, visibleSettings, trailingContentOffset, trailingFocusCount) {
+        val settingSections = buildFlatItemSections(flatItems, visibleSettings)
+        if (trailingFocusCount <= 0) {
+            settingSections
+        } else {
+            settingSections + ListSection(
+                listStartIndex = flatItems.size,
+                listEndIndex = flatItems.size + trailingContentOffset + trailingFocusCount - 1,
+                focusStartIndex = visibleSettings.size,
+                focusEndIndex = visibleSettings.size + trailingFocusCount - 1
+            )
+        }
+    }
 
     SectionFocusedScroll(
         listState = listState,

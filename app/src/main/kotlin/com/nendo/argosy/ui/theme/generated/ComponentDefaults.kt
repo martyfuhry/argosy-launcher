@@ -299,4 +299,10 @@ object ComponentDefaults {
         const val audioFadeMs = 450
     }
 
+    object AutoGrid {
+        const val entryStartScale = 0.6f
+        const val entryMs = 200
+        const val entryStepMs = 20
+    }
+
 }

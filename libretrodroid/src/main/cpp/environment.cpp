@@ -64,6 +64,10 @@ void Environment::deinitialize() {
     gameGeometryHeight = 0;
     gameGeometryAspectRatio = -1.0f;
 
+    gameMaxGeometryUpdated = false;
+    gameMaxGeometryWidth = 0;
+    gameMaxGeometryHeight = 0;
+
     gameTimingUpdated = false;
     gameTimingFps = 0.0;
     gameTimingSampleRate = 0.0;

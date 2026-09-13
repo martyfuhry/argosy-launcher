@@ -99,6 +99,9 @@ fun DualHomeLowerContent(
                     onKeyboardToggle = onKeyboardToggle,
                     carouselConfig = uiState.carouselConfig,
                     autoGridConfig = uiState.autoGridConfig,
+                    autoGridEntryAnimationKey = uiState.loadedSectionKey
+                        .takeIf { uiState.autoGridConfig.showAllGames },
+                    isCurrentSectionLoaded = uiState.isCurrentSectionLoaded,
                     layoutKind = uiState.layoutKind,
                     customGridState = uiState.customGrid,
                     customGridContentFor = { tile -> uiState.tileContentFor(tile, context) },

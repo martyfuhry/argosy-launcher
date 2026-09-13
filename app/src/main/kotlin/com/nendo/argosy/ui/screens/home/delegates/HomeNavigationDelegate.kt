@@ -44,7 +44,6 @@ class HomeNavigationDelegate @Inject constructor(
     private val rowGameIndexes = mutableMapOf<HomeRow, Int>()
     private var rowLoadJob: Job? = null
     private var backgroundPrefetchJob: Job? = null
-    private val loadViewDebounceMs = 150L
 
     fun restoreInitialRow(savedStateHandle: SavedStateHandle): Pair<HomeRow, Int> {
         val rowType = savedStateHandle.get<String>(KEY_ROW_TYPE)
@@ -124,12 +123,9 @@ class HomeNavigationDelegate @Inject constructor(
         return prevRow to savedIndex
     }
 
-    fun loadRowWithDebounce(scope: CoroutineScope, row: HomeRow, onLoadRow: suspend (HomeRow) -> Unit) {
+    fun loadRow(scope: CoroutineScope, row: HomeRow, onLoadRow: suspend (HomeRow) -> Unit) {
         rowLoadJob?.cancel()
-        rowLoadJob = scope.launch {
-            delay(loadViewDebounceMs)
-            onLoadRow(row)
-        }
+        rowLoadJob = scope.launch { onLoadRow(row) }
     }
 
     fun setFocusIndex(currentState: HomeUiState, index: Int): Boolean {

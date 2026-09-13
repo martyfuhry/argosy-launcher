@@ -242,6 +242,7 @@ sealed class HomeRow(
 data class HomeUiState(
     val platforms: List<HomePlatformUi> = emptyList(),
     val platformItems: List<HomeRowItem> = emptyList(),
+    val platformItemsFor: Long? = null,
     val focusedGameIndex: Int = 0,
     val recentGames: List<HomeGameUi> = emptyList(),
     val favoriteGames: List<HomeGameUi> = emptyList(),
@@ -412,6 +413,14 @@ data class HomeUiState(
         get() = (currentRow as? HomeRow.MediaLibrary)?.let { mediaLibraries.getOrNull(it.index) }
 
     /**
+     * Whether the platform row under the cursor is still waiting on its own games. [platformItems]
+     * holds whichever platform loaded last, so a row whose platform it does not name shows nothing
+     * rather than another platform's covers.
+     */
+    val isPlatformRowLoading: Boolean
+        get() = currentRow is HomeRow.Platform && platformItemsFor != currentPlatform?.id
+
+    /**
      * What the row under the cursor holds, in the order it is walked.
      *
      * Favorites is the one row carrying both kinds, and they run one after the other -- games, then
@@ -428,7 +437,7 @@ data class HomeUiState(
                     favoriteMediaShown.map { HomeRowItem.Media(it) } +
                     HomeRowItem.ViewAll(sourceFilter = "FAVORITES")
             }
-            is HomeRow.Platform -> platformItems
+            is HomeRow.Platform -> if (isPlatformRowLoading) emptyList() else platformItems
             HomeRow.Continue -> when {
                 recentGames.isEmpty() -> emptyList()
                 layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CAROUSEL ->

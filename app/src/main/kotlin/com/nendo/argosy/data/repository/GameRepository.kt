@@ -977,6 +977,17 @@ class GameRepository @Inject constructor(
         limit: Int = 20
     ): List<GameEntity> = gameDao.getByPlatformSorted(platformId, hiddenOwnerId(), limit)
 
+    /**
+     * A platform's games in the order a row carrying every game displays them: ownership tier, then
+     * titles not starting with a letter, then title. Pages split by [offset] are disjoint, so a
+     * leading page and the rest together hold each game exactly once.
+     */
+    suspend fun getByPlatformTitleOrdered(
+        platformId: Long,
+        limit: Int,
+        offset: Int = 0
+    ): List<GameEntity> = gameDao.getByPlatformTitleOrdered(platformId, hiddenOwnerId(), limit, offset)
+
     suspend fun getAllSortedByTitle(): List<GameEntity> =
         hydrateByIds(gameDao.getAllSortedByTitleIds(hiddenOwnerId()))
 

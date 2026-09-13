@@ -7,6 +7,7 @@ import com.nendo.argosy.data.steam.SteamConnectionState
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.core.emulator.LibretroSettingDef
+import com.nendo.argosy.libretro.frame.FrameRegistry
 import com.nendo.argosy.ui.screens.settings.sections.AboutItem
 import com.nendo.argosy.ui.screens.settings.sections.AmbientLedItem
 import com.nendo.argosy.ui.screens.settings.sections.ambientLedItemAtFocusIndex
@@ -1097,7 +1098,7 @@ private fun routeFramePickerConfirm(vm: SettingsViewModel, state: SettingsUiStat
     val installedIds = registry.getInstalledIds()
     when (state.focusedIndex) {
         0 -> vm.updatePlatformLibretroSetting(LibretroSettingDef.Frame, null)
-        1 -> vm.updatePlatformLibretroSetting(LibretroSettingDef.Frame, "none")
+        1 -> vm.updatePlatformLibretroSetting(LibretroSettingDef.Frame, FrameRegistry.NO_FRAME_ID)
         allFrames.size + 2 -> vm.requestCustomFramePicker()
         else -> {
             val frameIndex = state.focusedIndex - 2

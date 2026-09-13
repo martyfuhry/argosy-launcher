@@ -825,6 +825,7 @@ fun HomeScreen(
                         uiState.isMediaRow && uiState.currentItems.isEmpty() -> {
                             MediaRowEmptyState(row = uiState.currentRow)
                         }
+                        uiState.isPlatformRowLoading -> Unit
                         uiState.currentItems.isEmpty() -> {
                             val pinId = when (val row = uiState.currentRow) {
                                 is HomeRow.PinnedRegular -> row.pinId
@@ -848,6 +849,8 @@ fun HomeScreen(
                                 focusedIndex = uiState.focusedGameIndex,
                                 config = uiState.autoGridConfig,
                                 gridState = gridState,
+                                entryAnimationKey = (uiState.currentPlatform?.id ?: uiState.currentRow)
+                                    .takeIf { uiState.autoGridConfig.showAllGames },
                                 showPlatformBadge = uiState.currentRow !is HomeRow.Platform &&
                                     uiState.currentRow != HomeRow.Steam && uiState.currentRow != HomeRow.Android,
                                 downloadIndicatorFor = { item ->

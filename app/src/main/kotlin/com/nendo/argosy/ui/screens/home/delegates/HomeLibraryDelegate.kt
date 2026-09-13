@@ -5,18 +5,15 @@ import com.nendo.argosy.R
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.getDisplayName
 import com.nendo.argosy.data.model.GameSource
-import com.nendo.argosy.data.model.orderedForEveryGame
 import com.nendo.argosy.data.model.tieredByOwnership
 import com.nendo.argosy.data.emulator.EmulatorDetector
 import com.nendo.argosy.data.platform.LocalPlatformIds
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
-import com.nendo.argosy.data.preferences.UserPreferences
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.repository.DownloadFileStatusRepository
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.domain.model.CompletionStatus
-import com.nendo.argosy.domain.model.HomeLayoutKind
 import com.nendo.argosy.domain.model.PinnedCollection
 import com.nendo.argosy.domain.usecase.collection.GetGamesForPinnedCollectionUseCase
 import com.nendo.argosy.domain.usecase.collection.GetPinnedCollectionsUseCase
@@ -33,6 +30,8 @@ import com.nendo.argosy.ui.screens.home.HomeGameUiSortProps
 import com.nendo.argosy.ui.screens.home.HomePlatformUi
 import com.nendo.argosy.ui.screens.home.HomeRow
 import com.nendo.argosy.ui.screens.home.HomeRowItem
+import com.nendo.argosy.ui.screens.home.PLATFORM_ROW_LIMIT
+import com.nendo.argosy.ui.screens.home.PlatformGameLoader
 import com.nendo.argosy.ui.screens.home.toHomePlatformUi
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -51,12 +50,11 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.time.temporal.TemporalAdjusters
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val PLATFORM_GAMES_LIMIT = 20
-private const val PLATFORM_GAMES_UNCAPPED = Int.MAX_VALUE
 private const val TILE_PICKER_LIMIT = 60
 private const val MAX_DISPLAYED_RECOMMENDATIONS = 16
 private const val RECOMMENDATION_PENALTY = 0.9f
@@ -73,6 +71,8 @@ private const val RECENT_PLAYED_THRESHOLD_HOURS = 4L
 data class LibraryState(
     val platforms: List<HomePlatformUi> = emptyList(),
     val platformItems: List<HomeRowItem> = emptyList(),
+    val platformItemsFor: Long? = null,
+    val platformItemsComplete: Boolean = false,
     val recentGames: List<HomeGameUi> = emptyList(),
     val favoriteGames: List<HomeGameUi> = emptyList(),
     val recommendedGames: List<HomeGameUi> = emptyList(),
@@ -113,6 +113,8 @@ class HomeLibraryDelegate @Inject constructor(
     private val recentGamesCache = AtomicReference(RecentGamesCache(null, 0L))
     private var cachedPlatformDisplayNames: Map<Long, String> = emptyMap()
     private val pendingCoverRepairs = mutableSetOf<Long>()
+    private val platformGameLoader = PlatformGameLoader(gameRepository, downloadFileStatusRepository)
+    private val platformLoadGeneration = AtomicLong()
 
     private val initialLoadMutex = Mutex()
     @Volatile
@@ -155,7 +157,7 @@ class HomeLibraryDelegate @Inject constructor(
         val platforms = allPlatforms.filter { it.id != LocalPlatformIds.STEAM && it.id != LocalPlatformIds.ANDROID }
         cachedPlatformDisplayNames = allPlatforms.associate { it.id to it.getDisplayName() }
         var favorites = gameRepository.getFavorites()
-        val androidGames = gameRepository.getByPlatformSorted(LocalPlatformIds.ANDROID, limit = PLATFORM_GAMES_LIMIT)
+        val androidGames = gameRepository.getByPlatformSorted(LocalPlatformIds.ANDROID, limit = PLATFORM_ROW_LIMIT)
             .let { if (installedOnly) filterPlayable(it) else it }
         val steamGameUis = loadSteamRow(installedOnly)
 
@@ -210,10 +212,7 @@ class HomeLibraryDelegate @Inject constructor(
     private fun startBackgroundFollowUp(scope: CoroutineScope, startRow: HomeRow) {
         scope.launch {
             if (startRow is HomeRow.Platform) {
-                val platform = _state.value.platforms.getOrNull(startRow.index)
-                if (platform != null) {
-                    loadGamesForPlatformInternal(platform.id, startRow.index)
-                }
+                _state.value.platforms.getOrNull(startRow.index)?.let { loadPlatformGames(it) }
             }
             loadRecommendations()
             validateInstalledGamesInBackground(scope)
@@ -388,7 +387,7 @@ class HomeLibraryDelegate @Inject constructor(
         val platforms = allPlatforms.filter { it.id != LocalPlatformIds.STEAM && it.id != LocalPlatformIds.ANDROID }
         cachedPlatformDisplayNames = allPlatforms.associate { it.id to it.getDisplayName() }
         val platformUis = platforms.map { it.toHomePlatformUi(emulatorDetector) }
-        val androidGames = gameRepository.getByPlatformSorted(LocalPlatformIds.ANDROID, limit = PLATFORM_GAMES_LIMIT)
+        val androidGames = gameRepository.getByPlatformSorted(LocalPlatformIds.ANDROID, limit = PLATFORM_ROW_LIMIT)
             .let { if (installedOnly) filterPlayable(it) else it }
         val androidGameUis = androidGames.map { it.toUi() }
         val steamGameUis = loadSteamRow(installedOnly)
@@ -401,43 +400,50 @@ class HomeLibraryDelegate @Inject constructor(
         }
     }
 
-    suspend fun loadGamesForPlatformInternal(platformId: Long, platformIndex: Int) {
+    /**
+     * Loads [platform]'s row. Every caller goes through here, and only the most recent call may
+     * publish: a load overtaken by another stops at its next publish, so a platform the cursor has
+     * left can never write over the one it moved to. The leading page is published only when the
+     * row does not already show this platform, so a refresh never shrinks a full row.
+     */
+    suspend fun loadPlatformGames(platform: HomePlatformUi) {
+        val generation = platformLoadGeneration.incrementAndGet()
         val prefs = preferencesRepository.userPreferences.first()
-        val uncapped = showsEveryGame(prefs)
-        val limit = if (uncapped) PLATFORM_GAMES_UNCAPPED else PLATFORM_GAMES_LIMIT
-        var games = gameRepository.getByPlatformSorted(platformId, limit = limit)
-        if (discoverGamesIfNeeded(games)) {
-            games = gameRepository.getByPlatformSorted(platformId, limit = limit)
-        }
-        if (prefs.installedOnlyHome) {
-            games = filterPlayable(games)
-        }
-        val platform = _state.value.platforms.getOrNull(platformIndex)
-        val gameItems: List<HomeRowItem> = orderedPlatformRow(games, uncapped).map { HomeRowItem.Game(it) }
-        val items: List<HomeRowItem> = if (platform != null && !uncapped) {
+        val showsEveryGame = prefs.homeLayout.showsEveryGame
+        platformGameLoader.load(
+            platformId = platform.id,
+            showsEveryGame = showsEveryGame,
+            installedOnly = prefs.installedOnlyHome,
+            publishLeadingPage = _state.value.platformItemsFor != platform.id,
+            toUi = { it.toUi() },
+            publish = { games, complete ->
+                publishPlatformItems(platform, games, complete, showsEveryGame, generation)
+            }
+        )
+    }
+
+    private fun publishPlatformItems(
+        platform: HomePlatformUi,
+        games: List<HomeGameUi>,
+        complete: Boolean,
+        showsEveryGame: Boolean,
+        generation: Long
+    ): Boolean {
+        if (platformLoadGeneration.get() != generation) return false
+        val gameItems: List<HomeRowItem> = games.map { HomeRowItem.Game(it) }
+        val items = if (showsEveryGame) {
+            gameItems
+        } else {
             gameItems + HomeRowItem.ViewAll(
                 platformId = platform.id,
                 platformName = platform.name,
                 logoPath = platform.logoPath
             )
-        } else {
-            gameItems
         }
-        _state.update { it.copy(platformItems = items) }
-    }
-
-    /**
-     * Whether a platform row should carry its whole library rather than a leading slice and a way
-     * into the library screen. Only the auto grid offers this: a carousel walks one cover at a time,
-     * so an uncapped rail there is a corridor rather than a shortcut.
-     */
-    private fun showsEveryGame(prefs: UserPreferences): Boolean =
-        prefs.homeLayout.selected == HomeLayoutKind.AUTO_GRID &&
-            prefs.homeLayout.autoGrid.showAllGames
-
-    private suspend fun orderedPlatformRow(games: List<GameEntity>, uncapped: Boolean): List<HomeGameUi> {
-        val gameUis = games.map { it.toUi() }
-        return if (uncapped) orderedForEveryGame(gameUis, HomeGameUiSortProps) else gameUis
+        _state.update {
+            it.copy(platformItems = items, platformItemsFor = platform.id, platformItemsComplete = complete)
+        }
+        return true
     }
 
     suspend fun loadGamesForPinnedCollection(pinId: Long) {
@@ -494,27 +500,9 @@ class HomeLibraryDelegate @Inject constructor(
             }
             is HomeRow.Platform -> {
                 val platform = _state.value.platforms.getOrNull(currentRow.index) ?: return RefreshResult(emptyList())
-                val prefs = preferencesRepository.userPreferences.first()
-                val uncapped = showsEveryGame(prefs)
-                var games = gameRepository.getByPlatformSorted(
-                    platform.id,
-                    limit = if (uncapped) PLATFORM_GAMES_UNCAPPED else PLATFORM_GAMES_LIMIT
-                )
-                if (prefs.installedOnlyHome) {
-                    games = filterPlayable(games)
-                }
-                val gameItems: List<HomeRowItem> = orderedPlatformRow(games, uncapped).map { HomeRowItem.Game(it) }
-                val items: List<HomeRowItem> = if (uncapped) {
-                    gameItems
-                } else {
-                    gameItems + HomeRowItem.ViewAll(
-                        platformId = platform.id,
-                        platformName = platform.name,
-                        logoPath = platform.logoPath
-                    )
-                }
-                _state.update { it.copy(platformItems = items) }
-                RefreshResult(items.mapNotNull { (it as? HomeRowItem.Game)?.game?.id })
+                loadPlatformGames(platform)
+                val shown = _state.value.takeIf { it.platformItemsFor == platform.id }?.platformItems.orEmpty()
+                RefreshResult(shown.mapNotNull { (it as? HomeRowItem.Game)?.game?.id })
             }
             HomeRow.Recommendations -> {
                 loadRecommendations()
@@ -522,7 +510,7 @@ class HomeLibraryDelegate @Inject constructor(
             }
             HomeRow.Android -> {
                 val installedOnly = preferencesRepository.userPreferences.first().installedOnlyHome
-                val games = gameRepository.getByPlatformSorted(LocalPlatformIds.ANDROID, limit = PLATFORM_GAMES_LIMIT)
+                val games = gameRepository.getByPlatformSorted(LocalPlatformIds.ANDROID, limit = PLATFORM_ROW_LIMIT)
                     .let { if (installedOnly) filterPlayable(it) else it }
                 val gameUis = games.map { it.toUi() }
                 _state.update { it.copy(androidGames = gameUis) }
@@ -670,21 +658,8 @@ class HomeLibraryDelegate @Inject constructor(
         }
     }
 
-    private suspend fun discoverGamesIfNeeded(games: List<GameEntity>): Boolean {
-        val gamesNeedingDiscovery = games.filter { game ->
-            game.source != GameSource.STEAM &&
-            game.source != GameSource.ANDROID_APP &&
-            game.rommId != null &&
-            (game.localPath == null || !downloadFileStatusRepository.pathExists(game.localPath))
-        }
-        if (gamesNeedingDiscovery.isEmpty()) return false
-        withContext(Dispatchers.IO) {
-            gamesNeedingDiscovery.take(20).forEach { game ->
-                gameRepository.validateAndDiscoverGame(game.id)
-            }
-        }
-        return true
-    }
+    private suspend fun discoverGamesIfNeeded(games: List<GameEntity>): Boolean =
+        platformGameLoader.discoverStalePaths(games).isNotEmpty()
 
     private suspend fun installedOnlyHome(): Boolean =
         preferencesRepository.userPreferences.first().installedOnlyHome
@@ -878,11 +853,11 @@ class HomeLibraryDelegate @Inject constructor(
     )
 
     private suspend fun loadSteamRow(installedOnly: Boolean): List<HomeGameUi> {
-        val candidates = gameRepository.getByPlatformSorted(LocalPlatformIds.STEAM, limit = PLATFORM_GAMES_LIMIT)
+        val candidates = gameRepository.getByPlatformSorted(LocalPlatformIds.STEAM, limit = PLATFORM_ROW_LIMIT)
         withContext(Dispatchers.IO) {
             candidates.forEach { steamPathResolver.isGameInstalled(it) }
         }
-        val games = gameRepository.getByPlatformSorted(LocalPlatformIds.STEAM, limit = PLATFORM_GAMES_LIMIT)
+        val games = gameRepository.getByPlatformSorted(LocalPlatformIds.STEAM, limit = PLATFORM_ROW_LIMIT)
             .map { it.toUi() }
         val shown = if (installedOnly) games.filter { it.isDownloaded } else games
         return tieredByOwnership(shown, HomeGameUiSortProps)

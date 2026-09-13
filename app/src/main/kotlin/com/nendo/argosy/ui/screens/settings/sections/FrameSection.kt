@@ -73,7 +73,7 @@ fun FrameSection(
 
     val previewFrameId = when {
         currentFrameOverride == null -> defaultFrameForPlatform
-        currentFrameOverride == "none" -> null
+        currentFrameOverride == FrameRegistry.NO_FRAME_ID -> null
         else -> currentFrameOverride
     }
 
@@ -128,12 +128,12 @@ fun FrameSection(
                 item(key = "none") {
                     FrameListItem(
                         displayName = stringResource(R.string.settings_shell_frame_none_option),
-                        isSelected = currentFrameOverride == "none",
+                        isSelected = currentFrameOverride == FrameRegistry.NO_FRAME_ID,
                         isInstalled = true,
                         isDownloading = false,
                         isFocused = uiState.focusedIndex == 1,
                         onClick = { viewModel.updatePlatformLibretroSetting(
-                            com.nendo.argosy.core.emulator.LibretroSettingDef.Frame, "none"
+                            com.nendo.argosy.core.emulator.LibretroSettingDef.Frame, FrameRegistry.NO_FRAME_ID
                         ) },
                         onDownload = {}
                     )

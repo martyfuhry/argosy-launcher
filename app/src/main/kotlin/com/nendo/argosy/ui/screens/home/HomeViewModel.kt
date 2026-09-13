@@ -230,6 +230,7 @@ class HomeViewModel @Inject constructor(
                     it.copy(
                         platforms = lib.platforms,
                         platformItems = lib.platformItems.applyRowGradients(gradients),
+                        platformItemsFor = lib.platformItemsFor,
                         recentGames = lib.recentGames.applyGradients(gradients),
                         favoriteGames = lib.favoriteGames.applyGradients(gradients),
                         recommendedGames = lib.recommendedGames.applyGradients(gradients),
@@ -241,7 +242,7 @@ class HomeViewModel @Inject constructor(
                         },
                         pinnedGamesLoading = lib.pinnedGamesLoading,
                         repairedCoverPaths = lib.repairedCoverPaths
-                    )
+                    ).clampedToCompletePlatformRow(lib.platformItemsComplete)
                 }
             }
         }
@@ -298,7 +299,9 @@ class HomeViewModel @Inject constructor(
                         showMediaLibraryRows = media.showLibraries,
                         mediaResumePrompt = media.resumePrompt
                     )
-                    if (updated.holdsCurrentRow) {
+                    if (updated.holdsCurrentRow && updated.isPlatformRowLoading) {
+                        updated
+                    } else if (updated.holdsCurrentRow) {
                         updated.copy(
                             focusedGameIndex = updated.focusedGameIndex
                                 .coerceIn(0, (updated.currentItems.size - 1).coerceAtLeast(0))
@@ -367,6 +370,7 @@ class HomeViewModel @Inject constructor(
             it.copy(
                 platforms = lib.platforms,
                 platformItems = lib.platformItems.applyRowGradients(gradients),
+                platformItemsFor = lib.platformItemsFor,
                 recentGames = lib.recentGames.applyGradients(gradients),
                 favoriteGames = lib.favoriteGames.applyGradients(gradients),
                 recommendedGames = lib.recommendedGames.applyGradients(gradients),
@@ -490,8 +494,7 @@ class HomeViewModel @Inject constructor(
                     storedPages = prefs.homeLayout.customGrid.pageCount
                 )
 
-                val showsEveryGame = prefs.homeLayout.selected == HomeLayoutKind.AUTO_GRID &&
-                    prefs.homeLayout.autoGrid.showAllGames
+                val showsEveryGame = prefs.homeLayout.showsEveryGame
                 if (lastShowsEveryGame != null && lastShowsEveryGame != showsEveryGame) {
                     refreshCurrentRowInternal()
                 }
@@ -560,6 +563,10 @@ class HomeViewModel @Inject constructor(
                 }
                 is PlatformChangeResult.DisplayOnly -> {
                     _uiState.update { it.copy(platforms = result.platforms) }
+                    val updated = _uiState.value
+                    if (updated.isPlatformRowLoading) {
+                        loadPlatformRowIfNeeded(updated.currentRow, result.platforms)
+                    }
                 }
                 is PlatformChangeResult.StructuralChange -> {
                     _uiState.update { it.copy(platforms = result.platforms, currentRow = result.row, focusedGameIndex = 0) }
@@ -572,7 +579,7 @@ class HomeViewModel @Inject constructor(
     private fun loadPlatformRowIfNeeded(row: HomeRow, platforms: List<HomePlatformUi>) {
         if (row !is HomeRow.Platform) return
         val platform = platforms.getOrNull(row.index) ?: return
-        viewModelScope.launch { libraryDelegate.loadGamesForPlatformInternal(platform.id, row.index) }
+        viewModelScope.launch { libraryDelegate.loadPlatformGames(platform) }
     }
 
     private fun loadData() {
@@ -636,7 +643,7 @@ class HomeViewModel @Inject constructor(
         val result = navigationDelegate.nextRow(_uiState.value) ?: return
         _uiState.update { it.copy(currentRow = result.first, focusedGameIndex = result.second) }
         syncSelectedMediaLibrary()
-        navigationDelegate.loadRowWithDebounce(viewModelScope, result.first) { row ->
+        navigationDelegate.loadRow(viewModelScope, result.first) { row ->
             loadRowContent(row)
         }
         saveCurrentState()
@@ -647,7 +654,7 @@ class HomeViewModel @Inject constructor(
         if (row == state.currentRow || row !in state.availableRows) return
         _uiState.update { it.copy(currentRow = row, focusedGameIndex = 0) }
         syncSelectedMediaLibrary()
-        navigationDelegate.loadRowWithDebounce(viewModelScope, row) { loadRowContent(it) }
+        navigationDelegate.loadRow(viewModelScope, row) { loadRowContent(it) }
         saveCurrentState()
     }
 
@@ -655,7 +662,7 @@ class HomeViewModel @Inject constructor(
         val result = navigationDelegate.previousRow(_uiState.value) ?: return
         _uiState.update { it.copy(currentRow = result.first, focusedGameIndex = result.second) }
         syncSelectedMediaLibrary()
-        navigationDelegate.loadRowWithDebounce(viewModelScope, result.first) { row ->
+        navigationDelegate.loadRow(viewModelScope, result.first) { row ->
             loadRowContent(row)
         }
         saveCurrentState()
@@ -685,7 +692,7 @@ class HomeViewModel @Inject constructor(
             is HomeRow.Platform -> {
                 val platform = _uiState.value.platforms.getOrNull(row.index)
                 if (platform != null) {
-                    libraryDelegate.loadGamesForPlatformInternal(platform.id, row.index)
+                    libraryDelegate.loadPlatformGames(platform)
                 }
             }
             HomeRow.Continue -> libraryDelegate.loadRecentGames()
@@ -1679,6 +1686,12 @@ class HomeViewModel @Inject constructor(
             libraryDelegate.updateAchievementCounts(game.id, counts.total, counts.earned)
         }
     }
+}
+
+private fun HomeUiState.clampedToCompletePlatformRow(complete: Boolean): HomeUiState {
+    if (!complete || currentRow !is HomeRow.Platform || isPlatformRowLoading) return this
+    val lastIndex = (currentItems.size - 1).coerceAtLeast(0)
+    return if (focusedGameIndex > lastIndex) copy(focusedGameIndex = lastIndex) else this
 }
 
 private fun HomeGameUi.applyGradient(gradients: Map<Long, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): HomeGameUi =

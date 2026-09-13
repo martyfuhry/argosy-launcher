@@ -565,6 +565,12 @@ class FrameRegistry @Inject constructor(@ApplicationContext private val context:
 
         const val CUSTOM_ID_PREFIX = "custom_"
 
+        /**
+         * The stored frame override meaning "no frame". A null override means Auto, which picks the
+         * platform's first frame, so the two must never be conflated when saving.
+         */
+        const val NO_FRAME_ID = "none"
+
         const val GITHUB_RAW_BASE =
             "https://raw.githubusercontent.com/libretro/overlay-borders/master/"
 

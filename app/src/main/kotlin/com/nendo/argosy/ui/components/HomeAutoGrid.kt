@@ -1,5 +1,9 @@
 package com.nendo.argosy.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,8 +29,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
@@ -41,8 +48,12 @@ import com.nendo.argosy.ui.common.GridDirection
 import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalBoxArtStyle
+import com.nendo.argosy.ui.theme.LocalMotionTier
+import com.nendo.argosy.ui.theme.Motion
+import com.nendo.argosy.ui.theme.MotionTier
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.ui.util.clickableNoFocus
+import kotlinx.coroutines.flow.first
 
 /**
  * What a d-pad press resolves to inside the grid. Callers act on the verdict rather than deriving
@@ -96,11 +107,8 @@ fun autoGridMove(
 }
 
 /**
- * The auto grid: one home section's covers flowing in a fixed number of lanes, scrolling on the
- * configured axis. Lanes read as columns when scrolling vertically and as rows when scrolling
- * horizontally, so the same number means the same thing the picker previewed.
- *
- * Owns no focus state; [focusedIndex] indexes [items] and the caller drives it.
+ * Owns no focus state; the caller drives [focusedIndex]. A non-null [entryAnimationKey] grows the
+ * covers visible when that key first shows items into place, once per key.
  */
 @Composable
 fun HomeAutoGrid(
@@ -108,6 +116,7 @@ fun HomeAutoGrid(
     focusedIndex: Int,
     config: AutoGridConfig,
     gridState: LazyGridState,
+    entryAnimationKey: Any?,
     onItemTap: (Int) -> Unit,
     onItemLongPress: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -118,6 +127,7 @@ fun HomeAutoGrid(
     onPosterLoaded: ((String, android.graphics.Bitmap) -> Unit)? = null
 ) {
     AutoGridFocusSync(gridState, focusedIndex, items.size, config)
+    val entry = rememberAutoGridEntry(entryAnimationKey, items.isNotEmpty(), gridState)
     Column(modifier = modifier.fillMaxSize()) {
         if (config.showTitles) {
             AutoGridTitle(item = items.getOrNull(focusedIndex))
@@ -155,7 +165,8 @@ fun HomeAutoGrid(
                     onLongPress = { onItemLongPress(index) },
                     onCoverLoadFailed = onCoverLoadFailed,
                     onCoverLoaded = onCoverLoaded,
-                    onPosterLoaded = onPosterLoaded
+                    onPosterLoaded = onPosterLoaded,
+                    modifier = entry?.modifierFor(item.key) ?: Modifier
                 )
             }
             when (config.scrollAxis) {
@@ -283,11 +294,63 @@ private fun AutoGridFocusSync(
     }
 }
 
-/**
- * The line above the grid, naming what the cursor is on. Media answers it in two parts because the
- * tile is the show and the press starts one episode of it, and a grid that named only the show would
- * leave which episode to be guessed at.
- */
+@Composable
+private fun rememberAutoGridEntry(
+    key: Any?,
+    hasItems: Boolean,
+    gridState: LazyGridState
+): AutoGridEntry? {
+    val enabled = key != null && LocalMotionTier.current != MotionTier.Reduced
+    val positions = remember(key) { mutableStateOf<Map<Any, Int>?>(null) }
+    val clock = remember(key) { Animatable(0f) }
+    LaunchedEffect(key, hasItems, enabled) {
+        val played = positions.value
+        if (played != null) {
+            clock.snapTo(entryTotalMs(played).toFloat())
+            return@LaunchedEffect
+        }
+        if (!enabled || !hasItems) return@LaunchedEffect
+        withFrameNanos { }
+        val visible = snapshotFlow { gridState.layoutInfo.visibleItemsInfo }.first { it.isNotEmpty() }
+        val firstIndex = visible.minOf { it.index }
+        val measured = visible.associate { it.key to it.index - firstIndex }
+        positions.value = measured
+        val total = entryTotalMs(measured)
+        clock.animateTo(total.toFloat(), tween(durationMillis = total, easing = LinearEasing))
+    }
+    if (!enabled) return null
+    return AutoGridEntry(
+        positions = positions.value,
+        clock = clock,
+        pending = hasItems && positions.value == null
+    )
+}
+
+private fun entryTotalMs(positions: Map<Any, Int>): Int =
+    (positions.values.maxOrNull() ?: 0) * ComponentDefaults.AutoGrid.entryStepMs +
+        ComponentDefaults.AutoGrid.entryMs
+
+private class AutoGridEntry(
+    val positions: Map<Any, Int>?,
+    val clock: Animatable<Float, AnimationVector1D>,
+    val pending: Boolean
+) {
+    fun modifierFor(key: Any): Modifier {
+        if (pending) return Modifier.graphicsLayer { alpha = 0f }
+        val position = positions?.get(key) ?: return Modifier
+        val startMs = position * ComponentDefaults.AutoGrid.entryStepMs
+        return Modifier.graphicsLayer {
+            val progress = ((clock.value - startMs) / ComponentDefaults.AutoGrid.entryMs).coerceIn(0f, 1f)
+            val eased = Motion.argosyEase.transform(progress)
+            val startScale = ComponentDefaults.AutoGrid.entryStartScale
+            val scale = startScale + (1f - startScale) * eased
+            alpha = eased
+            scaleX = scale
+            scaleY = scale
+        }
+    }
+}
+
 @Composable
 private fun AutoGridTitle(item: CarouselItem?) {
     val heading = when (item) {
@@ -338,11 +401,16 @@ private fun AutoGridCell(
     onLongPress: () -> Unit,
     onCoverLoadFailed: ((Long, String) -> Unit)?,
     onCoverLoaded: ((Long, android.graphics.Bitmap) -> Unit)?,
-    onPosterLoaded: ((String, android.graphics.Bitmap) -> Unit)?
+    onPosterLoaded: ((String, android.graphics.Bitmap) -> Unit)?,
+    modifier: Modifier = Modifier
 ) {
     val boxArtStyle = LocalBoxArtStyle.current
     val coverAspectRatio = boxArtStyle.aspectRatio
-    Column(modifier = if (cellWidth != null) Modifier.width(cellWidth) else Modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier.then(
+            if (cellWidth != null) Modifier.width(cellWidth) else Modifier.fillMaxWidth()
+        )
+    ) {
         when (item) {
             is CarouselItem.Game -> {
                 val cellRatio = coverAspectRatio

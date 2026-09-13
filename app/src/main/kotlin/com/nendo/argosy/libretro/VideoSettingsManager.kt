@@ -186,21 +186,28 @@ class VideoSettingsManager(
     var frameOffsetY by mutableStateOf(0f)
     var frameZoom by mutableStateOf(1f)
 
-    val frameIsAdjustable: Boolean
-        get() = currentFrame?.let { frameRegistry.findById(it)?.screenRect } != null
+    /**
+     * Whether the game can be moved and zoomed under [frameId]: with no frame, or on a plate that
+     * places the game itself. A cutout bezel fixes where the game shows through, and a suppressed
+     * frame hands the whole surface to the game.
+     */
+    fun isFrameAdjustable(frameId: String?): Boolean {
+        if (framesSuppressed) return false
+        return frameId == null || frameRegistry.findById(frameId)?.screenRect != null
+    }
 
-    fun adjustFrame(offsetX: Float, offsetY: Float, zoom: Float) {
+    fun adjustFrame(frameId: String?, offsetX: Float, offsetY: Float, zoom: Float) {
         frameOffsetX = (frameOffsetX + offsetX).coerceIn(-0.5f, 0.5f)
         frameOffsetY = (frameOffsetY + offsetY).coerceIn(-0.5f, 0.5f)
         frameZoom = (frameZoom * zoom).coerceIn(0.2f, 3f)
-        applyFrame(currentFrame)
+        applyFrame(frameId)
     }
 
-    fun resetFrameAdjustment() {
+    fun resetFrameAdjustment(frameId: String?) {
         frameOffsetX = 0f
         frameOffsetY = 0f
         frameZoom = 1f
-        applyFrame(currentFrame)
+        applyFrame(frameId)
     }
 
     fun persistFrameAdjustment() {
@@ -226,7 +233,11 @@ class VideoSettingsManager(
         if (bitmap == null) {
             retroView.clearBackgroundFrame()
             retroView.backgroundFrameBehind = false
-            retroView.viewport = RectF(0f, 0f, 1f, 1f)
+            retroView.viewport = if (frameId == null && !framesSuppressed) {
+                adjustedViewport(FULL_SURFACE)
+            } else {
+                RectF(0f, 0f, 1f, 1f)
+            }
             return
         }
 
@@ -604,7 +615,7 @@ class VideoSettingsManager(
         scope.launch {
             val current = platformLibretroSettingsDao.getByPlatformId(platformId)
                 ?: PlatformLibretroSettingsEntity(platformId = platformId)
-            val updated = current.copy(frame = frameId)
+            val updated = current.copy(frame = frameId ?: FrameRegistry.NO_FRAME_ID)
             if (updated.hasAnyOverrides()) {
                 platformLibretroSettingsDao.upsert(updated)
             } else {
@@ -615,6 +626,7 @@ class VideoSettingsManager(
 
     companion object {
         private const val TAG = "VideoSettingsManager"
+        private val FULL_SURFACE = FrameRegistry.ScreenRect(0f, 0f, 1f, 1f)
 
         private val PLATFORM_TEXTURE_CROP = mapOf(
             // 3DO opera core emits ~16 VBI lines as black at the top of the 240-line frame.

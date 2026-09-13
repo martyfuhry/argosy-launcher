@@ -39,7 +39,6 @@ import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.model.Section
 import com.nendo.argosy.data.model.SortOption
 import com.nendo.argosy.data.model.computeGenericSections
-import com.nendo.argosy.data.model.orderedForEveryGame
 import com.nendo.argosy.data.model.tieredByOwnership
 import com.nendo.argosy.domain.usecase.cache.RepairImageCacheUseCase
 import com.nendo.argosy.ui.common.GridDirection
@@ -50,6 +49,7 @@ import com.nendo.argosy.ui.common.toHomeGameUi
 import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
 import com.nendo.argosy.ui.screens.home.HomeGameUi
 import com.nendo.argosy.ui.screens.home.HomeGameUiSortProps
+import com.nendo.argosy.ui.screens.home.PLATFORM_ROW_LIMIT
 import com.nendo.argosy.ui.screens.home.toHomeMediaUi
 import com.nendo.argosy.ui.screens.media.episodeLabel
 import com.nendo.argosy.ui.screens.media.toCompanionDetail
@@ -75,7 +75,6 @@ private const val NEW_GAME_THRESHOLD_HOURS = 24L
 private const val RECENT_PLAYED_THRESHOLD_HOURS = 4L
 private const val RECENT_GAMES_LIMIT = 20
 private const val RECENT_GAMES_LIMIT_GRID = 32
-private const val PLATFORM_GAMES_LIMIT = 20
 private const val LIBRARY_GRID_COLUMNS = 6
 
 private const val SECTION_KIND_RECENT = "RECENT"
@@ -146,6 +145,18 @@ sealed class DualHomeSection(
         val name: String
     ) : DualHomeSection(HomeSectionKind.MEDIA_LIBRARY, name)
 }
+
+/**
+ * Identifies the content a section loads, so a load can tell whether the section it was started for
+ * is still the one under the cursor after the section list has been rebuilt.
+ */
+val DualHomeSection.contentKey: String
+    get() = when (this) {
+        is DualHomeSection.Platform -> "${kind.name}:$id"
+        is DualHomeSection.Pinned -> "${kind.name}:${pinned.id}"
+        is DualHomeSection.MediaLibrary -> "${kind.name}:$libraryId"
+        else -> kind.name
+    }
 
 /**
  * The row's full name, translated where the row is a fixed one.
@@ -305,6 +316,8 @@ data class DualHomeUiState(
     val focusZone: DualHomeFocusZone = DualHomeFocusZone.CAROUSEL,
     val appBarIndex: Int = 0,
     val platformTotalCount: Int = 0,
+    val gamesComplete: Boolean = true,
+    val loadedSectionKey: String? = null,
     val viewMode: DualHomeViewMode = DualHomeViewMode.CAROUSEL,
     val collectionItems: List<DualCollectionListItem> = emptyList(),
     val selectedCollectionIndex: Int = 0,
@@ -375,7 +388,15 @@ data class DualHomeUiState(
         get() = if (platformTotalCount > 0) platformTotalCount else rowItemCount
 
     val hasMoreGames: Boolean
-        get() = platformTotalCount > games.size
+        get() = gamesComplete && platformTotalCount > games.size
+
+    /**
+     * Whether [games] and [mediaItems] belong to the section under the cursor. A section switch
+     * moves the cursor before the new section's load lands, and until then the lists still hold the
+     * section being left.
+     */
+    val isCurrentSectionLoaded: Boolean
+        get() = currentSection?.contentKey == loadedSectionKey
 
     val currentPlatformId: Long?
         get() = (currentSection as? DualHomeSection.Platform)?.id
@@ -732,6 +753,11 @@ class DualHomeViewModel(
 
     private var latestDownloads: Map<Long, com.nendo.argosy.data.local.entity.DownloadQueueEntity> = emptyMap()
     private val pendingCoverRepairs = mutableSetOf<Long>()
+    private val platformGameLoader = com.nendo.argosy.ui.screens.home.PlatformGameLoader(
+        gameRepository,
+        downloadFileStatusRepository
+    )
+    private var sectionLoadJob: kotlinx.coroutines.Job? = null
     private var letterOverlayJob: kotlinx.coroutines.Job? = null
     private var mediaNoticeJob: kotlinx.coroutines.Job? = null
     private var mediaInfoSiblingsJob: kotlinx.coroutines.Job? = null
@@ -871,6 +897,10 @@ class DualHomeViewModel(
                         sections = updatedSections,
                         currentSectionIndex = remapSectionIndex(state.currentSection, updatedSections)
                     )
+                }
+                val remapped = _uiState.value
+                if (remapped.loadedSectionKey != null && !remapped.isCurrentSectionLoaded) {
+                    loadGamesForCurrentSection()
                 }
                 applyPendingRestore()
             }
@@ -1092,29 +1122,30 @@ class DualHomeViewModel(
         return preferencesRepository?.userPreferences?.first()?.installedOnlyHome == true
     }
 
-    /**
-     * Whether a section should carry its whole library rather than a leading slice. The companion
-     * display answers the same setting the main one does, or the option would only work on
-     * whichever screen happened to be looked at.
-     */
-    private suspend fun showsEveryGame(): Boolean {
-        val layout = preferencesRepository?.userPreferences?.first()?.homeLayout ?: return false
-        return layout.selected == com.nendo.argosy.domain.model.HomeLayoutKind.AUTO_GRID &&
-            layout.autoGrid.showAllGames
-    }
-
     private suspend fun loadGamesForCurrentSectionSuspend() {
         val section = _uiState.value.currentSection ?: return
         if (section is DualHomeSection.MediaLibrary) {
             loadMediaForSection(section)
             return
         }
-        val installedOnly = isInstalledOnlyEnabled()
-        val uncapped = showsEveryGame()
-        val platformLimit = if (uncapped) Int.MAX_VALUE else PLATFORM_GAMES_LIMIT
+        val prefs = preferencesRepository?.userPreferences?.first()
+        val installedOnly = prefs?.installedOnlyHome == true
+        val uncapped = prefs?.homeLayout?.showsEveryGame == true
         val recentLimit = if (uncapped) RECENT_GAMES_LIMIT_GRID else RECENT_GAMES_LIMIT
 
-        var realCount = 0
+        if (section is DualHomeSection.Platform) {
+            val realCount = gameRepository.countByPlatform(section.id)
+            platformGameLoader.load(
+                platformId = section.id,
+                showsEveryGame = uncapped,
+                installedOnly = installedOnly,
+                publishLeadingPage = _uiState.value.loadedSectionKey != section.contentKey,
+                toUi = { it.toUi() },
+                publish = { games, complete -> publishSectionGames(section, games, realCount, complete) }
+            )
+            return
+        }
+
         val games = when (section) {
             is DualHomeSection.Recent -> {
                 val newThreshold = Instant.now().minus(
@@ -1140,15 +1171,6 @@ class DualHomeViewModel(
                 if (installedOnly) favorites = filterPlayable(favorites)
                 favorites.map { it.toUi() }
             }
-            is DualHomeSection.Platform -> {
-                realCount = gameRepository.countByPlatform(section.id)
-                var platformGames = gameRepository.getByPlatformSorted(
-                    section.id, limit = platformLimit
-                )
-                if (installedOnly) platformGames = filterPlayable(platformGames)
-                val platformUis = platformGames.map { it.toUi() }
-                if (uncapped) orderedForEveryGame(platformUis, HomeGameUiSortProps) else platformUis
-            }
             is DualHomeSection.Recommendations -> {
                 val ids = recommendedGameIds()
                 val byId = gameRepository.getByIds(ids).associateBy { it.id }
@@ -1156,14 +1178,14 @@ class DualHomeViewModel(
             }
             is DualHomeSection.Android -> {
                 var androidGames = gameRepository.getByPlatformSorted(
-                    LocalPlatformIds.ANDROID, limit = platformLimit
+                    LocalPlatformIds.ANDROID, limit = PLATFORM_ROW_LIMIT
                 )
                 if (installedOnly) androidGames = filterPlayable(androidGames)
                 androidGames.map { it.toUi() }
             }
             is DualHomeSection.Steam -> {
                 val steamUis = gameRepository.getByPlatformSorted(
-                    LocalPlatformIds.STEAM, limit = platformLimit
+                    LocalPlatformIds.STEAM, limit = PLATFORM_ROW_LIMIT
                 ).map { it.toUi() }
                 tieredByOwnership(steamUis, HomeGameUiSortProps)
             }
@@ -1172,10 +1194,22 @@ class DualHomeViewModel(
                 if (installedOnly) pinnedGames = filterPlayable(pinnedGames)
                 pinnedGames.map { it.toUi() }
             }
-            is DualHomeSection.MediaLibrary -> emptyList()
+            is DualHomeSection.Platform, is DualHomeSection.MediaLibrary -> emptyList()
         }
 
+        publishSectionGames(section, games, realCount = 0, complete = true)
+    }
+
+    private fun publishSectionGames(
+        section: DualHomeSection,
+        games: List<HomeGameUi>,
+        realCount: Int,
+        complete: Boolean
+    ): Boolean {
+        var accepted = false
         _uiState.update {
+            accepted = it.currentSection?.contentKey == section.contentKey
+            if (!accepted) return@update it
             val previousId = it.selectedGame?.id
             val remapped = games.indexOfFirst { g -> g.id == previousId }
             val newIndex = if (remapped >= 0) remapped
@@ -1184,9 +1218,12 @@ class DualHomeViewModel(
                 games = games,
                 mediaItems = emptyList(),
                 platformTotalCount = realCount,
+                gamesComplete = complete,
+                loadedSectionKey = section.contentKey,
                 selectedIndex = newIndex
             )
         }
+        return accepted
     }
 
     /**
@@ -1215,10 +1252,13 @@ class DualHomeViewModel(
             )
         }
         _uiState.update {
+            if (it.currentSection?.contentKey != section.contentKey) return@update it
             it.copy(
                 games = emptyList(),
                 mediaItems = items,
                 platformTotalCount = 0,
+                gamesComplete = true,
+                loadedSectionKey = section.contentKey,
                 selectedIndex = it.selectedIndex.coerceIn(0, (items.size - 1).coerceAtLeast(0))
             )
         }
@@ -2101,8 +2141,13 @@ class DualHomeViewModel(
         if (state.sections.isEmpty()) return
 
         val newIndex = (state.currentSectionIndex + 1) % state.sections.size
-        _uiState.update { it.copy(currentSectionIndex = newIndex, selectedIndex = 0) }
-        viewModelScope.launch {
+        switchToSection(newIndex, onLoaded)
+    }
+
+    private fun switchToSection(index: Int, onLoaded: (() -> Unit)?) {
+        _uiState.update { it.copy(currentSectionIndex = index, selectedIndex = 0) }
+        sectionLoadJob?.cancel()
+        sectionLoadJob = viewModelScope.launch {
             loadGamesForCurrentSectionSuspend()
             persistSection()
             onLoaded?.invoke()
@@ -2117,12 +2162,7 @@ class DualHomeViewModel(
         val state = _uiState.value
         if (index !in state.sections.indices || index == state.currentSectionIndex) return
 
-        _uiState.update { it.copy(currentSectionIndex = index, selectedIndex = 0) }
-        viewModelScope.launch {
-            loadGamesForCurrentSectionSuspend()
-            persistSection()
-            onLoaded?.invoke()
-        }
+        switchToSection(index, onLoaded)
     }
 
     fun previousSection(onLoaded: (() -> Unit)? = null) {
@@ -2134,12 +2174,7 @@ class DualHomeViewModel(
         } else {
             state.currentSectionIndex - 1
         }
-        _uiState.update { it.copy(currentSectionIndex = newIndex, selectedIndex = 0) }
-        viewModelScope.launch {
-            loadGamesForCurrentSectionSuspend()
-            persistSection()
-            onLoaded?.invoke()
-        }
+        switchToSection(newIndex, onLoaded)
     }
 
     /**

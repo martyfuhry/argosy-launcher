@@ -674,6 +674,7 @@ fun InGameSettingsScreen(
                                 listState = videoListState,
                                 enablePicker = false,
                                 trailingContent = { InGameHudHeader() },
+                                trailingFocusCount = InGameHudItem.entries.size,
                                 trailingItems = {
                                     items(InGameHudItem.entries, key = { it.key }) { item ->
                                         InGameHudRow(

@@ -149,6 +149,8 @@ fun DualHomeLowerScreen(
         com.nendo.argosy.domain.model.CarouselConfig(),
     autoGridConfig: com.nendo.argosy.domain.model.AutoGridConfig =
         com.nendo.argosy.domain.model.AutoGridConfig(),
+    autoGridEntryAnimationKey: Any? = null,
+    isCurrentSectionLoaded: Boolean = true,
     layoutKind: com.nendo.argosy.domain.model.HomeLayoutKind =
         com.nendo.argosy.domain.model.HomeLayoutKind.CAROUSEL,
     isPlatformSection: Boolean = false,
@@ -317,10 +319,11 @@ fun DualHomeLowerScreen(
             )
         } else if (isAutoGrid) {
             HomeAutoGrid(
-                items = railItems,
+                items = if (isCurrentSectionLoaded) railItems else emptyList(),
                 focusedIndex = selectedIndex,
                 config = autoGridConfig,
                 gridState = gridState,
+                entryAnimationKey = autoGridEntryAnimationKey,
                 showPlatformBadge = false,
                 onItemTap = { index ->
                     val media = mediaItems.getOrNull(index)
