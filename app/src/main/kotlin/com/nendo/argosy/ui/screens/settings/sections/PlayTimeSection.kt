@@ -125,7 +125,7 @@ internal sealed class PlayTimeItem(
     }
 }
 
-private val playTimeLayout = SettingsLayout<PlayTimeItem, PlayTimeLayoutState>(
+internal val playTimeLayout = SettingsLayout<PlayTimeItem, PlayTimeLayoutState>(
     allItems = PlayTimeItem.ALL,
     isFocusable = { it.isFocusable },
     visibleWhen = { item, state -> item.visibleWhen(state) },
@@ -243,6 +243,8 @@ fun PlayTimeSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val visibleItems = remember(layoutState) { playTimeLayout.visibleItems(layoutState) }
     val sections = remember(layoutState, context) { playTimeLayout.buildSections(layoutState, context) }
     val isOnline = uiState.server.connectionStatus == ConnectionStatus.ONLINE
+
+    PlayTimePresentation(uiState, visibleItems, layoutState)
 
     fun isFocused(item: PlayTimeItem): Boolean =
         uiState.focusedIndex == playTimeLayout.focusIndexOf(item, layoutState)
