@@ -63,7 +63,9 @@ class SyncCoordinator @Inject constructor(
     private val saveRecoveryGate: SaveRecoveryGate,
     private val screenshotUploader: ScreenshotUploader,
     private val rommApiProvider: RomMApiProvider,
-    private val accountSwitchMarkerStore: com.nendo.argosy.data.preferences.AccountSwitchMarkerStore
+    private val accountSwitchMarkerStore: com.nendo.argosy.data.preferences.AccountSwitchMarkerStore,
+    private val syncStatesOnSessionEndUseCase:
+        Lazy<com.nendo.argosy.domain.usecase.state.SyncStatesOnSessionEndUseCase>
 ) {
     companion object {
         private const val TAG = "SyncCoordinator"
@@ -122,6 +124,13 @@ class SyncCoordinator @Inject constructor(
             val refreshed = saveSyncRepository.get().scanAndQueueLocalChanges(secureSaves = false)
             if (refreshed > 0) {
                 Logger.info(TAG, "reconcileAll: secure-saves-off discovery refreshed $refreshed caches, draining before negotiate")
+            }
+            val adoptedStates = runCatching {
+                syncStatesOnSessionEndUseCase.get().adoptOffSessionStatesForDownloadedGames()
+            }.onFailure { Logger.error(TAG, "reconcileAll: off-session state adoption failed", it) }
+                .getOrDefault(0)
+            if (adoptedStates > 0) {
+                Logger.info(TAG, "reconcileAll: secure-saves-off discovery adopted $adoptedStates states")
             }
             processQueue()
         }

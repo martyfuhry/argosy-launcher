@@ -123,7 +123,8 @@ class SyncCoordinatorApplyPlanTest {
             saveRecoveryGate = mockk(relaxed = true),
             screenshotUploader = mockk(relaxed = true),
             rommApiProvider = mockk(relaxed = true),
-            accountSwitchMarkerStore = mockk(relaxed = true)
+            accountSwitchMarkerStore = mockk(relaxed = true),
+            syncStatesOnSessionEndUseCase = mockk(relaxed = true)
         )
 
         every { strategySelector.current() } returns fakeStrategy

@@ -3,10 +3,14 @@ package com.nendo.argosy.domain.usecase.state
 import android.util.Log
 import com.nendo.argosy.data.emulator.CoreVersionExtractor
 import com.nendo.argosy.data.emulator.EmulatorDetector
+import com.nendo.argosy.data.emulator.EmulatorResolver
 import com.nendo.argosy.data.emulator.StatePathRegistry
 import com.nendo.argosy.data.local.dao.GameDao
+import com.nendo.argosy.data.local.dao.getByIdsChunked
 import com.nendo.argosy.data.local.entity.StateCacheEntity
+import com.nendo.argosy.data.preferences.AccountSwitchMarkerStore
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
+import com.nendo.argosy.data.repository.DiscoveredState
 import com.nendo.argosy.data.repository.ActiveSaveRepository
 import com.nendo.argosy.data.repository.StateCacheManager
 import com.nendo.argosy.data.sync.StateClaim
@@ -39,12 +43,64 @@ class SyncStatesOnSessionEndUseCase @Inject constructor(
     private val emulatorDetector: EmulatorDetector,
     private val coreVersionExtractor: CoreVersionExtractor,
     private val preferencesRepository: UserPreferencesRepository,
-    private val stateOwnershipTracker: StateOwnershipTracker
+    private val stateOwnershipTracker: StateOwnershipTracker,
+    private val emulatorResolver: EmulatorResolver,
+    private val accountSwitchMarkerStore: AccountSwitchMarkerStore
 ) {
     suspend operator fun invoke(
         gameId: Long,
         emulatorPackage: String,
         queueUploads: Boolean = true
+    ): StateSyncResult = sync(gameId, emulatorPackage, queueUploads, skipKnownContent = false)
+
+    /**
+     * Adopts states written outside an Argosy session, which only happens with Secure Saves off.
+     *
+     * A slot whose file matches the cached state for the same slot in the active channel is left
+     * alone, because a file Argosy itself restored there would otherwise be re-cached and uploaded
+     * as a new server state beside the one it came from.
+     *
+     * A file older than the server's copy of its slot is backed up as a state of its own rather
+     * than over the newer one, so every local state reaches the server and no server state is
+     * traded away for it.
+     */
+    suspend fun adoptOffSessionStates(
+        gameId: Long,
+        emulatorPackage: String,
+        queueUploads: Boolean
+    ): StateSyncResult {
+        if (preferencesRepository.userPreferences.first().secureSaves) return StateSyncResult.NotConfigured
+        if (accountSwitchMarkerStore.isSwitching()) {
+            Log.i(TAG, "Account switch in progress, not adopting on-disk states")
+            return StateSyncResult.NotConfigured
+        }
+        return sync(gameId, emulatorPackage, queueUploads, skipKnownContent = true)
+    }
+
+    /**
+     * [adoptOffSessionStates] for every downloaded game with a server copy, for the periodic
+     * reconcile that already sweeps saves the same way.
+     */
+    suspend fun adoptOffSessionStatesForDownloadedGames(): Int {
+        if (preferencesRepository.userPreferences.first().secureSaves) return 0
+        var adopted = 0
+        for (game in gameDao.getByIdsChunked(gameDao.getDownloadedRommGameIds())) {
+            val emulatorPackage = emulatorResolver.getEmulatorPackageForGame(
+                game.id,
+                game.platformId,
+                game.platformSlug
+            ) ?: continue
+            val result = adoptOffSessionStates(game.id, emulatorPackage, queueUploads = true)
+            if (result is StateSyncResult.Cached) adopted += result.count
+        }
+        return adopted
+    }
+
+    private suspend fun sync(
+        gameId: Long,
+        emulatorPackage: String,
+        queueUploads: Boolean,
+        skipKnownContent: Boolean
     ): StateSyncResult {
         val prefs = preferencesRepository.userPreferences.first()
         if (!prefs.stateCacheEnabled) {
@@ -124,9 +180,17 @@ class SyncStatesOnSessionEndUseCase @Inject constructor(
             val isNewer = existingCache != null && state.lastModified.isAfter(existingCache.cachedAt)
             Log.d(TAG, "Slot ${state.slotNumber}: fileModified=${state.lastModified}, cachedAt=${existingCache?.cachedAt}, isNewer=$isNewer, screenshotMissing=$screenshotMissing")
 
-            val shouldCache = existingCache == null ||
-                state.lastModified.isAfter(existingCache.cachedAt) ||
-                screenshotMissing
+            val contentKnown = skipKnownContent && existingCache != null && isNewer &&
+                !screenshotMissing && stateCacheManager.hasSameContent(existingCache, state.file)
+            val shouldCache = !contentKnown && (existingCache == null || isNewer || screenshotMissing)
+
+            if (shouldCache && skipKnownContent && existingCache != null && staleOnServer(existingCache, state)) {
+                Log.i(
+                    TAG,
+                    "Slot ${state.slotNumber} has a newer server state; uploading the on-disk one as its own state"
+                )
+                stateCacheManager.clearServerLink(existingCache.id)
+            }
 
             if (shouldCache) {
                 val cacheId = stateCacheManager.cacheState(
@@ -158,6 +222,11 @@ class SyncStatesOnSessionEndUseCase @Inject constructor(
         }
 
         return StateSyncResult.Cached(cachedCount, queuedCount)
+    }
+
+    private fun staleOnServer(existing: StateCacheEntity, discovered: DiscoveredState): Boolean {
+        val serverUpdatedAt = existing.serverUpdatedAt ?: return false
+        return existing.rommSaveId != null && serverUpdatedAt.isAfter(discovered.lastModified)
     }
 
     private suspend fun queueStatesForUpload(gameId: Long, rommId: Long, emulatorId: String): Int {

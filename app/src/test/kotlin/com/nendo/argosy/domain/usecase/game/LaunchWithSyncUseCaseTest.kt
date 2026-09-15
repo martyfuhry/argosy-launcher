@@ -73,7 +73,8 @@ class LaunchWithSyncUseCaseTest {
             emulatorConfigDao, emulatorResolver,
             preferencesRepository, romMRepository, saveSyncRepository,
             titleIdDownloadObserver, preLaunchStateSyncUseCase,
-            mockk<com.nendo.argosy.data.sync.N3dsSaveCaseRepair>(relaxed = true)
+            mockk<com.nendo.argosy.data.sync.N3dsSaveCaseRepair>(relaxed = true),
+            mockk<com.nendo.argosy.domain.usecase.state.SyncStatesOnSessionEndUseCase>(relaxed = true)
         )
 
         every { preferencesRepository.userPreferences } returns MutableStateFlow(UserPreferences(saveSyncEnabled = true))

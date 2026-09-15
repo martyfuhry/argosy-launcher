@@ -1058,7 +1058,7 @@ class StateCacheManager @Inject constructor(
             } else {
                 api.uploadState(
                     rommId,
-                    state.emulatorId,
+                    serverEmulatorTag(state),
                     stateFile = buildStatePart(),
                     screenshotFile = buildScreenshotPart()
                 )
@@ -1082,7 +1082,7 @@ class StateCacheManager @Inject constructor(
                 )
                 api.uploadState(
                     rommId,
-                    state.emulatorId,
+                    serverEmulatorTag(state),
                     stateFile = buildStatePart(),
                     screenshotFile = buildScreenshotPart()
                 )
@@ -1432,6 +1432,23 @@ class StateCacheManager @Inject constructor(
 
     suspend fun getByGameAndEmulator(gameId: Long, emulatorId: String): List<StateCacheEntity> =
         stateCacheDao.getByGameAndEmulator(gameId, emulatorId, syncPreferencesRepository.getRommUserId())
+
+    suspend fun hasSameContent(state: StateCacheEntity, file: File): Boolean = withContext(Dispatchers.IO) {
+        val cached = getCacheFile(state) ?: return@withContext false
+        cached.length() == file.length() && calculateFileHash(cached) == calculateFileHash(file)
+    }
+
+    internal suspend fun serverEmulatorTag(state: StateCacheEntity): String {
+        val emulatorId = if (state.emulatorId == EmulatorRegistry.LEGACY_BUILTIN_ID) {
+            EmulatorRegistry.BUILTIN_ID
+        } else {
+            state.emulatorId
+        }
+        val game = gameDao.getById(state.gameId)
+        val coreId = game?.let { saveSyncApiClient.resolveCoreForGame(it, emulatorId) }
+            ?: state.coreId?.takeIf { it != state.emulatorId }
+        return EmulatorRegistry.toServerEmulator(emulatorId, coreId)
+    }
 
     private fun calculateFileHash(file: File): String {
         val md = MessageDigest.getInstance("MD5")

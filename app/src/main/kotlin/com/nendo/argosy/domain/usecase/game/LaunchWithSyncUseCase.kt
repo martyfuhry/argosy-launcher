@@ -35,7 +35,9 @@ class LaunchWithSyncUseCase @Inject constructor(
     private val saveSyncRepository: SaveSyncRepository,
     private val titleIdDownloadObserver: TitleIdDownloadObserver,
     private val preLaunchStateSyncUseCase: PreLaunchStateSyncUseCase,
-    private val n3dsSaveCaseRepair: com.nendo.argosy.data.sync.N3dsSaveCaseRepair
+    private val n3dsSaveCaseRepair: com.nendo.argosy.data.sync.N3dsSaveCaseRepair,
+    private val syncStatesOnSessionEndUseCase:
+        com.nendo.argosy.domain.usecase.state.SyncStatesOnSessionEndUseCase
 ) {
     @Deprecated("Use invokeWithProgress instead", ReplaceWith("invokeWithProgress(gameId)"))
     fun invoke(gameId: Long): Flow<SyncState> = flow {
@@ -119,6 +121,8 @@ class LaunchWithSyncUseCase @Inject constructor(
     }
 
     private suspend fun syncStatesQuietly(gameId: Long, emulatorPackage: String, channelName: String?) {
+        runCatching { syncStatesOnSessionEndUseCase.adoptOffSessionStates(gameId, emulatorPackage, queueUploads = false) }
+            .onFailure { Logger.error(TAG, "Off-session state adoption failed for gameId=$gameId", it) }
         runCatching { preLaunchStateSyncUseCase(gameId, emulatorPackage, channelName) }
             .onFailure { Logger.error(TAG, "Pre-launch state sync failed for gameId=$gameId", it) }
     }
