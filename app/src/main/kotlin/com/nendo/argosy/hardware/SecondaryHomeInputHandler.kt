@@ -27,6 +27,8 @@ import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.screens.home.HomeGameUi
 import com.nendo.argosy.ui.screens.secondaryhome.SecondaryHomeViewModel
 
+private const val UPPER_YIELD_INTERVAL_MS = 400L
+
 class SecondaryHomeInputHandler(
     private val viewModel: SecondaryHomeViewModel,
     private val dualHomeViewModel: DualHomeViewModel,
@@ -46,6 +48,7 @@ class SecondaryHomeInputHandler(
     private val dualMediaViewModel: () -> DualMediaViewModel? = { null },
     private val onConfirmMediaRow: () -> Unit = {}
 ) {
+    private var lastUpperYieldAt = 0L
 
     fun routeInput(
         event: GamepadEvent,
@@ -55,6 +58,10 @@ class SecondaryHomeInputHandler(
     ): InputResult {
         val syncConflictResult = handleSyncConflictInput(event)
         if (syncConflictResult.handled) return syncConflictResult
+
+        if (!isGameActive && dualHomeViewModel.forwardingMode.value != ForwardingMode.NONE) {
+            return yieldToUpperScreen()
+        }
 
         val saveConflictResult = handleSaveConflictInput(event)
         if (saveConflictResult.handled) return saveConflictResult
@@ -128,6 +135,15 @@ class SecondaryHomeInputHandler(
                 broadcasts.broadcastViewModeChange(drawerOpen = true)
             }
             else -> {}
+        }
+        return InputResult.HANDLED
+    }
+
+    private fun yieldToUpperScreen(): InputResult {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastUpperYieldAt >= UPPER_YIELD_INTERVAL_MS) {
+            lastUpperYieldAt = now
+            broadcasts.broadcastRefocusUpper()
         }
         return InputResult.HANDLED
     }

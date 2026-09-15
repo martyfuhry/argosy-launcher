@@ -4013,7 +4013,11 @@ class DualScreenManager(
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
                         Intent.FLAG_ACTIVITY_NO_ANIMATION
                 )
-            }
+            },
+            displayAffinityHelper.getActivityOptions(
+                forEmulator = false,
+                overrideDisplayId = android.view.Display.DEFAULT_DISPLAY
+            )
         )
     }
 }
