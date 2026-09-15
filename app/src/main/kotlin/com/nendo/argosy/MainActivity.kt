@@ -795,10 +795,14 @@ class MainActivity : ComponentActivity() {
         if (dualScreenManager.isRolesSwapped.value) return
         if (dualScreenManager.swappedIsGameActive.value) return
         isOverlayFocused = false
-        if (dualScreenManager.isCompanionActive.value) {
+        if (!dualScreenManager.isCompanionActive.value) {
+            dualScreenManager.ensureCompanionLaunched()
+            return
+        }
+        if (isOnHomeScreen) {
             dualScreenManager.companionHost?.refocusSelf()
         } else {
-            dualScreenManager.ensureCompanionLaunched()
+            dualScreenManager.onRefocusUpper()
         }
     }
 

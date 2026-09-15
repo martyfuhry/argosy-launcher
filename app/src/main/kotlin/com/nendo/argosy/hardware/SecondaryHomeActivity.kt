@@ -357,6 +357,9 @@ class SecondaryHomeActivity :
             initializeCompanion()
         }
         if (dsm.primaryOnHome.value) dualHomeViewModel.stopDrawerForwarding()
+        if (!dsm.primaryOnHome.value && !isGameActive) {
+            window.decorView.post { broadcasts.broadcastRefocusUpper() }
+        }
         launchedExternalApp = false
         syncFromSessionStore()
         broadcasts.broadcastCompanionResumed()
@@ -1229,14 +1232,9 @@ class SecondaryHomeActivity :
         dsm.companionHost = this
         lifecycleScope.launch {
             dsm.primaryOnHome.collect { onHome ->
-                if (onHome) {
-                    if (dualHomeViewModel.forwardingMode.value ==
-                        com.nendo.argosy.ui.dualscreen.home.ForwardingMode.BACKGROUND
-                    ) {
-                        dualHomeViewModel.stopDrawerForwarding()
-                    }
-                } else {
-                    dualHomeViewModel.startBackgroundForwarding()
+                when {
+                    !onHome -> dualHomeViewModel.startBackgroundForwarding()
+                    !dsm.isOverlayFocused -> dualHomeViewModel.stopDrawerForwarding()
                 }
             }
         }
