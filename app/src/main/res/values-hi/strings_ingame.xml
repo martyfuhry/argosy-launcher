@@ -217,6 +217,7 @@
     <string name="ingame_coreoptions_per_game_title">गेम-विशिष्ट सेटिंग्स</string>
     <string name="ingame_coreoptions_per_game_subtitle_on">बदलाव केवल इस गेम पर लागू होते हैं</string>
     <string name="ingame_coreoptions_per_game_subtitle_off">इस कोर के लिए ग्लोबल डिफ़ॉल्ट इस्तेमाल हो रहे हैं</string>
+    <string name="ingame_coreoptions_held_by_dual_screen">डुअल स्क्रीन द्वारा तय</string>
 
     <string name="ingame_frame_previous_description">पिछला</string>
     <string name="ingame_frame_next_description">अगला</string>

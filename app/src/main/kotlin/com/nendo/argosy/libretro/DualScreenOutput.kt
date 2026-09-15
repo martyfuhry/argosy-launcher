@@ -7,8 +7,9 @@ import android.graphics.RectF
  * How a two-screen console's single framebuffer is split across two displays.
  *
  * The core composites both screens into one frame, so which part belongs on which display is a
- * crop of that frame. [layoutOptionValue] is the core option that produces the arrangement these
- * crops assume - the crops are only correct while it is set, so it is applied with them.
+ * crop of that frame. [coreOptions] are the core options that produce the arrangement these crops
+ * assume - the crops are only correct while they are set, so they are applied with them and held
+ * there for as long as the split is on.
  *
  * Crop values are the fraction trimmed from each edge, written as the picture reads: the console's
  * upper screen is the upper part. A hardware-rendered frame arrives bottom row first and the
@@ -69,7 +70,10 @@ data class DualScreenOutput(
          */
         private val AZAHAR = DualScreenOutput(
             coreId = "azahar",
-            coreOptions = mapOf("citra_layout_option" to "default"),
+            coreOptions = mapOf(
+                "citra_layout_option" to "default",
+                "citra_swap_screen" to "Top"
+            ),
             primary = RectF(0f, 0f, 0f, 0.5f),
             secondary = RectF(0.1f, 0.5f, 0.1f, 0f),
             primaryAspect = 400f / 240f,
@@ -86,6 +90,7 @@ data class DualScreenOutput(
             coreId = "melonds",
             coreOptions = mapOf(
                 "melonds_screen_layout" to "Top/Bottom",
+                "melonds_screen_gap" to "0",
                 "melonds_touch_mode" to "Touch"
             ),
             primary = RectF(0f, 0f, 0f, 0.5f),

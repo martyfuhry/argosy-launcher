@@ -214,6 +214,7 @@
     <string name="ingame_coreoptions_per_game_title">遊戲專屬設定</string>
     <string name="ingame_coreoptions_per_game_subtitle_on">變更僅套用於此遊戲</string>
     <string name="ingame_coreoptions_per_game_subtitle_off">使用此核心的全域預設值</string>
+    <string name="ingame_coreoptions_held_by_dual_screen">由雙螢幕決定</string>
 
     <string name="ingame_frame_previous_description">上一個</string>
     <string name="ingame_frame_next_description">下一個</string>

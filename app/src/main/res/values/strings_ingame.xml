@@ -487,6 +487,9 @@
     <string name="ingame_coreoptions_per_game_subtitle_on">Changes apply to this game only</string>
     <!-- Second line under that row while it is off. -->
     <string name="ingame_coreoptions_per_game_subtitle_off">Using global defaults for this core</string>
+    <!-- Second line under a core option that cannot be changed while the console's two screens
+         are shown on two displays, because splitting the picture depends on its value. -->
+    <string name="ingame_coreoptions_held_by_dual_screen">Set by dual screen</string>
 
     <!-- Spoken description of the left arrow in the border art picker. Adjective: the border
          before this one. -->

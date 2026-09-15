@@ -48,6 +48,7 @@ public:
     std::array<float, 12>& getBackgroundVertices() { return backgroundVertices; }
     std::array<float, 12>& getFramebufferVertices() { return framebufferVertices; }
     std::array<float, 12>& getTextureCoordinates() { return textureCoordinates; }
+    std::array<float, 12>& getFramebufferTextureCoordinates() { return framebufferTextureCoordinates; }
     std::array<float, 4>& getRelativeForegroundBounds() { return relativeForegroundBounds; }
 
     float getAspectRatio() { return aspectRatio; }
@@ -93,6 +94,26 @@ private:
     };
 
     std::array<float, 12> textureCoordinates {
+        0.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        0.0F,
+
+        1.0F,
+        0.0F,
+
+        0.0F,
+        1.0F,
+
+        1.0F,
+        1.0F,
+    };
+
+    std::array<float, 12> framebufferTextureCoordinates {
         0.0F,
         0.0F,
 

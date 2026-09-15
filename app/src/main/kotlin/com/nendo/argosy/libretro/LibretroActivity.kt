@@ -1911,26 +1911,33 @@ class LibretroActivity : ComponentActivity() {
         val coreId = resolvedCoreId ?: return emptyList()
         val manifest = CoreOptionManifestRegistry.getManifest(coreId) ?: return emptyList()
         val perGame = perGameSettingsEnabled && gameId != -1L
+        val held = splitHeldCoreOptions()
         return manifest.options.map { def ->
             val gameOverride = if (perGame) gameCoreOptionOverrides[def.key] else null
             val globalOverride = coreOptionOverrides[def.key]
+            val heldValue = held[def.key]
             CoreOptionViewItem(
                 key = def.key,
                 displayName = def.displayName,
                 description = def.description,
                 values = def.values,
-                currentValue = (gameOverride ?: globalOverride)
+                currentValue = heldValue ?: (gameOverride ?: globalOverride)
                     ?.let { def.resolveStored(it) } ?: def.defaultValue,
-                isOverridden = if (perGame) gameOverride != null else globalOverride != null,
-                valueLabels = def.valueLabels
+                isOverridden = heldValue == null &&
+                    (if (perGame) gameOverride != null else globalOverride != null),
+                valueLabels = def.valueLabels,
+                isHeldByDualScreen = heldValue != null
             )
         }
     }
+
+    private fun splitHeldCoreOptions(): Map<String, String> = dualScreenOutput?.coreOptions.orEmpty()
 
     private fun cycleCoreOption(optionKey: String, direction: Int) =
         cycleCoreOption(optionKey, direction, emptyList())
 
     private fun cycleCoreOption(optionKey: String, direction: Int, explicitValues: List<String>) {
+        if (optionKey in splitHeldCoreOptions()) return
         val coreId = resolvedCoreId ?: return
         val def = CoreOptionManifestRegistry.getManifest(coreId)
             ?.options?.firstOrNull { it.key == optionKey } ?: return
@@ -1970,6 +1977,7 @@ class LibretroActivity : ComponentActivity() {
     }
 
     private fun resetCoreOption(optionKey: String) {
+        if (optionKey in splitHeldCoreOptions()) return
         val coreId = resolvedCoreId ?: return
         val def = CoreOptionManifestRegistry.getManifest(coreId)
             ?.options?.firstOrNull { it.key == optionKey } ?: return
@@ -1996,10 +2004,13 @@ class LibretroActivity : ComponentActivity() {
         val coreId = resolvedCoreId
         val manifest = coreId?.let { CoreOptionManifestRegistry.getManifest(it) }
         if (manifest != null && ::retroView.isInitialized) {
+            val held = splitHeldCoreOptions()
             manifest.options.forEach { def ->
                 val gameOverride = if (enabled) gameCoreOptionOverrides[def.key] else null
                 val stored = gameOverride ?: coreOptionOverrides[def.key]
-                val effective = stored?.let { def.resolveStored(it) } ?: def.defaultValue
+                val effective = held[def.key]
+                    ?: stored?.let { def.resolveStored(it) }
+                    ?: def.defaultValue
                 retroView.updateVariables(Variable(def.key, effective))
             }
         }
@@ -3005,6 +3016,7 @@ class LibretroActivity : ComponentActivity() {
         autoSaveStateCaptured = false
         window.hideSystemBars()
         retroView.onResume()
+        setUpSecondScreen()
         showSecondScreen()
         startRollingSave()
     }

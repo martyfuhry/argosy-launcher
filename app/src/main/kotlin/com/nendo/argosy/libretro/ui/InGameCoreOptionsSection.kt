@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.components.CyclePreference
 import com.nendo.argosy.ui.components.FocusedScroll
+import com.nendo.argosy.ui.components.InfoPreference
 import com.nendo.argosy.ui.components.SwitchPreference
 import com.nendo.argosy.ui.screens.settings.CoreOptionViewItem
 import com.nendo.argosy.ui.theme.Dimens
@@ -55,6 +56,15 @@ internal fun InGameCoreOptionsSection(
         }
         itemsIndexed(options, key = { _, option -> option.key }) { index, option ->
             val isFocused = index + offset == focusedIndex
+            if (option.isHeldByDualScreen) {
+                InfoPreference(
+                    title = option.displayName,
+                    value = option.displayValue,
+                    isFocused = isFocused,
+                    subtitle = stringResource(R.string.ingame_coreoptions_held_by_dual_screen)
+                )
+                return@itemsIndexed
+            }
             CyclePreference(
                 title = option.displayName,
                 value = option.displayValue,

@@ -220,6 +220,7 @@
     <string name="ingame_coreoptions_per_game_title">Ajustes específicos del juego</string>
     <string name="ingame_coreoptions_per_game_subtitle_on">Los cambios se aplican solo a este juego</string>
     <string name="ingame_coreoptions_per_game_subtitle_off">Usa los valores globales predeterminados de este núcleo</string>
+    <string name="ingame_coreoptions_held_by_dual_screen">Lo define la pantalla doble</string>
 
     <string name="ingame_frame_previous_description">Anterior</string>
     <string name="ingame_frame_next_description">Siguiente</string>

@@ -262,7 +262,9 @@ void Video::renderFrame(bool force) {
         glVertexAttribPointer(shader.gvPositionHandle, 2, GL_FLOAT, GL_FALSE, 0, vertices.data());
         glEnableVertexAttribArray(shader.gvPositionHandle);
 
-        auto coordinates = videoLayout.getTextureCoordinates();
+        auto coordinates = i == 0
+            ? videoLayout.getTextureCoordinates()
+            : videoLayout.getFramebufferTextureCoordinates();
         glVertexAttribPointer(shader.gvCoordinateHandle, 2, GL_FLOAT, GL_FALSE, 0, coordinates.data());
         glEnableVertexAttribArray(shader.gvCoordinateHandle);
 
