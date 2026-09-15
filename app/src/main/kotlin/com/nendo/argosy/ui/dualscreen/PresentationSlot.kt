@@ -1,0 +1,37 @@
+package com.nendo.argosy.ui.dualscreen
+
+import com.nendo.argosy.domain.model.HomeLayoutSettings
+
+/**
+ * Which screen published the presentation content on the other display. Slots are held per owner so
+ * that a screen taking over and the screen it replaced can publish and release in any order without
+ * the later publish being undone by the earlier release.
+ */
+@JvmInline
+value class SlotOwner(val id: String)
+
+/**
+ * What the presentation screen shows while a screen on the control surface is open.
+ *
+ * Every case is authored beside the screen that publishes it; there is no generic payload a host
+ * could render by guessing. A screen with nothing worth showing publishes nothing and the host
+ * falls back.
+ */
+sealed interface PresentationSlot {
+    data object Fallback : PresentationSlot
+
+    data class HomeLayoutPreview(val settings: HomeLayoutSettings) : PresentationSlot
+
+    data class PlayTime(
+        val sectionLabel: String,
+        val games: List<PlayTimeSlotGame>,
+        val dateLabel: String? = null
+    ) : PresentationSlot
+}
+
+data class PlayTimeSlotGame(
+    val gameId: Long,
+    val title: String,
+    val coverPath: String?,
+    val detail: String
+)

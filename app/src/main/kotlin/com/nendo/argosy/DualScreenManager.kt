@@ -90,6 +90,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -745,6 +747,38 @@ class DualScreenManager(
 
     private val _isCompanionActive = MutableStateFlow(false)
     val isCompanionActive: StateFlow<Boolean> = _isCompanionActive
+
+    private val _presentationSlots =
+        MutableStateFlow<List<Pair<com.nendo.argosy.ui.dualscreen.SlotOwner, com.nendo.argosy.ui.dualscreen.PresentationSlot>>>(
+            emptyList()
+        )
+
+    /**
+     * What the presentation screen should show right now: the most recent published slot, or the
+     * fallback once every publisher has released. Screens publish while they are on screen and
+     * release when they leave, so the surface follows navigation without either side tracking it.
+     */
+    val presentationSlot: StateFlow<com.nendo.argosy.ui.dualscreen.PresentationSlot> =
+        _presentationSlots
+            .map { it.lastOrNull()?.second ?: com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback }
+            .stateIn(
+                scope,
+                kotlinx.coroutines.flow.SharingStarted.Eagerly,
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
+            )
+
+    fun presentSlot(
+        owner: com.nendo.argosy.ui.dualscreen.SlotOwner,
+        slot: com.nendo.argosy.ui.dualscreen.PresentationSlot
+    ) {
+        _presentationSlots.update { entries ->
+            entries.filterNot { it.first == owner } + (owner to slot)
+        }
+    }
+
+    fun releaseSlot(owner: com.nendo.argosy.ui.dualscreen.SlotOwner) {
+        _presentationSlots.update { entries -> entries.filterNot { it.first == owner } }
+    }
 
     private val _primaryOnHome = MutableStateFlow(true)
 

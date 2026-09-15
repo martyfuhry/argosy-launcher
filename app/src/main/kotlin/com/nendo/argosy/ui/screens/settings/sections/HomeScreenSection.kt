@@ -12,6 +12,8 @@ import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -195,6 +197,14 @@ internal fun homeScreenFocusIndexOf(item: HomeScreenItem, display: DisplayState)
 fun HomeScreenSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val display = uiState.display
     val context = LocalContext.current
+    val presentsPreview = com.nendo.argosy.DualScreenManagerHolder.instance
+        ?.isCompanionActive?.collectAsState()?.value == true
+    if (presentsPreview) {
+        com.nendo.argosy.ui.dualscreen.PresentOnCompanion(
+            owner = com.nendo.argosy.ui.dualscreen.SlotOwner("settings.homeScreen"),
+            slot = com.nendo.argosy.ui.dualscreen.PresentationSlot.HomeLayoutPreview(display.homeLayout)
+        )
+    }
 
     val visibleItems = remember(
         display.useGameBackground,
@@ -339,7 +349,7 @@ fun HomeScreenSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     )
                 }
 
-                HomeScreenItem.LayoutPreview -> Box(
+                HomeScreenItem.LayoutPreview -> if (presentsPreview) Unit else Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {

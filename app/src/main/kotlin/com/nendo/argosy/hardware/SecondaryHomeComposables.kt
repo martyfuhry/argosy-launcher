@@ -128,6 +128,12 @@ fun SecondaryHomeContent(
 
     val dualHomeState by dualHomeViewModel.uiState.collectAsState()
     val drawerState by viewModel.uiState.collectAsState()
+    val presentationSlot by (
+        com.nendo.argosy.DualScreenManagerHolder.instance?.presentationSlot
+            ?: kotlinx.coroutines.flow.MutableStateFlow(
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
+            )
+        ).collectAsState()
 
     /**
      * The whole companion display refuses Compose focus, not just the home content inside it.
@@ -152,6 +158,12 @@ fun SecondaryHomeContent(
             exit = fadeOut()
         ) {
             SplashContent()
+        }
+
+        val slot = presentationSlot
+        if (slot != com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback && !isGameActive) {
+            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+            return@Box
         }
 
         AnimatedVisibility(
