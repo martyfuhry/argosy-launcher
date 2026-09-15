@@ -257,17 +257,9 @@ class DualHomeInputHandler(
                         InputResult.HANDLED
                     } else InputResult.UNHANDLED
                 } else if (state.isViewAllFocused) {
-                    val platformId = state.currentPlatformId
-                    if (platformId != null) {
-                        viewModel.enterLibraryGridForPlatform(platformId) {
-                            onBroadcastViewModeChange()
-                            onBroadcastLibraryGameSelection()
-                        }
-                    } else {
-                        viewModel.enterLibraryGrid {
-                            onBroadcastViewModeChange()
-                            onBroadcastLibraryGameSelection()
-                        }
+                    viewModel.enterViewAll {
+                        onBroadcastViewModeChange()
+                        onBroadcastLibraryGameSelection()
                     }
                     InputResult.HANDLED
                 } else {

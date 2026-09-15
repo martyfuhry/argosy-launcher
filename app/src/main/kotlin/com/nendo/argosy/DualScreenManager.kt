@@ -746,6 +746,20 @@ class DualScreenManager(
     private val _isCompanionActive = MutableStateFlow(false)
     val isCompanionActive: StateFlow<Boolean> = _isCompanionActive
 
+    private val _primaryOnHome = MutableStateFlow(true)
+
+    /**
+     * Whether the primary display is showing home. Anything else there - Apps, Settings, a
+     * destination reached from the drawer - owns the pad, and the companion is a passenger until it
+     * comes back. The companion outlives the primary leaving and returning, so it cannot infer this
+     * from its own lifecycle.
+     */
+    val primaryOnHome: StateFlow<Boolean> = _primaryOnHome
+
+    fun setPrimaryOnHome(onHome: Boolean) {
+        _primaryOnHome.value = onHome
+    }
+
     private val _dualViewMode = MutableStateFlow("CAROUSEL")
     val dualViewMode: StateFlow<String> = _dualViewMode
 

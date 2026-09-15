@@ -836,17 +836,9 @@ class SecondaryHomeInputHandler(
                         InputResult.HANDLED
                     } else InputResult.UNHANDLED
                 } else if (state.isViewAllFocused) {
-                    val platformId = state.currentPlatformId
-                    if (platformId != null) {
-                        dualHomeViewModel.enterLibraryGridForPlatform(platformId) {
-                            broadcasts.broadcastViewModeChange()
-                            broadcasts.broadcastLibraryGameSelection()
-                        }
-                    } else {
-                        dualHomeViewModel.enterLibraryGrid {
-                            broadcasts.broadcastViewModeChange()
-                            broadcasts.broadcastLibraryGameSelection()
-                        }
+                    dualHomeViewModel.enterViewAll {
+                        broadcasts.broadcastViewModeChange()
+                        broadcasts.broadcastLibraryGameSelection()
                     }
                     InputResult.HANDLED
                 } else {

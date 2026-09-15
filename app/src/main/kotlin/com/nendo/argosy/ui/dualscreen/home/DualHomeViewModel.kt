@@ -294,6 +294,11 @@ data class DualActiveFilters(
         values.firstOrNull()?.let { DualActiveFilterEntry(category, text = it, count = values.size) }
 }
 
+sealed interface DualViewAllTarget {
+    data class Platform(val platformId: Long) : DualViewAllTarget
+    data class Source(val source: String) : DualViewAllTarget
+}
+
 sealed interface DualLibraryGridItem {
     data class Header(val label: String) : DualLibraryGridItem
     data class Game(val game: HomeGameUi, val gameIndex: Int) : DualLibraryGridItem
@@ -337,6 +342,7 @@ data class DualHomeUiState(
     val customGridConfig: com.nendo.argosy.domain.model.CustomGridConfig =
         com.nendo.argosy.domain.model.CustomGridConfig(),
     val backgroundBlur: Int = 0,
+    val showsEveryGame: Boolean = false,
     val collectionOpenedFromTile: Boolean = false,
     val showLibraryMenu: Boolean = false,
     val libraryMenuFocusIndex: Int = 0,
@@ -387,8 +393,31 @@ data class DualHomeUiState(
     val totalCount: Int
         get() = if (platformTotalCount > 0) platformTotalCount else rowItemCount
 
-    val hasMoreGames: Boolean
-        get() = gamesComplete && platformTotalCount > games.size
+    /**
+     * Where the row's trailing View All tile leads, or null when the row has none. Follows the
+     * single-screen home row for row, so a shortcut offered on one display is offered on both.
+     */
+    val viewAllTarget: DualViewAllTarget?
+        get() {
+            if (!gamesComplete || games.isEmpty() || mediaItems.isNotEmpty()) return null
+            return when (val section = currentSection) {
+                is DualHomeSection.Platform ->
+                    DualViewAllTarget.Platform(section.id).takeUnless { showsEveryGame }
+                DualHomeSection.Recent ->
+                    DualViewAllTarget.Source(SourceFilter.PLAYABLE.name)
+                        .takeIf { layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CAROUSEL }
+                DualHomeSection.Favorites -> DualViewAllTarget.Source(SourceFilter.FAVORITES.name)
+                DualHomeSection.Android -> DualViewAllTarget.Platform(LocalPlatformIds.ANDROID)
+                DualHomeSection.Steam -> DualViewAllTarget.Platform(LocalPlatformIds.STEAM)
+                else -> null
+            }
+        }
+
+    val hasViewAll: Boolean
+        get() = viewAllTarget != null
+
+    val viewAllRemainingCount: Int
+        get() = (platformTotalCount - games.size).coerceAtLeast(0)
 
     /**
      * Whether [games] and [mediaItems] belong to the section under the cursor. A section switch
@@ -398,11 +427,8 @@ data class DualHomeUiState(
     val isCurrentSectionLoaded: Boolean
         get() = currentSection?.contentKey == loadedSectionKey
 
-    val currentPlatformId: Long?
-        get() = (currentSection as? DualHomeSection.Platform)?.id
-
     val isViewAllFocused: Boolean
-        get() = hasMoreGames && selectedIndex == games.size
+        get() = hasViewAll && selectedIndex == games.size
 
     fun platformName(context: Context): String =
         currentSection?.resolveTitle(context).orEmpty()
@@ -815,6 +841,8 @@ class DualHomeViewModel(
     private var sortPartition: com.nendo.argosy.data.model.SortPartition =
         com.nendo.argosy.data.model.SortPartition.NONE
 
+    private var shownLibraries: Boolean? = null
+
     private fun observeLayoutConfig() {
         val prefs = preferencesRepository ?: return
         viewModelScope.launch {
@@ -837,6 +865,7 @@ class DualHomeViewModel(
                         autoGridConfig = preferences.homeLayout.autoGrid,
                         customGridConfig = preferences.homeLayout.customGrid,
                         layoutKind = preferences.homeLayout.selected,
+                        showsEveryGame = preferences.homeLayout.showsEveryGame,
                         backgroundBlur = preferences.backgroundBlur
                     )
                 }
@@ -844,6 +873,9 @@ class DualHomeViewModel(
                     autoFit = preferences.homeLayout.customGrid.autoFit,
                     storedPages = preferences.homeLayout.customGrid.pageCount
                 )
+                val showLibraries = preferences.homeLayout.rails.showLibraries
+                if (shownLibraries != null && shownLibraries != showLibraries) refresh()
+                shownLibraries = showLibraries
             }
         }
     }
@@ -1083,6 +1115,9 @@ class DualHomeViewModel(
      */
     private suspend fun mediaLibrarySections(): List<DualHomeSection.MediaLibrary> {
         val repository = mediaRepository ?: return emptyList()
+        val showLibraries = preferencesRepository?.userPreferences?.first()
+            ?.homeLayout?.rails?.showLibraries ?: true
+        if (!showLibraries) return emptyList()
         return repository.observeLibraries().first()
             .map { DualHomeSection.MediaLibrary(it.libraryId, it.name) }
             .filter { repository.observeLibraryItems(it.libraryId).first().isNotEmpty() }
@@ -2035,7 +2070,7 @@ class DualHomeViewModel(
 
         val games = _uiState.value.games
         if (games.isEmpty()) return
-        val maxIndex = if (_uiState.value.hasMoreGames) games.size else games.size - 1
+        val maxIndex = if (_uiState.value.hasViewAll) games.size else games.size - 1
         val byId = if (pending.gameId > 0) games.indexOfFirst { it.id == pending.gameId } else -1
         val target = if (byId >= 0) byId else pending.legacySelectedIndex
         _uiState.update { it.copy(selectedIndex = target.coerceIn(0, maxIndex)) }
@@ -2191,7 +2226,7 @@ class DualHomeViewModel(
     fun selectNext() {
         val state = _uiState.value
         if (state.rowItemCount == 0) return
-        val maxIndex = if (state.hasMoreGames) state.rowItemCount else state.rowItemCount - 1
+        val maxIndex = if (state.hasViewAll) state.rowItemCount else state.rowItemCount - 1
         val newIndex = (state.selectedIndex + 1).coerceAtMost(maxIndex)
         _uiState.update { it.copy(selectedIndex = newIndex) }
         persistSection()
@@ -2587,7 +2622,7 @@ class DualHomeViewModel(
     fun moveCarouselGridFocus(direction: GridDirection): AutoGridMove {
         val state = _uiState.value
         if (state.rowItemCount == 0) return AutoGridMove.None
-        val count = if (state.hasMoreGames) state.rowItemCount + 1 else state.rowItemCount
+        val count = if (state.hasViewAll) state.rowItemCount + 1 else state.rowItemCount
         val move = autoGridMove(
             itemCount = count,
             config = state.autoGridConfig,
@@ -2761,15 +2796,38 @@ class DualHomeViewModel(
     }
 
     fun enterLibraryGridForPlatform(platformId: Long, onLoaded: (() -> Unit)? = null) {
-        val platformName = _uiState.value.sections
+        val state = _uiState.value
+        val platformName = state.sections
             .filterIsInstance<DualHomeSection.Platform>()
-            .find { it.id == platformId }?.displayName ?: allPlatformsLabel()
+            .find { it.id == platformId }?.displayName
+            ?: state.currentSection
+                ?.takeIf { it is DualHomeSection.Android || it is DualHomeSection.Steam }
+                ?.resolveTitle(context)
+            ?: allPlatformsLabel()
         _uiState.update { it.copy(
             viewMode = DualHomeViewMode.LIBRARY_GRID,
             activeFilters = DualActiveFilters(platformId = platformId),
             libraryPlatformLabel = platformName
         )}
         loadLibraryGamesForPlatform(platformId, onLoaded = onLoaded)
+    }
+
+    /**
+     * Follows the current row's View All tile into the library, filtered the way the row is.
+     */
+    fun enterViewAll(onLoaded: (() -> Unit)? = null) {
+        when (val target = _uiState.value.viewAllTarget) {
+            is DualViewAllTarget.Platform -> enterLibraryGridForPlatform(target.platformId, onLoaded)
+            is DualViewAllTarget.Source -> {
+                _uiState.update { it.copy(
+                    viewMode = DualHomeViewMode.LIBRARY_GRID,
+                    activeFilters = DualActiveFilters(source = target.source),
+                    libraryPlatformLabel = allPlatformsLabel()
+                )}
+                loadLibraryGames(onLoaded = onLoaded)
+            }
+            null -> enterLibraryGrid(onLoaded)
+        }
     }
 
     fun toggleLibraryGrid(onLoaded: (() -> Unit)? = null) {
@@ -3499,8 +3557,8 @@ class DualHomeViewModel(
     ): List<HomeGameUi> {
         return games.filter { game ->
             val matchesSource = when (filters.source) {
-                "PLAYABLE" -> game.isPlayable
-                "FAVORITES" -> game.isFavorite
+                SourceFilter.PLAYABLE.name -> game.isPlayable
+                SourceFilter.FAVORITES.name -> game.isFavorite
                 else -> true
             }
             val matchesSearch = filters.searchQuery.isBlank() ||

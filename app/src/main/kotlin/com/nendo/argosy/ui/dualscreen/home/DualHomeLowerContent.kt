@@ -76,7 +76,8 @@ fun DualHomeLowerContent(
                     selectedIndex = uiState.selectedIndex,
                     platformName = uiState.platformName(context),
                     totalCount = uiState.totalCount,
-                    hasMoreGames = uiState.hasMoreGames,
+                    hasViewAll = uiState.hasViewAll,
+                    viewAllRemainingCount = uiState.viewAllRemainingCount,
                     isViewAllFocused = uiState.isViewAllFocused,
                     homeApps = homeApps,
                     appBarFocused = uiState.focusZone == DualHomeFocusZone.APP_BAR,
@@ -371,7 +372,7 @@ fun DualHomeLowerContent(
             )
         }
 
-        if (forwardingMode == ForwardingMode.OVERLAY) {
+        if (forwardingMode != ForwardingMode.NONE) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

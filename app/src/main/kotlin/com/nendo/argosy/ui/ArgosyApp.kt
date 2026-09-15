@@ -206,7 +206,10 @@ fun ArgosyApp(
     }
 
     LaunchedEffect(isOnHomeScreen) {
-        (context as? com.nendo.argosy.MainActivity)?.isOnHomeScreen = isOnHomeScreen
+        (context as? com.nendo.argosy.MainActivity)?.let { activity ->
+            activity.isOnHomeScreen = isOnHomeScreen
+            activity.dualScreenManager.setPrimaryOnHome(isOnHomeScreen)
+        }
     }
 
     val activity = context as? com.nendo.argosy.MainActivity
@@ -1861,7 +1864,6 @@ fun ArgosyApp(
                                 }
                             },
                             onViewAllClick = {
-                                val platformId = swappedVm.uiState.value.currentPlatformId
                                 val afterSwitch = {
                                     dualScreenManager.onViewModeChanged(DualHomeViewMode.LIBRARY_GRID.name, false, false)
                                     val state = swappedVm.uiState.value
@@ -1869,11 +1871,7 @@ fun ArgosyApp(
                                     if (game != null) dualScreenManager.onGameSelected(game.toShowcaseState())
                                     Unit
                                 }
-                                if (platformId != null) {
-                                    swappedVm.enterLibraryGridForPlatform(platformId) { afterSwitch() }
-                                } else {
-                                    swappedVm.enterLibraryGrid { afterSwitch() }
-                                }
+                                swappedVm.enterViewAll { afterSwitch() }
                             },
                             onCollectionTapped = { index ->
                                 val items = swappedVm.uiState.value.collectionItems

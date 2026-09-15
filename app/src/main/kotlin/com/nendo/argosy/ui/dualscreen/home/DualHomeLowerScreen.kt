@@ -124,7 +124,8 @@ fun DualHomeLowerScreen(
     selectedIndex: Int,
     platformName: String,
     totalCount: Int,
-    hasMoreGames: Boolean,
+    hasViewAll: Boolean,
+    viewAllRemainingCount: Int,
     isViewAllFocused: Boolean,
     homeApps: List<String>,
     appBarFocused: Boolean,
@@ -188,8 +189,8 @@ fun DualHomeLowerScreen(
         games = games,
         mediaItems = mediaItems,
         mediaDownloadIndicators = mediaDownloadIndicators,
-        hasMoreGames = hasMoreGames,
-        totalCount = totalCount,
+        hasViewAll = hasViewAll,
+        viewAllRemainingCount = viewAllRemainingCount,
         repairedCoverPaths = repairedCoverPaths
     )
 
@@ -223,7 +224,7 @@ fun DualHomeLowerScreen(
                         index = selectedIndex,
                         scrollOffset = CarouselAnchor.CENTER.snapOffsetPx
                     )
-                } else if (hasMoreGames && selectedIndex == games.size) {
+                } else if (hasViewAll && selectedIndex == games.size) {
                     listState.animateScrollToItem(
                         index = games.size,
                         scrollOffset = CarouselAnchor.CENTER.snapOffsetPx
@@ -372,7 +373,11 @@ fun DualHomeLowerScreen(
                 showFocusVisuals = !appBarFocused,
                 showPlatformBadge = carouselConfig.showPlatformBadge && !isPlatformSection,
                 showNewBadge = false,
-                viewAllStyle = ViewAllCardStyle.ACCENT_COUNT,
+                viewAllStyle = if (viewAllRemainingCount > 0) {
+                    ViewAllCardStyle.ACCENT_COUNT
+                } else {
+                    ViewAllCardStyle.OUTLINE_GRID
+                },
                 onItemTap = { index ->
                     val game = games.getOrNull(index)
                     if (game != null) {
@@ -1134,15 +1139,15 @@ private fun rememberCompanionCarouselItems(
     games: List<HomeGameUi>,
     mediaItems: List<com.nendo.argosy.ui.screens.home.HomeMediaUi>,
     mediaDownloadIndicators: Map<String, com.nendo.argosy.ui.screens.home.GameDownloadIndicator>,
-    hasMoreGames: Boolean,
-    totalCount: Int,
+    hasViewAll: Boolean,
+    viewAllRemainingCount: Int,
     repairedCoverPaths: Map<Long, String>
 ): List<CarouselItem> = remember(
     games,
     mediaItems,
     mediaDownloadIndicators,
-    hasMoreGames,
-    totalCount,
+    hasViewAll,
+    viewAllRemainingCount,
     repairedCoverPaths
 ) {
     buildList {
@@ -1166,11 +1171,11 @@ private fun rememberCompanionCarouselItems(
                 )
             )
         }
-        if (hasMoreGames) {
+        if (hasViewAll) {
             add(
                 CarouselItem.ViewAll(
                     key = "view_all",
-                    remainingCount = totalCount - games.size
+                    remainingCount = viewAllRemainingCount
                 )
             )
         }

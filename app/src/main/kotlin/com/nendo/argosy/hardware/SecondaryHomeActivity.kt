@@ -356,7 +356,7 @@ class SecondaryHomeActivity :
             dsm = currentDsm
             initializeCompanion()
         }
-        dualHomeViewModel.stopDrawerForwarding()
+        if (dsm.primaryOnHome.value) dualHomeViewModel.stopDrawerForwarding()
         launchedExternalApp = false
         syncFromSessionStore()
         broadcasts.broadcastCompanionResumed()
@@ -573,6 +573,12 @@ class SecondaryHomeActivity :
      * one a directly-delivered motion event gets.
      */
     override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
+        if (event.isFromSource(android.view.InputDevice.SOURCE_JOYSTICK) &&
+            ::dsm.isInitialized && !dsm.claimInput(event)
+        ) {
+            android.util.Log.d("SecondaryHome", "Joystick motion already handled by the primary display, dropped")
+            return true
+        }
         if (yieldsKeysToMediaPlayer()) {
             val forward = dsm.mediaPlayerMotionDispatcher
             if (forward != null && forward(event)) return true
@@ -1221,6 +1227,19 @@ class SecondaryHomeActivity :
         loadInitialState()
         if (!isShowcaseRole) dsm.clearMediaInfoRequest()
         dsm.companionHost = this
+        lifecycleScope.launch {
+            dsm.primaryOnHome.collect { onHome ->
+                if (onHome) {
+                    if (dualHomeViewModel.forwardingMode.value ==
+                        com.nendo.argosy.ui.dualscreen.home.ForwardingMode.BACKGROUND
+                    ) {
+                        dualHomeViewModel.stopDrawerForwarding()
+                    }
+                } else {
+                    dualHomeViewModel.startBackgroundForwarding()
+                }
+            }
+        }
         lifecycleScope.launch { dsm.dualScreenShowcase.collect { _showcaseState.value = it } }
         lifecycleScope.launch { dsm.companionDetail.collect { _companionDetail.value = it } }
         lifecycleScope.launch { dsm.dualViewMode.collect { _showcaseViewMode.value = it } }
@@ -1517,9 +1536,7 @@ class SecondaryHomeActivity :
         val onReady = {
             broadcasts.broadcastViewModeChange(); broadcasts.broadcastLibraryGameSelection()
         }
-        val platformId = dualHomeViewModel.uiState.value.currentPlatformId
-        if (platformId != null) dualHomeViewModel.enterLibraryGridForPlatform(platformId, onReady)
-        else dualHomeViewModel.enterLibraryGrid(onReady)
+        dualHomeViewModel.enterViewAll(onReady)
     }
 
     private fun handleCollectionTapped(index: Int) {
