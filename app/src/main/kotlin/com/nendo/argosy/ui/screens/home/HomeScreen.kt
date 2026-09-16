@@ -170,7 +170,7 @@ fun HomeScreen(
     isDefaultView: Boolean,
     onGameSelect: (Long) -> Unit,
     onNavigateToLibrary: (platformId: Long?, sourceFilter: String?) -> Unit = { _, _ -> },
-    onNavigateToCollections: () -> Unit = {},
+    onNavigateToCollections: (collectionId: Long) -> Unit = {},
     onNavigateToDefault: () -> Unit,
     onDrawerToggle: () -> Unit,
     onChangelogAction: (RequiredAction) -> Unit = {},
@@ -262,7 +262,7 @@ fun HomeScreen(
                 is HomeEvent.NavigateToLibrary -> {
                     onNavigateToLibrary(event.platformId, event.sourceFilter)
                 }
-                is HomeEvent.NavigateToCollections -> onNavigateToCollections()
+                is HomeEvent.NavigateToCollections -> onNavigateToCollections(event.collectionId)
                 is HomeEvent.NavigateToSettings -> onNavigateToSettings(event.section)
                 is HomeEvent.PlayMedia -> onPlayMedia(event.itemId, event.startOver)
                 is HomeEvent.NavigateToMediaDetail -> onMediaSelect(event.itemId)
