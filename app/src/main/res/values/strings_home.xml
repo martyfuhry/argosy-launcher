@@ -384,4 +384,14 @@
     <!-- Rough size of a batch of episodes about to be downloaded. %1$.1f is a number of gigabytes.
          "GB" is the unit symbol. -->
     <string name="home_media_download_size_gigabytes">%1$.1f GB</string>
+
+    <!-- Label of a fact on the second screen while the home grid is being browsed. Noun, the studio
+         that made the focused game. Its value is a company name and is not translated. -->
+    <string name="home_companion_fact_developer">Developer</string>
+    <!-- Label of a fact on the second screen while the home grid is being browsed. Verb used as a
+         noun label, the year the focused game came out. Its value is a four-digit year. -->
+    <string name="home_companion_fact_released">Released</string>
+    <!-- Label of a fact on the second screen while the home grid is being browsed. Noun, the genre
+         of the focused game. -->
+    <string name="home_companion_fact_genre">Genre</string>
 </resources>

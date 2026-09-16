@@ -289,12 +289,15 @@ fun HomeScreen(
                 viewModel.refreshPlatforms()
                 viewModel.refreshFavorites()
                 viewModel.refreshRecentGames()
+                viewModel.republishCompanionDetail()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         inputDispatcher.subscribeView(inputHandler, forRoute = Screen.ROUTE_HOME)
+        viewModel.republishCompanionDetail()
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.clearCompanionDetail()
         }
     }
 

@@ -3,7 +3,10 @@ package com.nendo.argosy.ui.screens.home
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.dualscreen.CompanionDetail
+import com.nendo.argosy.ui.dualscreen.CompanionFact
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -212,7 +215,7 @@ class HomeViewModel @Inject constructor(
         observeAchievementUpdates()
         libraryDelegate.observePinnedCollections(viewModelScope)
         observeRecentlyPlayedChanges()
-        observeFocusedGameForLed()
+        observeFocusedGame()
         observeCollectionModal()
         observeDelegateStates()
         observeHomeTiles()
@@ -386,11 +389,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun observeFocusedGameForLed() {
+    private fun observeFocusedGame() {
         viewModelScope.launch {
             var previousGameId: Long? = null
             _uiState.collect { state ->
                 val focusedGame = state.focusedGame
+                if (focusedGame?.id != previousGameId) publishCompanionDetail(focusedGame)
                 if (focusedGame != null && focusedGame.id != previousGameId) {
                     previousGameId = focusedGame.id
                     ambientLedManager.setContext(AmbientLedContext.GAME_HOVER)
@@ -410,6 +414,54 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun publishCompanionDetail(game: HomeGameUi?) {
+        DualScreenManagerHolder.instance?.setCompanionDetail(
+            game?.let {
+                CompanionDetail(
+                    title = it.title,
+                    subtitle = it.platformDisplayName,
+                    artUrl = it.coverPath,
+                    backdropUrl = it.backgroundPath,
+                    isGameTitle = true,
+                    facts = buildList {
+                        it.developer?.let { developer ->
+                            add(
+                                CompanionFact(
+                                    context.getString(R.string.home_companion_fact_developer),
+                                    developer
+                                )
+                            )
+                        }
+                        it.releaseYear?.let { year ->
+                            add(
+                                CompanionFact(
+                                    context.getString(R.string.home_companion_fact_released),
+                                    year.toString()
+                                )
+                            )
+                        }
+                        it.genre?.let { genre ->
+                            add(
+                                CompanionFact(
+                                    context.getString(R.string.home_companion_fact_genre),
+                                    genre
+                                )
+                            )
+                        }
+                    }
+                )
+            }
+        )
+    }
+
+    fun republishCompanionDetail() {
+        publishCompanionDetail(_uiState.value.focusedGame)
+    }
+
+    fun clearCompanionDetail() {
+        DualScreenManagerHolder.instance?.setCompanionDetail(null)
     }
 
     private fun observeAchievementUpdates() {
