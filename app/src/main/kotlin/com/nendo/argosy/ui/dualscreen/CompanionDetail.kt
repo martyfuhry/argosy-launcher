@@ -23,10 +23,19 @@ data class CompanionDetail(
     val artUrl: String? = null,
     val backdropUrl: String? = null,
     val facts: List<CompanionFact> = emptyList(),
+    val hints: List<CompanionHint> = emptyList(),
     val isGameTitle: Boolean = false
 )
 
 data class CompanionFact(
     val label: String,
     val value: String
+)
+
+/**
+ * What a button does on the screen being driven, spelled out on the screen describing it.
+ */
+data class CompanionHint(
+    val button: com.nendo.argosy.ui.components.InputButton,
+    val label: String
 )

@@ -200,6 +200,17 @@ class GameDetailViewModel @Inject constructor(
         modalResetSignal.signal.onEach { resetAllModals() }.launchIn(viewModelScope)
 
         viewModelScope.launch {
+            var publishedGameId: Long? = null
+            _uiState.collect { state ->
+                val game = state.game
+                if (game?.id != publishedGameId) {
+                    publishedGameId = game?.id
+                    publishCompanionDetail(game)
+                }
+            }
+        }
+
+        viewModelScope.launch {
             gradientExtractionDelegate.gradients.collect { gradients ->
                 _uiState.update { state ->
                     state.copy(
@@ -2150,6 +2161,54 @@ class GameDetailViewModel @Inject constructor(
     private fun dismissAllModals() {
         resetAllModals()
         soundManager.play(SoundType.CLOSE_MODAL)
+    }
+
+    private fun publishCompanionDetail(game: GameDetailUi?) {
+        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(
+            game?.let {
+                com.nendo.argosy.ui.dualscreen.CompanionDetail(
+                    title = it.title,
+                    subtitle = it.platformName,
+                    artUrl = it.coverPath,
+                    backdropUrl = it.backgroundPath,
+                    isGameTitle = true,
+                    facts = buildList {
+                        it.developer?.let { developer ->
+                            add(
+                                com.nendo.argosy.ui.dualscreen.CompanionFact(
+                                    context.getString(R.string.home_companion_fact_developer),
+                                    developer
+                                )
+                            )
+                        }
+                        it.releaseYear?.let { year ->
+                            add(
+                                com.nendo.argosy.ui.dualscreen.CompanionFact(
+                                    context.getString(R.string.home_companion_fact_released),
+                                    year.toString()
+                                )
+                            )
+                        }
+                        it.genre?.let { genre ->
+                            add(
+                                com.nendo.argosy.ui.dualscreen.CompanionFact(
+                                    context.getString(R.string.home_companion_fact_genre),
+                                    genre
+                                )
+                            )
+                        }
+                    }
+                )
+            }
+        )
+    }
+
+    fun republishCompanionDetail() {
+        publishCompanionDetail(_uiState.value.game)
+    }
+
+    fun clearCompanionDetail() {
+        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(null)
     }
 
     private fun resetAllModals() {

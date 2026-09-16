@@ -315,6 +315,10 @@ fun ArgosyApp(
         )
     }
 
+    val hasPresentationScreen by dsm?.hasPresentationScreen?.collectAsState()
+        ?: remember { mutableStateOf(false) }
+    val presentationShowsHints = hasPresentationScreen && companionActive
+
     val footerHostController = remember { FooterHostController() }
 
     val rootFocusRequester = remember { FocusRequester() }
@@ -1208,10 +1212,12 @@ fun ArgosyApp(
                 )
             }
 
-            FooterHost(
-                controller = footerHostController,
-                modifier = Modifier.align(Alignment.BottomCenter)
-            )
+            if (!presentationShowsHints) {
+                FooterHost(
+                    controller = footerHostController,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
             }
         }
     }

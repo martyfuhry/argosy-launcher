@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.nendo.argosy.ui.components.FooterBar
 import com.nendo.argosy.ui.components.HomeLayoutPreview
 import com.nendo.argosy.ui.components.ScreenNumberBadge
 import com.nendo.argosy.ui.theme.Dimens
@@ -34,7 +35,12 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
             is PresentationSlot.Detail -> CompanionDetailScreen(
                 detail = slot.detail,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                footerHints = slot.detail.hints
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { hints ->
+                        { FooterBar(hints = hints.map { it.button to it.label }) }
+                    }
             )
             is PresentationSlot.ScreenIdentity -> Box(
                 modifier = Modifier.fillMaxSize(),
