@@ -135,9 +135,12 @@ folder resolution); "tidying" them breaks resolution.
   moment focus decides what is selected rather than what is typed into.
 - Tokens: design-system-docs/tokens.json -> scripts/gen-tokens.mjs ->
   ui/theme/generated/*.
-- File access: FileAccessLayer + Manage Storage permission. SAF is
-  deliberately not used (assumes no Manage Storage; blocks the
-  permissive-device workaround). Unreadable is not absent.
+- File access: FileAccessLayer + Manage Storage permission. A user-granted
+  persisted SAF tree is deliberately never depended on (it assumes no Manage
+  Storage and forecloses the permissive-device workaround); do not add one.
+  DocumentsContract with manage=true IS used, as a FileAccessLayer fallback tier
+  via ManagedStorageAccessor, because Android 11+ refuses direct File I/O to
+  Android/data even with Manage Storage held. Unreadable is not absent.
 - Session layer: PlaySessionTracker + GameSessionService (all emulators,
   persistent app layer).
 
