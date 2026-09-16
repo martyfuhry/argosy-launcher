@@ -63,6 +63,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
+@dagger.hilt.android.AndroidEntryPoint
 class SecondaryHomeActivity :
     ComponentActivity(),
     DualScreenManager.CompanionHost {
@@ -178,21 +179,6 @@ class SecondaryHomeActivity :
         }
 
         setContent {
-            // Collect the same ThemeState the primary display uses so cover-art
-            // style, ui-scale, and other theme locals match across screens.
-            // Activity isn't a Hilt entry point, so we read the prefs flow
-            // directly through DSM rather than instantiating a second
-            // ThemeViewModel (which would also spin up a duplicate
-            // ambient-LED observer).
-            // Keyed on isInitialized: dsm is resolved asynchronously after
-            // setContent runs, so the collector has to (re)start once dsm
-            // is available. Without the key produceState fires once, sees
-            // dsm uninitialized, and never re-runs -- live theme updates
-            // from the primary screen never reach the secondary.
-            // dsm is resolved asynchronously after setContent runs, so the
-            // collector has to start once isInitialized flips true. Without
-            // the LaunchedEffect key, live theme updates from the primary
-            // screen would never reach the secondary.
             val themeState = remember { mutableStateOf(ThemeState()) }
             val customFonts = remember { mutableStateOf(CustomFontFamilies()) }
             val screenDimmerPrefs = remember { mutableStateOf(ScreenDimmerPreferences()) }
@@ -244,6 +230,21 @@ class SecondaryHomeActivity :
 
     @androidx.compose.runtime.Composable
     private fun CompanionRoleContent() {
+        if (!isShowcaseRole) {
+            com.nendo.argosy.ui.ArgosyApp(
+                isDualScreenDevice = true,
+                isRolesSwapped = false,
+                onStartupComplete = { dsm.stopStartupGuard() }
+            )
+            return
+        }
+
+        val slot by dsm.presentationSlot.collectAsState()
+        com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+    }
+
+    @androidx.compose.runtime.Composable
+    private fun LegacyCompanionRoleContent() {
         val primaryDetail by _companionDetail.collectAsState()
         val describingPrimary = primaryDetail
             .takeIf { isShowcaseRole && !isMediaPanelVisible }

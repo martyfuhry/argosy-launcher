@@ -487,18 +487,27 @@ class MainActivity : ComponentActivity() {
                     androidx.compose.runtime.LaunchedEffect(Unit) {
                         dualScreenManager.localeChangeToken.drop(1).collect { recreate() }
                     }
-                    ArgosyApp(
-                        isDualScreenDevice = dualScreenDeviceState.value,
-                        isRolesSwapped = rolesSwappedState.value,
-                        isCompanionActive = isCompanionActive,
-                        dualScreenShowcase = dualScreenShowcase,
-                        dualGameDetailState = dualGameDetailState,
-                        dualViewMode = dualViewMode,
-                        dualCollectionShowcase = dualCollectionShowcase,
-                        dualAppBarFocused = dualAppBarFocused,
-                        dualDrawerOpen = dualDrawerOpen,
-                        onStartupComplete = { dualScreenManager.stopStartupGuard() }
-                    )
+                    val companionActiveState = dualScreenManager.isCompanionActive.collectAsState()
+                    val companionHoldsPrimary = dualScreenDeviceState.value &&
+                        companionActiveState.value &&
+                        !rolesSwappedState.value
+                    if (companionHoldsPrimary) {
+                        val slot by dualScreenManager.presentationSlot.collectAsState()
+                        com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+                    } else {
+                        ArgosyApp(
+                            isDualScreenDevice = dualScreenDeviceState.value,
+                            isRolesSwapped = rolesSwappedState.value,
+                            isCompanionActive = isCompanionActive,
+                            dualScreenShowcase = dualScreenShowcase,
+                            dualGameDetailState = dualGameDetailState,
+                            dualViewMode = dualViewMode,
+                            dualCollectionShowcase = dualCollectionShowcase,
+                            dualAppBarFocused = dualAppBarFocused,
+                            dualDrawerOpen = dualDrawerOpen,
+                            onStartupComplete = { dualScreenManager.stopStartupGuard() }
+                        )
+                    }
                 }
             }
         }
