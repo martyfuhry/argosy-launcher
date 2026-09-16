@@ -532,7 +532,6 @@
     <string name="ui_quick_settings_haptics">震动反馈</string>
     <string name="ui_quick_settings_ui_sounds">界面音效</string>
     <string name="ui_quick_settings_bgm">BGM</string>
-    <string name="ui_quick_settings_swap_displays">交换屏幕</string>
     <string name="ui_quick_settings_quaypass">QuayPass</string>
     <string name="ui_quick_settings_volume">音量</string>
     <string name="ui_quick_settings_brightness">亮度</string>

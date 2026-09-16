@@ -174,11 +174,13 @@
     <string name="settings_displays_dual_screen_subtitle">Zweiten Bildschirm als Begleitbildschirm nutzen</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">Dieses System erlaubt keine Companion-App auf dem zweiten Bildschirm; zum erneuten Versuch aus- und wieder einschalten</string>
 
-    <string name="settings_displays_display_roles_title">Bildschirmrollen</string>
-    <string name="settings_displays_display_roles_subtitle">Welcher physische Bildschirm Haupt- bzw. Begleitbildschirm ist; Vertauscht tauscht oben und unten</string>
+    <string name="settings_displays_pause_docked_title">Im Dock pausieren</string>
+    <string name="settings_displays_pause_docked_subtitle">Schaltet den zweiten Bildschirm aus, solange ein Fernseher angeschlossen ist, und wieder ein, sobald er abgezogen wird</string>
+    <string name="settings_displays_display_roles_title">Steuerbildschirm</string>
+    <string name="settings_displays_display_roles_subtitle">Der Bildschirm, auf dem Menüs erscheinen; der andere zeigt, was du gerade ansiehst</string>
     <string name="settings_displays_display_roles_auto">Auto</string>
-    <string name="settings_displays_display_roles_standard">Standard</string>
-    <string name="settings_displays_display_roles_swapped">Vertauscht</string>
+    <string name="settings_displays_display_roles_standard">Begleitbildschirm</string>
+    <string name="settings_displays_display_roles_swapped">Hauptbildschirm</string>
 
     <string name="settings_displays_ambient_led_title">LED-Steuerung</string>
     <string name="settings_displays_ambient_led_subtitle">LED-Farben und -Effekte des Thumbsticks</string>

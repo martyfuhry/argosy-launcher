@@ -1415,7 +1415,6 @@ class ArgosyViewModel @Inject constructor(
             systemVolume = qs.systemVolume,
             screenBrightness = qs.screenBrightness,
             isDualScreenActive = _isDualScreenMode,
-            isRolesSwapped = false,
             isSocialLinked = qs.isSocialLinked,
             quayPassEnabled = qs.quayPassEnabled
         )
@@ -1429,8 +1428,7 @@ class ArgosyViewModel @Inject constructor(
     }
 
     fun createQuickSettingsInputHandler(
-        onDismiss: () -> Unit,
-        onSwapDisplays: (() -> Unit)? = null
+        onDismiss: () -> Unit
     ): InputHandler = object : InputHandler {
 
         override fun onUp(): InputResult {
@@ -1513,10 +1511,6 @@ class ArgosyViewModel @Inject constructor(
                 QuickSettingsItem.BGM -> {
                     val enabled = toggleAmbientAudio()
                     InputResult.handled(if (enabled) SoundType.TOGGLE else SoundType.SILENT)
-                }
-                QuickSettingsItem.SwapDisplays -> {
-                    onSwapDisplays?.invoke()
-                    InputResult.HANDLED
                 }
                 QuickSettingsItem.QuayPass -> {
                     toggleQuayPassFromQuickSettings()

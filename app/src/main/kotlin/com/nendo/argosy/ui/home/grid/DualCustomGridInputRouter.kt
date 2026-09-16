@@ -152,8 +152,7 @@ class DualCustomGridInputRouter(
                 ) {
                     return InputResult.HANDLED
                 }
-                com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
-                InputResult.handled(SoundType.TOGGLE)
+                InputResult.HANDLED
             }
 
             GamepadEvent.ContextMenu -> {

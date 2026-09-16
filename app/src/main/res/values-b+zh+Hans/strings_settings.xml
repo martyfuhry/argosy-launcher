@@ -161,11 +161,13 @@
     <string name="settings_displays_dual_screen_subtitle">将副屏用作伴侣屏幕</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">此系统不允许在副屏上运行伴侣应用；请关闭后重新打开以重试</string>
 
-    <string name="settings_displays_display_roles_title">屏幕角色</string>
-    <string name="settings_displays_display_roles_subtitle">指定哪块物理屏幕作为主屏幕与伴侣屏幕；"已互换"会上下颠倒</string>
+    <string name="settings_displays_pause_docked_title">接电视时暂停</string>
+    <string name="settings_displays_pause_docked_subtitle">连接电视期间关闭第二块屏幕，拔掉后重新开启</string>
+    <string name="settings_displays_display_roles_title">操作屏幕</string>
+    <string name="settings_displays_display_roles_subtitle">菜单打开的那块屏幕；另一块显示你正在看的内容</string>
     <string name="settings_displays_display_roles_auto">自动</string>
-    <string name="settings_displays_display_roles_standard">标准</string>
-    <string name="settings_displays_display_roles_swapped">已互换</string>
+    <string name="settings_displays_display_roles_standard">伴侣屏幕</string>
+    <string name="settings_displays_display_roles_swapped">主屏幕</string>
 
     <string name="settings_displays_ambient_led_title">LED控制</string>
     <string name="settings_displays_ambient_led_subtitle">摇杆LED颜色与效果</string>

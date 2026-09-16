@@ -519,12 +519,6 @@ class HomeInputHandler(
         if (state.showAddToCollectionModal) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (state.customGrid.engagedTileId != null) return InputResult.HANDLED
-        val dualScreen = com.nendo.argosy.DualScreenManagerHolder.instance
-            ?.takeIf { it.isDualScreenDevice.value }
-        if (dualScreen != null) {
-            dualScreen.swapRoles()
-            return InputResult.handled(SoundType.TOGGLE)
-        }
         if (isCustomGrid(state)) return InputResult.UNHANDLED
         if (state.isMediaRow) return InputResult.HANDLED
         if (state.focusedGame != null) {

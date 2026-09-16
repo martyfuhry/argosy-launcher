@@ -566,7 +566,6 @@
     <string name="ui_quick_settings_haptics">Vibración</string>
     <string name="ui_quick_settings_ui_sounds">Sonidos de la interfaz</string>
     <string name="ui_quick_settings_bgm">BGM</string>
-    <string name="ui_quick_settings_swap_displays">Intercambiar pantallas</string>
     <string name="ui_quick_settings_quaypass">QuayPass</string>
     <string name="ui_quick_settings_volume">Volumen</string>
     <string name="ui_quick_settings_brightness">Brillo</string>

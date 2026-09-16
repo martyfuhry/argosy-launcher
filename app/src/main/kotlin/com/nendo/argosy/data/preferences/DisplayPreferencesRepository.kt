@@ -100,6 +100,7 @@ data class DisplayPreferences(
     val screenDimmerTimeoutMinutes: Int = 2,
     val screenDimmerLevel: Int = 50,
     val dualScreenEnabled: Boolean = false,
+    val pauseDualScreenWhileDocked: Boolean = true,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,
     val dualScreenInputFocus: DualScreenInputFocus = DualScreenInputFocus.AUTO,
     val installedOnlyHome: Boolean = false
@@ -190,6 +191,7 @@ class DisplayPreferencesRepository @Inject constructor(
         val SCREEN_DIMMER_TIMEOUT_MINUTES = intPreferencesKey("screen_dimmer_timeout_minutes")
         val SCREEN_DIMMER_LEVEL = intPreferencesKey("screen_dimmer_level")
         val DUAL_SCREEN_ENABLED = booleanPreferencesKey("dual_screen_enabled")
+        val PAUSE_DUAL_SCREEN_WHILE_DOCKED = booleanPreferencesKey("pause_dual_screen_while_docked")
         val DISPLAY_ROLE_OVERRIDE = stringPreferencesKey("display_role_override")
         val DUAL_SCREEN_INPUT_FOCUS = stringPreferencesKey("dual_screen_input_focus")
         val INSTALLED_ONLY_HOME = booleanPreferencesKey("installed_only_home")
@@ -283,6 +285,7 @@ class DisplayPreferencesRepository @Inject constructor(
             screenDimmerTimeoutMinutes = prefs[Keys.SCREEN_DIMMER_TIMEOUT_MINUTES] ?: 2,
             screenDimmerLevel = prefs[Keys.SCREEN_DIMMER_LEVEL] ?: 50,
             dualScreenEnabled = prefs[Keys.DUAL_SCREEN_ENABLED] ?: DisplayAffinityHelper.isKnownDualScreenDevice(),
+            pauseDualScreenWhileDocked = prefs[Keys.PAUSE_DUAL_SCREEN_WHILE_DOCKED] ?: true,
             displayRoleOverride = DisplayRoleOverride.fromString(prefs[Keys.DISPLAY_ROLE_OVERRIDE]),
             dualScreenInputFocus = DualScreenInputFocus.fromString(prefs[Keys.DUAL_SCREEN_INPUT_FOCUS]),
             installedOnlyHome = prefs[Keys.INSTALLED_ONLY_HOME] ?: false
@@ -619,6 +622,10 @@ class DisplayPreferencesRepository @Inject constructor(
 
     suspend fun setDualScreenEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.DUAL_SCREEN_ENABLED] = enabled }
+    }
+
+    suspend fun setPauseDualScreenWhileDocked(pause: Boolean) {
+        dataStore.edit { it[Keys.PAUSE_DUAL_SCREEN_WHILE_DOCKED] = pause }
     }
 
     suspend fun setDisplayRoleOverride(override: DisplayRoleOverride) {

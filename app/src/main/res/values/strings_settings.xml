@@ -341,17 +341,22 @@
     <!-- Second line of that row on a device whose firmware refuses to host the second screen. -->
     <string name="settings_displays_dual_screen_subtitle_unsupported">This system does not allow a companion app on the secondary display; toggle off and on to retry</string>
 
-    <!-- Row title. Noun phrase: which screen gets which job. -->
-    <string name="settings_displays_display_roles_title">Display Roles</string>
-    <!-- Second line of that row. "Swapped" is the name of one of the row's own values, below. -->
-    <string name="settings_displays_display_roles_subtitle">Which physical display is the main vs companion screen; Swapped flips top and bottom</string>
-    <!-- Value of that row: let Argosy decide. Adjective, short for "automatic". -->
+    <!-- Row title. Verb phrase: what happens to the second screen while a television is plugged in. -->
+    <string name="settings_displays_pause_docked_title">Pause While Docked</string>
+    <!-- Second line of that row. -->
+    <string name="settings_displays_pause_docked_subtitle">Turn the second screen off while a television is connected, and back on when it is unplugged</string>
+
+    <!-- Row title. Noun phrase: the screen the controller drives. -->
+    <string name="settings_displays_display_roles_title">Control Screen</string>
+    <!-- Second line of that row. Names what the other screen becomes. -->
+    <string name="settings_displays_display_roles_subtitle">The screen menus open on; the other one shows what you are looking at</string>
+    <!-- Value of that row: let Argosy decide, which puts control on the built-in screen when a
+         television is attached. Adjective, short for "automatic". -->
     <string name="settings_displays_display_roles_auto">Auto</string>
-    <!-- Value of that row: the screens keep the jobs the device gives them. Adjective. -->
-    <string name="settings_displays_display_roles_standard">Standard</string>
-    <!-- Value of that row: the two screens trade jobs. Adjective. Must match the word used in
-         settings_displays_display_roles_subtitle. -->
-    <string name="settings_displays_display_roles_swapped">Swapped</string>
+    <!-- Value of that row: the companion screen, which is the lower one on a two-screen handheld. -->
+    <string name="settings_displays_display_roles_standard">Companion screen</string>
+    <!-- Value of that row: the device's main screen, the upper one on a two-screen handheld. -->
+    <string name="settings_displays_display_roles_swapped">Main screen</string>
 
     <!-- Row opening the settings for the light ring around the sticks. "LED" is the light itself;
          leave it untranslated. -->

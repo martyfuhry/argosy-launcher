@@ -232,10 +232,7 @@ class DualHomeInputHandler(
                     InputResult.HANDLED
                 } else InputResult.UNHANDLED
             }
-            com.nendo.argosy.ui.input.GamepadEvent.Select -> {
-                com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
-                InputResult.HANDLED
-            }
+            com.nendo.argosy.ui.input.GamepadEvent.Select -> InputResult.HANDLED
             com.nendo.argosy.ui.input.GamepadEvent.PrevSection -> {
                 if (inAppBar) viewModel.focusCarousel()
                 viewModel.previousSection()
@@ -556,10 +553,7 @@ class DualHomeInputHandler(
                 onBroadcastLibraryGameSelection()
                 InputResult.HANDLED
             }
-            com.nendo.argosy.ui.input.GamepadEvent.Select -> {
-                com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
-                InputResult.HANDLED
-            }
+            com.nendo.argosy.ui.input.GamepadEvent.Select -> InputResult.HANDLED
             com.nendo.argosy.ui.input.GamepadEvent.Back -> {
                 viewModel.exitToCarousel()
                 onBroadcastViewModeChange()

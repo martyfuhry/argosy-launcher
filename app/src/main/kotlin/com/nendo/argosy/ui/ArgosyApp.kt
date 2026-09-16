@@ -446,10 +446,6 @@ fun ArgosyApp(
             onDismiss = {
                 inputDispatcher.unsubscribeDrawer()
                 viewModel.setQuickSettingsOpen(false)
-            },
-            onSwapDisplays = {
-                (context as? com.nendo.argosy.MainActivity)
-                    ?.dualScreenManager?.swapRoles()
             }
         )
     }
@@ -2130,7 +2126,6 @@ fun ArgosyApp(
                     systemVolume = quickSettingsUiState.systemVolume,
                     screenBrightness = quickSettingsUiState.screenBrightness,
                     isDualScreenActive = isDualScreenDevice && companionActive,
-                    isRolesSwapped = isRolesSwapped,
                     isSocialLinked = quickSettingsUiState.isSocialLinked,
                     quayPassEnabled = quickSettingsUiState.quayPassEnabled
                 ),
@@ -2145,10 +2140,6 @@ fun ArgosyApp(
                 onPerformanceModeCycle = { viewModel.cyclePerformanceMode() },
                 onVolumeChange = { viewModel.setSystemVolume(it) },
                 onBrightnessChange = { viewModel.setScreenBrightness(it) },
-                onSwapDisplays = {
-                    (context as? com.nendo.argosy.MainActivity)
-                        ?.dualScreenManager?.swapRoles()
-                },
                 onQuayPassToggle = { viewModel.toggleQuayPassFromQuickSettings() },
                 onDismiss = closeQuickSettings,
                 footerHints = quickSettingsFooterHints.map { (button, labelRes) ->

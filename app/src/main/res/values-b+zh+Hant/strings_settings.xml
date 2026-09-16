@@ -148,11 +148,13 @@
     <string name="settings_displays_dual_screen_subtitle">將第二螢幕作為隨附螢幕使用</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">此系統不允許在第二螢幕上執行隨附應用程式，請關閉再重新開啟以重試</string>
 
-    <string name="settings_displays_display_roles_title">顯示器角色</string>
-    <string name="settings_displays_display_roles_subtitle">決定哪個實體螢幕是主螢幕、哪個是隨附螢幕；「交換」會對調上下</string>
+    <string name="settings_displays_pause_docked_title">接電視時暫停</string>
+    <string name="settings_displays_pause_docked_subtitle">連接電視期間關閉第二個螢幕，拔除後再次開啟</string>
+    <string name="settings_displays_display_roles_title">操作螢幕</string>
+    <string name="settings_displays_display_roles_subtitle">選單開啟的那個螢幕；另一個顯示你正在看的內容</string>
     <string name="settings_displays_display_roles_auto">自動</string>
-    <string name="settings_displays_display_roles_standard">標準</string>
-    <string name="settings_displays_display_roles_swapped">交換</string>
+    <string name="settings_displays_display_roles_standard">隨附螢幕</string>
+    <string name="settings_displays_display_roles_swapped">主螢幕</string>
 
     <string name="settings_displays_ambient_led_title">LED控制</string>
     <string name="settings_displays_ambient_led_subtitle">搖桿LED色彩與效果</string>

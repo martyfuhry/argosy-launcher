@@ -167,11 +167,13 @@
     <string name="settings_displays_dual_screen_subtitle">Utiliser l\'écran secondaire comme écran compagnon</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">Ce système n\'autorise pas d\'application compagnon sur l\'écran secondaire ; désactivez puis réactivez pour réessayer</string>
 
-    <string name="settings_displays_display_roles_title">Rôles des écrans</string>
-    <string name="settings_displays_display_roles_subtitle">Quel écran physique est l\'écran principal et lequel est l\'écran compagnon ; Inversé échange le haut et le bas</string>
+    <string name="settings_displays_pause_docked_title">Pause sur téléviseur</string>
+    <string name="settings_displays_pause_docked_subtitle">Éteint le second écran tant qu\'un téléviseur est branché, et le rallume au débranchement</string>
+    <string name="settings_displays_display_roles_title">Écran de contrôle</string>
+    <string name="settings_displays_display_roles_subtitle">L\'écran où s\'ouvrent les menus ; l\'autre montre ce que vous regardez</string>
     <string name="settings_displays_display_roles_auto">Auto</string>
-    <string name="settings_displays_display_roles_standard">Standard</string>
-    <string name="settings_displays_display_roles_swapped">Inversé</string>
+    <string name="settings_displays_display_roles_standard">Écran compagnon</string>
+    <string name="settings_displays_display_roles_swapped">Écran principal</string>
 
     <string name="settings_displays_ambient_led_title">Contrôle LED</string>
     <string name="settings_displays_ambient_led_subtitle">Couleurs et effets des LED des sticks</string>

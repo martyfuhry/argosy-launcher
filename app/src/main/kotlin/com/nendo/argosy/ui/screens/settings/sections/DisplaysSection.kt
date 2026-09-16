@@ -69,6 +69,11 @@ internal sealed class DisplaysItem(
     data object DimLevel : DisplaysItem("dimLevel", "screenSafety")
 
     data object DualScreenEnabled : DisplaysItem("dualScreenEnabled", "displays")
+    data object PauseWhileDocked : DisplaysItem(
+        key = "pauseDualScreenWhileDocked",
+        section = "displays",
+        visibleWhen = { it.dualScreenEnabled && !it.display.secondaryDisplayUnsupported }
+    )
     data object DisplayRoles : DisplaysItem(
         key = "displayRoles",
         section = "displays",
@@ -92,7 +97,7 @@ internal sealed class DisplaysItem(
                 ScreenSafetyHeader,
                 ScreenDimmer, DimAfter, DimLevel,
                 DisplaysSpacer, DisplaysHeader,
-                DualScreenEnabled, DisplayRoles, AmbientLedSettings
+                DualScreenEnabled, PauseWhileDocked, DisplayRoles, AmbientLedSettings
             )
     }
 }
@@ -233,6 +238,14 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 isEnabled = display.dualScreenEnabled,
                 isFocused = isFocused(item),
                 onToggle = { viewModel.setDualScreenEnabled(it) }
+            )
+
+            DisplaysItem.PauseWhileDocked -> SwitchPreference(
+                title = stringResource(R.string.settings_displays_pause_docked_title),
+                subtitle = stringResource(R.string.settings_displays_pause_docked_subtitle),
+                isEnabled = display.pauseDualScreenWhileDocked,
+                isFocused = isFocused(item),
+                onToggle = { viewModel.setPauseDualScreenWhileDocked(it) }
             )
 
             DisplaysItem.DisplayRoles -> CyclePreference(

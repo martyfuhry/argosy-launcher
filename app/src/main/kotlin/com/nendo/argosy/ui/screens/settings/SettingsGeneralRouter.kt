@@ -448,6 +448,17 @@ internal fun routeToggleGradientAdvancedMode(vm: SettingsViewModel) {
     vm.extractGradientForPreview()
 }
 
+internal fun routeSetPauseDualScreenWhileDocked(vm: SettingsViewModel, pause: Boolean) {
+    vm.viewModelScope.launch {
+        vm.preferencesRepository.setPauseDualScreenWhileDocked(pause)
+        com.nendo.argosy.data.preferences.SessionStateStore(vm.context)
+            .setPauseDualScreenWhileDocked(pause)
+        vm.displayDelegate.updateState(
+            vm._uiState.value.display.copy(pauseDualScreenWhileDocked = pause)
+        )
+    }
+}
+
 internal fun routeSetDualScreenEnabled(vm: SettingsViewModel, enabled: Boolean) {
     vm.viewModelScope.launch {
         vm.preferencesRepository.setDualScreenEnabled(enabled)

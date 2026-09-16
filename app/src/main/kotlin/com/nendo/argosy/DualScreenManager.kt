@@ -1342,10 +1342,20 @@ class DualScreenManager(
     private var companionPausedPending = false
     private var companionLaunchAttempts = 0
 
+    private fun dockedWithExternalDisplay(): Boolean =
+        displayAffinityHelper.secondaryDisplayType == SecondaryDisplayType.EXTERNAL &&
+            sessionStateStore.pauseDualScreenWhileDocked()
+
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) {
             if (!displayAffinityHelper.isPhysicalDisplay(displayId)) return
             reprobeSecondaryDisplay()
+            if (dockedWithExternalDisplay()) {
+                teardownCompanion()
+                _isDualScreenDevice.value = false
+                cleanupSwappedState()
+                return
+            }
             val resolver = DisplayRoleResolver(displayAffinityHelper, sessionStateStore)
             val newSwapped = resolver.isSwapped
             if (newSwapped != _isRolesSwapped.value) {
@@ -1364,8 +1374,13 @@ class DualScreenManager(
             companionLaunchJob = null
             _isCompanionActive.value = false
             CompanionGuardService.stop(appContext)
+            reprobeSecondaryDisplay()
             _isDualScreenDevice.value = displayAffinityHelper.hasSecondaryDisplay
             cleanupSwappedState()
+            if (displayAffinityHelper.hasSecondaryDisplay && !dockedWithExternalDisplay()) {
+                CompanionGuardService.start(appContext)
+                ensureCompanionLaunched()
+            }
         }
 
         override fun onDisplayChanged(displayId: Int) {}
@@ -3877,6 +3892,7 @@ class DualScreenManager(
 
     fun ensureCompanionLaunched(allowDuringSession: Boolean = false) {
         if (!displayAffinityHelper.hasSecondaryDisplay) return
+        if (dockedWithExternalDisplay()) return
         if (sessionStateStore.isDualScreenEnabled()) setSecondaryHomeComponentEnabled(true)
         if (_isCompanionActive.value) return
         if (!allowDuringSession && sessionStateStore.hasActiveSession()) return

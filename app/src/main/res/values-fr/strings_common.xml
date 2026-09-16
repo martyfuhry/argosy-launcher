@@ -577,7 +577,6 @@
     <string name="ui_quick_settings_haptics">Vibrations</string>
     <string name="ui_quick_settings_ui_sounds">Sons de l\'interface</string>
     <string name="ui_quick_settings_bgm">BGM</string>
-    <string name="ui_quick_settings_swap_displays">Permuter les écrans</string>
     <string name="ui_quick_settings_quaypass">QuayPass</string>
     <string name="ui_quick_settings_volume">Volume</string>
     <string name="ui_quick_settings_brightness">Luminosité</string>

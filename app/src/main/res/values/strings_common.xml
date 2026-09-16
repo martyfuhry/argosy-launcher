@@ -1128,7 +1128,6 @@
     <string name="ui_quick_settings_bgm">BGM</string>
     <!-- Row of that panel, on a device with two screens. Verb phrase: puts each screen in the
          other's role. -->
-    <string name="ui_quick_settings_swap_displays">Swap Displays</string>
     <!-- Row of that panel. "QuayPass" is the name of an Argosy feature; leave it
          untranslated. -->
     <string name="ui_quick_settings_quaypass">QuayPass</string>

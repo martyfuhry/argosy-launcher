@@ -826,10 +826,7 @@ class SecondaryHomeInputHandler(
                 dualHomeViewModel.nextSection()
                 InputResult.HANDLED
             }
-            GamepadEvent.Select -> {
-                com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
-                InputResult.HANDLED
-            }
+            GamepadEvent.Select -> InputResult.HANDLED
             GamepadEvent.Confirm -> {
                 if (onKeyboardSlot) {
                     broadcasts.broadcastToggleKeyboard()
@@ -1033,10 +1030,7 @@ class SecondaryHomeInputHandler(
                 broadcasts.broadcastLibraryGameSelection()
                 InputResult.HANDLED
             }
-            GamepadEvent.Select -> {
-                com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
-                InputResult.HANDLED
-            }
+            GamepadEvent.Select -> InputResult.HANDLED
             GamepadEvent.Back -> {
                 dualHomeViewModel.exitToCarousel()
                 broadcasts.broadcastViewModeChange()

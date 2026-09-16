@@ -579,6 +579,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             hasSecondaryDisplay = vm.displayAffinityHelper.hasSecondaryDisplay,
             hasPhysicalSecondaryDisplay = vm.displayAffinityHelper.hasPhysicalSecondaryDisplay,
             dualScreenEnabled = prefs.dualScreenEnabled,
+            pauseDualScreenWhileDocked = prefs.pauseDualScreenWhileDocked,
             displayRoleOverride = prefs.displayRoleOverride,
             installedOnlyHome = prefs.installedOnlyHome
         ))

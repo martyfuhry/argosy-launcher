@@ -568,7 +568,6 @@
     <string name="ui_quick_settings_haptics">Вибрация</string>
     <string name="ui_quick_settings_ui_sounds">Звуки интерфейса</string>
     <string name="ui_quick_settings_bgm">BGM</string>
-    <string name="ui_quick_settings_swap_displays">Поменять экраны местами</string>
     <string name="ui_quick_settings_quaypass">QuayPass</string>
     <string name="ui_quick_settings_volume">Громкость</string>
     <string name="ui_quick_settings_brightness">Яркость</string>
