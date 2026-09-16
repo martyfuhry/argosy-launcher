@@ -321,10 +321,7 @@ data class ScreenAssignment(
     val heightPx: Int,
     val builtIn: Boolean,
     val role: ScreenRole
-) {
-    val aspectRatio: Float
-        get() = if (heightPx == 0) 1f else widthPx.toFloat() / heightPx.toFloat()
-}
+)
 
 data class ControlsState(
     val hapticEnabled: Boolean = true,

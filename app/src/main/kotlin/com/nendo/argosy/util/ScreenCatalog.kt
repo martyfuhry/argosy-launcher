@@ -16,10 +16,7 @@ data class AttachedScreen(
     val widthPx: Int,
     val heightPx: Int,
     val builtIn: Boolean
-) {
-    val aspectRatio: Float
-        get() = if (heightPx == 0) 1f else widthPx.toFloat() / heightPx.toFloat()
-}
+)
 
 @Singleton
 class ScreenCatalog @Inject constructor(

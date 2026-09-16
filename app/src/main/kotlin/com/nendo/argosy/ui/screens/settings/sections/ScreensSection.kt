@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import com.nendo.argosy.R
 import com.nendo.argosy.domain.model.ScreenRole
 import com.nendo.argosy.ui.primitives.FocusIndicators
@@ -53,6 +53,8 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val screens = uiState.display.screens
     val builtIn = remember(screens) { screens.filter { it.builtIn } }
     val attached = remember(screens) { screens.filterNot { it.builtIn } }
+    val widestPx = remember(screens) { screens.maxOfOrNull { it.widthPx }?.coerceAtLeast(1) ?: 1 }
+    val perPixel = Dimens.screenMapCardWidth / widestPx.toFloat()
 
     Column(
         modifier = Modifier.fillMaxSize().padding(Dimens.spacingLg),
@@ -70,12 +72,12 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = Modifier.width(Dimens.screenMapCardWidth),
                 verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
             ) {
                 builtIn.forEach { screen ->
                     ScreenCard(
                         screen = screen,
+                        perPixel = perPixel,
                         isFocused = uiState.focusedIndex == screens.indexOf(screen),
                         onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
                     )
@@ -94,13 +96,12 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                                     .height(Dimens.borderMedium)
                                     .background(MaterialTheme.colorScheme.onSurfaceVariant)
                             )
-                            Box(modifier = Modifier.width(Dimens.screenMapCardWidth)) {
-                                ScreenCard(
-                                    screen = screen,
-                                    isFocused = uiState.focusedIndex == screens.indexOf(screen),
-                                    onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
-                                )
-                            }
+                            ScreenCard(
+                                screen = screen,
+                                perPixel = perPixel,
+                                isFocused = uiState.focusedIndex == screens.indexOf(screen),
+                                onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
+                            )
                         }
                     }
                 }
@@ -122,14 +123,15 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 @Composable
 private fun ScreenCard(
     screen: ScreenAssignment,
+    perPixel: Dp,
     isFocused: Boolean,
     onClick: () -> Unit
 ) {
     val dimmed = screen.role == ScreenRole.OFF
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(screen.aspectRatio.coerceIn(0.4f, 2.5f))
+            .width(perPixel * screen.widthPx.toFloat())
+            .height(perPixel * screen.heightPx.toFloat())
             .argosyFocusIndicators(
                 focused = isFocused,
                 indicators = FocusIndicators.Ring,
