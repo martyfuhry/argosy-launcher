@@ -9,7 +9,6 @@ import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -26,34 +25,9 @@ import javax.inject.Singleton
  */
 @Singleton
 class ManagedStorageAccessor @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val preferencesRepository: dagger.Lazy<com.nendo.argosy.data.preferences.UserPreferencesRepository>
+    @ApplicationContext private val context: Context
 ) {
     private val contentResolver: ContentResolver = context.contentResolver
-
-    @Volatile
-    private var cachedTreeUri: Uri? = null
-
-    @Volatile
-    private var initialized = false
-
-    suspend fun ensureInitialized() {
-        if (!initialized && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val prefs = preferencesRepository.get().preferences.first()
-            cachedTreeUri = prefs.androidDataSafUri?.let { Uri.parse(it) }
-            initialized = true
-        }
-    }
-
-    fun initializeBlocking() {
-        if (!initialized && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            kotlinx.coroutines.runBlocking {
-                val prefs = preferencesRepository.get().preferences.first()
-                cachedTreeUri = prefs.androidDataSafUri?.let { Uri.parse(it) }
-                initialized = true
-            }
-        }
-    }
 
     companion object {
         private const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
@@ -67,19 +41,6 @@ class ManagedStorageAccessor @Inject constructor(
             DocumentsContract.Document.COLUMN_SIZE,
             DocumentsContract.Document.COLUMN_FLAGS
         )
-    }
-
-    fun setTreeUri(uriString: String?) {
-        cachedTreeUri = uriString?.let { Uri.parse(it) }
-    }
-
-    fun hasValidSafGrant(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return true
-        initializeBlocking()
-        val treeUri = cachedTreeUri ?: return false
-        return contentResolver.persistedUriPermissions.any {
-            it.uri == treeUri && it.isReadPermission && it.isWritePermission
-        }
     }
 
     data class DocumentFile(
@@ -129,34 +90,7 @@ class ManagedStorageAccessor @Inject constructor(
             return listFilesLegacy(volumeId, relativePath)
         }
 
-        initializeBlocking()
-
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            val result = listFilesWithTreeUri(treeUri, volumeId, relativePath)
-            if (result != null) return result
-        }
-
         return listFilesWithManagedParameter(volumeId, relativePath)
-    }
-
-    private fun listFilesWithTreeUri(treeUri: Uri, volumeId: String, relativePath: String): List<DocumentFile>? {
-        val targetDocId = "$volumeId:$relativePath"
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, targetDocId)
-        val queryUri = applyManagedParameter(childrenUri, relativePath)
-
-        return try {
-            android.util.Log.d("ManagedStorageAccessor", "listFiles with tree URI: $queryUri")
-            contentResolver.query(queryUri, DOCUMENT_COLUMNS, null, null, null)?.use { cursor ->
-                if (cursor.count > 0) {
-                    android.util.Log.d("ManagedStorageAccessor", "Tree URI succeeded with ${cursor.count} files")
-                    parseDocumentCursor(cursor)
-                } else null
-            }
-        } catch (e: Exception) {
-            android.util.Log.d("ManagedStorageAccessor", "Tree URI approach failed: ${e.message}")
-            null
-        }
     }
 
     private fun listFilesWithManagedParameter(volumeId: String, relativePath: String): List<DocumentFile>? {
@@ -219,23 +153,6 @@ class ManagedStorageAccessor @Inject constructor(
             return file.exists()
         }
 
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            try {
-                val targetDocId = "$volumeId:$relativePath"
-                val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, targetDocId)
-                val queryUri = applyManagedParameter(documentUri, relativePath)
-                val exists = contentResolver.query(
-                    queryUri,
-                    arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID),
-                    null, null, null
-                )?.use { it.moveToFirst() } ?: false
-                if (exists) return true
-            } catch (e: Exception) {
-                android.util.Log.d("ManagedStorageAccessor", "existsAtPath tree URI failed: ${e.message}")
-            }
-        }
-
         val documentId = "$volumeId:$relativePath"
         val documentUri = DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_AUTHORITY, documentId)
         val queryUri = applyManagedParameter(documentUri, relativePath)
@@ -283,17 +200,6 @@ class ManagedStorageAccessor @Inject constructor(
             return runCatching { ParcelFileDescriptor.open(file, parcelModeFor(writable)) }.getOrNull()
         }
 
-        initializeBlocking()
-
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            val targetDocId = "$volumeId:$relativePath"
-            val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, targetDocId)
-            runCatching { contentResolver.openFileDescriptor(documentUri, mode) }
-                .getOrNull()
-                ?.let { return it }
-        }
-
         val documentId = "$volumeId:$relativePath"
         val baseUri = DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_AUTHORITY, documentId)
         val documentUri = applyManagedParameter(baseUri, relativePath)
@@ -317,23 +223,6 @@ class ManagedStorageAccessor @Inject constructor(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             val file = File(getVolumeRoot(volumeId), relativePath)
             return if (file.exists() && file.canRead()) file.inputStream() else null
-        }
-
-        initializeBlocking()
-
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            try {
-                val targetDocId = "$volumeId:$relativePath"
-                val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, targetDocId)
-                val stream = contentResolver.openInputStream(documentUri)
-                if (stream != null) {
-                    android.util.Log.d("ManagedStorageAccessor", "openInputStream with tree URI succeeded")
-                    return stream
-                }
-            } catch (e: Exception) {
-                android.util.Log.d("ManagedStorageAccessor", "openInputStream tree URI failed: ${e.message}")
-            }
         }
 
         val documentId = "$volumeId:$relativePath"
@@ -372,62 +261,7 @@ class ManagedStorageAccessor @Inject constructor(
             return file.outputStream()
         }
 
-        initializeBlocking()
-
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            val stream = openOutputStreamWithTreeUri(treeUri, volumeId, relativePath)
-            if (stream != null) return stream
-        }
-
         return openOutputStreamWithManagedParameter(volumeId, relativePath)
-    }
-
-    private fun openOutputStreamWithTreeUri(
-        treeUri: Uri,
-        volumeId: String,
-        relativePath: String
-    ): OutputStream? {
-        val targetDocId = "$volumeId:$relativePath"
-        val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, targetDocId)
-
-        // Try to open existing file first
-        try {
-            val stream = contentResolver.openOutputStream(documentUri, "wt")
-            if (stream != null) {
-                android.util.Log.d("ManagedStorageAccessor", "openOutputStream with tree URI succeeded")
-                return stream
-            }
-        } catch (e: Exception) {
-            android.util.Log.d("ManagedStorageAccessor", "openOutputStream tree URI failed (may need create): ${e.message}")
-        }
-
-        // File may not exist, try to create it
-        return try {
-            val fileName = relativePath.substringAfterLast('/')
-            val parentPath = relativePath.substringBeforeLast('/', "")
-            if (fileName.isEmpty()) {
-                android.util.Log.e("ManagedStorageAccessor", "Invalid path, no file name: $relativePath")
-                return null
-            }
-
-            val parentDocId = if (parentPath.isEmpty()) "$volumeId:" else "$volumeId:$parentPath"
-            val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, parentDocId)
-
-            val mimeType = getMimeTypeForExtension(fileName.substringAfterLast('.', ""))
-            val createdUri = DocumentsContract.createDocument(contentResolver, parentUri, mimeType, fileName)
-
-            if (createdUri != null) {
-                android.util.Log.d("ManagedStorageAccessor", "Created document: $createdUri")
-                contentResolver.openOutputStream(createdUri, "wt")
-            } else {
-                android.util.Log.e("ManagedStorageAccessor", "Failed to create document: $relativePath")
-                null
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("ManagedStorageAccessor", "createDocument failed: ${e.message}")
-            null
-        }
     }
 
     private fun openOutputStreamWithManagedParameter(volumeId: String, relativePath: String): OutputStream? {
@@ -493,9 +327,6 @@ class ManagedStorageAccessor @Inject constructor(
             return dir.mkdirs()
         }
 
-        initializeBlocking()
-
-        // Split path into segments and create each directory level
         val segments = relativePath.split('/').filter { it.isNotEmpty() }
         var currentPath = ""
 
@@ -503,10 +334,8 @@ class ManagedStorageAccessor @Inject constructor(
             val parentPath = currentPath
             currentPath = if (currentPath.isEmpty()) segment else "$currentPath/$segment"
 
-            // Check if this level already exists
             if (existsAtPath(volumeId, currentPath)) continue
 
-            // Create this directory level
             val created = createSingleDirectory(volumeId, parentPath, segment)
             if (!created) {
                 android.util.Log.e("ManagedStorageAccessor", "Failed to create directory: $currentPath")
@@ -517,27 +346,6 @@ class ManagedStorageAccessor @Inject constructor(
     }
 
     private fun createSingleDirectory(volumeId: String, parentPath: String, dirName: String): Boolean {
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            try {
-                val parentDocId = if (parentPath.isEmpty()) "$volumeId:" else "$volumeId:$parentPath"
-                val parentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, parentDocId)
-                val createdUri = DocumentsContract.createDocument(
-                    contentResolver,
-                    parentUri,
-                    DocumentsContract.Document.MIME_TYPE_DIR,
-                    dirName
-                )
-                if (createdUri != null) {
-                    android.util.Log.d("ManagedStorageAccessor", "Created directory: $parentPath/$dirName")
-                    return true
-                }
-            } catch (e: Exception) {
-                android.util.Log.d("ManagedStorageAccessor", "createDirectory tree URI failed: ${e.message}")
-            }
-        }
-
-        // Fallback to managed parameter approach
         return try {
             val parentDocId = if (parentPath.isEmpty()) "$volumeId:" else "$volumeId:$parentPath"
             val parentBaseUri = DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_AUTHORITY, parentDocId)
@@ -576,25 +384,9 @@ class ManagedStorageAccessor @Inject constructor(
             return file.delete()
         }
 
-        initializeBlocking()
-
-        val treeUri = cachedTreeUri
-        if (treeUri != null) {
-            try {
-                val targetDocId = "$volumeId:$relativePath"
-                val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, targetDocId)
-                val deleted = DocumentsContract.deleteDocument(contentResolver, documentUri)
-                if (deleted) {
-                    android.util.Log.d("ManagedStorageAccessor", "deleteAtPath with tree URI succeeded")
-                    return true
-                }
-            } catch (e: Exception) {
-                android.util.Log.d("ManagedStorageAccessor", "deleteAtPath tree URI failed: ${e.message}")
-            }
-        }
-
         val documentId = "$volumeId:$relativePath"
-        val documentUri = DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_AUTHORITY, documentId)
+        val baseUri = DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_AUTHORITY, documentId)
+        val documentUri = applyManagedParameter(baseUri, relativePath)
 
         return try {
             DocumentsContract.deleteDocument(contentResolver, documentUri)

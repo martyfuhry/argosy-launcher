@@ -212,9 +212,6 @@
     <string name="gamedetail_permission_storage_title">需要权限</string>
     <string name="gamedetail_permission_storage_message">存档同步已启用，但未获得文件访问权限。请授予权限以同步存档，或禁用存档同步以继续。</string>
     <string name="gamedetail_permission_storage_confirm">授予权限</string>
-    <string name="gamedetail_permission_folder_title">需要文件夹访问权限</string>
-    <string name="gamedetail_permission_folder_message">存档同步需要访问Android/data文件夹，才能从其他模拟器同步存档。请在提示时选择Android文件夹，或禁用存档同步以继续。</string>
-    <string name="gamedetail_permission_folder_confirm">选择文件夹</string>
     <string name="gamedetail_permission_disable_sync">禁用存档同步</string>
     <string name="gamedetail_permission_cancel">取消</string>
 

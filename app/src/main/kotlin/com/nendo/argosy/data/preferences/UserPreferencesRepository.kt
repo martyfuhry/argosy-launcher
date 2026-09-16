@@ -190,7 +190,6 @@ class UserPreferencesRepository @Inject constructor(
             ambientLedScreenEnabled = display.ambientLedScreenEnabled,
             ambientLedTransitionMs = display.ambientLedTransitionMs,
             ambientLedAchievementFlash = display.ambientLedAchievementFlash,
-            androidDataSafUri = sync.androidDataSafUri,
             builtinLibretroEnabled = builtinEnabled,
             appAffinityEnabled = app.appAffinityEnabled,
             dualScreenEnabled = display.dualScreenEnabled,
@@ -378,7 +377,6 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setSaveCacheLimit(limit: Int) = syncPrefs.setSaveCacheLimit(limit)
     suspend fun setSaveDebugLoggingEnabled(enabled: Boolean) = syncPrefs.setSaveDebugLoggingEnabled(enabled)
     suspend fun setImageCachePath(path: String?) = syncPrefs.setImageCachePath(path)
-    suspend fun setAndroidDataSafUri(uri: String?) = syncPrefs.setAndroidDataSafUri(uri)
     fun saveWatcherEnabled(): Flow<Boolean> = syncPrefs.saveWatcherEnabled()
     suspend fun setSaveWatcherEnabled(enabled: Boolean) = syncPrefs.setSaveWatcherEnabled(enabled)
 
@@ -822,7 +820,6 @@ data class UserPreferences(
     val ambientLedScreenEnabled: Boolean = false,
     val ambientLedTransitionMs: Int = 250,
     val ambientLedAchievementFlash: Boolean = true,
-    val androidDataSafUri: String? = null,
     val builtinLibretroEnabled: Boolean = true,
     val appAffinityEnabled: Boolean = false,
     val dualScreenEnabled: Boolean = false,

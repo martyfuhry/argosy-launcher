@@ -39,7 +39,6 @@ data class SyncPreferences(
     val saveWatcherEnabled: Boolean = false,
     val saveDebugLoggingEnabled: Boolean = false,
     val imageCachePath: String? = null,
-    val androidDataSafUri: String? = null,
     val socialSessionToken: String? = null,
     val socialUserId: String? = null,
     val socialUsername: String? = null,
@@ -100,7 +99,6 @@ class SyncPreferencesRepository @Inject constructor(
         val SAVE_WATCHER_ENABLED = booleanPreferencesKey("save_watcher_enabled")
         val SAVE_DEBUG_LOGGING_ENABLED = booleanPreferencesKey("save_debug_logging_enabled")
         val IMAGE_CACHE_PATH = stringPreferencesKey("image_cache_path")
-        val ANDROID_DATA_SAF_URI = stringPreferencesKey("android_data_saf_uri")
         val SOCIAL_SESSION_TOKEN = stringPreferencesKey("social_session_token")
         val SOCIAL_USER_ID = stringPreferencesKey("social_user_id")
         val SOCIAL_USERNAME = stringPreferencesKey("social_username")
@@ -294,7 +292,6 @@ class SyncPreferencesRepository @Inject constructor(
             saveWatcherEnabled = prefs[Keys.SAVE_WATCHER_ENABLED] ?: false,
             saveDebugLoggingEnabled = prefs[Keys.SAVE_DEBUG_LOGGING_ENABLED] ?: false,
             imageCachePath = prefs[Keys.IMAGE_CACHE_PATH],
-            androidDataSafUri = prefs[Keys.ANDROID_DATA_SAF_URI],
             socialSessionToken = prefs[Keys.SOCIAL_SESSION_TOKEN],
             socialUserId = prefs[Keys.SOCIAL_USER_ID],
             socialUsername = prefs[Keys.SOCIAL_USERNAME],
@@ -552,13 +549,6 @@ class SyncPreferencesRepository @Inject constructor(
         dataStore.edit { prefs ->
             if (path != null) prefs[Keys.IMAGE_CACHE_PATH] = path
             else prefs.remove(Keys.IMAGE_CACHE_PATH)
-        }
-    }
-
-    suspend fun setAndroidDataSafUri(uri: String?) {
-        dataStore.edit { prefs ->
-            if (uri != null) prefs[Keys.ANDROID_DATA_SAF_URI] = uri
-            else prefs.remove(Keys.ANDROID_DATA_SAF_URI)
         }
     }
 

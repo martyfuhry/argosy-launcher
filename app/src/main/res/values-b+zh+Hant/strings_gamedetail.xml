@@ -212,9 +212,6 @@
     <string name="gamedetail_permission_storage_title">需要權限</string>
     <string name="gamedetail_permission_storage_message">存檔同步已啟用，但尚未授予檔案存取權限。請授予權限以同步存檔，或停用存檔同步以繼續。</string>
     <string name="gamedetail_permission_storage_confirm">授予權限</string>
-    <string name="gamedetail_permission_folder_title">需要資料夾存取權</string>
-    <string name="gamedetail_permission_folder_message">存檔同步需要存取Android/data資料夾，才能同步其他模擬器的存檔。請在系統提示時選擇Android資料夾，或停用存檔同步以繼續。</string>
-    <string name="gamedetail_permission_folder_confirm">選擇資料夾</string>
     <string name="gamedetail_permission_disable_sync">停用存檔同步</string>
     <string name="gamedetail_permission_cancel">取消</string>
 

@@ -250,9 +250,6 @@
     <string name="gamedetail_permission_storage_title">Berechtigung erforderlich</string>
     <string name="gamedetail_permission_storage_message">Die Spielstand-Synchronisierung ist aktiviert, aber die Dateizugriffsberechtigung wurde nicht erteilt. Erteilen Sie die Berechtigung, um Spielstände zu synchronisieren, oder deaktivieren Sie die Synchronisierung, um fortzufahren.</string>
     <string name="gamedetail_permission_storage_confirm">Berechtigung erteilen</string>
-    <string name="gamedetail_permission_folder_title">Ordnerzugriff erforderlich</string>
-    <string name="gamedetail_permission_folder_message">Die Spielstand-Synchronisierung benötigt Zugriff auf den Ordner Android/data, um Spielstände von anderen Emulatoren zu synchronisieren. Wählen Sie bei Aufforderung den Ordner Android, oder deaktivieren Sie die Synchronisierung, um fortzufahren.</string>
-    <string name="gamedetail_permission_folder_confirm">Ordner auswählen</string>
     <string name="gamedetail_permission_disable_sync">Spielstand-Synchronisierung deaktivieren</string>
     <string name="gamedetail_permission_cancel">Abbrechen</string>
 

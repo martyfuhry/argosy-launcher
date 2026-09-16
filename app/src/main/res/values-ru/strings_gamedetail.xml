@@ -222,9 +222,6 @@
     <string name="gamedetail_permission_storage_title">Требуется разрешение</string>
     <string name="gamedetail_permission_storage_message">Синхронизация сохранений включена, но разрешение на доступ к файлам не предоставлено. Предоставьте разрешение для синхронизации сохранений или отключите синхронизацию, чтобы продолжить.</string>
     <string name="gamedetail_permission_storage_confirm">Предоставить разрешение</string>
-    <string name="gamedetail_permission_folder_title">Требуется доступ к папке</string>
-    <string name="gamedetail_permission_folder_message">Для синхронизации сохранений с других эмуляторов нужен доступ к папке Android/data. Выберите папку Android, когда появится запрос, или отключите синхронизацию, чтобы продолжить.</string>
-    <string name="gamedetail_permission_folder_confirm">Выбрать папку</string>
     <string name="gamedetail_permission_disable_sync">Отключить синхронизацию сохранений</string>
     <string name="gamedetail_permission_cancel">Отмена</string>
 

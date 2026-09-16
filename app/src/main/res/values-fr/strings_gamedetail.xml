@@ -253,9 +253,6 @@
     <string name="gamedetail_permission_storage_title">Autorisation requise</string>
     <string name="gamedetail_permission_storage_message">La synchronisation des sauvegardes est activée mais l\'autorisation d\'accès aux fichiers n\'a pas été accordée. Accordez l\'autorisation pour synchroniser les sauvegardes, ou désactivez la synchronisation pour continuer.</string>
     <string name="gamedetail_permission_storage_confirm">Accorder l\'autorisation</string>
-    <string name="gamedetail_permission_folder_title">Accès au dossier requis</string>
-    <string name="gamedetail_permission_folder_message">La synchronisation des sauvegardes nécessite l\'accès au dossier Android/data pour synchroniser les sauvegardes des autres émulateurs. Sélectionnez le dossier Android lorsque demandé, ou désactivez la synchronisation pour continuer.</string>
-    <string name="gamedetail_permission_folder_confirm">Sélectionner le dossier</string>
     <string name="gamedetail_permission_disable_sync">Désactiver la synchronisation des sauvegardes</string>
     <string name="gamedetail_permission_cancel">Annuler</string>
 

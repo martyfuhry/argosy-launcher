@@ -253,9 +253,6 @@
     <string name="gamedetail_permission_storage_title">Se requiere permiso</string>
     <string name="gamedetail_permission_storage_message">La sincronización de guardado está activada, pero no se concedió el permiso de acceso a archivos. Concede el permiso para sincronizar las partidas guardadas, o desactiva la sincronización de guardado para continuar.</string>
     <string name="gamedetail_permission_storage_confirm">Conceder permiso</string>
-    <string name="gamedetail_permission_folder_title">Se requiere acceso a la carpeta</string>
-    <string name="gamedetail_permission_folder_message">La sincronización de guardado necesita acceso a la carpeta Android/data para sincronizar las partidas guardadas de otros emuladores. Selecciona la carpeta Android cuando se te pida, o desactiva la sincronización de guardado para continuar.</string>
-    <string name="gamedetail_permission_folder_confirm">Seleccionar carpeta</string>
     <string name="gamedetail_permission_disable_sync">Desactivar sincronización de guardado</string>
     <string name="gamedetail_permission_cancel">Cancelar</string>
 

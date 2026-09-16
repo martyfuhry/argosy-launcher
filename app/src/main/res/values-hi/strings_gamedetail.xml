@@ -249,9 +249,6 @@
     <string name="gamedetail_permission_storage_title">अनुमति आवश्यक</string>
     <string name="gamedetail_permission_storage_message">सेव सिंक सक्षम है लेकिन फ़ाइल एक्सेस अनुमति नहीं दी गई है। सेव सिंक करने के लिए अनुमति दें, या जारी रखने के लिए सेव सिंक अक्षम करें।</string>
     <string name="gamedetail_permission_storage_confirm">अनुमति दें</string>
-    <string name="gamedetail_permission_folder_title">फ़ोल्डर एक्सेस आवश्यक</string>
-    <string name="gamedetail_permission_folder_message">अन्य एमुलेटर से सेव सिंक करने के लिए Android/data फ़ोल्डर तक पहुंच चाहिए। पूछे जाने पर Android फ़ोल्डर चुनें, या जारी रखने के लिए सेव सिंक अक्षम करें।</string>
-    <string name="gamedetail_permission_folder_confirm">फ़ोल्डर चुनें</string>
     <string name="gamedetail_permission_disable_sync">सेव सिंक अक्षम करें</string>
     <string name="gamedetail_permission_cancel">रद्द करें</string>
 

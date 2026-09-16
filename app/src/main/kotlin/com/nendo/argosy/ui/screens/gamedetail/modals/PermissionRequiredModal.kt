@@ -25,14 +25,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.primitives.ActionButton
-import com.nendo.argosy.ui.screens.gamedetail.PermissionModalType
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
 
 @Composable
 fun PermissionRequiredModal(
     isVisible: Boolean,
-    permissionType: PermissionModalType = PermissionModalType.STORAGE,
     onGrantPermission: () -> Unit,
     onDisableSync: () -> Unit,
     onDismiss: () -> Unit,
@@ -43,18 +41,9 @@ fun PermissionRequiredModal(
     val isDarkTheme = LocalLauncherTheme.current.isDarkTheme
     val overlayColor = if (isDarkTheme) Color.Black.copy(alpha = 0.7f) else Color.White.copy(alpha = 0.5f)
 
-    val (title, description, buttonText) = when (permissionType) {
-        PermissionModalType.STORAGE -> Triple(
-            stringResource(R.string.gamedetail_permission_storage_title),
-            stringResource(R.string.gamedetail_permission_storage_message),
-            stringResource(R.string.gamedetail_permission_storage_confirm)
-        )
-        PermissionModalType.SAF -> Triple(
-            stringResource(R.string.gamedetail_permission_folder_title),
-            stringResource(R.string.gamedetail_permission_folder_message),
-            stringResource(R.string.gamedetail_permission_folder_confirm)
-        )
-    }
+    val title = stringResource(R.string.gamedetail_permission_storage_title)
+    val description = stringResource(R.string.gamedetail_permission_storage_message)
+    val buttonText = stringResource(R.string.gamedetail_permission_storage_confirm)
 
     Box(
         modifier = modifier

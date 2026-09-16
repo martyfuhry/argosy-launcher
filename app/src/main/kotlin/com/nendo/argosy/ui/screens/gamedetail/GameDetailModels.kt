@@ -136,8 +136,6 @@ enum class GameDownloadStatus {
 
 enum class RatingType { OPINION, DIFFICULTY }
 
-enum class PermissionModalType { STORAGE, SAF }
-
 data class CoverCandidate(
     val url: String,
     val thumbUrl: String? = null,
@@ -271,7 +269,6 @@ data class GameDetailUiState(
     val saveStatusInfo: SaveStatusInfo? = null,
     val isSyncingSaves: Boolean = false,
     val showPermissionModal: Boolean = false,
-    val permissionModalType: PermissionModalType = PermissionModalType.STORAGE,
     val focusedScreenshotIndex: Int = 0,
     val showScreenshotViewer: Boolean = false,
     val viewerScreenshotIndex: Int = 0,

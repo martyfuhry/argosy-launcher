@@ -647,18 +647,10 @@
     <!-- Accepting button on that modal. Verb phrase: opens the system screen where access is
          given. -->
     <string name="gamedetail_permission_storage_confirm">Grant Permission</string>
-    <!-- Heading of the modal shown when save syncing needs access to one particular folder. Noun
-         phrase. -->
-    <string name="gamedetail_permission_folder_title">Folder Access Required</string>
-    <!-- Body of that modal. "Android/data" is a folder name on the device; leave it untranslated.
-         "Android" on its own is the folder the user has to pick. -->
-    <string name="gamedetail_permission_folder_message">Save sync needs access to the Android/data folder to sync saves from other emulators. Select the Android folder when prompted, or disable save sync to continue.</string>
-    <!-- Accepting button on that modal. Verb phrase: opens the system folder chooser. -->
-    <string name="gamedetail_permission_folder_confirm">Select Folder</string>
-    <!-- Second button on both permission modals. Verb phrase: turns off the exchange of saved
+    <!-- Second button on the permission modal. Verb phrase: turns off the exchange of saved
          progress with the server, so no access is needed. -->
     <string name="gamedetail_permission_disable_sync">Disable Save Sync</string>
-    <!-- Third button on both permission modals. Verb: closes the modal and changes nothing. -->
+    <!-- Third button on the permission modal. Verb: closes the modal and changes nothing. -->
     <string name="gamedetail_permission_cancel">Cancel</string>
 
     <!-- ============================== Missing disc modal =============================== -->

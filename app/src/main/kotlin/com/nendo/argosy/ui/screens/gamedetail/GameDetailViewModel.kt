@@ -164,9 +164,6 @@ class GameDetailViewModel @Inject constructor(
 
     val saveChannelDelegate get() = saveManagement.saveChannelDelegate
 
-    private val _requestSafGrant = MutableStateFlow(false)
-    val requestSafGrant: StateFlow<Boolean> = _requestSafGrant.asStateFlow()
-
     override fun onCleared() {
         super.onCleared()
         imageCacheManager.resumeBackgroundCaching()
@@ -2138,30 +2135,6 @@ class GameDetailViewModel @Inject constructor(
             flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
         }
         context.startActivity(intent)
-    }
-
-    fun requestSafGrant() {
-        _uiState.update { it.copy(showPermissionModal = false) }
-        _requestSafGrant.value = true
-    }
-
-    fun onSafGrantResult(uri: android.net.Uri?) {
-        _requestSafGrant.value = false
-        if (uri == null) return
-
-        viewModelScope.launch {
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                        android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-                preferencesRepository.setAndroidDataSafUri(uri.toString())
-                playGame()
-            } catch (e: Exception) {
-                android.util.Log.e("GameDetailViewModel", "Failed to persist SAF permission: ${e.message}")
-            }
-        }
     }
 
     fun disableSaveSync() {
