@@ -172,6 +172,19 @@
     <string name="settings_displays_display_roles_standard">कम्पैनियन स्क्रीन</string>
     <string name="settings_displays_display_roles_swapped">मुख्य स्क्रीन</string>
 
+    <string name="settings_displays_screens_title">स्क्रीन व्यवस्था</string>
+    <string name="settings_displays_screens_subtitle">हर जुड़ी स्क्रीन को एक काम सौंपें</string>
+    <string name="settings_screens_intro">हर स्क्रीन वहीं दिखाई गई है जहाँ वह डिवाइस पर है। उसका काम बदलने के लिए एक चुनें।</string>
+    <string name="settings_screens_role_modal_title">स्क्रीन %1$d</string>
+    <string name="settings_screens_role_current">मौजूदा</string>
+    <string name="settings_screens_role_primary">प्राथमिक</string>
+    <string name="settings_screens_role_primary_detail">मेन्यू यहीं खुलते हैं और कंट्रोलर इसे चलाता है</string>
+    <string name="settings_screens_role_presentation">प्रस्तुति</string>
+    <string name="settings_screens_role_presentation_detail">आप जो देख रहे हैं वह दिखाती है, बिना नियंत्रण के</string>
+    <string name="settings_screens_role_app_target">ऐप स्क्रीन</string>
+    <string name="settings_screens_role_app_target_detail">आपके शुरू किए ऐप और गेम यहीं खुलते हैं</string>
+    <string name="settings_screens_role_off">बंद</string>
+    <string name="settings_screens_role_off_detail">Argosy इस स्क्रीन पर कुछ नहीं दिखाता</string>
     <string name="settings_displays_ambient_led_title">LED नियंत्रण</string>
     <string name="settings_displays_ambient_led_subtitle">थंबस्टिक LED के रंग और इफ़ेक्ट</string>
 

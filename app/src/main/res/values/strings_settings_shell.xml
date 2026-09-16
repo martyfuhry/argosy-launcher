@@ -151,6 +151,7 @@
     <string name="settings_shell_header_home_screen">HOME SCREEN</string>
     <string name="settings_shell_header_library_view">LIBRARY</string>
     <string name="settings_shell_header_displays">DISPLAYS</string>
+    <string name="settings_shell_header_screens">SCREEN LAYOUT</string>
     <!-- "LED" is the RGB light strip on some handhelds; commonly left untranslated. -->
     <string name="settings_shell_header_ambient_led">LED CONTROL</string>
     <string name="settings_shell_header_navigation">NAVIGATION</string>

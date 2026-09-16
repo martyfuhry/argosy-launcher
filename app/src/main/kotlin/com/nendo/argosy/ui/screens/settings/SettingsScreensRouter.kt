@@ -1,0 +1,117 @@
+package com.nendo.argosy.ui.screens.settings
+
+import androidx.lifecycle.viewModelScope
+import com.nendo.argosy.domain.model.ScreenLayout
+import com.nendo.argosy.domain.model.ScreenLayouts
+import com.nendo.argosy.domain.model.ScreenRole
+import com.nendo.argosy.util.ScreenCatalog
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+
+internal fun routeNavigateToScreens(vm: SettingsViewModel) {
+    vm.viewModelScope.launch {
+        refreshScreens(vm)
+        routePushSection(vm, SettingsSection.SCREENS)
+    }
+}
+
+internal fun routeFocusScreen(vm: SettingsViewModel, index: Int) {
+    vm.setFocusIndex(index)
+}
+
+internal fun routeOpenScreenRoleModal(vm: SettingsViewModel) {
+    val display = vm._uiState.value.display
+    val current = display.screens.getOrNull(vm._uiState.value.focusedIndex) ?: return
+    vm.displayDelegate.updateState(
+        display.copy(
+            screenRoleModalOpen = true,
+            screenRoleModalFocus = ScreenRole.entries.indexOf(current.role).coerceAtLeast(0)
+        )
+    )
+}
+
+internal fun routeCloseScreenRoleModal(vm: SettingsViewModel) {
+    vm.displayDelegate.updateState(vm._uiState.value.display.copy(screenRoleModalOpen = false))
+}
+
+internal fun routeFocusScreenRole(vm: SettingsViewModel, index: Int) {
+    vm.displayDelegate.updateState(
+        vm._uiState.value.display.copy(
+            screenRoleModalFocus = index.mod(ScreenRole.entries.size)
+        )
+    )
+}
+
+internal fun routeMoveScreenRoleFocus(vm: SettingsViewModel, delta: Int) {
+    routeFocusScreenRole(vm, vm._uiState.value.display.screenRoleModalFocus + delta)
+}
+
+internal fun routeAssignScreenRole(vm: SettingsViewModel, role: ScreenRole) {
+    val state = vm._uiState.value
+    val screens = state.display.screens
+    val target = screens.getOrNull(state.focusedIndex) ?: return
+    if (role == ScreenRole.OFF && screens.count { it.role != ScreenRole.OFF } <= 1) {
+        routeCloseScreenRoleModal(vm)
+        return
+    }
+
+    val current = ScreenLayout(screens.associate { it.key to it.role })
+    val next = current.withRole(target.key, role)
+    if (next.primaryKey == null) {
+        routeCloseScreenRoleModal(vm)
+        return
+    }
+
+    val updated = screens.map { it.copy(role = next.roleFor(it.key) ?: it.role) }
+    vm.displayDelegate.updateState(
+        state.display.copy(screens = updated, screenRoleModalOpen = false)
+    )
+
+    vm.viewModelScope.launch {
+        val stored = vm.preferencesRepository.userPreferences.first().screenLayouts
+        val setKey = ScreenLayouts.setKeyOf(screens.map { it.key })
+        vm.preferencesRepository.setScreenLayouts(stored.with(setKey, next))
+        applyScreenLayout(vm, next)
+    }
+}
+
+private suspend fun refreshScreens(vm: SettingsViewModel) {
+    val catalog = ScreenCatalog(vm.context)
+    val attached = catalog.attachedScreens()
+    if (attached.isEmpty()) return
+
+    val keys = attached.map { it.key }
+    val setKey = ScreenLayouts.setKeyOf(keys)
+    val stored = vm.preferencesRepository.userPreferences.first().screenLayouts
+    val layout = stored.layoutFor(setKey)
+        ?: ScreenLayout.defaultFor(keys, attached.filter { it.builtIn }.map { it.key })
+
+    vm.displayDelegate.updateState(
+        vm._uiState.value.display.copy(
+            screens = attached.map { screen ->
+                ScreenAssignment(
+                    key = screen.key,
+                    displayId = screen.displayId,
+                    number = screen.number,
+                    widthPx = screen.widthPx,
+                    heightPx = screen.heightPx,
+                    builtIn = screen.builtIn,
+                    role = layout.roleFor(screen.key) ?: ScreenRole.PRESENTATION
+                )
+            },
+            screenRoleModalOpen = false,
+            screenRoleModalFocus = 0
+        )
+    )
+}
+
+private fun applyScreenLayout(vm: SettingsViewModel, layout: ScreenLayout) {
+    val dsm = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
+    val screens = vm._uiState.value.display.screens
+    val primary = screens.find { it.key == layout.primaryKey } ?: return
+    dsm.applyScreenLayout(
+        primaryDisplayId = primary.displayId,
+        appTargetDisplayId = screens.find { it.key == layout.appTargetKey }?.displayId,
+        hasPresentation = !layout.isSingleDisplay
+    )
+}

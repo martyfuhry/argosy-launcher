@@ -169,6 +169,19 @@
     <string name="settings_displays_display_roles_standard">伴侣屏幕</string>
     <string name="settings_displays_display_roles_swapped">主屏幕</string>
 
+    <string name="settings_displays_screens_title">屏幕布局</string>
+    <string name="settings_displays_screens_subtitle">为每块已连接的屏幕分配用途</string>
+    <string name="settings_screens_intro">每块屏幕按其在设备上的位置绘制。选择一块以更改其用途。</string>
+    <string name="settings_screens_role_modal_title">屏幕 %1$d</string>
+    <string name="settings_screens_role_current">当前</string>
+    <string name="settings_screens_role_primary">主控</string>
+    <string name="settings_screens_role_primary_detail">菜单在此打开，由手柄操控</string>
+    <string name="settings_screens_role_presentation">展示</string>
+    <string name="settings_screens_role_presentation_detail">显示你正在查看的内容，不含控件</string>
+    <string name="settings_screens_role_app_target">应用屏幕</string>
+    <string name="settings_screens_role_app_target_detail">启动的应用和游戏在此打开</string>
+    <string name="settings_screens_role_off">关闭</string>
+    <string name="settings_screens_role_off_detail">Argosy 不在此屏幕显示任何内容</string>
     <string name="settings_displays_ambient_led_title">LED控制</string>
     <string name="settings_displays_ambient_led_subtitle">摇杆LED颜色与效果</string>
 

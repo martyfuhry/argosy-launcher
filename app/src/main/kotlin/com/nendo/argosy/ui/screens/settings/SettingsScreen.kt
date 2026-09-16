@@ -86,6 +86,7 @@ import com.nendo.argosy.ui.screens.settings.sections.AmbientLedSection
 import com.nendo.argosy.ui.screens.settings.sections.AudioSection
 import com.nendo.argosy.ui.screens.settings.sections.BoxArtSection
 import com.nendo.argosy.ui.screens.settings.sections.DisplaysSection
+import com.nendo.argosy.ui.screens.settings.sections.ScreensSection
 import com.nendo.argosy.ui.screens.settings.sections.NavigationSection
 import com.nendo.argosy.ui.screens.settings.sections.BuiltinEmulatorSection
 import com.nendo.argosy.ui.screens.settings.sections.EmulatorsSection
@@ -622,6 +623,7 @@ fun SettingsScreen(
                         SettingsSection.HOME_SCREEN -> stringResource(R.string.settings_shell_header_home_screen)
                         SettingsSection.LIBRARY_VIEW -> stringResource(R.string.settings_shell_header_library_view)
                         SettingsSection.DISPLAYS -> stringResource(R.string.settings_shell_header_displays)
+                        SettingsSection.SCREENS -> stringResource(R.string.settings_shell_header_screens)
                         SettingsSection.AMBIENT_LED -> stringResource(R.string.settings_shell_header_ambient_led)
                         SettingsSection.NAVIGATION -> stringResource(R.string.settings_shell_header_navigation)
                         SettingsSection.PLATFORMS -> stringResource(R.string.settings_shell_header_platforms)
@@ -707,6 +709,7 @@ fun SettingsScreen(
                     SettingsSection.HOME_SCREEN -> HomeScreenSection(uiState, viewModel)
                     SettingsSection.LIBRARY_VIEW -> LibrarySection(uiState, viewModel)
                     SettingsSection.DISPLAYS -> DisplaysSection(uiState, viewModel)
+                    SettingsSection.SCREENS -> ScreensSection(uiState, viewModel)
                     SettingsSection.AMBIENT_LED -> AmbientLedSection(uiState, viewModel)
                     SettingsSection.NAVIGATION -> NavigationSection(uiState, viewModel)
                     SettingsSection.BUILTIN_EMULATOR -> BuiltinEmulatorSection(uiState, viewModel)

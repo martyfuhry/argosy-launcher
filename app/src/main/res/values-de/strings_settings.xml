@@ -182,6 +182,19 @@
     <string name="settings_displays_display_roles_standard">Begleitbildschirm</string>
     <string name="settings_displays_display_roles_swapped">Hauptbildschirm</string>
 
+    <string name="settings_displays_screens_title">Bildschirmanordnung</string>
+    <string name="settings_displays_screens_subtitle">Jedem angeschlossenen Bildschirm eine Aufgabe geben</string>
+    <string name="settings_screens_intro">Jeder Bildschirm wird dort gezeichnet, wo er am Gerät sitzt. Wähle einen aus, um seine Aufgabe zu ändern.</string>
+    <string name="settings_screens_role_modal_title">Bildschirm %1$d</string>
+    <string name="settings_screens_role_current">Aktuell</string>
+    <string name="settings_screens_role_primary">Primär</string>
+    <string name="settings_screens_role_primary_detail">Menüs öffnen hier und der Controller steuert ihn</string>
+    <string name="settings_screens_role_presentation">Anzeige</string>
+    <string name="settings_screens_role_presentation_detail">Zeigt ohne Bedienelemente, was du gerade ansiehst</string>
+    <string name="settings_screens_role_app_target">App-Bildschirm</string>
+    <string name="settings_screens_role_app_target_detail">Gestartete Apps und Spiele öffnen hier</string>
+    <string name="settings_screens_role_off">Aus</string>
+    <string name="settings_screens_role_off_detail">Argosy zeigt auf diesem Bildschirm nichts an</string>
     <string name="settings_displays_ambient_led_title">LED-Steuerung</string>
     <string name="settings_displays_ambient_led_subtitle">LED-Farben und -Effekte des Thumbsticks</string>
 

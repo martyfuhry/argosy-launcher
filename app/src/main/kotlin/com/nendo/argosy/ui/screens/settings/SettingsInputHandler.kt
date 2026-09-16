@@ -12,6 +12,7 @@ import com.nendo.argosy.ui.screens.settings.sections.input.PlatformDetailSection
 import com.nendo.argosy.ui.screens.settings.sections.input.AmbientLedSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.CoreOptionsSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.DisplaysSectionInput
+import com.nendo.argosy.ui.screens.settings.sections.input.ScreensSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.DriversSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.InterfaceSectionInput
 import com.nendo.argosy.ui.screens.settings.sections.input.LightSectionsInput
@@ -57,6 +58,7 @@ class SettingsInputHandler(
         put(SettingsSection.THEME_FONTS, ThemeFontsSectionInput(viewModel))
         put(SettingsSection.THEME_BACKDROP, ThemeBackdropSectionInput(viewModel))
         put(SettingsSection.AMBIENT_LED, AmbientLedSectionInput(viewModel))
+        put(SettingsSection.SCREENS, ScreensSectionInput(viewModel))
         put(SettingsSection.SHADER_STACK, ShaderStackSectionInput(viewModel))
         put(SettingsSection.CORE_OPTIONS, CoreOptionsSectionInput(viewModel))
         put(SettingsSection.STORAGE, StorageSectionInput(viewModel))

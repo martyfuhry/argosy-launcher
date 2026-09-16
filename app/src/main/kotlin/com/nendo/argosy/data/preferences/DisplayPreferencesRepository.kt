@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nendo.argosy.data.cache.GradientPreset
 import com.nendo.argosy.domain.model.GripAutoControllers
+import com.nendo.argosy.domain.model.ScreenLayouts
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.util.DisplayAffinityHelper
 import kotlinx.coroutines.flow.Flow
@@ -103,6 +104,7 @@ data class DisplayPreferences(
     val pauseDualScreenWhileDocked: Boolean = true,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,
     val dualScreenInputFocus: DualScreenInputFocus = DualScreenInputFocus.AUTO,
+    val screenLayouts: ScreenLayouts = ScreenLayouts(),
     val installedOnlyHome: Boolean = false
 )
 
@@ -194,6 +196,7 @@ class DisplayPreferencesRepository @Inject constructor(
         val PAUSE_DUAL_SCREEN_WHILE_DOCKED = booleanPreferencesKey("pause_dual_screen_while_docked")
         val DISPLAY_ROLE_OVERRIDE = stringPreferencesKey("display_role_override")
         val DUAL_SCREEN_INPUT_FOCUS = stringPreferencesKey("dual_screen_input_focus")
+        val SCREEN_LAYOUTS = stringPreferencesKey("screen_layouts")
         val INSTALLED_ONLY_HOME = booleanPreferencesKey("installed_only_home")
     }
 
@@ -288,6 +291,7 @@ class DisplayPreferencesRepository @Inject constructor(
             pauseDualScreenWhileDocked = prefs[Keys.PAUSE_DUAL_SCREEN_WHILE_DOCKED] ?: true,
             displayRoleOverride = DisplayRoleOverride.fromString(prefs[Keys.DISPLAY_ROLE_OVERRIDE]),
             dualScreenInputFocus = DualScreenInputFocus.fromString(prefs[Keys.DUAL_SCREEN_INPUT_FOCUS]),
+            screenLayouts = ScreenLayouts.fromJson(prefs[Keys.SCREEN_LAYOUTS]),
             installedOnlyHome = prefs[Keys.INSTALLED_ONLY_HOME] ?: false
         )
     }
@@ -634,6 +638,10 @@ class DisplayPreferencesRepository @Inject constructor(
 
     suspend fun setDualScreenInputFocus(focus: DualScreenInputFocus) {
         dataStore.edit { it[Keys.DUAL_SCREEN_INPUT_FOCUS] = focus.name }
+    }
+
+    suspend fun setScreenLayouts(layouts: ScreenLayouts) {
+        dataStore.edit { it[Keys.SCREEN_LAYOUTS] = layouts.toJson() }
     }
 
     suspend fun setInstalledOnlyHome(enabled: Boolean) {

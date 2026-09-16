@@ -91,6 +91,7 @@ object DimensionTokens {
         const val mediaMenuRailWidth = 56
         const val mediaMenuWidthPct = 30
         const val searchResultArtwork = 56
+        const val screenMapCardWidth = 220
         const val playerTransportHeight = 96
         const val playerChromePadding = 32
         const val playerScrubTrackHeight = 4

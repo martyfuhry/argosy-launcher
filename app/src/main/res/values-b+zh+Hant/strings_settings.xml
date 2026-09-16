@@ -156,6 +156,19 @@
     <string name="settings_displays_display_roles_standard">隨附螢幕</string>
     <string name="settings_displays_display_roles_swapped">主螢幕</string>
 
+    <string name="settings_displays_screens_title">螢幕配置</string>
+    <string name="settings_displays_screens_subtitle">為每片已連接的螢幕指派用途</string>
+    <string name="settings_screens_intro">每片螢幕依其在裝置上的位置繪製。選一片以變更其用途。</string>
+    <string name="settings_screens_role_modal_title">螢幕 %1$d</string>
+    <string name="settings_screens_role_current">目前</string>
+    <string name="settings_screens_role_primary">主控</string>
+    <string name="settings_screens_role_primary_detail">選單在此開啟，由手把操控</string>
+    <string name="settings_screens_role_presentation">展示</string>
+    <string name="settings_screens_role_presentation_detail">顯示你正在查看的內容，不含控制項</string>
+    <string name="settings_screens_role_app_target">應用程式螢幕</string>
+    <string name="settings_screens_role_app_target_detail">啟動的應用程式與遊戲在此開啟</string>
+    <string name="settings_screens_role_off">關閉</string>
+    <string name="settings_screens_role_off_detail">Argosy 不在此螢幕顯示任何內容</string>
     <string name="settings_displays_ambient_led_title">LED控制</string>
     <string name="settings_displays_ambient_led_subtitle">搖桿LED色彩與效果</string>
 

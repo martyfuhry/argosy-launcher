@@ -107,6 +107,7 @@
     <string name="settings_shell_header_home_screen">主畫面</string>
     <string name="settings_shell_header_library_view">收藏庫</string>
     <string name="settings_shell_header_displays">顯示器</string>
+    <string name="settings_shell_header_screens">螢幕配置</string>
     <string name="settings_shell_header_ambient_led">LED控制</string>
     <string name="settings_shell_header_navigation">導覽</string>
     <string name="settings_shell_header_platforms">平台</string>

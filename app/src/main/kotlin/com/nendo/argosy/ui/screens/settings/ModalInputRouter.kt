@@ -42,8 +42,24 @@ internal class ModalInputRouter(private val viewModel: SettingsViewModel) {
         interceptEmulatorPicker(state, method)?.let { return it }
         interceptDownloadDefaultsModal(state, method)?.let { return it }
         interceptShaderPicker(method)?.let { return it }
+        interceptScreenRoleModal(state, method)?.let { return it }
 
         return null
+    }
+
+    private fun interceptScreenRoleModal(state: SettingsUiState, method: InputMethod): InputResult? {
+        if (!state.display.screenRoleModalOpen) return null
+        return when (method) {
+            InputMethod.UP, InputMethod.LEFT -> { viewModel.moveScreenRoleFocus(-1); InputResult.HANDLED }
+            InputMethod.DOWN, InputMethod.RIGHT -> { viewModel.moveScreenRoleFocus(1); InputResult.HANDLED }
+            InputMethod.CONFIRM -> {
+                val index = state.display.screenRoleModalFocus
+                viewModel.assignScreenRole(com.nendo.argosy.domain.model.ScreenRole.entries[index])
+                InputResult.HANDLED
+            }
+            InputMethod.BACK -> { viewModel.closeScreenRoleModal(); InputResult.handled(SoundType.BACK) }
+            else -> InputResult.HANDLED
+        }
     }
 
     private fun interceptDownloadDefaultsModal(state: SettingsUiState, method: InputMethod): InputResult? {

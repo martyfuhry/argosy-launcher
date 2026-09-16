@@ -107,6 +107,7 @@
     <string name="settings_shell_header_home_screen">ÉCRAN D\'ACCUEIL</string>
     <string name="settings_shell_header_library_view">BIBLIOTHÈQUE</string>
     <string name="settings_shell_header_displays">ÉCRANS</string>
+    <string name="settings_shell_header_screens">DISPOSITION DES ÉCRANS</string>
     <string name="settings_shell_header_ambient_led">CONTRÔLE LED</string>
     <string name="settings_shell_header_navigation">NAVIGATION</string>
     <string name="settings_shell_header_platforms">PLATEFORMES</string>

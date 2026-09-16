@@ -5,6 +5,7 @@ import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.core.input.SoundConfig
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.domain.model.ScreenLayouts
 import com.nendo.argosy.util.LogLevel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -196,6 +197,7 @@ class UserPreferencesRepository @Inject constructor(
             pauseDualScreenWhileDocked = display.pauseDualScreenWhileDocked,
             displayRoleOverride = display.displayRoleOverride,
             dualScreenInputFocus = display.dualScreenInputFocus,
+            screenLayouts = display.screenLayouts,
             installedOnlyHome = display.installedOnlyHome,
             socialSessionToken = sync.socialSessionToken,
             socialUserId = sync.socialUserId,
@@ -325,6 +327,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setPauseDualScreenWhileDocked(pause: Boolean) =
         displayPrefs.setPauseDualScreenWhileDocked(pause)
     suspend fun setDisplayRoleOverride(override: DisplayRoleOverride) = displayPrefs.setDisplayRoleOverride(override)
+    suspend fun setScreenLayouts(layouts: ScreenLayouts) = displayPrefs.setScreenLayouts(layouts)
     suspend fun setDualScreenInputFocus(focus: DualScreenInputFocus) = displayPrefs.setDualScreenInputFocus(focus)
     suspend fun setInstalledOnlyHome(enabled: Boolean) = displayPrefs.setInstalledOnlyHome(enabled)
 
@@ -826,6 +829,7 @@ data class UserPreferences(
     val pauseDualScreenWhileDocked: Boolean = true,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,
     val dualScreenInputFocus: DualScreenInputFocus = DualScreenInputFocus.AUTO,
+    val screenLayouts: ScreenLayouts = ScreenLayouts(),
     val installedOnlyHome: Boolean = false,
     val socialSessionToken: String? = null,
     val socialUserId: String? = null,

@@ -100,6 +100,7 @@
     <string name="settings_shell_header_home_screen">होम स्क्रीन</string>
     <string name="settings_shell_header_library_view">लाइब्रेरी</string>
     <string name="settings_shell_header_displays">डिस्प्ले</string>
+    <string name="settings_shell_header_screens">स्क्रीन व्यवस्था</string>
     <string name="settings_shell_header_ambient_led">LED नियंत्रण</string>
     <string name="settings_shell_header_navigation">नेविगेशन</string>
     <string name="settings_shell_header_platforms">प्लेटफ़ॉर्म</string>

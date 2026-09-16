@@ -47,6 +47,7 @@ import com.nendo.argosy.data.preferences.SystemIconPosition
 import com.nendo.argosy.data.preferences.ThemeMode
 import com.nendo.argosy.data.preferences.AmbientLedColorMode
 import com.nendo.argosy.data.preferences.DisplayRoleOverride
+import com.nendo.argosy.domain.model.ScreenRole
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import com.nendo.argosy.core.input.SoundConfig
 import com.nendo.argosy.ui.input.SoundPreset
@@ -110,6 +111,7 @@ enum class SettingsSection {
     HOME_SCREEN,
     LIBRARY_VIEW,
     DISPLAYS,
+    SCREENS,
     AMBIENT_LED,
     NAVIGATION,
     PLATFORMS,
@@ -302,10 +304,26 @@ data class DisplayState(
     val dualScreenEnabled: Boolean = false,
     val pauseDualScreenWhileDocked: Boolean = true,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,
+    val screens: List<ScreenAssignment> = emptyList(),
+    val screenRoleModalOpen: Boolean = false,
+    val screenRoleModalFocus: Int = 0,
     val installedOnlyHome: Boolean = false
 ) {
     val secondaryDisplayUnsupported: Boolean
         get() = dualScreenEnabled && hasPhysicalSecondaryDisplay && !hasSecondaryDisplay
+}
+
+data class ScreenAssignment(
+    val key: String,
+    val displayId: Int,
+    val number: Int,
+    val widthPx: Int,
+    val heightPx: Int,
+    val builtIn: Boolean,
+    val role: ScreenRole
+) {
+    val aspectRatio: Float
+        get() = if (heightPx == 0) 1f else widthPx.toFloat() / heightPx.toFloat()
 }
 
 data class ControlsState(

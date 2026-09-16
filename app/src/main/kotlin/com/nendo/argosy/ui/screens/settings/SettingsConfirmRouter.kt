@@ -76,6 +76,7 @@ import com.nendo.argosy.ui.screens.settings.sections.builtinControlsMaxFocusInde
 import com.nendo.argosy.ui.screens.settings.sections.builtinVideoMaxFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.navigationMaxFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.displaysMaxFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.screensMaxFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.EmulatorsItem
 import com.nendo.argosy.ui.screens.settings.sections.createEmulatorsLayoutInfo
 import com.nendo.argosy.ui.screens.settings.sections.emulatorsItemAtFocusIndex
@@ -268,6 +269,10 @@ internal fun routeConfirm(vm: SettingsViewModel): InputResult {
         SettingsSection.BOX_ART -> routeBoxArtConfirm(vm, state)
         SettingsSection.DISPLAYS -> routeDisplaysConfirm(vm, state)
         SettingsSection.AMBIENT_LED -> routeAmbientLedConfirm(vm, state)
+        SettingsSection.SCREENS -> {
+            vm.openScreenRoleModal()
+            InputResult.handled(SoundType.OPEN_MODAL)
+        }
         SettingsSection.NAVIGATION -> routeNavigationConfirm(vm, state)
         SettingsSection.PLATFORMS -> routeEmulatorsConfirm(vm, state)
         SettingsSection.BUILTIN_EMULATOR -> routeBuiltinEmulatorConfirm(vm, state)
@@ -677,6 +682,7 @@ private fun routeDisplaysConfirm(vm: SettingsViewModel, state: SettingsUiState):
             vm.requestEnumPicker(DisplaysItem.DisplayRoles.key)
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
+        DisplaysItem.ScreenLayout -> vm.navigateToScreens()
         DisplaysItem.AmbientLedSettings -> vm.navigateToAmbientLed()
         else -> {}
     }
@@ -1277,6 +1283,7 @@ private fun computeMaxFocusIndex(
     SettingsSection.BOX_ART -> boxArtMaxFocusIndex(state.display)
     SettingsSection.DISPLAYS -> displaysMaxFocusIndex(DisplaysLayoutState.from(state))
     SettingsSection.AMBIENT_LED -> ambientLedMaxFocusIndex(state.display)
+    SettingsSection.SCREENS -> screensMaxFocusIndex(state.display.screens)
     SettingsSection.NAVIGATION -> navigationMaxFocusIndex(state.controls)
     SettingsSection.PLATFORMS -> emulatorsMaxFocusIndex(state.emulators.platforms)
     SettingsSection.BUILTIN_EMULATOR -> when {

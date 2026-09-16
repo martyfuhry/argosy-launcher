@@ -1077,6 +1077,14 @@ class SettingsViewModel @Inject constructor(
 
     fun navigateToHomeScreen() = routeNavigateToHomeScreen(this)
     fun navigateToAmbientLed() = routeNavigateToAmbientLed(this)
+    fun navigateToScreens() = routeNavigateToScreens(this)
+    fun focusScreen(index: Int) = routeFocusScreen(this, index)
+    fun openScreenRoleModal() = routeOpenScreenRoleModal(this)
+    fun closeScreenRoleModal() = routeCloseScreenRoleModal(this)
+    fun focusScreenRole(index: Int) = routeFocusScreenRole(this, index)
+    fun moveScreenRoleFocus(delta: Int) = routeMoveScreenRoleFocus(this, delta)
+    fun assignScreenRole(role: com.nendo.argosy.domain.model.ScreenRole) =
+        routeAssignScreenRole(this, role)
     fun navigateToThemeSounds() = routeNavigateToThemeSounds(this)
     fun navigateToThemeMusic() = routeNavigateToThemeMusic(this)
     fun navigateToThemeFonts() = routeNavigateToThemeFonts(this)

@@ -185,6 +185,19 @@
     <string name="settings_displays_display_roles_standard">Pantalla complementaria</string>
     <string name="settings_displays_display_roles_swapped">Pantalla principal</string>
 
+    <string name="settings_displays_screens_title">Disposición de pantallas</string>
+    <string name="settings_displays_screens_subtitle">Asigna una función a cada pantalla conectada</string>
+    <string name="settings_screens_intro">Cada pantalla se dibuja donde está en el dispositivo. Elige una para cambiar su función.</string>
+    <string name="settings_screens_role_modal_title">Pantalla %1$d</string>
+    <string name="settings_screens_role_current">Actual</string>
+    <string name="settings_screens_role_primary">Principal</string>
+    <string name="settings_screens_role_primary_detail">Los menús se abren aquí y el mando la controla</string>
+    <string name="settings_screens_role_presentation">Presentación</string>
+    <string name="settings_screens_role_presentation_detail">Muestra lo que estás viendo, sin controles</string>
+    <string name="settings_screens_role_app_target">Pantalla de apps</string>
+    <string name="settings_screens_role_app_target_detail">Las apps y los juegos que inicies se abren aquí</string>
+    <string name="settings_screens_role_off">Apagada</string>
+    <string name="settings_screens_role_off_detail">Argosy no muestra nada en esta pantalla</string>
     <string name="settings_displays_ambient_led_title">Control LED</string>
     <string name="settings_displays_ambient_led_subtitle">Colores y efectos LED de los sticks</string>
 

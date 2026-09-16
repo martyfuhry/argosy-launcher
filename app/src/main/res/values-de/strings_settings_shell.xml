@@ -107,6 +107,7 @@
     <string name="settings_shell_header_home_screen">STARTBILDSCHIRM</string>
     <string name="settings_shell_header_library_view">BIBLIOTHEK</string>
     <string name="settings_shell_header_displays">BILDSCHIRME</string>
+    <string name="settings_shell_header_screens">BILDSCHIRMANORDNUNG</string>
     <string name="settings_shell_header_ambient_led">LED-STEUERUNG</string>
     <string name="settings_shell_header_navigation">NAVIGATION</string>
     <string name="settings_shell_header_platforms">PLATTFORMEN</string>

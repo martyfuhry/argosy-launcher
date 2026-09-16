@@ -209,6 +209,26 @@ class DualScreenManager(
         _isRolesSwapped.value = value
     }
 
+    private val _hasPresentationScreen = MutableStateFlow(true)
+    val hasPresentationScreen: StateFlow<Boolean> = _hasPresentationScreen
+
+    fun applyScreenLayout(primaryDisplayId: Int, appTargetDisplayId: Int?, hasPresentation: Boolean) {
+        displayAffinityHelper.appTargetDisplayId = appTargetDisplayId
+        _hasPresentationScreen.value = hasPresentation
+        setPrimaryDisplayId(primaryDisplayId)
+    }
+
+    fun setPrimaryDisplayId(displayId: Int) {
+        val swapped = displayId == android.view.Display.DEFAULT_DISPLAY
+        if (swapped != _isRolesSwapped.value) {
+            _isRolesSwapped.value = swapped
+            sessionStateStore.setRolesSwapped(swapped)
+            onRoleSwapped?.invoke(swapped)
+            companionHost?.onRoleSwapped(swapped)
+        }
+        if (swapped) refocusMain() else companionHost?.refocusSelf()
+    }
+
     /**
      * Bumped whenever the launcher's display language changes. A locale override only takes
      * effect for resources resolved through an Activity's own wrapped base Context, so both

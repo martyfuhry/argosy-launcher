@@ -107,6 +107,7 @@
     <string name="settings_shell_header_home_screen">ГЛАВНЫЙ ЭКРАН</string>
     <string name="settings_shell_header_library_view">БИБЛИОТЕКА</string>
     <string name="settings_shell_header_displays">ЭКРАНЫ</string>
+    <string name="settings_shell_header_screens">РАСПОЛОЖЕНИЕ ЭКРАНОВ</string>
     <string name="settings_shell_header_ambient_led">УПРАВЛЕНИЕ LED</string>
     <string name="settings_shell_header_navigation">НАВИГАЦИЯ</string>
     <string name="settings_shell_header_platforms">ПЛАТФОРМЫ</string>

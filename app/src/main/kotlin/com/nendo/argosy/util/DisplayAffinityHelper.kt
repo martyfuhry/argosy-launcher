@@ -33,6 +33,16 @@ class DisplayAffinityHelper @Inject constructor(
      */
     var secondaryDisplayUsable: Boolean = true
 
+    /**
+     * The display apps and games are sent to, when the player has named one. Independent of
+     * [hasSecondaryDisplay]: a layout with no presentation screen runs the launcher single-screen
+     * and still places launches here.
+     */
+    var appTargetDisplayId: Int? = null
+
+    private val resolvedAppTarget: Int?
+        get() = appTargetDisplayId?.takeIf { id -> physicalDisplays.any { it.displayId == id } }
+
     val hasSecondaryDisplay: Boolean
         get() = dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay
 
@@ -86,6 +96,7 @@ class DisplayAffinityHelper @Inject constructor(
     }
 
     fun getEmulatorDisplayId(rolesSwapped: Boolean): Int {
+        resolvedAppTarget?.let { return it }
         return if (rolesSwapped) secondaryDisplayId ?: Display.DEFAULT_DISPLAY
         else Display.DEFAULT_DISPLAY
     }
@@ -137,9 +148,10 @@ class DisplayAffinityHelper @Inject constructor(
         rolesSwapped: Boolean = false,
         overrideDisplayId: Int? = null
     ): Bundle? {
-        if (overrideDisplayId == null && !hasSecondaryDisplay) return null
+        val appTarget = resolvedAppTarget
+        if (overrideDisplayId == null && !hasSecondaryDisplay && appTarget == null) return null
 
-        val targetDisplayId = overrideDisplayId ?: if (forEmulator) {
+        val targetDisplayId = overrideDisplayId ?: appTarget ?: if (forEmulator) {
             if (rolesSwapped) secondaryDisplayId ?: return null
             else Display.DEFAULT_DISPLAY
         } else {

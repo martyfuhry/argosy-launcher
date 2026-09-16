@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Monitor
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -79,6 +80,11 @@ internal sealed class DisplaysItem(
         section = "displays",
         visibleWhen = { it.dualScreenEnabled && !it.display.secondaryDisplayUnsupported }
     )
+    data object ScreenLayout : DisplaysItem(
+        key = "screenLayout",
+        section = "displays",
+        visibleWhen = { it.hasPhysicalSecondaryDisplay }
+    )
     data object AmbientLedSettings : DisplaysItem(
         key = "ambientLedSettings",
         section = "displays",
@@ -97,7 +103,7 @@ internal sealed class DisplaysItem(
                 ScreenSafetyHeader,
                 ScreenDimmer, DimAfter, DimLevel,
                 DisplaysSpacer, DisplaysHeader,
-                DualScreenEnabled, PauseWhileDocked, DisplayRoles, AmbientLedSettings
+                DualScreenEnabled, PauseWhileDocked, DisplayRoles, ScreenLayout, AmbientLedSettings
             )
     }
 }
@@ -260,6 +266,14 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 },
                 onSelect = { viewModel.setDisplayRoleOverride(DisplayRoleOverride.entries[it]) },
                 pickerRequestToken = pickerToken(item)
+            )
+
+            DisplaysItem.ScreenLayout -> NavigationPreference(
+                icon = Icons.Outlined.Monitor,
+                title = stringResource(R.string.settings_displays_screens_title),
+                subtitle = stringResource(R.string.settings_displays_screens_subtitle),
+                isFocused = isFocused(item),
+                onClick = { openFrom(item) { viewModel.navigateToScreens() } }
             )
 
             DisplaysItem.AmbientLedSettings -> NavigationPreference(

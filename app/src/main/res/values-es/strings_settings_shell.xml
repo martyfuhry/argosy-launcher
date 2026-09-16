@@ -107,6 +107,7 @@
     <string name="settings_shell_header_home_screen">PANTALLA DE INICIO</string>
     <string name="settings_shell_header_library_view">BIBLIOTECA</string>
     <string name="settings_shell_header_displays">PANTALLAS</string>
+    <string name="settings_shell_header_screens">DISPOSICIÓN DE PANTALLAS</string>
     <string name="settings_shell_header_ambient_led">CONTROL LED</string>
     <string name="settings_shell_header_navigation">NAVEGACIÓN</string>
     <string name="settings_shell_header_platforms">PLATAFORMAS</string>

@@ -358,6 +358,33 @@
     <!-- Value of that row: the device's main screen, the upper one on a two-screen handheld. -->
     <string name="settings_displays_display_roles_swapped">Main screen</string>
 
+    <!-- Row opening the screen-by-screen role editor. -->
+    <string name="settings_displays_screens_title">Screen Layout</string>
+    <!-- Second line of that row. -->
+    <string name="settings_displays_screens_subtitle">Give each attached screen a job</string>
+
+    <!-- Line above the map of screens, telling the player how to change one. -->
+    <string name="settings_screens_intro">Each screen is drawn where it sits on the device. Pick one to change what it does.</string>
+    <!-- Title of the modal that assigns a role. %1$d is the number drawn on the chosen screen. -->
+    <string name="settings_screens_role_modal_title">Screen %1$d</string>
+    <!-- Badge marking the role a screen already holds. -->
+    <string name="settings_screens_role_current">Current</string>
+    <!-- Role name: the screen the controller drives. -->
+    <string name="settings_screens_role_primary">Primary</string>
+    <!-- Its one-line explanation. -->
+    <string name="settings_screens_role_primary_detail">Menus open here and the controller drives it</string>
+    <!-- Role name: the screen that shows what the primary one has focused. -->
+    <string name="settings_screens_role_presentation">Presentation</string>
+    <!-- Its one-line explanation. -->
+    <string name="settings_screens_role_presentation_detail">Shows what you are looking at, with no controls</string>
+    <!-- Role name: the screen that other apps and games are sent to. -->
+    <string name="settings_screens_role_app_target">App Screen</string>
+    <!-- Its one-line explanation. -->
+    <string name="settings_screens_role_app_target_detail">Apps and games you launch open here</string>
+    <!-- Role name: the screen Argosy leaves alone. -->
+    <string name="settings_screens_role_off">Off</string>
+    <!-- Its one-line explanation. -->
+    <string name="settings_screens_role_off_detail">Argosy puts nothing on this screen</string>
     <!-- Row opening the settings for the light ring around the sticks. "LED" is the light itself;
          leave it untranslated. -->
     <string name="settings_displays_ambient_led_title">LED Control</string>

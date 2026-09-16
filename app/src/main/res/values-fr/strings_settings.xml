@@ -175,6 +175,19 @@
     <string name="settings_displays_display_roles_standard">Écran compagnon</string>
     <string name="settings_displays_display_roles_swapped">Écran principal</string>
 
+    <string name="settings_displays_screens_title">Disposition des écrans</string>
+    <string name="settings_displays_screens_subtitle">Attribuez un rôle à chaque écran connecté</string>
+    <string name="settings_screens_intro">Chaque écran est dessiné à sa place sur l\'appareil. Choisissez-en un pour changer son rôle.</string>
+    <string name="settings_screens_role_modal_title">Écran %1$d</string>
+    <string name="settings_screens_role_current">Actuel</string>
+    <string name="settings_screens_role_primary">Principal</string>
+    <string name="settings_screens_role_primary_detail">Les menus s\'ouvrent ici et la manette le pilote</string>
+    <string name="settings_screens_role_presentation">Présentation</string>
+    <string name="settings_screens_role_presentation_detail">Affiche ce que vous regardez, sans commandes</string>
+    <string name="settings_screens_role_app_target">Écran des applis</string>
+    <string name="settings_screens_role_app_target_detail">Les applis et jeux lancés s\'ouvrent ici</string>
+    <string name="settings_screens_role_off">Éteint</string>
+    <string name="settings_screens_role_off_detail">Argosy n\'affiche rien sur cet écran</string>
     <string name="settings_displays_ambient_led_title">Contrôle LED</string>
     <string name="settings_displays_ambient_led_subtitle">Couleurs et effets des LED des sticks</string>
 
