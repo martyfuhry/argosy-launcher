@@ -13,6 +13,31 @@ Essential reminders for writing consistent, maintainable code in this project.
 
 These are NON-NEGOTIABLE. A feature missing any of these is INCOMPLETE.
 
+### 0. Comments: code is for code, the PR is for explainers
+
+Default to zero. Before keeping any comment, rewrite it as a noun phrase. If it
+survives, keep it; if it cannot, delete it.
+
+- Survives: `JVM heap budget: 11 GB total, 16 GB CI runner.`
+- Cannot: `The Kotlin daemon carries the compile, so it takes the larger share.`
+
+A comment states what a declaration IS. The moment it explains why a choice was
+made, it belongs in the commit message and the PR description, which `git blame`
+retrieves from the line anyway. Any of these words means the sentence is arguing,
+so delete it: because, so, since, which is why, rather than, instead of, not just,
+to avoid, otherwise, this ensures, deliberately, on purpose, note that, we, our.
+
+Also delete any number or comparison that came out of a debugging session. "17x",
+"was 2h40m", "under X it did Y" is history, not contract.
+
+Zero inline `//` inside function bodies. No single-line `/* */` or `/** */`
+anywhere, including declaration-level KDoc: the one-line block form is a rephrased
+`//`. A genuinely needed KDoc uses the multi-line block form above a non-obvious
+PUBLIC contract. Never on a private declaration; rename it instead.
+
+The `.claude/hooks/smell-guard.py` word list is a backstop that fires after the
+edit is written. Passing it is not the goal; not needing it is.
+
 ### 1. Input Handling (TV + Touch)
 All interactive UI components MUST have:
 
