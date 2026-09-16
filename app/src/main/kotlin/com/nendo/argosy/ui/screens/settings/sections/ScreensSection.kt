@@ -72,7 +72,8 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+                verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 builtIn.forEach { screen ->
                     ScreenCard(
