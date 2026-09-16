@@ -17,31 +17,34 @@ import com.nendo.argosy.ui.components.HomeLayoutPreview
 import com.nendo.argosy.ui.components.ScreenNumberBadge
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.backdrop.BackdropRole
+import com.nendo.argosy.ui.theme.backdrop.surfaceBackdrop
 
-/**
- * Draws whatever the screen on the control surface published. Each case renders the composable that
- * screen authored for this display; the fallback draws nothing at all, so an idle presentation
- * screen shows the wallpaper behind it rather than a menu nobody can reach.
- */
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
-    when (slot) {
-        PresentationSlot.Fallback -> Unit
-        is PresentationSlot.HomeLayoutPreview -> Box(
-            modifier = Modifier.fillMaxSize().padding(Dimens.spacingLg),
-            contentAlignment = Alignment.Center
-        ) {
-            HomeLayoutPreview(settings = slot.settings, modifier = Modifier.fillMaxWidth())
-        }
-        is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
-        is PresentationSlot.ScreenIdentity -> Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.BottomEnd
-        ) {
-            ScreenNumberBadge(
-                number = slot.number,
-                modifier = Modifier.padding(Dimens.spacingLg)
+    Box(modifier = Modifier.fillMaxSize().surfaceBackdrop(BackdropRole.WALLPAPER)) {
+        when (slot) {
+            PresentationSlot.Fallback -> Unit
+            is PresentationSlot.HomeLayoutPreview -> Box(
+                modifier = Modifier.fillMaxSize().padding(Dimens.spacingLg),
+                contentAlignment = Alignment.Center
+            ) {
+                HomeLayoutPreview(settings = slot.settings, modifier = Modifier.fillMaxWidth())
+            }
+            is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
+            is PresentationSlot.Detail -> CompanionDetailScreen(
+                detail = slot.detail,
+                modifier = Modifier.fillMaxSize()
             )
+            is PresentationSlot.ScreenIdentity -> Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                ScreenNumberBadge(
+                    number = slot.number,
+                    modifier = Modifier.padding(Dimens.spacingLg)
+                )
+            }
         }
     }
 }

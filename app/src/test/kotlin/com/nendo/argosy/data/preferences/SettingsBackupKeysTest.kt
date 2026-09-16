@@ -74,7 +74,8 @@ class SettingsBackupKeysTest {
         "ambient_led_screen_enabled", "ambient_led_transition_ms", "display_role_override",
         "dual_screen_enabled", "dual_screen_input_focus", "screen_dimmer_enabled",
         "screen_dimmer_level", "screen_dimmer_timeout_minutes", "ui_scale",
-        "builtin_architecture_override", "grip_auto_controllers", "app_affinity_enabled"
+        "builtin_architecture_override", "grip_auto_controllers", "app_affinity_enabled",
+        "screen_layouts", "pause_dual_screen_while_docked"
     )
 
     private val derivedAndGenerated = setOf(

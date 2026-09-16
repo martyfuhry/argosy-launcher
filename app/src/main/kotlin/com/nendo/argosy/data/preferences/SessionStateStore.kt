@@ -60,11 +60,6 @@ class SessionStateStore(context: Context) {
             .remove(KEY_EMULATOR_DISPLAY_ID)
             .putBoolean(KEY_IS_HARDCORE, false)
             .putLong(KEY_SESSION_START_TIME, 0)
-            .putString(KEY_COMPANION_SCREEN, "HOME")
-            .putLong(KEY_DETAIL_GAME_ID, -1)
-            .putString(KEY_ACTIVE_MODAL, "NONE")
-            .putLong(KEY_MODAL_GAME_ID, -1)
-            .putBoolean(KEY_SCREENSHOT_VIEWER_OPEN, false)
             .apply()
     }
 
@@ -185,144 +180,6 @@ class SessionStateStore(context: Context) {
     fun pauseDualScreenWhileDocked(): Boolean =
         prefs.getBoolean(KEY_PAUSE_DS_WHILE_DOCKED, true)
 
-    fun setCompanionScreen(screen: String, detailGameId: Long = -1) {
-        prefs.edit()
-            .putString(KEY_COMPANION_SCREEN, screen)
-            .putLong(KEY_DETAIL_GAME_ID, detailGameId)
-            .apply()
-    }
-
-    fun getCompanionScreen(): String =
-        prefs.getString(KEY_COMPANION_SCREEN, "HOME") ?: "HOME"
-
-    fun getDetailGameId(): Long = prefs.getLong(KEY_DETAIL_GAME_ID, -1)
-
-    fun setActiveModal(modal: String, modalGameId: Long = -1) {
-        prefs.edit()
-            .putString(KEY_ACTIVE_MODAL, modal)
-            .putLong(KEY_MODAL_GAME_ID, modalGameId)
-            .apply()
-    }
-
-    fun getActiveModal(): String =
-        prefs.getString(KEY_ACTIVE_MODAL, "NONE") ?: "NONE"
-
-    fun getModalGameId(): Long = prefs.getLong(KEY_MODAL_GAME_ID, -1)
-
-    fun clearActiveModal() {
-        prefs.edit()
-            .putString(KEY_ACTIVE_MODAL, "NONE")
-            .putLong(KEY_MODAL_GAME_ID, -1)
-            .apply()
-    }
-
-    fun setDetailTab(tab: String) {
-        prefs.edit().putString(KEY_DETAIL_TAB, tab).apply()
-    }
-
-    fun getDetailTab(): String =
-        prefs.getString(KEY_DETAIL_TAB, "") ?: ""
-
-    fun setScreenshotViewerState(isOpen: Boolean, index: Int = -1) {
-        prefs.edit()
-            .putBoolean(KEY_SCREENSHOT_VIEWER_OPEN, isOpen)
-            .putInt(KEY_SCREENSHOT_VIEWER_INDEX, index)
-            .apply()
-    }
-
-    fun isScreenshotViewerOpen(): Boolean =
-        prefs.getBoolean(KEY_SCREENSHOT_VIEWER_OPEN, false)
-
-    fun getScreenshotViewerIndex(): Int =
-        prefs.getInt(KEY_SCREENSHOT_VIEWER_INDEX, -1)
-
-    fun setCarouselPosition(sectionIndex: Int, selectedIndex: Int) {
-        prefs.edit()
-            .putInt(KEY_CAROUSEL_SECTION_INDEX, sectionIndex)
-            .putInt(KEY_CAROUSEL_SELECTED_INDEX, selectedIndex)
-            .apply()
-    }
-
-    fun getCarouselSectionIndex(): Int =
-        prefs.getInt(KEY_CAROUSEL_SECTION_INDEX, 0)
-
-    fun getCarouselSelectedIndex(): Int =
-        prefs.getInt(KEY_CAROUSEL_SELECTED_INDEX, 0)
-
-    /**
-     * Stable identity of the lower home carousel: which section (by kind and, for
-     * a platform or media library, its id) and which item (game by Long id, media
-     * title by String id) were selected, plus the active home filter context.
-     * Restored by identity so a shifting dynamic section list does not strand the
-     * upper and lower screens on different games. Legacy index fields remain
-     * populated for graceful fallback before any id-context exists; the media id
-     * fields read back as empty from a context written before they existed.
-     * [playerBucket] is the stored name of the chosen player-count bucket, or null
-     * when none is chosen.
-     */
-    data class CarouselNavContext(
-        val hasContext: Boolean,
-        val sectionKind: String,
-        val platformId: Long,
-        val pinId: Long,
-        val gameId: Long,
-        val mediaLibraryId: String,
-        val mediaItemId: String,
-        val legacySectionIndex: Int,
-        val legacySelectedIndex: Int,
-        val filterSource: String,
-        val filterPlatformId: Long,
-        val filterSearch: String,
-        val sortOption: String,
-        val sortDescending: Boolean,
-        val genres: Set<String>,
-        val playerBucket: String?,
-        val franchises: Set<String>
-    )
-
-    fun setCarouselNavContext(ctx: CarouselNavContext) {
-        prefs.edit()
-            .putBoolean(KEY_CAROUSEL_HAS_CONTEXT, ctx.hasContext)
-            .putString(KEY_CAROUSEL_SECTION_KIND, ctx.sectionKind)
-            .putLong(KEY_CAROUSEL_PLATFORM_ID, ctx.platformId)
-            .putLong(KEY_CAROUSEL_PIN_ID, ctx.pinId)
-            .putLong(KEY_CAROUSEL_GAME_ID, ctx.gameId)
-            .putString(KEY_CAROUSEL_MEDIA_LIBRARY_ID, ctx.mediaLibraryId)
-            .putString(KEY_CAROUSEL_MEDIA_ITEM_ID, ctx.mediaItemId)
-            .putInt(KEY_CAROUSEL_SECTION_INDEX, ctx.legacySectionIndex)
-            .putInt(KEY_CAROUSEL_SELECTED_INDEX, ctx.legacySelectedIndex)
-            .putString(KEY_CAROUSEL_FILTER_SOURCE, ctx.filterSource)
-            .putLong(KEY_CAROUSEL_FILTER_PLATFORM_ID, ctx.filterPlatformId)
-            .putString(KEY_CAROUSEL_FILTER_SEARCH, ctx.filterSearch)
-            .putString(KEY_CAROUSEL_SORT_OPTION, ctx.sortOption)
-            .putBoolean(KEY_CAROUSEL_SORT_DESC, ctx.sortDescending)
-            .putStringSet(KEY_CAROUSEL_GENRES, ctx.genres)
-            .putString(KEY_CAROUSEL_PLAYER_BUCKET, ctx.playerBucket)
-            .putStringSet(KEY_CAROUSEL_FRANCHISES, ctx.franchises)
-            .apply()
-    }
-
-    fun getCarouselNavContext(): CarouselNavContext =
-        CarouselNavContext(
-            hasContext = prefs.getBoolean(KEY_CAROUSEL_HAS_CONTEXT, false),
-            sectionKind = prefs.getString(KEY_CAROUSEL_SECTION_KIND, "") ?: "",
-            platformId = prefs.getLong(KEY_CAROUSEL_PLATFORM_ID, -1),
-            pinId = prefs.getLong(KEY_CAROUSEL_PIN_ID, -1),
-            gameId = prefs.getLong(KEY_CAROUSEL_GAME_ID, -1),
-            mediaLibraryId = prefs.getString(KEY_CAROUSEL_MEDIA_LIBRARY_ID, "") ?: "",
-            mediaItemId = prefs.getString(KEY_CAROUSEL_MEDIA_ITEM_ID, "") ?: "",
-            legacySectionIndex = prefs.getInt(KEY_CAROUSEL_SECTION_INDEX, 0),
-            legacySelectedIndex = prefs.getInt(KEY_CAROUSEL_SELECTED_INDEX, 0),
-            filterSource = prefs.getString(KEY_CAROUSEL_FILTER_SOURCE, "ALL") ?: "ALL",
-            filterPlatformId = prefs.getLong(KEY_CAROUSEL_FILTER_PLATFORM_ID, -1),
-            filterSearch = prefs.getString(KEY_CAROUSEL_FILTER_SEARCH, "") ?: "",
-            sortOption = prefs.getString(KEY_CAROUSEL_SORT_OPTION, "") ?: "",
-            sortDescending = prefs.getBoolean(KEY_CAROUSEL_SORT_DESC, false),
-            genres = prefs.getStringSet(KEY_CAROUSEL_GENRES, emptySet()) ?: emptySet(),
-            playerBucket = prefs.getString(KEY_CAROUSEL_PLAYER_BUCKET, null),
-            franchises = prefs.getStringSet(KEY_CAROUSEL_FRANCHISES, emptySet()) ?: emptySet()
-        )
-
     fun setWizardActive(active: Boolean) {
         prefs.edit().putBoolean(KEY_WIZARD_ACTIVE, active).apply()
     }
@@ -412,35 +269,11 @@ class SessionStateStore(context: Context) {
         private const val KEY_DUAL_SCREEN_INPUT_FOCUS = "dual_screen_input_focus"
         private const val KEY_ROLES_SWAPPED = "roles_swapped"
         private const val KEY_PAUSE_DS_WHILE_DOCKED = "pause_ds_while_docked"
-        private const val KEY_COMPANION_SCREEN = "companion_screen"
-        private const val KEY_DETAIL_GAME_ID = "detail_game_id"
-        private const val KEY_CAROUSEL_SECTION_INDEX = "carousel_section_index"
-        private const val KEY_CAROUSEL_SELECTED_INDEX = "carousel_selected_index"
-        private const val KEY_CAROUSEL_HAS_CONTEXT = "carousel_has_context"
-        private const val KEY_CAROUSEL_SECTION_KIND = "carousel_section_kind"
-        private const val KEY_CAROUSEL_PLATFORM_ID = "carousel_platform_id"
-        private const val KEY_CAROUSEL_PIN_ID = "carousel_pin_id"
-        private const val KEY_CAROUSEL_GAME_ID = "carousel_game_id"
-        private const val KEY_CAROUSEL_MEDIA_LIBRARY_ID = "carousel_media_library_id"
-        private const val KEY_CAROUSEL_MEDIA_ITEM_ID = "carousel_media_item_id"
-        private const val KEY_CAROUSEL_FILTER_SOURCE = "carousel_filter_source"
-        private const val KEY_CAROUSEL_FILTER_PLATFORM_ID = "carousel_filter_platform_id"
-        private const val KEY_CAROUSEL_FILTER_SEARCH = "carousel_filter_search"
-        private const val KEY_CAROUSEL_SORT_OPTION = "carousel_sort_option"
-        private const val KEY_CAROUSEL_SORT_DESC = "carousel_sort_desc"
-        private const val KEY_CAROUSEL_GENRES = "carousel_filter_genres"
-        private const val KEY_CAROUSEL_PLAYER_BUCKET = "carousel_filter_player_bucket"
-        private const val KEY_CAROUSEL_FRANCHISES = "carousel_filter_franchises"
         private const val KEY_SESSION_START_TIME = "session_start_time"
         private const val KEY_EMULATOR_PACKAGE = "emulator_package"
         private const val KEY_EMULATOR_DISPLAY_ID = "emulator_display_id"
         private const val KEY_WIZARD_ACTIVE = "wizard_active"
         private const val KEY_FIRST_RUN_COMPLETE = "first_run_complete"
-        private const val KEY_ACTIVE_MODAL = "active_modal"
-        private const val KEY_MODAL_GAME_ID = "modal_game_id"
-        private const val KEY_DETAIL_TAB = "detail_tab"
-        private const val KEY_SCREENSHOT_VIEWER_OPEN = "screenshot_viewer_open"
-        private const val KEY_SCREENSHOT_VIEWER_INDEX = "screenshot_viewer_index"
         private const val KEY_DUAL_SCREEN_ENABLED = "dual_screen_enabled"
         private const val KEY_SECONDARY_DISPLAY_USABLE = "secondary_display_usable"
         private const val KEY_SAVE_SYNC_ENABLED = "save_sync_enabled"

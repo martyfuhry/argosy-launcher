@@ -9,10 +9,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 internal fun routeNavigateToScreens(vm: SettingsViewModel) {
-    vm.viewModelScope.launch {
-        refreshScreens(vm)
-        routePushSection(vm, SettingsSection.SCREENS)
-    }
+    routePushSection(vm, SettingsSection.SCREENS)
+    routeRefreshScreens(vm)
+}
+
+internal fun routeRefreshScreens(vm: SettingsViewModel) {
+    vm.viewModelScope.launch { refreshScreens(vm) }
 }
 
 internal fun routeFocusScreen(vm: SettingsViewModel, index: Int) {
@@ -71,7 +73,7 @@ internal fun routeAssignScreenRole(vm: SettingsViewModel, role: ScreenRole) {
         val stored = vm.preferencesRepository.userPreferences.first().screenLayouts
         val setKey = ScreenLayouts.setKeyOf(screens.map { it.key })
         vm.preferencesRepository.setScreenLayouts(stored.with(setKey, next))
-        applyScreenLayout(vm, next)
+        com.nendo.argosy.DualScreenManagerHolder.instance?.applyStoredScreenLayout()
     }
 }
 
@@ -102,16 +104,5 @@ private suspend fun refreshScreens(vm: SettingsViewModel) {
             screenRoleModalOpen = false,
             screenRoleModalFocus = 0
         )
-    )
-}
-
-private fun applyScreenLayout(vm: SettingsViewModel, layout: ScreenLayout) {
-    val dsm = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
-    val screens = vm._uiState.value.display.screens
-    val primary = screens.find { it.key == layout.primaryKey } ?: return
-    dsm.applyScreenLayout(
-        primaryDisplayId = primary.displayId,
-        appTargetDisplayId = screens.find { it.key == layout.appTargetKey }?.displayId,
-        hasPresentation = !layout.isSingleDisplay
     )
 }

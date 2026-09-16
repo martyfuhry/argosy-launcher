@@ -78,33 +78,8 @@ import com.nendo.argosy.core.notification.NotificationHost
 import com.nendo.argosy.ui.quickmenu.QuickMenuInputHandler
 import com.nendo.argosy.ui.quickmenu.QuickMenuOverlay
 import com.nendo.argosy.ui.quickmenu.QuickMenuViewModel
-import com.nendo.argosy.hardware.CompanionContent
-import com.nendo.argosy.hardware.CompanionMediaToggle
-import com.nendo.argosy.hardware.CompanionPanel
-import com.nendo.argosy.hardware.CompanionScreen
-import com.nendo.argosy.data.repository.AppsRepository
-import com.nendo.argosy.ui.screens.secondaryhome.DrawerAppUi
 import com.nendo.argosy.DualScreenManager
-import com.nendo.argosy.domain.model.HomeLayoutKind
-import com.nendo.argosy.domain.model.HomeTileTargetRef
-import com.nendo.argosy.ui.dualscreen.gamedetail.ActiveModal
-import com.nendo.argosy.ui.dualscreen.gamedetail.DualGameDetailInputHandler
-import com.nendo.argosy.ui.dualscreen.gamedetail.DualGameDetailUpperScreen
-import com.nendo.argosy.ui.dualscreen.gamedetail.DualSteamInstallPickerContent
-import com.nendo.argosy.ui.dualscreen.gamedetail.GameDetailOption
-import com.nendo.argosy.ui.dualscreen.gamedetail.DualGameDetailUpperState
-import com.nendo.argosy.ui.dualscreen.home.DualCollectionShowcase
-import com.nendo.argosy.ui.dualscreen.home.DualCollectionShowcaseState
-import com.nendo.argosy.ui.dualscreen.home.DualCollectionListItem
-import com.nendo.argosy.ui.dualscreen.home.DualFilterCategory
-import com.nendo.argosy.ui.dualscreen.home.DualHomeInputHandler
-import com.nendo.argosy.ui.dualscreen.ControlRoleContent
-import com.nendo.argosy.ui.dualscreen.home.DualHomeLowerContent
-import com.nendo.argosy.ui.dualscreen.home.DualHomeShowcaseState
-import com.nendo.argosy.ui.dualscreen.home.DualHomeUpperScreen
-import com.nendo.argosy.ui.dualscreen.home.DualHomeViewMode
-import com.nendo.argosy.ui.dualscreen.home.DualHomeViewModel
-import com.nendo.argosy.ui.dualscreen.home.toShowcaseState
+import com.nendo.argosy.ui.screens.settings.SettingsSection
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.theme.Motion
@@ -127,15 +102,6 @@ private const val NAV_READY_TIMEOUT_MS = 45_000L
 fun ArgosyApp(
     viewModel: ArgosyViewModel = hiltViewModel(),
     quickMenuViewModel: QuickMenuViewModel = hiltViewModel(),
-    isDualScreenDevice: Boolean = false,
-    isRolesSwapped: Boolean = false,
-    isCompanionActive: StateFlow<Boolean>? = null,
-    dualScreenShowcase: StateFlow<DualHomeShowcaseState>? = null,
-    dualGameDetailState: StateFlow<DualGameDetailUpperState?>? = null,
-    dualViewMode: StateFlow<String>? = null,
-    dualCollectionShowcase: StateFlow<DualCollectionShowcaseState>? = null,
-    dualAppBarFocused: StateFlow<Boolean>? = null,
-    dualDrawerOpen: StateFlow<Boolean>? = null,
     onStartupComplete: () -> Unit = {}
 ) {
     val navController = rememberNavController()
@@ -164,18 +130,16 @@ fun ArgosyApp(
     val netplayJoinState by viewModel.netplayJoinState.collectAsState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val activity = context as? com.nendo.argosy.MainActivity
+    val dsm = remember { com.nendo.argosy.DualScreenManagerHolder.instance }
 
-    // Dual-screen showcase state (when running on dual-display device)
-    val showcaseState by dualScreenShowcase?.collectAsState() ?: remember { mutableStateOf(DualHomeShowcaseState()) }
-    val gameDetailUpperState by dualGameDetailState?.collectAsState() ?: remember { mutableStateOf(null) }
-    val companionActive by isCompanionActive?.collectAsState() ?: remember { mutableStateOf(false) }
-    val viewMode by dualViewMode?.collectAsState() ?: remember { mutableStateOf("CAROUSEL") }
-    val collectionShowcaseState by dualCollectionShowcase?.collectAsState() ?: remember { mutableStateOf(DualCollectionShowcaseState()) }
-    val appBarFocused by dualAppBarFocused?.collectAsState() ?: remember { mutableStateOf(false) }
-    val drawerOpen by dualDrawerOpen?.collectAsState() ?: remember { mutableStateOf(false) }
+    val companionActive by dsm?.isCompanionActive?.collectAsState()
+        ?: remember { mutableStateOf(false) }
+    val isDualScreenDevice by dsm?.isDualScreenDevice?.collectAsState()
+        ?: remember { mutableStateOf(false) }
+    val isRolesSwapped by dsm?.isRolesSwapped?.collectAsState()
+        ?: remember { mutableStateOf(false) }
     val isOnHomeScreen = currentRoute == Screen.Home.route
-    val showDualOverlay = isDualScreenDevice && isOnHomeScreen && companionActive && !isRolesSwapped
-    val showSwappedInteractive = isDualScreenDevice && isOnHomeScreen && isRolesSwapped
 
     val isDualActive = isDualScreenDevice && companionActive
     LaunchedEffect(isDualActive) {
@@ -189,43 +153,20 @@ fun ArgosyApp(
     val isOnWizard = currentRoute == Screen.FirstRun.route
     var wasOnWizard by remember { mutableStateOf(isOnWizard) }
     LaunchedEffect(uiState.isFirstRun, isOnWizard) {
-        val wizardActive = uiState.isFirstRun || isOnWizard
-        (context as? com.nendo.argosy.MainActivity)?.dualScreenManager
-            ?.broadcastWizardState(wizardActive)
+        dsm?.broadcastWizardState(uiState.isFirstRun || isOnWizard)
         if (wasOnWizard && !isOnWizard) {
             viewModel.triggerPostWizardSync()
         }
         wasOnWizard = isOnWizard
     }
 
-    LaunchedEffect(showDualOverlay, isDrawerOpen, isQuickSettingsOpen, quickMenuState.isVisible) {
-        if (showDualOverlay) {
-            (context as? com.nendo.argosy.MainActivity)?.isOverlayFocused =
-                isDrawerOpen || isQuickSettingsOpen || quickMenuState.isVisible
-        }
-    }
-
     LaunchedEffect(isOnHomeScreen) {
-        (context as? com.nendo.argosy.MainActivity)?.let { activity ->
-            activity.isOnHomeScreen = isOnHomeScreen
-            activity.dualScreenManager.setPrimaryOnHome(isOnHomeScreen)
-        }
+        activity?.isOnHomeScreen = isOnHomeScreen
+        dsm?.setPrimaryOnHome(isOnHomeScreen)
     }
 
-    val activity = context as? com.nendo.argosy.MainActivity
-
-    val companionDetail by (
-        activity?.dualScreenManager?.companionDetail
-            ?: remember {
-                kotlinx.coroutines.flow.MutableStateFlow<
-                    com.nendo.argosy.ui.dualscreen.CompanionDetail?
-                    >(null)
-            }
-        ).collectAsState()
-    val describedByPrimary = companionDetail
-
-    LaunchedEffect(activity) {
-        val dsm = activity?.dualScreenManager ?: return@LaunchedEffect
+    LaunchedEffect(dsm) {
+        dsm ?: return@LaunchedEffect
         dsm.onSaveConflictDismiss = { viewModel.dismissSaveConflict() }
         dsm.onSaveConflictOverwrite = { viewModel.forceUploadConflictSave() }
         viewModel.saveConflictInfo.collect { info ->
@@ -337,13 +278,50 @@ fun ArgosyApp(
         )
     }
 
+    val unconfiguredScreenSet by (
+        dsm?.unconfiguredScreenSet
+            ?: remember { kotlinx.coroutines.flow.MutableStateFlow<String?>(null) }
+        ).collectAsState()
+
+    var screenSetPromptVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(unconfiguredScreenSet) {
+        if (unconfiguredScreenSet == null) {
+            screenSetPromptVisible = false
+            return@LaunchedEffect
+        }
+        screenSetPromptVisible = true
+        delay(com.nendo.argosy.core.notification.SCREEN_SET_PROMPT_MS)
+        screenSetPromptVisible = false
+        dsm?.clearUnconfiguredScreenSet()
+    }
+
+    val screenSetPromptHandler = remember(navController) {
+        object : InputHandler {
+            override fun onContextMenu(): InputResult {
+                screenSetPromptVisible = false
+                dsm?.clearUnconfiguredScreenSet()
+                navController.navigate(
+                    Screen.Settings.createRoute(section = SettingsSection.SCREENS.name)
+                ) { launchSingleTop = true }
+                return InputResult.HANDLED
+            }
+        }
+    }
+
+    LaunchedEffect(screenSetPromptVisible) {
+        inputDispatcher.setInterceptHandler(
+            if (screenSetPromptVisible) screenSetPromptHandler else null
+        )
+    }
+
     val footerHostController = remember { FooterHostController() }
 
     val rootFocusRequester = remember { FocusRequester() }
     var resumeCount by remember { mutableStateOf(0) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        if (activity?.isOverlayFocused != true) {
+        if (dsm?.isOverlayFocused != true) {
             inputDispatcher.blockInputFor(200)
             inputDispatcher.resetToMainView()
             viewModel.resetAllModals()
@@ -356,17 +334,14 @@ fun ArgosyApp(
     // When dual-screen topology changes (role swap, companion attach/detach, game moves
     // between displays), drop any lingering modal/drawer state and clear the deferred
     // view subscription so the newly-active screen's input handler gets a clean slot.
-    val dsmForTopology = activity?.dualScreenManager
-    if (dsmForTopology != null) {
-        val swappedGameActive by dsmForTopology.swappedIsGameActive.collectAsState()
+    if (dsm != null) {
+        val swappedGameActive by dsm.swappedIsGameActive.collectAsState()
         LaunchedEffect(isRolesSwapped, companionActive, swappedGameActive) {
             inputDispatcher.resetToMainView()
             inputDispatcher.clearPendingViewSubscription()
-            activity?.let { a ->
-                if (a.isOverlayFocused) {
-                    a.isOverlayFocused = false
-                    a.dualScreenManager.companionHost?.onOverlayClosed()
-                }
+            if (dsm.isOverlayFocused) {
+                dsm.isOverlayFocused = false
+                dsm.companionHost?.onOverlayClosed()
             }
             viewModel.setDrawerOpen(false)
             viewModel.setQuickSettingsOpen(false)
@@ -383,7 +358,6 @@ fun ArgosyApp(
 
     val navigateFromDrawer: (String) -> Unit = remember {
         { route ->
-            val dsm = activity?.dualScreenManager
             val handledOnDual = when (route) {
                 Screen.Library.route -> dsm?.openLibraryOnInteractiveSurface() == true
                 Screen.MediaLibrary.route -> dsm?.openMediaOnInteractiveSurface() == true
@@ -478,13 +452,8 @@ fun ArgosyApp(
             viewModel = quickMenuViewModel,
             onGameSelect = { gameId ->
                 closeQuickMenu()
-                val dsm = (context as? com.nendo.argosy.MainActivity)?.dualScreenManager
-                if (dsm?.isRolesSwapped?.value == true) {
-                    dsm.selectGameSwapped(gameId)
-                } else {
-                    navController.navigate(Screen.GameDetail.createRoute(gameId)) {
-                        launchSingleTop = true
-                    }
+                navController.navigate(Screen.GameDetail.createRoute(gameId)) {
+                    launchSingleTop = true
                 }
             },
             onDismiss = { closeQuickMenu() }
@@ -502,7 +471,7 @@ fun ArgosyApp(
         }
     }
 
-    val pendingOverlay by activity?.pendingOverlayEvent?.collectAsState()
+    val pendingOverlay by dsm?.pendingOverlayEvent?.collectAsState()
         ?: remember { mutableStateOf(null) }
     LaunchedEffect(pendingOverlay) {
         val eventName = pendingOverlay ?: return@LaunchedEffect
@@ -511,7 +480,7 @@ fun ArgosyApp(
             DualScreenManager.OVERLAY_QUICK_SETTINGS -> openQuickSettings()
             else -> openDrawer()
         }
-        activity?.clearPendingOverlay()
+        dsm?.clearPendingOverlay()
     }
 
     val saveConflictInputHandler = remember(viewModel) {
@@ -645,184 +614,6 @@ fun ArgosyApp(
         }
     }
 
-    val dualModalInputHandler = remember(activity) {
-        object : InputHandler {
-            override fun onLeft(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.modalType == ActiveModal.RATING ||
-                    state?.modalType == ActiveModal.DIFFICULTY
-                ) {
-                    activity?.adjustDualModalRating(-1)
-                } else if (state?.modalType == ActiveModal.FILE_PICKER) {
-                    if (activity?.moveDualFilePickerButtonFocus(-1) != true) {
-                        activity?.setDualFilePickerGroupCollapsed(collapse = true)
-                    }
-                } else if (state?.modalType == ActiveModal.COVER_PICKER) {
-                    activity?.moveDualCoverPickerFocus(-1)
-                } else if (state?.modalType == ActiveModal.SAVE_DELETE) {
-                    activity?.dualScreenManager?.moveDualSaveDeleteFocus(-1)
-                } else if (state?.modalType == ActiveModal.REVIEW_EDITOR) {
-                    activity?.adjustDualReviewEditor(-1)
-                }
-                return InputResult.HANDLED
-            }
-            override fun onRight(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.modalType == ActiveModal.RATING ||
-                    state?.modalType == ActiveModal.DIFFICULTY
-                ) {
-                    activity?.adjustDualModalRating(1)
-                } else if (state?.modalType == ActiveModal.FILE_PICKER) {
-                    if (activity?.moveDualFilePickerButtonFocus(1) != true) {
-                        activity?.setDualFilePickerGroupCollapsed(collapse = false)
-                    }
-                } else if (state?.modalType == ActiveModal.COVER_PICKER) {
-                    activity?.moveDualCoverPickerFocus(1)
-                } else if (state?.modalType == ActiveModal.SAVE_DELETE) {
-                    activity?.dualScreenManager?.moveDualSaveDeleteFocus(1)
-                } else if (state?.modalType == ActiveModal.REVIEW_EDITOR) {
-                    activity?.adjustDualReviewEditor(1)
-                }
-                return InputResult.HANDLED
-            }
-            override fun onUp(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.showCreateDialog == true) return InputResult.HANDLED
-                when (state?.modalType) {
-                    ActiveModal.STATUS -> activity?.moveDualModalStatus(-1)
-                    ActiveModal.EMULATOR -> activity?.moveDualEmulatorFocus(-1)
-                    ActiveModal.CORE -> activity?.moveDualCoreFocus(-1)
-                    ActiveModal.SAVE_PATH -> activity?.moveDualSavePathFocus(-1)
-                    ActiveModal.DISPLAY_TARGET -> activity?.moveDualDisplayTargetFocus(-1)
-                    ActiveModal.MEMORY_CARD -> activity?.moveDualMemoryCardFocus(-1)
-                    ActiveModal.VARIANT_PICKER -> activity?.moveDualVariantFocus(-1)
-                    ActiveModal.COLLECTION -> activity?.moveDualCollectionFocus(-1)
-                    ActiveModal.STEAM_INSTALL -> activity?.moveDualSteamInstallFocus(-1)
-                    ActiveModal.FILE_PICKER -> activity?.moveDualFilePickerFocus(-1)
-                    ActiveModal.COVER_PICKER -> activity?.moveDualCoverPickerFocus(
-                        -com.nendo.argosy.ui.screens.gamedetail.modals.COVER_PICKER_COLUMNS
-                    )
-                    ActiveModal.REVIEW_EDITOR -> activity?.moveDualReviewEditorSection(-1)
-                    else -> {}
-                }
-                return InputResult.HANDLED
-            }
-            override fun onDown(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.showCreateDialog == true) return InputResult.HANDLED
-                when (state?.modalType) {
-                    ActiveModal.STATUS -> activity?.moveDualModalStatus(1)
-                    ActiveModal.EMULATOR -> activity?.moveDualEmulatorFocus(1)
-                    ActiveModal.CORE -> activity?.moveDualCoreFocus(1)
-                    ActiveModal.SAVE_PATH -> activity?.moveDualSavePathFocus(1)
-                    ActiveModal.DISPLAY_TARGET -> activity?.moveDualDisplayTargetFocus(1)
-                    ActiveModal.MEMORY_CARD -> activity?.moveDualMemoryCardFocus(1)
-                    ActiveModal.VARIANT_PICKER -> activity?.moveDualVariantFocus(1)
-                    ActiveModal.COLLECTION -> activity?.moveDualCollectionFocus(1)
-                    ActiveModal.STEAM_INSTALL -> activity?.moveDualSteamInstallFocus(1)
-                    ActiveModal.FILE_PICKER -> activity?.moveDualFilePickerFocus(1)
-                    ActiveModal.COVER_PICKER -> activity?.moveDualCoverPickerFocus(
-                        com.nendo.argosy.ui.screens.gamedetail.modals.COVER_PICKER_COLUMNS
-                    )
-                    ActiveModal.REVIEW_EDITOR -> activity?.moveDualReviewEditorSection(1)
-                    else -> {}
-                }
-                return InputResult.HANDLED
-            }
-            override fun onConfirm(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.showCreateDialog == true) return InputResult.HANDLED
-                when (state?.modalType) {
-                    ActiveModal.RATING, ActiveModal.DIFFICULTY,
-                    ActiveModal.STATUS -> activity?.confirmDualModal()
-                    ActiveModal.EMULATOR -> activity?.confirmDualEmulatorSelection()
-                    ActiveModal.CORE -> activity?.confirmDualCoreSelection()
-                    ActiveModal.SAVE_PATH -> activity?.confirmDualSavePathSelection()
-                    ActiveModal.DISPLAY_TARGET -> activity?.confirmDualDisplayTargetSelection()
-                    ActiveModal.MEMORY_CARD -> activity?.confirmDualMemoryCardSelection()
-                    ActiveModal.VARIANT_PICKER -> activity?.confirmDualVariantSelection()
-                    ActiveModal.COLLECTION -> activity?.toggleDualCollectionAtFocus()
-                    ActiveModal.STEAM_INSTALL -> activity?.confirmDualSteamInstallSelection()
-                    ActiveModal.SAVE_NAME -> activity?.confirmDualSaveName()
-                    ActiveModal.SAVE_DELETE -> activity?.dualScreenManager?.confirmDualSaveDelete()
-                    ActiveModal.FILE_PICKER -> activity?.activateDualFilePickerFocused()
-                    ActiveModal.COVER_PICKER -> activity?.confirmDualCoverAtFocus()
-                    ActiveModal.REVIEW_EDITOR -> activity?.confirmDualReviewEditor()
-                    else -> {}
-                }
-                return InputResult.HANDLED
-            }
-            override fun onContextMenu(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.modalType == ActiveModal.FILE_PICKER) {
-                    activity?.confirmDualFilePicker()
-                    return InputResult.HANDLED
-                }
-                if (state?.modalType == ActiveModal.COVER_PICKER) {
-                    activity?.searchDualCovers()
-                    return InputResult.HANDLED
-                }
-                return InputResult.HANDLED
-            }
-            override fun onPrevSection(): InputResult {
-                if (activity?.dualGameDetailState?.value?.modalType == ActiveModal.FILE_PICKER) {
-                    activity?.jumpDualFilePickerGroup(-1)
-                }
-                return InputResult.HANDLED
-            }
-            override fun onNextSection(): InputResult {
-                if (activity?.dualGameDetailState?.value?.modalType == ActiveModal.FILE_PICKER) {
-                    activity?.jumpDualFilePickerGroup(1)
-                }
-                return InputResult.HANDLED
-            }
-            override fun onBack(): InputResult {
-                val state = activity?.dualGameDetailState?.value
-                if (state?.showCreateDialog == true) {
-                    activity?.dismissDualCollectionCreateDialog()
-                    return InputResult.HANDLED
-                }
-                if (state?.modalType == ActiveModal.REVIEW_EDITOR) {
-                    activity?.backDualReviewEditor()
-                    return InputResult.HANDLED
-                }
-                activity?.dismissDualModal()
-                return InputResult.HANDLED
-            }
-            override fun onMenu(): InputResult {
-                if (activity?.dualGameDetailState?.value?.modalType == ActiveModal.REVIEW_EDITOR) {
-                    activity?.submitDualReview()
-                }
-                return InputResult.HANDLED
-            }
-            override fun onSecondaryAction(): InputResult {
-                if (activity?.dualGameDetailState?.value?.modalType == ActiveModal.REVIEW_EDITOR) {
-                    activity?.promptDualReviewDelete()
-                }
-                return InputResult.HANDLED
-            }
-            override fun onPrevTrigger(): InputResult = InputResult.HANDLED
-            override fun onNextTrigger(): InputResult = InputResult.HANDLED
-            override fun onSelect(): InputResult {
-                if (activity?.dualGameDetailState?.value?.modalType == ActiveModal.REVIEW_EDITOR) {
-                    activity?.submitDualReview()
-                }
-                return InputResult.HANDLED
-            }
-            override fun onLeftStickClick(): InputResult = InputResult.HANDLED
-            override fun onRightStickClick(): InputResult = InputResult.HANDLED
-        }
-    }
-
-    val dualModalActive = !isRolesSwapped &&
-        gameDetailUpperState?.modalType != null &&
-        gameDetailUpperState?.modalType != ActiveModal.NONE
-
-    LaunchedEffect(gameDetailUpperState?.modalType) {
-        android.util.Log.d("UpdatesDLC", "ArgosyApp: modalType changed to ${gameDetailUpperState?.modalType}")
-    }
-
-    val isDualConflictMode = showDualOverlay || showSwappedInteractive
     val netplayJoinNeedsInput = netplayJoinState.let {
         it is NetplayJoinState.VerifyingGame &&
             (it.sub is VerifySubState.AmbiguousCandidates || it.sub is VerifySubState.HashMismatchVariants)
@@ -872,11 +663,11 @@ fun ArgosyApp(
         }
     }
 
-    LaunchedEffect(coreCrashPrompt, saveConflictInfo, backgroundConflictInfo, dualModalActive, isDualConflictMode, netplayInvitePrompt, netplayJoinModalActive, netplayJoinNeedsInput, steamDownloadPrompt, resumeCount) {
+    LaunchedEffect(coreCrashPrompt, saveConflictInfo, backgroundConflictInfo, netplayInvitePrompt, netplayJoinModalActive, netplayJoinNeedsInput, steamDownloadPrompt, resumeCount) {
         inputDispatcher.setCriticalHandler(
             when {
                 coreCrashPrompt != null -> coreCrashInputHandler
-                saveConflictInfo != null && !isDualConflictMode -> saveConflictInputHandler
+                saveConflictInfo != null -> saveConflictInputHandler
                 backgroundConflictInfo != null -> backgroundConflictInputHandler
                 else -> null
             }
@@ -885,7 +676,6 @@ fun ArgosyApp(
             steamDownloadPrompt != null -> inputDispatcher.subscribeDrawer(steamDownloadPromptInputHandler)
             netplayJoinNeedsInput || netplayJoinModalActive -> inputDispatcher.subscribeDrawer(netplayJoinInputHandler)
             netplayInvitePrompt != null -> inputDispatcher.subscribeDrawer(netplayInviteInputHandler)
-            dualModalActive -> inputDispatcher.subscribeDrawer(dualModalInputHandler)
             else -> inputDispatcher.unsubscribeDrawer()
         }
     }
@@ -937,12 +727,10 @@ fun ArgosyApp(
     // Notify companion when any upper overlay closes: stop forwarding + refocus lower screen
     val notifyOverlayClosed: () -> Unit = remember {
         {
-            activity?.let { a ->
-                if (a.isOverlayFocused) {
-                    a.isOverlayFocused = false
-                    a.dualScreenManager.companionHost?.onOverlayClosed()
-                    a.dualScreenManager.companionHost?.refocusSelf()
-                }
+            if (dsm != null && dsm.isOverlayFocused) {
+                dsm.isOverlayFocused = false
+                dsm.companionHost?.onOverlayClosed()
+                dsm.companionHost?.refocusSelf()
             }
         }
     }
@@ -956,7 +744,7 @@ fun ArgosyApp(
                 if (onHome) {
                     notifyOverlayClosed()
                 } else {
-                    activity?.dualScreenManager?.companionHost?.onBackgroundForward()
+                    dsm?.companionHost?.onBackgroundForward()
                 }
             }
             wasOpen = open
@@ -985,7 +773,7 @@ fun ArgosyApp(
                 if (onHome) {
                     notifyOverlayClosed()
                 } else {
-                    activity?.dualScreenManager?.companionHost?.onBackgroundForward()
+                    dsm?.companionHost?.onBackgroundForward()
                 }
             }
             wasOpen = open
@@ -1001,7 +789,7 @@ fun ArgosyApp(
                 if (onHome) {
                     notifyOverlayClosed()
                 } else {
-                    activity?.dualScreenManager?.companionHost?.onBackgroundForward()
+                    dsm?.companionHost?.onBackgroundForward()
                 }
             }
             wasVisible = state.isVisible
@@ -1027,82 +815,56 @@ fun ArgosyApp(
             val result = inputDispatcher.dispatch(input)
             val event = input.event
             if (!result.handled && !inputDispatcher.hasActiveModal()) {
-                if (showSwappedInteractive) {
-                    when (event) {
-                        GamepadEvent.Menu -> {
-                            (context as? com.nendo.argosy.MainActivity)
-                                ?.dualScreenManager?.broadcastOpenOverlay("drawer")
-                        }
-                        GamepadEvent.RightStickClick -> {
-                            if (isQuickSettingsOpen) {
-                                closeQuickSettings()
-                            } else {
-                                if (quickMenuState.isVisible) closeQuickMenu()
-                                openQuickSettings()
-                            }
-                        }
-                        GamepadEvent.LeftStickClick -> {
-                            if (quickMenuState.isVisible) {
-                                closeQuickMenu()
-                            } else {
-                                if (isQuickSettingsOpen) closeQuickSettings()
-                                openQuickMenu()
-                            }
-                        }
-                        else -> {}
-                    }
-                } else {
-                    when (event) {
-                        GamepadEvent.Menu -> {
-                            if (isDrawerOpen) {
-                                closeDrawer()
-                            } else {
-                                if (isQuickSettingsOpen) closeQuickSettings()
-                                if (quickMenuState.isVisible) closeQuickMenu()
-                                openDrawer()
-                            }
-                        }
-                        GamepadEvent.Left -> {
-                            if (!input.isRepeat &&
-                                !isDrawerOpen &&
-                                !isQuickSettingsOpen &&
-                                !quickMenuState.isVisible
-                            ) {
-                                openDrawer()
-                            }
-                        }
-                        GamepadEvent.LeftStickClick -> {
-                            if (quickMenuState.isVisible) {
-                                closeQuickMenu()
-                            } else {
-                                if (isDrawerOpen) closeDrawer()
-                                if (isQuickSettingsOpen) closeQuickSettings()
-                                openQuickMenu()
-                            }
-                        }
-                        GamepadEvent.RightStickClick -> {
-                            if (isQuickSettingsOpen) {
-                                closeQuickSettings()
-                            } else {
-                                if (isDrawerOpen) closeDrawer()
-                                if (quickMenuState.isVisible) closeQuickMenu()
-                                openQuickSettings()
-                            }
-                        }
-                        GamepadEvent.Home -> {
-                            if (isDrawerOpen) closeDrawer()
+                when (event) {
+                    GamepadEvent.Menu -> {
+                        if (isDrawerOpen) {
+                            closeDrawer()
+                        } else {
                             if (isQuickSettingsOpen) closeQuickSettings()
                             if (quickMenuState.isVisible) closeQuickMenu()
-                            val homeRoute = Screen.Home.route
-                            if (currentRoute != homeRoute) {
-                                navController.navigate(homeRoute) {
-                                    popUpTo(homeRoute) { inclusive = true }
-                                    launchSingleTop = true
-                                }
+                            openDrawer()
+                        }
+                    }
+                    GamepadEvent.Left -> {
+                        if (!input.isRepeat &&
+                            !isDrawerOpen &&
+                            !isQuickSettingsOpen &&
+                            !quickMenuState.isVisible
+                        ) {
+                            openDrawer()
+                        }
+                    }
+                    GamepadEvent.LeftStickClick -> {
+                        if (quickMenuState.isVisible) {
+                            closeQuickMenu()
+                        } else {
+                            if (isDrawerOpen) closeDrawer()
+                            if (isQuickSettingsOpen) closeQuickSettings()
+                            openQuickMenu()
+                        }
+                    }
+                    GamepadEvent.RightStickClick -> {
+                        if (isQuickSettingsOpen) {
+                            closeQuickSettings()
+                        } else {
+                            if (isDrawerOpen) closeDrawer()
+                            if (quickMenuState.isVisible) closeQuickMenu()
+                            openQuickSettings()
+                        }
+                    }
+                    GamepadEvent.Home -> {
+                        if (isDrawerOpen) closeDrawer()
+                        if (isQuickSettingsOpen) closeQuickSettings()
+                        if (quickMenuState.isVisible) closeQuickMenu()
+                        val homeRoute = Screen.Home.route
+                        if (currentRoute != homeRoute) {
+                            navController.navigate(homeRoute) {
+                                popUpTo(homeRoute) { inclusive = true }
+                                launchSingleTop = true
                             }
                         }
-                        else -> {}
                     }
+                    else -> {}
                 }
             }
         }
@@ -1159,12 +921,11 @@ fun ArgosyApp(
 
         val isDarkTheme = LocalLauncherTheme.current.isDarkTheme
         val scrimColor = if (isDarkTheme) Color.Black.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.35f)
-        val dimmerDsm = activity?.dualScreenManager
         val lastUserActivityAtMs by (
-            dimmerDsm?.lastUserActivityAtMs
+            dsm?.lastUserActivityAtMs
                 ?: remember { kotlinx.coroutines.flow.MutableStateFlow(0L) }
             ).collectAsState()
-        val dimmerEnabled = dimmerDsm != null &&
+        val dimmerEnabled = dsm != null &&
             screenDimmerPrefs.enabled && !isEmulatorRunning && !uiState.isFirstRun
         val bottomReserved = gripReserveBottomInset()
 
@@ -1173,7 +934,7 @@ fun ArgosyApp(
             timeoutMs = screenDimmerPrefs.timeoutMinutes * 60_000L,
             dimLevel = screenDimmerPrefs.level / 100f,
             lastActivityAtMs = lastUserActivityAtMs,
-            onWake = { dimmerDsm?.notifyUserActivity("mainDimmerTap") }
+            onWake = { dsm?.notifyUserActivity("mainDimmerTap") }
         ) {
             var keySinkFocused by remember { mutableStateOf(false) }
             val imeManager = remember(context) {
@@ -1216,7 +977,7 @@ fun ArgosyApp(
                     }
                 }
 
-                val keyboardToggle by activity?.keyboardToggleEvent?.collectAsState()
+                val keyboardToggle by dsm?.keyboardToggleEvent?.collectAsState()
                     ?: remember { mutableStateOf(0L) }
                 LaunchedEffect(keyboardToggle) {
                     if (keyboardToggle == 0L) return@LaunchedEffect
@@ -1297,785 +1058,23 @@ fun ArgosyApp(
                 )
                 val contentBlur = maxOf(drawerBlur, quickMenuBlur)
 
-                // Dual-screen mode: show showcase on upper display when companion is active
-                if (showDualOverlay) {
-                    val detailState = gameDetailUpperState
-                    if (detailState != null && !detailState.isHomeChooser) {
-                        DualGameDetailUpperScreen(
-                            state = detailState,
-                            onModalRatingSelect = { value ->
-                                activity?.setDualModalRating(value)
-                                activity?.confirmDualModal()
-                            },
-                            onModalStatusSelect = { value ->
-                                activity?.setDualModalStatus(value)
-                                activity?.confirmDualModal()
-                            },
-                            onModalEmulatorSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualEmulatorFocus(index)
-                                    a.confirmDualEmulatorSelection()
-                                }
-                            },
-                            onModalCoreSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualCoreFocus(index)
-                                    a.confirmDualCoreSelection()
-                                }
-                            },
-                            onModalSavePathSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualSavePathFocus(index)
-                                    a.confirmDualSavePathSelection()
-                                }
-                            },
-                            onModalDisplayTargetSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualDisplayTargetFocus(index)
-                                    a.confirmDualDisplayTargetSelection()
-                                }
-                            },
-                            onModalMemoryCardSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualMemoryCardFocus(index)
-                                    a.confirmDualMemoryCardSelection()
-                                }
-                            },
-                            onModalVariantSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualVariantFocus(index)
-                                    a.confirmDualVariantSelection()
-                                }
-                            },
-                            onModalCollectionToggle = { collectionId ->
-                                activity?.let { a ->
-                                    val idx = detailState.collectionItems
-                                        .indexOfFirst { it.id == collectionId }
-                                    if (idx >= 0) a.setDualCollectionFocus(idx)
-                                    a.toggleDualCollectionAtFocus()
-                                }
-                            },
-                            onModalCollectionShowCreate = {
-                                activity?.showDualCollectionCreateDialog()
-                            },
-                            onModalCollectionCreate = { name ->
-                                if (name.isNotBlank()) {
-                                    activity?.confirmDualCollectionCreate(
-                                        name.trim()
-                                    )
-                                }
-                            },
-                            onModalCollectionCreateDismiss = {
-                                activity?.dismissDualCollectionCreateDialog()
-                            },
-                            onSaveNameTextChange = { text ->
-                                activity?.updateDualSaveNameText(text)
-                            },
-                            onSaveNameConfirm = {
-                                activity?.confirmDualSaveName()
-                            },
-                            onSaveDeleteConfirm = {
-                                activity?.dualScreenManager?.confirmDualSaveDelete(true)
-                            },
-                            onDiscSelect = { index ->
-                                activity?.selectDualDisc(index)
-                            },
-                            onModalSteamInstallSelect = { index ->
-                                activity?.let { a ->
-                                    a.setDualSteamInstallFocus(index)
-                                    a.confirmDualSteamInstallSelection()
-                                }
-                            },
-                            onModalDismiss = {
-                                activity?.dismissDualModal()
-                            },
-                            onFilePickerToggle = { row ->
-                                activity?.toggleDualFilePickerRow(row)
-                            },
-                            onFilePickerSelectAll = {
-                                activity?.toggleDualFilePickerSelectAll()
-                            },
-                            onFilePickerConfirm = {
-                                activity?.confirmDualFilePicker()
-                            },
-                            onFilePickerToggleCollapse = { groupKey ->
-                                activity?.toggleDualFilePickerGroupCollapse(groupKey)
-                            },
-                            onCoverSelect = { index ->
-                                activity?.selectDualCover(index)
-                            },
-                            onCoverQueryChange = { text ->
-                                activity?.updateDualCoverPickerQuery(text)
-                            },
-                            onCoverSearch = {
-                                activity?.searchDualCovers()
-                            },
-                            onReviewSectionFocus = { activity?.focusDualReviewEditorSection(it) },
-                            onReviewVerdictSelect = { activity?.setDualReviewVerdict(it) },
-                            onReviewVisibilitySelect = { activity?.setDualReviewVisibility(it) },
-                            onReviewBodyChange = { activity?.setDualReviewEditorBody(it) },
-                            onReviewConfirm = { activity?.confirmDualReviewEditor() },
-                            onReviewSubmit = { activity?.submitDualReview() },
-                            onReviewDeletePrompt = { activity?.promptDualReviewDelete() },
-                            onReviewDeleteConfirm = { activity?.confirmDualReviewDelete() },
-                            onReviewDiscard = { activity?.discardDualReviewEditor() },
-                            onReviewConfirmDismiss = { activity?.dismissDualReviewConfirm() },
-                            onReviewBack = { activity?.backDualReviewEditor() },
-                            footerHints = {
-                                FooterHints(
-                                    hints = listOf(
-                                        com.nendo.argosy.ui.components.InputButton.LB_RB to
-                                            stringResource(R.string.ui_dual_file_picker_hint_tab),
-                                        com.nendo.argosy.ui.components.InputButton.A to
-                                            stringResource(
-                                                R.string.ui_dual_file_picker_hint_select
-                                            ),
-                                        com.nendo.argosy.ui.components.InputButton.B to
-                                            stringResource(R.string.ui_dual_file_picker_hint_back)
-                                    )
-                                )
-                                androidx.compose.foundation.layout.Spacer(
-                                    modifier = Modifier.height(Dimens.footerHeight)
-                                )
-                            },
-                            modifier = Modifier.blur(contentBlur)
-                        )
-                    } else if (describedByPrimary != null) {
-                        com.nendo.argosy.ui.dualscreen.CompanionDetailScreen(
-                            detail = describedByPrimary,
-                            modifier = Modifier.blur(contentBlur),
-                            footerHints = {
-                                FooterHints(
-                                    hints = com.nendo.argosy.ui.dualscreen
-                                        .companionDetailHints(describedByPrimary, viewMode)
-                                )
-                            }
-                        )
-                    } else if (viewMode == "COLLECTIONS" || collectionShowcaseState.focused) {
-                        DualCollectionShowcase(
-                            state = collectionShowcaseState,
-                            footerHints = {
-                                FooterHints(
-                                    hints = listOf(
-                                        com.nendo.argosy.ui.components.InputButton.DPAD to
-                                            stringResource(
-                                                R.string.ui_dual_collections_hint_navigate
-                                            ),
-                                        com.nendo.argosy.ui.components.InputButton.A to
-                                            stringResource(R.string.ui_dual_collections_hint_open),
-                                        com.nendo.argosy.ui.components.InputButton.B to
-                                            stringResource(R.string.ui_dual_collections_hint_back)
-                                    )
-                                )
-                                androidx.compose.foundation.layout.Spacer(
-                                    modifier = Modifier.height(Dimens.footerHeight)
-                                )
-                            },
-                            modifier = Modifier.blur(contentBlur)
-                        )
-                    } else {
-                        DualHomeUpperScreen(
-                            state = showcaseState,
-                            footerHints = {
-                                FooterHints(
-                                    hints = com.nendo.argosy.ui.dualscreen.companionHomeHints(
-                                        viewMode = viewMode,
-                                        isDownloaded = showcaseState.isDownloaded,
-                                        isFavorite = showcaseState.isFavorite,
-                                        isRandomTile = showcaseState.isRandomTile,
-                                        drawerOpen = drawerOpen,
-                                        appBarFocused = appBarFocused
-                                    )
-                                )
-                            },
-                            modifier = Modifier.blur(contentBlur)
-                        )
-                    }
-
-                    if (detailState?.isHomeChooser == true &&
-                        detailState.modalType == ActiveModal.STEAM_INSTALL
-                    ) {
-                        DualSteamInstallPickerContent(
-                            optionNames = detailState.steamInstallOptionNames,
-                            focusIndex = detailState.steamInstallFocusIndex,
-                            onSelect = { index ->
-                                activity?.setDualSteamInstallFocus(index)
-                                activity?.confirmDualSteamInstallSelection()
-                            },
-                            onDismiss = { activity?.dismissDualModal() }
-                        )
-                    }
-
-                    val dualSyncOverlay by activity?.dualScreenManager
-                        ?.dualSyncOverlay?.collectAsState() ?: remember { mutableStateOf(null) }
-                    val dualSyncFocusIndex by activity?.dualScreenManager
-                        ?.dualSyncOverlayFocusIndex?.collectAsState() ?: remember { mutableStateOf(0) }
-                    dualSyncOverlay?.let { conflictState ->
-                        val isHardcore = conflictState.syncProgress is com.nendo.argosy.domain.model.SyncProgress.HardcoreConflict
-                        com.nendo.argosy.ui.components.SyncOverlay(
-                            syncProgress = conflictState.syncProgress,
-                            gameTitle = conflictState.gameTitle,
-                            onKeepHardcore = conflictState.onKeepHardcore,
-                            onDowngradeToCasual = conflictState.onDowngradeToCasual,
-                            onKeepLocal = conflictState.onKeepLocal,
-                            onKeepLocalModified = conflictState.onKeepLocalModified,
-                            onRestoreSelected = conflictState.onRestoreSelected,
-                            hardcoreConflictFocusIndex = if (isHardcore) dualSyncFocusIndex else 0,
-                            localModifiedFocusIndex = if (!isHardcore) dualSyncFocusIndex else 0
-                        )
-                    }
-                } else if (showSwappedInteractive) {
-                    val swappedVm = activity?.swappedDualHomeViewModel
-                    val dualScreenManager = activity?.dualScreenManager
-                    if (swappedVm != null && dualScreenManager != null) {
-                        val swappedHomeApps = remember { activity.homeAppsList }
-                        val swappedScreen by dualScreenManager.swappedCurrentScreen.collectAsState()
-
-                        val pushSwappedCollectionShowcase: () -> Unit =
-                            remember(swappedVm, dualScreenManager) {
-                                {
-                                    val item = swappedVm.selectedCollectionItem()
-                                    if (item != null) {
-                                        dualScreenManager.onCollectionFocused(
-                                            DualCollectionShowcaseState(
-                                                name = item.name,
-                                                description = item.description,
-                                                coverPaths = item.coverPaths,
-                                                gameCount = item.gameCount,
-                                                platformSummary = item.platformSummary,
-                                                totalPlaytimeMinutes = item.totalPlaytimeMinutes,
-                                                installedCount = item.installedCount,
-                                                achievementsEarned = item.achievementsEarned,
-                                                achievementsTotal = item.achievementsTotal
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-
-                        val pushSwappedGameSelection: () -> Unit =
-                            remember(swappedVm, dualScreenManager) {
-                                {
-                                    val state = swappedVm.uiState.value
-                                    val inCustomGrid = state.layoutKind == HomeLayoutKind.CUSTOM_GRID
-                                    val target = if (inCustomGrid) swappedVm.focusedTile()?.target else null
-                                    if (target is HomeTileTargetRef.Collection) {
-                                        swappedVm.loadCollectionShowcase(target.collectionId) {
-                                            dualScreenManager.onCollectionFocused(it)
-                                        }
-                                    } else {
-                                        if (inCustomGrid) {
-                                            val tileGame = swappedVm.focusedTileGameId()
-                                                ?.let { state.tileGames[it] }
-                                            val isRandomTile = (
-                                                swappedVm.focusedTile()?.target
-                                                    as? com.nendo.argosy.domain.model.HomeTileTargetRef.Feature
-                                                )?.kind == com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME
-                                            dualScreenManager.onGameSelected(
-                                                (tileGame?.toShowcaseState() ?: DualHomeShowcaseState())
-                                                    .copy(isRandomTile = isRandomTile)
-                                            )
-                                        } else {
-                                            val game = state.selectedGame
-                                            if (game != null) {
-                                                dualScreenManager.onGameSelected(game.toShowcaseState())
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                        val swappedInputHandler = remember(swappedVm) {
-                            DualHomeInputHandler(
-                                viewModel = swappedVm,
-                                homeApps = { activity.homeAppsList },
-                                onBroadcastViewModeChange = {
-                                    dualScreenManager.onViewModeChanged(
-                                        swappedVm.uiState.value.viewMode.name, false, false
-                                    )
-                                },
-                                onBroadcastCollectionFocused = pushSwappedCollectionShowcase,
-                                onBroadcastCurrentGameSelection = pushSwappedGameSelection,
-                                onBroadcastLibraryGameSelection = {
-                                    val state = swappedVm.uiState.value
-                                    val game = state.libraryGames.getOrNull(state.libraryFocusedIndex)
-                                        ?: return@DualHomeInputHandler
-                                    dualScreenManager.onGameSelected(game.toShowcaseState())
-                                },
-                                onBroadcastCollectionGameSelection = {
-                                    val game = swappedVm.focusedCollectionGame() ?: return@DualHomeInputHandler
-                                    dualScreenManager.onGameSelected(game.toShowcaseState())
-                                },
-                                onBroadcastDirectAction = { type, gameId ->
-                                    dualScreenManager.handleDirectAction(type, gameId)
-                                },
-                                onSelectGame = { gameId ->
-                                    dualScreenManager.selectGameSwapped(gameId)
-                                },
-                                onLaunchApp = { packageName ->
-                                    val launchIntent = context.packageManager
-                                        .getLaunchIntentForPackage(packageName)
-                                    if (launchIntent != null) {
-                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        context.startActivity(launchIntent)
-                                    }
-                                },
-                                onLaunchAppAlternate = { packageName ->
-                                    val launchIntent = context.packageManager
-                                        .getLaunchIntentForPackage(packageName)
-                                    if (launchIntent != null) {
-                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        val options = activity.displayAffinityHelper
-                                            .getActivityOptions(forEmulator = false)
-                                        if (options != null) {
-                                            context.startActivity(launchIntent, options)
-                                        }
-                                    }
-                                },
-                                dualMediaViewModel = { dualScreenManager.swappedMediaViewModel }
-                            )
-                        }
-
-                        var isScreenshotViewerOpen by remember { mutableStateOf(false) }
-                        val swappedDetailInputHandler = remember(dualScreenManager) {
-                            DualGameDetailInputHandler(
+                NavGraph(
+                    navController = navController,
+                    startDestination = startDestination,
+                    onDrawerToggle = { if (isDrawerOpen) closeDrawer() else openDrawer() },
+                    argosyViewModel = viewModel,
+                    onPlayMedia = { itemId, startOver ->
+                        dsm?.playMediaItem(itemId, startOver)
+                            ?: PlayerActivity.start(
                                 context = context,
-                                viewModel = { dualScreenManager.swappedGameDetailViewModel },
-                                isScreenshotViewerOpen = { isScreenshotViewerOpen },
-                                setScreenshotViewerOpen = { isScreenshotViewerOpen = it },
-                                onBroadcastScreenshotSelected = { index ->
-                                    dualScreenManager.onScreenshotSelected(index)
-                                },
-                                onBroadcastScreenshotCleared = {
-                                    isScreenshotViewerOpen = false
-                                    dualScreenManager.onScreenshotCleared()
-                                },
-                                onBroadcastModalState = { vm, modal ->
-                                    when (modal) {
-                                        ActiveModal.STATUS -> dualScreenManager.openModal(
-                                            modal,
-                                            statusSelected = vm.statusPickerValue.value,
-                                            statusCurrent = vm.uiState.value.status
-                                        )
-                                        else -> dualScreenManager.openModal(modal, vm.ratingPickerValue.value)
-                                    }
-                                },
-                                onBroadcastModalClose = {
-                                    dualScreenManager.dismissDualModal()
-                                },
-                                onBroadcastModalConfirm = { modal, value, statusValue ->
-                                    dualScreenManager.onModalConfirmResult(modal, value, statusValue)
-                                },
-                                onBroadcastInlineUpdate = { field, value ->
-                                    when (value) {
-                                        is Int -> dualScreenManager.handleInlineUpdate(field, intValue = value)
-                                        is String -> dualScreenManager.handleInlineUpdate(field, stringValue = value)
-                                    }
-                                },
-                                onBroadcastDirectAction = { type, gameId, channelName ->
-                                    dualScreenManager.handleDirectAction(type, gameId, channelName)
-                                },
-                                onBroadcastEmulatorModalOpen = { emulators, currentName ->
-                                    dualScreenManager.openEmulatorModal(
-                                        emulators.map { it.def.displayName },
-                                        emulators.map { it.versionName ?: "" },
-                                        currentName
-                                    )
-                                },
-                                onBroadcastCoreModalOpen = { coreNames, currentName ->
-                                    dualScreenManager.openCoreModal(coreNames, currentName)
-                                },
-                                onBroadcastSavePathModalOpen = { overridePath ->
-                                    dualScreenManager.openSavePathModal(overridePath)
-                                },
-                                onBroadcastDisplayTargetModalOpen = { names, currentName, inheritedName ->
-                                    dualScreenManager.openDisplayTargetModal(names, currentName, inheritedName)
-                                },
-                                onBroadcastMemoryCardModalOpen = { names, currentName, inheritedName ->
-                                    dualScreenManager.openMemoryCardModal(names, currentName, inheritedName)
-                                },
-                                onBroadcastVariantModalOpen = { variantNames, currentName ->
-                                    dualScreenManager.openVariantModal(
-                                        variantNames,
-                                        currentName
-                                    )
-                                },
-                                onBroadcastCollectionModalOpen = { vm ->
-                                    val items = vm.collectionItems.value
-                                    dualScreenManager.openCollectionModal(
-                                        items.map { it.id },
-                                        items.map { it.name },
-                                        items.map { it.isInCollection }
-                                    )
-                                },
-                                onBroadcastSteamInstallModalOpen = { vm ->
-                                    val options = vm.steamInstallOptions.value
-                                    dualScreenManager.openSteamInstallModal(
-                                        options.map { it.displayName },
-                                        options.map { it.launcherPackage }
-                                    )
-                                },
-                                onBroadcastSaveNamePrompt = { actionType, cacheId ->
-                                    dualScreenManager.openSaveNameModal(actionType, cacheId)
-                                },
-                                onBroadcastSaveAction = { type, gameId, channelName, timestamp ->
-                                    dualScreenManager.handleDirectAction(type, gameId, channelName, timestamp)
-                                },
-                                onReturnToHome = { dualScreenManager.returnToHomeSwapped() },
-                                onRefocusSelf = { },
-                                lifecycleLaunch = { block -> scope.launch { block() } }
-                            )
-                        }
-
-                        LaunchedEffect(swappedScreen) {
-                            when (swappedScreen) {
-                                CompanionScreen.HOME -> inputDispatcher.subscribeView(swappedInputHandler)
-                                CompanionScreen.GAME_DETAIL -> inputDispatcher.subscribeView(swappedDetailInputHandler)
-                            }
-                        }
-
-                        LaunchedEffect(swappedVm, swappedScreen, pushSwappedGameSelection) {
-                            if (swappedScreen != CompanionScreen.HOME) return@LaunchedEffect
-                            swappedVm.uiState
-                                .map {
-                                    Triple(
-                                        it.layoutKind,
-                                        it.customGrid.focusedTile?.target,
-                                        it.customGrid.tiles.size
-                                    )
-                                }
-                                .distinctUntilChanged()
-                                .collect { (layout, _, _) ->
-                                    if (layout != HomeLayoutKind.CUSTOM_GRID) return@collect
-                                    pushSwappedGameSelection()
-                                }
-                        }
-
-                        LaunchedEffect(isDrawerOpen, isQuickSettingsOpen, quickMenuState.isVisible) {
-                            if (isDrawerOpen || isQuickSettingsOpen || quickMenuState.isVisible) {
-                                swappedVm.startDrawerForwarding()
-                            } else {
-                                swappedVm.stopDrawerForwarding()
-                            }
-                        }
-
-                        val swappedGameActive by dualScreenManager.swappedIsGameActive.collectAsState()
-                        val swappedCompanionState by dualScreenManager.swappedCompanionState.collectAsState()
-
-                        val mediaPlayback by dualScreenManager.mediaPlayback.collectAsState()
-                        val mediaSignedIn by dualScreenManager.mediaSignedIn.collectAsState()
-                        val companionMediaVisible by dualScreenManager.companionMediaVisible.collectAsState()
-                        val mediaToggle = if (mediaPlayback == null && !mediaSignedIn) {
-                            null
-                        } else {
-                            CompanionMediaToggle(
-                                showingMedia = companionMediaVisible,
-                                isPlaying = mediaPlayback?.isPlaying == true
-                            )
-                        }
-
-                        if (swappedGameActive) {
-                            var isCompanionDrawerOpen by remember { mutableStateOf(false) }
-                            var companionDrawerApps by remember {
-                                mutableStateOf(emptyList<DrawerAppUi>())
-                            }
-                            var swappedCompanionPanel by remember {
-                                mutableStateOf(CompanionPanel.DASHBOARD)
-                            }
-                            val swappedAchievements by dualScreenManager.companionAchievements
-                                .collectAsState()
-
-                            LaunchedEffect(swappedGameActive) {
-                                if (swappedGameActive) {
-                                    val appsRepo = AppsRepository(context.applicationContext)
-                                    val apps = appsRepo.getInstalledApps()
-                                    val pinnedSet = swappedHomeApps.toSet()
-                                    companionDrawerApps = apps.map { app ->
-                                        DrawerAppUi(
-                                            packageName = app.packageName,
-                                            label = app.label,
-                                            isPinned = app.packageName in pinnedSet
-                                        )
-                                    }
-                                }
-                            }
-
-                            CompanionContent(
-                                state = swappedCompanionState,
-                                sessionTimer = dualScreenManager.swappedSessionTimer,
-                                homeApps = swappedHomeApps,
-                                isDrawerOpen = isCompanionDrawerOpen,
-                                drawerApps = companionDrawerApps,
-                                onOpenDrawer = { isCompanionDrawerOpen = true },
-                                onCloseDrawer = { isCompanionDrawerOpen = false },
-                                onPinToggle = { pkg ->
-                                    val current = activity.homeAppsList.toMutableSet()
-                                    if (pkg in current) current.remove(pkg)
-                                    else current.add(pkg)
-                                    dualScreenManager.updateHomeApps(current)
-                                    companionDrawerApps = companionDrawerApps.map {
-                                        if (it.packageName == pkg)
-                                            it.copy(isPinned = !it.isPinned)
-                                        else it
-                                    }
-                                },
-                                onDrawerAppClick = { pkg ->
-                                    isCompanionDrawerOpen = false
-                                    val launchIntent = context.packageManager
-                                        .getLaunchIntentForPackage(pkg)
-                                    if (launchIntent != null) {
-                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        context.startActivity(launchIntent)
-                                    }
-                                },
-                                onAppClick = { packageName ->
-                                    val launchIntent = context.packageManager
-                                        .getLaunchIntentForPackage(packageName)
-                                    if (launchIntent != null) {
-                                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                        context.startActivity(launchIntent)
-                                    }
-                                },
-                                onTabChanged = { swappedCompanionPanel = it },
-                                currentPanel = swappedCompanionPanel,
-                                achievements = swappedAchievements,
-                                mediaToggle = mediaToggle,
-                                onMediaToggle = { dualScreenManager.toggleCompanionMediaView() }
-                            )
-                        } else {
-                        ControlRoleContent(
-                            currentScreen = swappedScreen,
-                            dualHomeViewModel = swappedVm,
-                            dualGameDetailViewModel = dualScreenManager.swappedGameDetailViewModel,
-                            homeApps = swappedHomeApps,
-                            onGameSelected = { gameId ->
-                                dualScreenManager.selectGameSwapped(gameId)
-                            },
-                            onAppClick = { packageName ->
-                                val launchIntent = context.packageManager
-                                    .getLaunchIntentForPackage(packageName)
-                                if (launchIntent != null) {
-                                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(launchIntent)
-                                }
-                            },
-                            onViewAllClick = {
-                                val afterSwitch = {
-                                    dualScreenManager.onViewModeChanged(DualHomeViewMode.LIBRARY_GRID.name, false, false)
-                                    val state = swappedVm.uiState.value
-                                    val game = state.libraryGames.getOrNull(state.libraryFocusedIndex)
-                                    if (game != null) dualScreenManager.onGameSelected(game.toShowcaseState())
-                                    Unit
-                                }
-                                swappedVm.enterViewAll { afterSwitch() }
-                            },
-                            onCollectionTapped = { index ->
-                                val items = swappedVm.uiState.value.collectionItems
-                                val item = items.getOrNull(index)
-                                if (item is DualCollectionListItem.Collection) {
-                                    swappedVm.enterCollectionGames(item.id) {
-                                        dualScreenManager.onViewModeChanged(DualHomeViewMode.COLLECTION_GAMES.name, false, false)
-                                    }
-                                }
-                            },
-                            onGridGameTapped = { index ->
-                                val state = swappedVm.uiState.value
-                                when (state.viewMode) {
-                                    DualHomeViewMode.COLLECTION_GAMES -> {
-                                        swappedVm.moveCollectionGamesFocus(index - state.collectionGamesFocusedIndex)
-                                        val game = swappedVm.focusedCollectionGame()
-                                        if (game != null) dualScreenManager.onGameSelected(game.toShowcaseState())
-                                    }
-                                    DualHomeViewMode.LIBRARY_GRID -> {
-                                        swappedVm.setLibraryFocusIndex(index)
-                                        val game = state.libraryGames.getOrNull(index)
-                                        if (game != null) dualScreenManager.onGameSelected(game.toShowcaseState())
-                                    }
-                                    else -> {}
-                                }
-                            },
-                            onLetterClick = { letter ->
-                                swappedVm.jumpToSection(letter)
-                                val state = swappedVm.uiState.value
-                                val game = state.libraryGames.getOrNull(state.libraryFocusedIndex)
-                                if (game != null) dualScreenManager.onGameSelected(game.toShowcaseState())
-                            },
-                            onFilterOptionTapped = { index ->
-                                swappedVm.moveFilterFocus(index - swappedVm.uiState.value.filterFocusedIndex)
-                                swappedVm.confirmFilter()
-                            },
-                            onFilterCategoryTapped = { category ->
-                                swappedVm.setFilterCategory(category)
-                            },
-                            onSearchQueryChange = { query ->
-                                swappedVm.updateSearchQuery(query)
-                            },
-                            onOpenDrawer = { openDrawer() },
-                            onDetailBack = { dualScreenManager.returnToHomeSwapped() },
-                            onOptionAction = { vm, option ->
-                                val gameId = vm.uiState.value.gameId
-                                when (option) {
-                                    GameDetailOption.PLAY -> {
-                                        when {
-                                            vm.uiState.value.isPlayable ->
-                                                dualScreenManager.handleDirectAction("PLAY", gameId, vm.uiState.value.activeChannel)
-                                            vm.uiState.value.isSteamGame && vm.steamMarkOptions().isNotEmpty() -> {
-                                                vm.openSteamInstallModal(vm.steamMarkOptions())
-                                                val options = vm.steamInstallOptions.value
-                                                dualScreenManager.openSteamInstallModal(
-                                                    options.map { it.displayName },
-                                                    options.map { it.launcherPackage }
-                                                )
-                                            }
-                                            else ->
-                                                dualScreenManager.handleDirectAction("DOWNLOAD", gameId, vm.uiState.value.activeChannel)
-                                        }
-                                    }
-                                    GameDetailOption.RATING -> {
-                                        vm.openRatingPicker()
-                                        dualScreenManager.openModal(ActiveModal.RATING, vm.ratingPickerValue.value)
-                                    }
-                                    GameDetailOption.DIFFICULTY -> {
-                                        vm.openDifficultyPicker()
-                                        dualScreenManager.openModal(ActiveModal.DIFFICULTY, vm.ratingPickerValue.value)
-                                    }
-                                    GameDetailOption.STATUS -> {
-                                        vm.openStatusPicker()
-                                        dualScreenManager.openModal(
-                                            ActiveModal.STATUS,
-                                            statusSelected = vm.statusPickerValue.value,
-                                            statusCurrent = vm.uiState.value.status
-                                        )
-                                    }
-                                    GameDetailOption.TOGGLE_FAVORITE -> vm.toggleFavorite()
-                                    GameDetailOption.CHANGE_EMULATOR -> {
-                                        scope.launch {
-                                            val detector = com.nendo.argosy.data.emulator.getSharedEmulatorDetector(context)
-                                            detector.detectEmulators()
-                                            val emulators = detector.getInstalledForPlatform(
-                                                vm.uiState.value.platformSlug
-                                            )
-                                            vm.openEmulatorPicker(emulators)
-                                            dualScreenManager.openEmulatorModal(
-                                                emulators.map { it.def.displayName },
-                                                emulators.map { it.versionName ?: "" },
-                                                vm.uiState.value.emulatorName
-                                            )
-                                        }
-                                    }
-                                    GameDetailOption.CHANGE_CORE -> {
-                                        val coreNames = vm.openCorePicker()
-                                        dualScreenManager.openCoreModal(
-                                            coreNames,
-                                            vm.uiState.value.selectedCoreName
-                                        )
-                                    }
-                                    GameDetailOption.SAVE_PATH -> {
-                                        vm.openSavePathPicker()
-                                        dualScreenManager.openSavePathModal(vm.uiState.value.savePathOverride)
-                                    }
-                                    GameDetailOption.DISPLAY_TARGET -> {
-                                        vm.openDisplayTargetPicker()
-                                        val detailUi = vm.uiState.value
-                                        dualScreenManager.openDisplayTargetModal(
-                                            com.nendo.argosy.data.preferences.EmulatorDisplayTarget.entries.map { it.displayName },
-                                            detailUi.displayTargetName?.let {
-                                                com.nendo.argosy.data.preferences.EmulatorDisplayTarget.fromString(it).displayName
-                                            },
-                                            com.nendo.argosy.data.preferences.EmulatorDisplayTarget
-                                                .fromString(detailUi.platformDisplayTargetName).displayName
-                                        )
-                                    }
-                                    GameDetailOption.MEMORY_CARD -> {
-                                        vm.openMemoryCardPicker()
-                                        dualScreenManager.openMemoryCardModal(
-                                            vm.memcardPickerList.value.map { it.name },
-                                            vm.uiState.value.selectedMemcardName,
-                                            null
-                                        )
-                                    }
-                                    GameDetailOption.SELECT_VARIANT -> {
-                                        scope.launch {
-                                            val variants = vm.getDownloadedVariants()
-                                            vm.openVariantPicker(variants)
-                                            dualScreenManager.openVariantModal(
-                                                variants.map { it.fileName },
-                                                vm.uiState.value.selectedVariantName
-                                            )
-                                        }
-                                    }
-                                    GameDetailOption.ADD_TO_COLLECTION -> {
-                                        vm.openCollectionModal()
-                                        scope.launch {
-                                            kotlinx.coroutines.delay(50)
-                                            val items = vm.collectionItems.value
-                                            dualScreenManager.openCollectionModal(
-                                                items.map { it.id },
-                                                items.map { it.name },
-                                                items.map { it.isInCollection }
-                                            )
-                                        }
-                                    }
-                                    GameDetailOption.TITLE_ID -> {
-                                        dualScreenManager.handleDirectAction("REFRESH_TITLE_ID", gameId)
-                                    }
-                                    GameDetailOption.FILES -> {
-                                        dualScreenManager.handleDirectAction("FILES", gameId)
-                                    }
-                                    GameDetailOption.SELECT_DISC -> {
-                                        dualScreenManager.handleDirectAction("SELECT_DISC", gameId)
-                                    }
-                                    GameDetailOption.REFRESH_METADATA,
-                                    GameDetailOption.CHANGE_COVER,
-                                    GameDetailOption.RESET_COVER,
-                                    GameDetailOption.WRITE_REVIEW,
-                                    GameDetailOption.DELETE -> {
-                                        dualScreenManager.handleDirectAction(option.name, gameId)
-                                    }
-                                    GameDetailOption.HIDE -> {
-                                        val action = if (vm.uiState.value.isHidden) "UNHIDE" else "HIDE"
-                                        dualScreenManager.handleDirectAction(action, gameId)
-                                    }
-                                }
-                            },
-                            onScreenshotViewed = { index ->
-                                dualScreenManager.onScreenshotSelected(index)
-                            },
-                            onDimTapped = {
-                                val vm = dualScreenManager.swappedGameDetailViewModel
-                                if (vm != null && vm.activeModal.value != ActiveModal.NONE) {
-                                    vm.dismissPicker()
-                                    dualScreenManager.dismissDualModal()
-                                }
-                            },
-                            onCustomGridActivate = { swappedInputHandler.onConfirm() },
-                            mediaToggle = mediaToggle,
-                            onMediaToggle = { dualScreenManager.toggleCompanionMediaView() },
-                            onKeyboardToggle = { dualScreenManager.toggleUpperKeyboard() },
-                            dualMediaViewModel = dualScreenManager.swappedMediaViewModel,
-                            modifier = Modifier.blur(contentBlur)
-                        )
-                        }
-                    }
-                } else {
-                    NavGraph(
-                        navController = navController,
-                        startDestination = startDestination,
-                        onDrawerToggle = { if (isDrawerOpen) closeDrawer() else openDrawer() },
-                        argosyViewModel = viewModel,
-                        onPlayMedia = { itemId, startOver ->
-                            activity?.dualScreenManager?.playMediaItem(itemId, startOver)
-                                ?: PlayerActivity.start(
-                                    context = context,
-                                    args = PlayerArgs(
-                                        itemId = itemId,
-                                        startPositionMs = if (startOver) 0L else -1L
-                                    )
+                                args = PlayerArgs(
+                                    itemId = itemId,
+                                    startPositionMs = if (startOver) 0L else -1L
                                 )
-                        },
-                        modifier = Modifier.blur(contentBlur)
-                    )
-                }
+                            )
+                    },
+                    modifier = Modifier.blur(contentBlur)
+                )
             }
 
             NotificationHost(
@@ -2088,18 +1087,20 @@ fun ArgosyApp(
                 }
             )
 
+            com.nendo.argosy.core.notification.ScreenSetPrompt(
+                visible = screenSetPromptVisible,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = Dimens.spacingMd, bottom = Dimens.headerHeight)
+            )
+
             // Quick Menu Overlay (L3 triggered)
             QuickMenuOverlay(
                 viewModel = quickMenuViewModel,
                 onGameSelect = { gameId ->
                     closeQuickMenu()
-                    val dsm = activity?.dualScreenManager
-                    if (dsm?.isRolesSwapped?.value == true) {
-                        dsm.selectGameSwapped(gameId)
-                    } else {
-                        navController.navigate(Screen.GameDetail.createRoute(gameId)) {
-                            launchSingleTop = true
-                        }
+                    navController.navigate(Screen.GameDetail.createRoute(gameId)) {
+                        launchSingleTop = true
                     }
                 },
                 closeQuickMenu = closeQuickMenu
@@ -2147,16 +1148,13 @@ fun ArgosyApp(
                 }
             )
 
-            // Save Conflict Modal (single-screen only; dual-screen renders on companion)
-            if (!showDualOverlay && !showSwappedInteractive) {
-                saveConflictInfo?.let { info ->
-                    SaveConflictModal(
-                        info = info,
-                        focusedButton = saveConflictButtonIndex,
-                        onKeepLocal = { viewModel.dismissSaveConflict() },
-                        onOverwrite = { viewModel.forceUploadConflictSave() }
-                    )
-                }
+            saveConflictInfo?.let { info ->
+                SaveConflictModal(
+                    info = info,
+                    focusedButton = saveConflictButtonIndex,
+                    onKeepLocal = { viewModel.dismissSaveConflict() },
+                    onOverwrite = { viewModel.forceUploadConflictSave() }
+                )
             }
 
             // Background Sync Conflict Dialog

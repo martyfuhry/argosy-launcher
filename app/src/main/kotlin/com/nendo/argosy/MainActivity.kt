@@ -210,88 +210,6 @@ class MainActivity : ComponentActivity() {
             dualScreenManager.isOverlayFocused = value
         }
 
-    val dualScreenShowcase get() = dualScreenManager.dualScreenShowcase
-    val dualGameDetailState get() = dualScreenManager.dualGameDetailState
-    val isCompanionActive get() = dualScreenManager.isCompanionActive
-    val dualViewMode get() = dualScreenManager.dualViewMode
-    val dualAppBarFocused get() = dualScreenManager.dualAppBarFocused
-    val dualDrawerOpen get() = dualScreenManager.dualDrawerOpen
-    val dualCollectionShowcase get() = dualScreenManager.dualCollectionShowcase
-    val pendingOverlayEvent get() = dualScreenManager.pendingOverlayEvent
-    val keyboardToggleEvent get() = dualScreenManager.keyboardToggleEvent
-    val swappedDualHomeViewModel get() = dualScreenManager.swappedDualHomeViewModel
-    val swappedCurrentScreen get() = dualScreenManager.swappedCurrentScreen
-    val swappedGameDetailViewModel get() = dualScreenManager.swappedGameDetailViewModel
-    val homeAppsList get() = dualScreenManager.homeAppsList
-
-    fun clearPendingOverlay() = dualScreenManager.clearPendingOverlay()
-    fun adjustDualModalRating(delta: Int) = dualScreenManager.adjustDualModalRating(delta)
-    fun setDualModalRating(value: Int) = dualScreenManager.setDualModalRating(value)
-    fun moveDualModalStatus(delta: Int) = dualScreenManager.moveDualModalStatus(delta)
-    fun setDualModalStatus(value: String) = dualScreenManager.setDualModalStatus(value)
-    fun confirmDualModal() = dualScreenManager.confirmDualModal()
-    fun dismissDualModal() = dualScreenManager.dismissDualModal()
-    fun setDualEmulatorFocus(index: Int) = dualScreenManager.setDualEmulatorFocus(index)
-    fun setDualCollectionFocus(index: Int) = dualScreenManager.setDualCollectionFocus(index)
-    fun moveDualEmulatorFocus(delta: Int) = dualScreenManager.moveDualEmulatorFocus(delta)
-    fun confirmDualEmulatorSelection() = dualScreenManager.confirmDualEmulatorSelection()
-    fun setDualCoreFocus(index: Int) = dualScreenManager.setDualCoreFocus(index)
-    fun moveDualCoreFocus(delta: Int) = dualScreenManager.moveDualCoreFocus(delta)
-    fun confirmDualCoreSelection() = dualScreenManager.confirmDualCoreSelection()
-    fun setDualSavePathFocus(index: Int) = dualScreenManager.setDualSavePathFocus(index)
-    fun moveDualSavePathFocus(delta: Int) = dualScreenManager.moveDualSavePathFocus(delta)
-    fun confirmDualSavePathSelection() = dualScreenManager.confirmDualSavePathSelection()
-    fun setDualDisplayTargetFocus(index: Int) = dualScreenManager.setDualDisplayTargetFocus(index)
-    fun moveDualDisplayTargetFocus(delta: Int) = dualScreenManager.moveDualDisplayTargetFocus(delta)
-    fun confirmDualDisplayTargetSelection() = dualScreenManager.confirmDualDisplayTargetSelection()
-    fun setDualMemoryCardFocus(index: Int) = dualScreenManager.setDualMemoryCardFocus(index)
-    fun moveDualMemoryCardFocus(delta: Int) = dualScreenManager.moveDualMemoryCardFocus(delta)
-    fun confirmDualMemoryCardSelection() = dualScreenManager.confirmDualMemoryCardSelection()
-    fun setDualVariantFocus(index: Int) = dualScreenManager.setDualVariantFocus(index)
-    fun moveDualVariantFocus(delta: Int) = dualScreenManager.moveDualVariantFocus(delta)
-    fun confirmDualVariantSelection() = dualScreenManager.confirmDualVariantSelection()
-    fun moveDualFilePickerFocus(delta: Int) = dualScreenManager.moveDualFilePickerFocus(delta)
-    fun jumpDualFilePickerGroup(direction: Int) = dualScreenManager.jumpDualFilePickerGroup(direction)
-    fun toggleDualFilePickerRow(row: com.nendo.argosy.data.model.FilePickerRow? = null) =
-        dualScreenManager.toggleDualFilePickerRow(row)
-    fun setDualFilePickerGroupCollapsed(collapse: Boolean) =
-        dualScreenManager.setDualFocusedFilePickerGroupCollapsed(collapse)
-    fun toggleDualFilePickerGroupCollapse(groupKey: String) =
-        dualScreenManager.toggleDualFilePickerGroupCollapse(groupKey)
-    fun moveDualFilePickerButtonFocus(delta: Int) = dualScreenManager.moveDualFilePickerButtonFocus(delta)
-    fun activateDualFilePickerFocused() = dualScreenManager.activateDualFilePickerFocused()
-    fun toggleDualFilePickerSelectAll() = dualScreenManager.toggleDualFilePickerSelectAll()
-    fun confirmDualFilePicker() = dualScreenManager.confirmDualFilePicker()
-    fun moveDualCoverPickerFocus(delta: Int) = dualScreenManager.moveDualCoverPickerFocus(delta)
-    fun confirmDualCoverAtFocus() = dualScreenManager.confirmDualCoverAtFocus()
-    fun selectDualCover(index: Int) = dualScreenManager.selectDualCover(index)
-    fun updateDualCoverPickerQuery(text: String) = dualScreenManager.updateDualCoverPickerQuery(text)
-    fun searchDualCovers() = dualScreenManager.searchDualCovers()
-    fun moveDualCollectionFocus(delta: Int) = dualScreenManager.moveDualCollectionFocus(delta)
-    fun toggleDualCollectionAtFocus() = dualScreenManager.toggleDualCollectionAtFocus()
-    fun showDualCollectionCreateDialog() = dualScreenManager.showDualCollectionCreateDialog()
-    fun dismissDualCollectionCreateDialog() = dualScreenManager.dismissDualCollectionCreateDialog()
-    fun confirmDualCollectionCreate(name: String) = dualScreenManager.confirmDualCollectionCreate(name)
-    fun updateDualSaveNameText(text: String) = dualScreenManager.updateDualSaveNameText(text)
-    fun confirmDualSaveName() = dualScreenManager.confirmDualSaveName()
-    fun moveDualReviewEditorSection(delta: Int) = dualScreenManager.moveDualReviewEditorSection(delta)
-    fun focusDualReviewEditorSection(section: com.nendo.argosy.ui.screens.gamedetail.ReviewEditorSection) =
-        dualScreenManager.focusDualReviewEditorSection(section)
-    fun adjustDualReviewEditor(delta: Int) = dualScreenManager.adjustDualReviewEditor(delta)
-    fun setDualReviewVerdict(recommended: Boolean) = dualScreenManager.setDualReviewVerdict(recommended)
-    fun setDualReviewVisibility(visibility: String) = dualScreenManager.setDualReviewVisibility(visibility)
-    fun setDualReviewEditorBody(text: String) = dualScreenManager.setDualReviewEditorBody(text)
-    fun confirmDualReviewEditor() = dualScreenManager.confirmDualReviewEditor()
-    fun submitDualReview() = dualScreenManager.submitDualReview()
-    fun promptDualReviewDelete() = dualScreenManager.promptDualReviewDelete()
-    fun confirmDualReviewDelete() = dualScreenManager.confirmDualReviewDelete()
-    fun dismissDualReviewConfirm() = dualScreenManager.dismissDualReviewConfirm()
-    fun backDualReviewEditor() = dualScreenManager.backDualReviewEditor()
-    fun discardDualReviewEditor() = dualScreenManager.discardDualReviewEditor()
-    fun selectDualDisc(index: Int) = dualScreenManager.selectDualDisc(index)
-    fun setDualSteamInstallFocus(index: Int) = dualScreenManager.setDualSteamInstallFocus(index)
-    fun moveDualSteamInstallFocus(delta: Int) = dualScreenManager.moveDualSteamInstallFocus(delta)
-    fun confirmDualSteamInstallSelection() = dualScreenManager.confirmDualSteamInstallSelection()
 
     // --- Screen Capture ---
 
@@ -442,23 +360,15 @@ class MainActivity : ComponentActivity() {
             DualScreenManagerHolder.instance = dualScreenManager
         }
 
-        if (initialSwapped) {
-            dualScreenManager.initSwappedViewModel()
-        }
-
         dualScreenManager.onRoleSwapped = { swapped ->
-            if (swapped) {
-                if (dualScreenManager.swappedDualHomeViewModel == null) {
-                    dualScreenManager.initSwappedViewModel()
-                }
-                refocusSelf()
-            }
+            if (swapped) refocusSelf()
         }
         dualScreenManager.onOverlayFocusChanged = { _ -> }
         dualScreenManager.onEmulatorDispatcherChanged = { }
         dualScreenManager.registerReceivers()
         dualScreenManager.ensureCompanionLaunched()
         dualScreenManager.startStartupGuard()
+        dualScreenManager.applyStoredScreenLayout()
         initCacheAndPreferences()
         activityScope.launch { jellyfinConnectionManager.initialize() }
 
@@ -482,29 +392,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             ALauncherTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    val rolesSwappedState = dualScreenManager.isRolesSwapped.collectAsState()
-                    val dualScreenDeviceState = dualScreenManager.isDualScreenDevice.collectAsState()
                     androidx.compose.runtime.LaunchedEffect(Unit) {
                         dualScreenManager.localeChangeToken.drop(1).collect { recreate() }
                     }
-                    val companionActiveState = dualScreenManager.isCompanionActive.collectAsState()
-                    val companionHoldsPrimary = dualScreenDeviceState.value &&
-                        companionActiveState.value &&
-                        !rolesSwappedState.value
-                    if (companionHoldsPrimary) {
+                    val companionHoldsPrimary =
+                        dualScreenManager.companionHoldsPrimary.collectAsState()
+                    if (companionHoldsPrimary.value) {
                         val slot by dualScreenManager.presentationSlot.collectAsState()
                         com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
                     } else {
                         ArgosyApp(
-                            isDualScreenDevice = dualScreenDeviceState.value,
-                            isRolesSwapped = rolesSwappedState.value,
-                            isCompanionActive = isCompanionActive,
-                            dualScreenShowcase = dualScreenShowcase,
-                            dualGameDetailState = dualGameDetailState,
-                            dualViewMode = dualViewMode,
-                            dualCollectionShowcase = dualCollectionShowcase,
-                            dualAppBarFocused = dualAppBarFocused,
-                            dualDrawerOpen = dualDrawerOpen,
                             onStartupComplete = { dualScreenManager.stopStartupGuard() }
                         )
                     }
@@ -597,11 +494,7 @@ class MainActivity : ComponentActivity() {
             return true
         }
 
-        if (!dualScreenManager.isRolesSwapped.value &&
-            isOnHomeScreen &&
-            dualScreenManager.isCompanionActive.value &&
-            !isOverlayFocused
-        ) {
+        if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused) {
             if (event.action == KeyEvent.ACTION_DOWN || event.action == KeyEvent.ACTION_UP) {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
                     Logger.verbose(TAG) { "dispatchKeyEvent: FORWARDING key=${event.keyCode} to companion" }
@@ -619,7 +512,6 @@ class MainActivity : ComponentActivity() {
         }
 
         if (!dualScreenManager.isRolesSwapped.value &&
-            isOnHomeScreen &&
             !isOverlayFocused &&
             !dualScreenManager.isCompanionActive.value &&
             !dualScreenManager.swappedIsGameActive.value &&
@@ -630,7 +522,6 @@ class MainActivity : ComponentActivity() {
                 Log.d(TAG, "dispatchKeyEvent: companion link stale, relinking key=${event.keyCode}")
                 reassertCompanionForwarding()
             }
-            return true
         }
 
         if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
@@ -707,11 +598,7 @@ class MainActivity : ComponentActivity() {
 
         val stickEvent = gamepadInputHandler.processStickMotion(event)
         if (stickEvent != null) {
-            if (!dualScreenManager.isRolesSwapped.value &&
-                isOnHomeScreen &&
-                dualScreenManager.isCompanionActive.value &&
-                !isOverlayFocused
-            ) {
+            if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused) {
                 val keyCode = gamepadEventToKeyCode(stickEvent)
                 if (keyCode != null) {
                     dualScreenManager.companionHost?.onForwardKey(

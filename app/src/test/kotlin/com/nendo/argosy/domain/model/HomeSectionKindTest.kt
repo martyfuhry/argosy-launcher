@@ -1,14 +1,12 @@
 package com.nendo.argosy.domain.model
 
-import com.nendo.argosy.ui.dualscreen.home.DualHomeSection
 import com.nendo.argosy.ui.screens.home.HomeRow
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * The two home surfaces build their own row lists from their own repositories, so the only thing
- * keeping them in the same order is this enum. These tests fail if either side stops agreeing with
- * it, which is what a shared listing is supposed to guarantee.
+ * The home row list is built from its own repositories, so the only thing keeping it in the order
+ * the rest of the app assumes is this enum.
  */
 class HomeSectionKindTest {
 
@@ -36,23 +34,6 @@ class HomeSectionKindTest {
             HomeRow.Steam
         )
         assertEquals(HomeSectionKind.LEADING, rows.map { it.kind })
-    }
-
-    /**
-     * The companion carries the game rows only, and every leading kind is a game kind, so it is
-     * expected to claim all of them; a kind going missing here is the drift this test was written to
-     * catch.
-     */
-    @Test
-    fun `every leading kind is claimed by a section on the companion`() {
-        val sections = listOf(
-            DualHomeSection.Recent,
-            DualHomeSection.Recommendations,
-            DualHomeSection.Favorites,
-            DualHomeSection.Android,
-            DualHomeSection.Steam
-        )
-        assertEquals(HomeSectionKind.LEADING, sections.map { it.kind })
     }
 
     @Test

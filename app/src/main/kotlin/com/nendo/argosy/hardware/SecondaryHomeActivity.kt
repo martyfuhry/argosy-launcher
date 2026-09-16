@@ -31,17 +31,6 @@ import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.repository.AppsRepository
 import com.nendo.argosy.ui.ScreenDimmerPreferences
 import com.nendo.argosy.ui.components.ScreenDimmerOverlay
-import com.nendo.argosy.ui.dualscreen.ShowcaseViewModel
-import com.nendo.argosy.ui.dualscreen.gamedetail.ActiveModal
-import com.nendo.argosy.ui.dualscreen.gamedetail.DualGameDetailUpperState
-import com.nendo.argosy.ui.dualscreen.gamedetail.DualGameDetailViewModel
-import com.nendo.argosy.ui.dualscreen.gamedetail.parseSaveEntryDataList
-import com.nendo.argosy.ui.dualscreen.home.DualCollectionShowcaseState
-import com.nendo.argosy.ui.dualscreen.home.DualHomeShowcaseState
-import com.nendo.argosy.ui.dualscreen.home.DualHomeViewModel
-import com.nendo.argosy.ui.dualscreen.home.DualHomeViewMode
-import com.nendo.argosy.ui.dualscreen.media.DualMediaRow
-import com.nendo.argosy.ui.dualscreen.media.DualMediaViewModel
 import com.nendo.argosy.ui.input.LocalABIconsSwapped
 import com.nendo.argosy.ui.input.LocalXYIconsSwapped
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
@@ -51,7 +40,6 @@ import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.LocalSwapStartSelect
 import com.nendo.argosy.ui.input.SelectModifier
 import com.nendo.argosy.ui.input.mapKeycodeToGamepadEvent
-import com.nendo.argosy.ui.screens.secondaryhome.SecondaryHomeViewModel
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.PermissionHelper
 import com.nendo.argosy.util.hideSystemBars
@@ -69,6 +57,9 @@ class SecondaryHomeActivity :
     DualScreenManager.CompanionHost {
 
     private lateinit var dsm: DualScreenManager
+
+    @javax.inject.Inject
+    lateinit var gamepadInputHandler: com.nendo.argosy.ui.input.GamepadInputHandler
 
     private var languageTag: String = com.nendo.argosy.core.locale.LocaleHelper.SYSTEM_LANGUAGE_TAG
 
@@ -88,13 +79,7 @@ class SecondaryHomeActivity :
         )
     }
 
-    var currentScreen by mutableStateOf(CompanionScreen.HOME)
-        private set
-    var dualGameDetailViewModel: DualGameDetailViewModel? = null
-        private set
-    private var isScreenshotViewerOpen = false
     private var launchedExternalApp = false
-    private var preSessionDetailGameId = -1L
 
     private var isInitialized by mutableStateOf(false)
     var isArgosyForeground by mutableStateOf(false)
@@ -116,21 +101,9 @@ class SecondaryHomeActivity :
     private var confirmHoldFired = false
     private var mediaDimCollectJob: kotlinx.coroutines.Job? = null
 
-    private lateinit var viewModel: SecondaryHomeViewModel
-    private lateinit var dualHomeViewModel: DualHomeViewModel
-    private var dualMediaViewModel by mutableStateOf<DualMediaViewModel?>(null)
     private var isMediaPanelVisible by mutableStateOf(false)
-    private var mediaToggle by mutableStateOf<CompanionMediaToggle?>(null)
-    private lateinit var stateManager: SecondaryHomeStateManager
     var isShowcaseRole by mutableStateOf(false)
         private set
-
-    private val _companionDetail = MutableStateFlow<CompanionDetail?>(null)
-    private val _showcaseState = MutableStateFlow(DualHomeShowcaseState())
-    private val _showcaseViewMode = MutableStateFlow("CAROUSEL")
-    private val _showcaseCollectionState = MutableStateFlow(DualCollectionShowcaseState())
-    private val _showcaseGameDetailState = MutableStateFlow<DualGameDetailUpperState?>(null)
-    private var showcaseViewModel: ShowcaseViewModel? = null
 
     var swapAB = false; private set
     var swapXY = false; private set
@@ -141,8 +114,6 @@ class SecondaryHomeActivity :
     private var startSelectSwapped by mutableStateOf(false)
     private val selectModifier = SelectModifier()
 
-    private lateinit var broadcasts: SecondaryHomeBroadcastHelper
-    private lateinit var inputHandler: SecondaryHomeInputHandler
     private var displayListener: DisplayManager.DisplayListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -232,8 +203,6 @@ class SecondaryHomeActivity :
     private fun CompanionRoleContent() {
         if (!isShowcaseRole) {
             com.nendo.argosy.ui.ArgosyApp(
-                isDualScreenDevice = true,
-                isRolesSwapped = false,
                 onStartupComplete = { dsm.stopStartupGuard() }
             )
             return
@@ -241,109 +210,6 @@ class SecondaryHomeActivity :
 
         val slot by dsm.presentationSlot.collectAsState()
         com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
-    }
-
-    @androidx.compose.runtime.Composable
-    private fun LegacyCompanionRoleContent() {
-        val primaryDetail by _companionDetail.collectAsState()
-        val describingPrimary = primaryDetail
-            .takeIf { isShowcaseRole && !isMediaPanelVisible }
-        if (describingPrimary != null) {
-            val describedViewMode by _showcaseViewMode.collectAsState()
-            CompanionDetailScreen(
-                detail = describingPrimary,
-                modifier = Modifier.fillMaxSize(),
-                footerHints = {
-                    com.nendo.argosy.ui.components.FooterBar(
-                        hints = com.nendo.argosy.ui.dualscreen
-                            .companionDetailHints(describingPrimary, describedViewMode)
-                    )
-                }
-            )
-        } else if (isShowcaseRole) {
-            ShowcaseRoleContent(
-                isInitialized = isInitialized,
-                isArgosyForeground = isArgosyForeground,
-                isGameActive = isGameActive,
-                isWizardActive = isWizardActive,
-                showcaseViewModel = showcaseViewModel!!,
-                viewModel = viewModel,
-                homeApps = homeApps,
-                showcaseState = _showcaseState,
-                showcaseViewMode = _showcaseViewMode,
-                collectionShowcaseState = _showcaseCollectionState,
-                gameDetailState = _showcaseGameDetailState,
-                syncConflictState = dsm.dualSyncOverlay,
-                syncConflictFocusIndex = dsm.dualSyncOverlayFocusIndex,
-                onAppClick = ::launchApp,
-                dualMediaViewModel = dualMediaViewModel,
-                isMediaPanelVisible = isMediaPanelVisible,
-                onMediaSeasonSelected = { dualMediaViewModel?.selectSeason(it) },
-                onMediaEpisodeTapped = ::playMediaItemId
-            )
-        } else {
-            SecondaryHomeContent(
-                isInitialized = isInitialized,
-                isArgosyForeground = isArgosyForeground,
-                isGameActive = isGameActive,
-                isWizardActive = isWizardActive,
-                companionInGameState = companionInGameState,
-                companionSessionTimer = companionSessionTimer,
-                homeApps = homeApps,
-                viewModel = viewModel,
-                dualHomeViewModel = dualHomeViewModel,
-                currentScreen = currentScreen,
-                dualGameDetailViewModel = dualGameDetailViewModel,
-                onAppClick = ::launchApp,
-                onGameSelected = ::selectGame,
-                onViewAllClick = ::handleViewAllClick,
-                onCollectionTapped = ::handleCollectionTapped,
-                onGridGameTapped = ::handleGridGameTapped,
-                onLetterClick = {
-                    dualHomeViewModel.jumpToSection(it)
-                    broadcasts.broadcastLibraryGameSelection()
-                },
-                onFilterOptionTapped = {
-                    dualHomeViewModel.moveFilterFocus(
-                        it - dualHomeViewModel.uiState.value.filterFocusedIndex
-                    )
-                    dualHomeViewModel.confirmFilter()
-                },
-                onFilterCategoryTapped = {
-                    dualHomeViewModel.setFilterCategory(it)
-                },
-                onSearchQueryChange = { query ->
-                    dualHomeViewModel.updateSearchQuery(query)
-                },
-                onDetailBack = ::returnToHome,
-                onOptionAction = { vm, option ->
-                    inputHandler.handleOption(vm, option)
-                },
-                onScreenshotViewed = { index ->
-                    isScreenshotViewerOpen = true
-                    broadcasts.broadcastScreenshotSelected(index)
-                },
-                onDimTapped = { broadcasts.broadcastRefocusUpper() },
-                onCustomGridActivate = {
-                    inputHandler.handleDualHomeInput(
-                        com.nendo.argosy.ui.input.GamepadEvent.Confirm
-                    )
-                },
-                companionAchievements = companionAchievements,
-                onQuickSave = { dsm.sessionQuickActions?.quickSave() },
-                onQuickLoad = { dsm.sessionQuickActions?.quickLoad() },
-                onScreenshot = { dsm.sessionQuickActions?.screenshot() },
-                dualMediaViewModel = dualMediaViewModel,
-                isMediaPanelVisible = isMediaPanelVisible,
-                mediaToggle = mediaToggle,
-                onMediaToggle = ::openMediaFromAppBar,
-                onKeyboardToggle = { broadcasts.broadcastToggleKeyboard() },
-                onMediaRowTapped = { index -> dualMediaViewModel?.focusRow(index) },
-                onMediaRowConfirmed = ::playFocusedMediaRow,
-                onMediaSeasonSelected = { dualMediaViewModel?.selectSeason(it) },
-                onMediaEpisodeTapped = ::playMediaItemId
-            )
-        }
     }
 
     override fun onResume() {
@@ -357,13 +223,9 @@ class SecondaryHomeActivity :
             dsm = currentDsm
             initializeCompanion()
         }
-        if (dsm.primaryOnHome.value) dualHomeViewModel.stopDrawerForwarding()
-        if (!dsm.primaryOnHome.value && !isGameActive) {
-            window.decorView.post { broadcasts.broadcastRefocusUpper() }
-        }
         launchedExternalApp = false
         syncFromSessionStore()
-        broadcasts.broadcastCompanionResumed()
+        dsm.onCompanionResumed()
         endSessionIfEmulatorGone()
     }
 
@@ -395,7 +257,7 @@ class SecondaryHomeActivity :
 
     override fun onStop() {
         super.onStop()
-        if (::broadcasts.isInitialized) broadcasts.broadcastCompanionPaused()
+        if (::dsm.isInitialized) dsm.onCompanionPaused()
     }
 
     override fun finishCompanion() {
@@ -458,13 +320,7 @@ class SecondaryHomeActivity :
         if (isGameActive && ::dsm.isInitialized) {
             window.decorView.post { dsm.refocusSession() }
         } else if (isShowcaseRole) {
-            window.decorView.post { broadcasts.broadcastRefocusUpper() }
-        } else if (
-            dualHomeViewModel.forwardingMode.value ==
-                com.nendo.argosy.ui.dualscreen.home.ForwardingMode.BACKGROUND &&
-            currentScreen == CompanionScreen.HOME
-        ) {
-            window.decorView.post { broadcasts.broadcastRefocusUpper() }
+            window.decorView.post { dsm.onRefocusUpper() }
         }
     }
 
@@ -489,7 +345,6 @@ class SecondaryHomeActivity :
      */
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: android.view.KeyEvent): Boolean {
-        if (isCompanionTextEntryActive()) return super.dispatchKeyEvent(event)
         if (yieldsKeysToMediaPlayer()) {
             val forward = dsm.mediaPlayerKeyDispatcher
             if (forward != null) {
@@ -497,77 +352,18 @@ class SecondaryHomeActivity :
                 return super.dispatchKeyEvent(event)
             }
         }
-        when (event.action) {
-            android.view.KeyEvent.ACTION_DOWN ->
-                if (handleGamepadKeyDown(event.keyCode, event)) return true
-            android.view.KeyEvent.ACTION_UP ->
-                if (handleGamepadKeyUp(event.keyCode, event)) return true
-        }
+        if (::dsm.isInitialized && !dsm.companionHoldsPrimary.value) return true
+        if (::dsm.isInitialized && !dsm.claimInput(event)) return true
         if (event.keyCode == android.view.KeyEvent.KEYCODE_HOME ||
             event.keyCode == android.view.KeyEvent.KEYCODE_BUTTON_MODE
         ) {
+            if (event.action == android.view.KeyEvent.ACTION_DOWN) {
+                gamepadInputHandler.emitHomeEvent()
+            }
             return true
         }
+        if (gamepadInputHandler.handleKeyEvent(event)) return true
         return super.dispatchKeyEvent(event)
-    }
-
-    private fun isCompanionTextEntryActive(): Boolean =
-        ::dualHomeViewModel.isInitialized && dualHomeViewModel.uiState.value.isTextEntryActive
-
-    private fun handleGamepadKeyDown(keyCode: Int, event: android.view.KeyEvent): Boolean {
-        if (::dsm.isInitialized && !dsm.claimInput(event)) return true
-        if (event.repeatCount == 0) {
-            val conflictEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect)
-            if (conflictEvent != null) {
-                val conflictResult = inputHandler.handleSyncConflictInput(conflictEvent)
-                if (conflictResult.handled) return true
-                val saveResult = inputHandler.handleSaveConflictInput(conflictEvent)
-                if (saveResult.handled) return true
-            }
-        }
-        if (isShowcaseRole) {
-            if (!isArgosyForeground && event.repeatCount == 0) {
-                val gamepadEvent = mapKeycodeToGamepadEvent(
-                    keyCode, swapAB, swapXY, swapStartSelect
-                )
-                if (gamepadEvent != null) {
-                    val vm = showcaseViewModel
-                    if (vm != null && vm.isModalActive() &&
-                        vm.handleModalGamepadEvent(gamepadEvent)
-                    ) return true
-                }
-            }
-            return false
-        }
-        val gamepadEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect)
-            ?: return false
-        val pressed = selectModifier.filter(gamepadEvent, android.view.KeyEvent.ACTION_DOWN)
-            ?: return true
-        if (pressed == GamepadEvent.Confirm && deferConfirm()) {
-            if (event.repeatCount == 0) beginConfirmHold()
-            return true
-        }
-        if (event.repeatCount > 0) return false
-        return routeCompanionEvent(pressed).handled
-    }
-
-    private fun handleGamepadKeyUp(keyCode: Int, event: android.view.KeyEvent): Boolean {
-        val gamepadEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect)
-            ?: return false
-        if (gamepadEvent == GamepadEvent.Confirm && confirmHoldJob != null) {
-            endConfirmHold()
-            return true
-        }
-        val released = selectModifier.filter(gamepadEvent, android.view.KeyEvent.ACTION_UP)
-            ?: return false
-        if (isShowcaseRole) return false
-        return routeCompanionEvent(released).handled
-    }
-
-    private fun routeCompanionEvent(event: GamepadEvent): InputResult {
-        val result = inputHandler.routeInput(event, true, isGameActive, currentScreen)
-        if (::dsm.isInitialized) dsm.inputFeedback.play(event, result)
-        return result
     }
 
     /**
@@ -578,6 +374,11 @@ class SecondaryHomeActivity :
      */
     override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
         if (event.isFromSource(android.view.InputDevice.SOURCE_JOYSTICK) &&
+            ::dsm.isInitialized && !dsm.companionHoldsPrimary.value
+        ) {
+            return true
+        }
+        if (event.isFromSource(android.view.InputDevice.SOURCE_JOYSTICK) &&
             ::dsm.isInitialized && !dsm.claimInput(event)
         ) {
             android.util.Log.d("SecondaryHome", "Joystick motion already handled by the primary display, dropped")
@@ -587,6 +388,12 @@ class SecondaryHomeActivity :
             val forward = dsm.mediaPlayerMotionDispatcher
             if (forward != null && forward(event)) return true
         }
+        val stickEvent = gamepadInputHandler.processStickMotion(event)
+        if (stickEvent != null) {
+            gamepadInputHandler.injectEvent(stickEvent)
+            return true
+        }
+        if (gamepadInputHandler.handleMotionEvent(event)) return true
         return super.dispatchGenericMotionEvent(event)
     }
 
@@ -606,81 +413,12 @@ class SecondaryHomeActivity :
         if (!::dsm.isInitialized) return false
         if (dsm.mediaPlayerControlsLocked.value) return false
         if (!mediaPanelIsSurfaceNow()) return false
-        if (viewModel.uiState.value.isDrawerOpen) return false
         if (dsm.mediaPlayback.value == null) return false
         if (dsm.dualSyncOverlay.value != null || dsm.dualSaveConflict.value != null) return false
         return true
     }
 
-    private fun mediaPanelIsSurfaceNow(): Boolean = mediaPanelIsSurface(
-        isInitialized = isInitialized,
-        isMediaPanelVisible = isMediaPanelVisible,
-        isWizardActive = isWizardActive,
-        hasMediaViewModel = dualMediaViewModel != null
-    )
-
-    /**
-     * Only the curated grid needs a held A, and deferring the press everywhere else would put a
-     * delay on every confirm on this screen. The companion dispatches on key-down, so the wait has
-     * to be introduced deliberately and kept to where it earns its cost.
-     */
-    /**
-     * Whether confirm should wait to see if it becomes a hold. Only the surfaces that do something
-     * with a hold defer it, because deferring costs every press its immediacy: the curated grid,
-     * where a hold picks a tile up, and the library, where it opens the game's menu.
-     */
-    private fun deferConfirm(): Boolean {
-        if (isShowcaseRole || currentScreen != CompanionScreen.HOME) return false
-        if (isMediaPanelVisible) return false
-        if (!::dualHomeViewModel.isInitialized) return false
-        if (viewModel.uiState.value.isDrawerOpen) return true
-        val state = dualHomeViewModel.uiState.value
-        return when (state.viewMode) {
-            DualHomeViewMode.CAROUSEL ->
-                state.layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CUSTOM_GRID &&
-                    !state.showTilePicker && !state.showTileMenu
-            DualHomeViewMode.LIBRARY_GRID ->
-                !state.showFilterOverlay && !state.showLibraryMenu &&
-                    state.collectionPickerGameId == null
-            else -> false
-        }
-    }
-
-    private fun beginConfirmHold() {
-        confirmHoldFired = false
-        confirmHoldJob?.cancel()
-        confirmHoldJob = lifecycleScope.launch {
-            kotlinx.coroutines.delay(CONFIRM_HOLD_MS)
-            confirmHoldFired = true
-            inputHandler.routeInput(
-                com.nendo.argosy.ui.input.GamepadEvent.LongConfirm,
-                true,
-                isGameActive,
-                currentScreen
-            )
-        }
-    }
-
-    /**
-     * Completes a press that [beginConfirmHold] started, and does nothing otherwise.
-     *
-     * Whether a press is deferred is decided again when the button comes up, and by then the press
-     * itself may have changed the answer - opening the drawer makes the release deferrable when the
-     * push was not. Without the guard the release invents a second Confirm the user never gave, and
-     * it lands on whatever the first one just opened.
-     */
-    private fun endConfirmHold() {
-        val job = confirmHoldJob ?: return
-        job.cancel()
-        confirmHoldJob = null
-        if (confirmHoldFired) return
-        inputHandler.routeInput(
-            com.nendo.argosy.ui.input.GamepadEvent.Confirm,
-            true,
-            isGameActive,
-            currentScreen
-        )
-    }
+    private fun mediaPanelIsSurfaceNow(): Boolean = false
 
     override fun onForegroundChanged(isForeground: Boolean) {
         isArgosyForeground = isForeground
@@ -724,21 +462,10 @@ class SecondaryHomeActivity :
     override fun onSessionStarted(
         gameId: Long, isHardcore: Boolean, channelName: String?
     ) {
-        preSessionDetailGameId = if (currentScreen == CompanionScreen.GAME_DETAIL) {
-            dsm.sessionStateStore.getDetailGameId()
-        } else -1L
         isGameActive = true
-        if (!dsm.isExternalDisplay) {
-            viewModel.companionFocusAppBar(homeApps.size)
-        }
-        viewModel.setCompanionPanel(CompanionPanel.DASHBOARD)
         this.isHardcore = isHardcore
         currentChannelName = channelName
         isSaveDirty = false
-        currentScreen = CompanionScreen.HOME
-        dualGameDetailViewModel = null
-        dsm.sessionStateStore.setCompanionScreen("HOME")
-        loadCompanionGameData(gameId)
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = CompanionSessionTimer().also {
             it.start(applicationContext)
@@ -760,98 +487,32 @@ class SecondaryHomeActivity :
         currentChannelName = null
         isSaveDirty = false
         companionInGameState = CompanionInGameState()
-        viewModel.setCompanionPanel(CompanionPanel.DASHBOARD)
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = null
-        val savedGameId = preSessionDetailGameId
-        preSessionDetailGameId = -1L
-        if (savedGameId > 0) {
-            selectGame(savedGameId)
-        } else {
-            dsm.sessionStateStore.setCompanionScreen("HOME")
-        }
         isInitialized = true
     }
 
     override fun onHomeAppsChanged(apps: List<String>) {
-        homeApps = apps; viewModel.setHomeApps(apps)
+        homeApps = apps
     }
 
-    override fun onLibraryRefresh() {
-        viewModel.refresh(); dualHomeViewModel.refresh()
-    }
+    override fun onLibraryRefresh() = Unit
 
-    /**
-     * Drops back to Home before reloading. Recents, last-played and the game-detail overlay are
-     * per-account, so a detail screen left open across a switch would be rendering rows the
-     * incoming account does not own.
-     */
-    override fun onAccountSwitched() {
-        returnToHome()
-        onLibraryRefresh()
-    }
+    override fun onAccountSwitched() = Unit
 
-    override fun onOverlayRequested(eventName: String) {
-        if (!isShowcaseRole) return
-        when (eventName) {
-            "drawer" -> viewModel.openDrawer()
-        }
-    }
+    override fun onOverlayRequested(eventName: String) = Unit
 
-    override fun onOpenLibrary() {
-        runOnUiThread {
-            if (currentScreen != CompanionScreen.HOME) returnToHome()
-            dsm.setCompanionMediaVisible(false)
-            dualHomeViewModel.enterLibraryGrid {
-                broadcasts.broadcastViewModeChange()
-                broadcasts.broadcastLibraryGameSelection()
-            }
-        }
-    }
+    override fun onOpenLibrary() = Unit
 
-    override fun onOpenMediaGrid() {
-        runOnUiThread {
-            if (currentScreen != CompanionScreen.HOME) returnToHome()
-            dsm.setCompanionMediaVisible(false)
-            dualHomeViewModel.enterMediaGrid {
-                broadcasts.broadcastViewModeChange()
-            }
-        }
-    }
+    override fun onOpenMediaGrid() = Unit
 
-    /**
-     * Adopts the shared position before taking the driven role, not after.
-     *
-     * Restoring once the role flag has already flipped lets this surface draw its own stale cursor
-     * for a frame and then correct itself, which reads as the swap landing in the wrong place and
-     * jumping.
-     */
     override fun onRoleSwapped(isSwapped: Boolean) {
-        if (::dualHomeViewModel.isInitialized &&
-            dualHomeViewModel.uiState.value.viewMode == DualHomeViewMode.MEDIA_INFO
-        ) {
-            dualHomeViewModel.exitMediaInfo()
-        }
-        if (isSwapped || !::dualHomeViewModel.isInitialized) {
-            isShowcaseRole = isSwapped
-            return
-        }
-        dualHomeViewModel.restoreNavContextIfPresent(dsm.sessionStateStore.getCarouselNavContext())
-        lifecycleScope.launch {
-            kotlinx.coroutines.withTimeoutOrNull(SWAP_PREPARE_TIMEOUT_MS) {
-                dualHomeViewModel.restorePending.first { !it }
-            }
-            isShowcaseRole = false
-        }
+        isShowcaseRole = isSwapped
     }
 
-    override fun onOverlayClosed() {
-        dualHomeViewModel.stopDrawerForwarding()
-    }
+    override fun onOverlayClosed() = Unit
 
-    override fun onBackgroundForward() {
-        dualHomeViewModel.startBackgroundForwarding()
-    }
+    override fun onBackgroundForward() = Unit
 
     /**
      * Keys the primary display forwarded keep the media-player yield the directly-delivered ones
@@ -877,19 +538,10 @@ class SecondaryHomeActivity :
                 return
             }
         }
-        val gamepadEvent = mapKeycodeToGamepadEvent(keyCode, swapAB, swapXY, swapStartSelect) ?: return
-        if (gamepadEvent == GamepadEvent.Confirm &&
-            (confirmHoldJob != null || deferConfirm())
-        ) {
-            when (action) {
-                android.view.KeyEvent.ACTION_DOWN -> if (repeatCount == 0) beginConfirmHold()
-                android.view.KeyEvent.ACTION_UP -> endConfirmHold()
-            }
-            return
-        }
-        val routed = selectModifier.filter(gamepadEvent, action) ?: return
-        if (action == android.view.KeyEvent.ACTION_DOWN && repeatCount > 0) return
-        inputHandler.routeInput(routed, true, isGameActive, currentScreen)
+        val time = android.os.SystemClock.uptimeMillis()
+        val forwarded = android.view.KeyEvent(time, time, action, keyCode, repeatCount)
+        if (gamepadInputHandler.handleKeyEvent(forwarded)) return
+        super.dispatchKeyEvent(forwarded)
     }
 
     /**
@@ -1037,174 +689,8 @@ class SecondaryHomeActivity :
         }
     )
 
-    override fun onGameDetailOpened(gameId: Long) {}
-
-    override fun onGameDetailClosed() {}
-
-    override fun onScreenshotSelected(index: Int) {}
-
-    override fun onScreenshotCleared() {}
-
-    override fun onModalResult(
-        dismissed: Boolean,
-        type: String?,
-        value: Int,
-        statusSelected: String?,
-        selectedIndex: Int,
-        collectionToggleId: Long,
-        collectionCreateName: String?
-    ) {
-        val vm = dualGameDetailViewModel ?: return
-        if (dismissed) {
-            when (vm.activeModal.value) {
-                ActiveModal.COLLECTION -> vm.dismissCollectionModal()
-                ActiveModal.STEAM_INSTALL -> vm.dismissSteamInstallModal()
-                ActiveModal.EMULATOR -> vm.dismissPicker()
-                else -> vm.dismissPicker()
-            }
-            refocusSelf()
-            return
-        }
-        when (type) {
-            ActiveModal.RATING.name, ActiveModal.DIFFICULTY.name -> {
-                vm.setPickerValue(value)
-                vm.confirmPicker()
-                refocusSelf()
-            }
-            ActiveModal.STATUS.name -> {
-                val statusVal = statusSelected ?: return
-                vm.setStatusSelection(statusVal)
-                vm.confirmPicker()
-                refocusSelf()
-            }
-            ActiveModal.EMULATOR.name -> {
-                if (selectedIndex >= 0) vm.confirmEmulatorByIndex(selectedIndex)
-                else vm.dismissPicker()
-                refocusSelf()
-            }
-            ActiveModal.CORE.name -> {
-                if (selectedIndex >= 0) vm.confirmCoreByIndex(selectedIndex)
-                else vm.dismissPicker()
-                refocusSelf()
-            }
-            ActiveModal.SAVE_PATH.name -> {
-                if (selectedIndex >= 0) vm.confirmSavePathByIndex(selectedIndex)
-                else vm.dismissPicker()
-                refocusSelf()
-            }
-            ActiveModal.DISPLAY_TARGET.name -> {
-                if (selectedIndex >= 0) vm.confirmDisplayTargetByIndex(selectedIndex)
-                else vm.dismissPicker()
-                refocusSelf()
-            }
-            ActiveModal.MEMORY_CARD.name -> {
-                if (selectedIndex >= 0) vm.confirmMemoryCardByIndex(selectedIndex)
-                else vm.dismissPicker()
-                refocusSelf()
-            }
-            ActiveModal.VARIANT_PICKER.name -> {
-                if (selectedIndex >= 0) vm.confirmVariantByIndex(selectedIndex)
-                else vm.dismissPicker()
-                refocusSelf()
-            }
-            ActiveModal.STEAM_INSTALL.name -> {
-                vm.dismissSteamInstallModal()
-                vm.loadGame(vm.uiState.value.gameId)
-                refocusSelf()
-            }
-            ActiveModal.SAVE_NAME.name, ActiveModal.SAVE_DELETE.name, ActiveModal.REVIEW_EDITOR.name -> refocusSelf()
-            ActiveModal.COLLECTION.name -> {
-                if (collectionCreateName != null) {
-                    vm.createAndAddToCollection(collectionCreateName)
-                    lifecycleScope.launch {
-                        kotlinx.coroutines.delay(100)
-                        broadcasts.broadcastCollectionModalOpen(vm)
-                    }
-                    return
-                }
-                if (collectionToggleId > 0) vm.toggleCollection(collectionToggleId)
-            }
-        }
-    }
-
-    override fun onDirectActionResult(type: String, gameId: Long) {
-        if (type == "UNHIDE_DONE") {
-            dualHomeViewModel.refresh()
-            return
-        }
-        if (type == "STEAM_INSTALL_DONE") {
-            dualHomeViewModel.refresh()
-            if (gameId > 0) dualGameDetailViewModel?.loadGame(gameId)
-            return
-        }
-        val vm = dualGameDetailViewModel ?: return
-        when (type) {
-            "DELETE_START" -> { if (gameId > 0) vm.onDeleteStarted() }
-            "REFRESH_DONE", "DELETE_DONE", "COVER_DONE" -> { if (gameId > 0) vm.loadGame(gameId) }
-            "HIDE_DONE" -> returnToHome()
-            "SAVE_SWITCH_DONE", "SAVE_RESTORE_DONE", "SAVE_CREATE_DONE", "SAVE_LOCK_DONE" -> { }
-        }
-    }
-
-    override fun onStateEntriesReceived(
-        entries: List<com.nendo.argosy.domain.model.UnifiedStateEntry>
-    ) {
-        dualGameDetailViewModel?.loadStateEntries(entries)
-    }
-
-    override fun onSaveDataReceived(json: String, activeChannel: String?, activeTimestamp: Long?, syncing: Boolean) {
-        val vm = dualGameDetailViewModel ?: return
-        try {
-            val entries = parseSaveEntryDataList(json)
-            vm.loadUnifiedSaves(entries, activeChannel, activeTimestamp)
-            vm.setSyncing(syncing)
-        } catch (e: Exception) {
-            android.util.Log.e("SecondaryHome", "Failed to parse save data", e)
-        }
-    }
-
-    override fun onSavesSyncDone() {
-        dualGameDetailViewModel?.setSyncing(false)
-    }
-
     override fun onDownloadCompleted(gameId: Long) {
         onLibraryRefresh()
-        if (gameId > 0 && _showcaseState.value.gameId == gameId) {
-            _showcaseState.value = _showcaseState.value.copy(isDownloaded = true)
-        }
-    }
-
-    /**
-     * Keeps the showcase on whatever the grid has under its cursor.
-     *
-     * The one-shot broadcasts fire at moments chosen for the carousel, and tiles arrive from the
-     * database after the section does, so on a cold start the carousel's game would win the race and
-     * stay. Following the cursor means the upper screen is right whenever it settles, including on
-     * first load and on the way back from a game's details.
-     */
-    private fun observeCustomGridSelection() {
-        lifecycleScope.launch {
-            dualHomeViewModel.uiState
-                .map {
-                    Triple(it.layoutKind, it.customGrid.focusedTile?.target, it.customGrid.tiles.size)
-                }
-                .distinctUntilChanged()
-                .collect { (layout, _, _) ->
-                    if (layout != com.nendo.argosy.domain.model.HomeLayoutKind.CUSTOM_GRID) return@collect
-                    if (currentScreen != CompanionScreen.HOME) return@collect
-                    broadcasts.broadcastCurrentGameSelection()
-                }
-        }
-    }
-
-    fun returnToHome() {
-        isScreenshotViewerOpen = false
-        currentScreen = CompanionScreen.HOME
-        dualGameDetailViewModel = null
-        dsm.sessionStateStore.setCompanionScreen("HOME")
-        broadcasts.broadcastGameDetailClosed()
-        broadcasts.broadcastCurrentGameSelection()
-        dualHomeViewModel.refresh()
     }
 
     private val fontFamilyCache = mutableMapOf<String, FontFamily>()
@@ -1227,36 +713,15 @@ class SecondaryHomeActivity :
 
     private fun initializeCompanion() {
         registerDisplayListener()
-        initializeDependencies()
         loadInitialState()
         if (!isShowcaseRole) dsm.clearMediaInfoRequest()
         dsm.companionHost = this
-        lifecycleScope.launch {
-            dsm.primaryOnHome.collect { onHome ->
-                when {
-                    !onHome -> dualHomeViewModel.startBackgroundForwarding()
-                    !dsm.isOverlayFocused -> dualHomeViewModel.stopDrawerForwarding()
-                }
-            }
-        }
-        lifecycleScope.launch { dsm.dualScreenShowcase.collect { _showcaseState.value = it } }
-        lifecycleScope.launch { dsm.companionDetail.collect { _companionDetail.value = it } }
-        lifecycleScope.launch { dsm.dualViewMode.collect { _showcaseViewMode.value = it } }
-        lifecycleScope.launch { dsm.dualCollectionShowcase.collect { _showcaseCollectionState.value = it } }
-        lifecycleScope.launch { dsm.dualGameDetailState.collect { _showcaseGameDetailState.value = it } }
         lifecycleScope.launch { dsm.companionAchievements.collect { companionAchievements = it } }
         lifecycleScope.launch {
-            dsm.companionMediaVisible.collect { visible ->
-                isMediaPanelVisible = visible
-                dualMediaViewModel?.setActive(visible)
-                refreshMediaToggle()
-            }
+            dsm.companionMediaVisible.collect { visible -> isMediaPanelVisible = visible }
         }
-        lifecycleScope.launch { dsm.mediaPlayback.collect { refreshMediaToggle() } }
-        lifecycleScope.launch { dsm.mediaSignedIn.collect { refreshMediaToggle() } }
         lifecycleScope.launch {
             dsm.preferencesRepository.userPreferences.collect { prefs ->
-                applyInputSwapState(stateManager.inputSwapStateFrom(prefs))
                 selectModifier.comboMap =
                     SelectModifier.comboMapFrom(prefs.selectLCombo, prefs.selectRCombo)
             }
@@ -1264,330 +729,23 @@ class SecondaryHomeActivity :
         dimWhileMediaIdle()
     }
 
-    /**
-     * The app-bar button exists only where it leads somewhere: a signed-in media account, or a
-     * playback already running. Without either, the panel behind it would be empty and the button
-     * would be promising something the device cannot give.
-     */
-    private fun refreshMediaToggle() {
-        val playback = dsm.mediaPlayback.value
-        mediaToggle = if (playback == null && !dsm.mediaSignedIn.value) {
-            null
-        } else {
-            CompanionMediaToggle(
-                showingMedia = isMediaPanelVisible,
-                isPlaying = playback?.isPlaying == true
-            )
-        }
-    }
-
-    /**
-     * What the media button does, which depends on whether anything is being watched.
-     *
-     * Mid-playback it shows what is on, because that is the thing the viewer means. With nothing
-     * playing there is nothing to show, so it opens the browser on this screen instead of a panel
-     * that would be empty. During a session the panel is the answer either way: the browser lives
-     * on the home carousel, which the in-game dashboard has taken the screen from, so routing there
-     * would move a surface nobody is looking at.
-     */
-    private fun openMediaFromAppBar() {
-        if (dsm.mediaPlayback.value != null || isGameActive) {
-            dsm.toggleCompanionMediaView()
-            return
-        }
-        dualHomeViewModel.enterMediaGrid {
-            broadcasts.broadcastViewModeChange()
-        }
-    }
-
-    fun confirmFocusedMediaRow() {
-        val index = dualMediaViewModel?.uiState?.value?.focusedRowIndex ?: return
-        playFocusedMediaRow(index)
-    }
-
-    /**
-     * Plays the row at [index], or the first playable row when the index does not name one.
-     *
-     * The cursor is meant to rest only on an item, but it is -1 until the first list arrives and a
-     * header can hold it while a rail is being rebuilt underneath. Confirming in either state used
-     * to return silently, which reads as the selector being dead rather than as a list that has not
-     * settled.
-     *
-     * The row can hold a whole series -- related titles arrive as shows, not episodes -- so the id
-     * is resolved to something the player can negotiate before it is handed over. A series the
-     * resolver can only answer with its detail screen is logged and left alone, because this
-     * display has no media detail surface to open.
-     */
-    private fun playFocusedMediaRow(index: Int) {
-        val vm = dualMediaViewModel ?: return
-        val rows = vm.uiState.value.rows
-        val target = rows.getOrNull(index) as? DualMediaRow.Item
-            ?: rows.filterIsInstance<DualMediaRow.Item>().firstOrNull()
-        if (target == null) {
-            android.util.Log.d("SecondaryHome", "playFocusedMediaRow: no playable row for index $index")
-            return
-        }
-        vm.focusRow(rows.indexOf(target))
-        playMediaItemId(target.item.itemId)
-    }
-
-    /**
-     * Sends one item to the player window wherever it currently is. The id is resolved first
-     * because a row can hold a whole series; a series the resolver can only answer with its detail
-     * screen is logged and left alone, because this display has no media detail surface to open.
-     */
-    private fun playMediaItemId(itemId: String) {
-        lifecycleScope.launch {
-            when (val resolved = dsm.resolveMediaPlayTargetUseCase(itemId)) {
-                is com.nendo.argosy.domain.model.MediaPlayTarget.Play ->
-                    dsm.playMediaItem(resolved.itemId)
-                is com.nendo.argosy.domain.model.MediaPlayTarget.OpenDetail ->
-                    android.util.Log.d(
-                        "SecondaryHome",
-                        "playMediaItemId: no playable episode for ${resolved.itemId}"
-                    )
-            }
-        }
-    }
-
-    private fun applyInputSwapState(state: SecondaryHomeStateManager.InputSwapState) {
-        swapAB = state.swapAB
-        swapXY = state.swapXY
-        swapStartSelect = state.swapStartSelect
-        abIconsSwapped = state.abIconsSwapped
-        xyIconsSwapped = state.xyIconsSwapped
-        startSelectSwapped = state.startSelectSwapped
-    }
-
-    private fun initializeDependencies() {
-        val gameRepository = dsm.gameRepository
-        val platformRepository = dsm.platformRepository
-        val collectionRepository = dsm.collectionRepository
-        val affinityHelper = dsm.displayAffinityHelper
-
-        viewModel = SecondaryHomeViewModel(
-            gameRepository = gameRepository, platformRepository = platformRepository,
-            appsRepository = AppsRepository(applicationContext),
-            preferencesRepository = null,
-            displayAffinityHelper = affinityHelper,
-            downloadManager = null, context = applicationContext,
-            syncPreferencesRepository = dsm.syncPreferencesRepository
-        )
-        dualHomeViewModel = DualHomeViewModel(
-            gameRepository = gameRepository, platformRepository = platformRepository,
-            collectionRepository = collectionRepository,
-            downloadQueueRepository = dsm.downloadQueueRepository,
-            displayAffinityHelper = affinityHelper,
-            context = applicationContext,
-            steamContentManager = dsm.steamContentManager,
-            preferencesRepository = dsm.preferencesRepository,
-            repairImageCacheUseCase = dsm.repairImageCacheUseCase,
-            downloadFileStatusRepository = dsm.downloadFileStatusRepository,
-            gradientExtractionDelegate = dsm.gradientExtractionDelegate,
-            getPinnedCollectionsUseCase = dsm.getPinnedCollectionsUseCase,
-            getGamesForPinnedCollectionUseCase = dsm.getGamesForPinnedCollectionUseCase,
-            advanceCollectionFocusUseCase = dsm.advanceCollectionFocusUseCase,
-            prepareCollectionQueueUseCase = dsm.prepareCollectionQueueUseCase,
-            sessionStateStore = dsm.sessionStateStore,
-            homeTileRepository = dsm.homeTileRepository,
-            raTileContentRepository = dsm.raTileContentRepository,
-            homeGridPageRepository = dsm.homeGridPageRepository,
-            homeTilePromptQueue = dsm.homeTilePromptQueue,
-            appsRepository = dsm.appsRepository,
-            syncPreferencesRepository = dsm.syncPreferencesRepository,
-            pageChooserEntrySource = dsm.pageChooserEntrySource,
-            ambientAudioManager = dsm.ambientAudioManager,
-            mediaRepository = dsm.mediaRepository,
-            resolveMediaPlayTargetUseCase = dsm.resolveMediaPlayTargetUseCase,
-            mediaAvailabilityVerifier = dsm.mediaAvailabilityVerifier,
-            mediaDownloadDelegate = dsm.mediaDownloadDelegate,
-            mediaSiblingsDelegate = dsm.mediaSiblingsDelegate
-        )
-        dualHomeViewModel.observeHomeTiles()
-        dualHomeViewModel.observeTilePrompts()
-        dualMediaViewModel = DualMediaViewModel(
-            mediaRepository = dsm.mediaRepository,
-            playback = dsm.mediaPlayback,
-            gradientExtractionDelegate = dsm.gradientExtractionDelegate,
-            getRelatedMedia = dsm.getRelatedMediaUseCase,
-            availabilityVerifier = dsm.mediaAvailabilityVerifier,
-            seriesDelegate = dsm.mediaSeriesDelegate,
-            requestedItem = dsm.mediaInfoRequest
-        )
-        observeCustomGridSelection()
-        broadcasts = SecondaryHomeBroadcastHelper(
-            dsm = dsm, dualHomeViewModel = dualHomeViewModel,
-            secondaryHomeViewModel = { viewModel }
-        )
-        dualHomeViewModel.onRestoreComplete = {
-            homeRestoreSettled = true
-            if (currentScreen == CompanionScreen.HOME) {
-                broadcasts.broadcastCurrentGameSelection()
-            }
-        }
-        stateManager = SecondaryHomeStateManager(
-            context = applicationContext, gameRepository = gameRepository,
-            activeSaveRepository = dsm.activeSaveRepository,
-            prefetchGameSaveDataUseCase = dsm.prefetchGameSaveDataUseCase,
-            platformRepository = platformRepository,
-            collectionRepository = collectionRepository,
-            socialRepository = dsm.socialRepository,
-            emulatorConfigDao = dsm.emulatorConfigDao,
-            downloadQueueRepository = dsm.downloadQueueRepository,
-            downloadManager = dsm.downloadManager,
-            steamRepository = dsm.steamRepository,
-            configureEmulatorUseCase = dsm.configureEmulatorUseCase,
-            builtinCoreResolver = dsm.builtinCoreResolver,
-            saveHandlerRegistry = dsm.saveHandlerRegistry,
-            steamContentManager = dsm.steamContentManager,
-            displayAffinityHelper = affinityHelper,
-            downloadFileStatusRepository = dsm.downloadFileStatusRepository,
-            preferencesRepository = dsm.preferencesRepository,
-            resolveGameEmulatorContext = dsm.resolveGameEmulatorContext,
-            romMRepository = dsm.romMRepository
-        )
-
-        inputHandler = SecondaryHomeInputHandler(
-            viewModel = viewModel,
-            dualHomeViewModel = dualHomeViewModel,
-            broadcasts = broadcasts,
-            homeApps = { homeApps },
-            dualGameDetailViewModel = { dualGameDetailViewModel },
-            isScreenshotViewerOpen = { isScreenshotViewerOpen },
-            setScreenshotViewerOpen = { isScreenshotViewerOpen = it },
-            onSelectGame = ::selectGame,
-            onReturnToHome = ::returnToHome,
-            onLaunchApp = ::launchApp,
-            onLaunchAppOnOtherDisplay = ::launchAppOnOtherDisplay,
-            onRefocusSelf = ::refocusSelf,
-            context = applicationContext,
-            lifecycleLaunch = { block -> lifecycleScope.launch { block() } },
-            isMediaPanelSurface = ::mediaPanelIsSurfaceNow,
-            dualMediaViewModel = { dualMediaViewModel },
-            onConfirmMediaRow = ::confirmFocusedMediaRow
-        )
-        inputHandler.setDrawerAppLauncher { intent, options ->
-            if (intent != null) {
-                if (options != null) startActivity(intent, options)
-                else startActivity(intent)
-            }
-        }
-
-        showcaseViewModel = ShowcaseViewModel(
-            detailState = _showcaseGameDetailState,
-            broadcasts = broadcasts,
-            isControlActive = { isArgosyForeground }
-        )
-    }
 
     private fun loadInitialState() {
-        val initial = stateManager.loadInitialState(viewModel, dualHomeViewModel)
+        val store = dsm.sessionStateStore
+        isShowcaseRole = dsm.isRolesSwapped.value
+        isArgosyForeground = store.isArgosyForeground()
+        isGameActive = store.hasActiveSession()
+        isWizardActive = store.isWizardActive() || !store.isFirstRunComplete()
+        currentChannelName = store.getChannelName()
+        isSaveDirty = store.isSaveDirty()
+        isHardcore = store.isHardcore()
 
-        isShowcaseRole = initial.isShowcaseRole
-        isArgosyForeground = initial.isArgosyForeground
-        isGameActive = initial.isGameActive
-        homeRestoreSettled = !initial.restoreScheduled
-        isWizardActive = dsm.sessionStateStore.isWizardActive() ||
-            !dsm.sessionStateStore.isFirstRunComplete()
-        currentChannelName = initial.currentChannelName
-        isSaveDirty = initial.isSaveDirty
-        homeApps = initial.homeApps
-        // primaryColor is now sourced live from the user-prefs flow via
-        // themeState in setContent; the one-shot snapshot from initial state
-        // would freeze the secondary screen's accent at start time and never
-        // reflect Settings changes made on the primary.
-        isHardcore = initial.isHardcore
-
-        if (initial.isGameActive && initial.activeGameId > 0) {
-            loadCompanionGameData(initial.activeGameId)
+        if (isGameActive) {
             companionSessionTimer = CompanionSessionTimer().also {
                 it.start(applicationContext)
             }
         }
-
-        if (initial.restoredDetailViewModel != null) {
-            dualGameDetailViewModel = initial.restoredDetailViewModel
-            currentScreen = initial.restoredScreen!!
-            broadcasts.broadcastGameDetailOpened(initial.restoredDetailGameId)
-        }
-
-        val inputSwap = stateManager.loadInputSwapPreferences()
-        swapAB = inputSwap.swapAB
-        swapXY = inputSwap.swapXY
-        swapStartSelect = inputSwap.swapStartSelect
-        abIconsSwapped = inputSwap.abIconsSwapped
-        xyIconsSwapped = inputSwap.xyIconsSwapped
-        startSelectSwapped = inputSwap.startSelectSwapped
-
         isInitialized = true
-    }
-
-    private fun loadCompanionGameData(gameId: Long) {
-        lifecycleScope.launch {
-            companionInGameState = stateManager.loadCompanionGameData(gameId).withLiveQuickActionState(
-                quickActionsAvailable = dsm.sessionQuickActions != null,
-                hasQuickSave = dsm.companionHasQuickSave
-            )
-        }
-    }
-
-    private fun handleViewAllClick() {
-        val onReady = {
-            broadcasts.broadcastViewModeChange(); broadcasts.broadcastLibraryGameSelection()
-        }
-        dualHomeViewModel.enterViewAll(onReady)
-    }
-
-    private fun handleCollectionTapped(index: Int) {
-        val items = dualHomeViewModel.uiState.value.collectionItems
-        val item = items.getOrNull(index)
-        if (item is com.nendo.argosy.ui.dualscreen.home.DualCollectionListItem.Collection) {
-            dualHomeViewModel.enterCollectionGames(item.id)
-            broadcasts.broadcastViewModeChange()
-        }
-    }
-
-    private fun handleGridGameTapped(index: Int) {
-        val s = dualHomeViewModel.uiState.value
-        when (s.viewMode) {
-            DualHomeViewMode.COLLECTION_GAMES -> {
-                dualHomeViewModel.moveCollectionGamesFocus(index - s.collectionGamesFocusedIndex)
-                broadcasts.broadcastCollectionGameSelection()
-                s.collectionGames.getOrNull(index)?.let { selectGame(it.id) }
-            }
-            DualHomeViewMode.LIBRARY_GRID -> {
-                dualHomeViewModel.setLibraryFocusIndex(index)
-                broadcasts.broadcastLibraryGameSelection()
-                s.libraryGames.getOrNull(index)?.let { selectGame(it.id) }
-            }
-            else -> {}
-        }
-    }
-
-    private fun launchApp(packageName: String) = launchAppInternal(packageName, null)
-
-    private fun launchAppOnOtherDisplay(packageName: String) = launchAppInternal(
-        packageName,
-        android.app.ActivityOptions.makeBasic()
-            .setLaunchDisplayId(Display.DEFAULT_DISPLAY).toBundle()
-    )
-
-    private fun launchAppInternal(packageName: String, options: Bundle?) {
-        try {
-            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-            if (launchIntent != null) {
-                launchedExternalApp = true
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                if (options != null) {
-                    startActivity(launchIntent, options)
-                } else {
-                    if (::dsm.isInitialized) dsm.sessionStateStore.setForeignAppOnSecondary(true)
-                    startActivity(launchIntent)
-                }
-            }
-        } catch (_: Exception) {
-            launchedExternalApp = false
-        }
     }
 
     /**
@@ -1709,15 +867,6 @@ class SecondaryHomeActivity :
             }
         }
         displayManager.registerDisplayListener(displayListener, null)
-    }
-
-    private fun selectGame(gameId: Long) {
-        val vm = stateManager.createGameDetailViewModel()
-        vm.loadGame(gameId)
-        dualGameDetailViewModel = vm
-        currentScreen = CompanionScreen.GAME_DETAIL
-        dsm.sessionStateStore.setCompanionScreen("GAME_DETAIL", gameId)
-        broadcasts.broadcastGameDetailOpened(gameId)
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

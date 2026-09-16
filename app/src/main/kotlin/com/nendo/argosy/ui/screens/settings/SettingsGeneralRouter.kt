@@ -148,6 +148,7 @@ private fun routeApplySectionEntry(vm: SettingsViewModel, section: SettingsSecti
             routeResolveShaderChainSettingsScope(vm._uiState.value).chainJson
         )
         SettingsSection.DRIVERS -> vm.driversDelegate.loadDrivers(vm.viewModelScope)
+        SettingsSection.SCREENS -> routeRefreshScreens(vm)
         else -> {}
     }
 }

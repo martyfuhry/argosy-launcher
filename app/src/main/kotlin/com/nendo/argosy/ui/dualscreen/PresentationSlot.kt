@@ -29,6 +29,8 @@ sealed interface PresentationSlot {
     ) : PresentationSlot
 
     data class ScreenIdentity(val number: Int) : PresentationSlot
+
+    data class Detail(val detail: CompanionDetail) : PresentationSlot
 }
 
 data class PlayTimeSlotGame(

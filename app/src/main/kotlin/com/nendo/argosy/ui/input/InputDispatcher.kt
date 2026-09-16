@@ -11,6 +11,7 @@ class InputDispatcher(
     private val soundManager: SoundFeedbackManager? = null
 ) {
     private val modalStack = mutableListOf<InputHandler>()
+    private var interceptHandler: InputHandler? = null
     private var criticalHandler: InputHandler? = null
     private var drawerHandler: InputHandler? = null
     private var viewHandler: InputHandler? = null
@@ -85,6 +86,17 @@ class InputDispatcher(
         pendingViewSubscription = null
     }
 
+    /**
+     * The one tier that sees an event before anyone else and may decline it. A handler here claims
+     * the buttons it overrides and returns UNHANDLED for the rest, which then reach the normal
+     * chain, so a transient prompt can own a single button without freezing the screen behind it.
+     * Every other tier is all-or-nothing.
+     */
+    fun setInterceptHandler(handler: InputHandler?) {
+        interceptHandler = handler
+        processPendingEvent()
+    }
+
     /** Top-priority slot for app-level modals (save-conflict resolution) that must capture input
      * over any screen or drawer. Unlike modalStack, it is never cleared by screen subscriptions. */
     fun setCriticalHandler(handler: InputHandler?) {
@@ -140,6 +152,20 @@ class InputDispatcher(
     fun dispatch(input: GamepadInput): InputResult {
         if (System.currentTimeMillis() < inputBlockedUntil) {
             return InputResult.HANDLED
+        }
+
+        interceptHandler?.let { intercept ->
+            Companion.currentIsRepeat = input.isRepeat
+            val intercepted = try {
+                dispatchToHandler(input.event, intercept)
+            } finally {
+                Companion.currentIsRepeat = false
+            }
+            if (intercepted.handled) {
+                pendingInput = null
+                playFeedback(input.event, intercepted)
+                return intercepted
+            }
         }
 
         val handler = criticalHandler ?: modalStack.lastOrNull() ?: drawerHandler ?: viewHandler

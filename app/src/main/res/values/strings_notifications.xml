@@ -446,4 +446,11 @@
         <item quantity="one">+%1$d more</item>
         <item quantity="other">+%1$d more</item>
     </plurals>
+
+    <!-- Shown when a monitor or TV is plugged in that this device has no saved arrangement for.
+         "Display" here means a physical screen, not the act of displaying something. -->
+    <string name="notif_new_display_title">New display detected</string>
+    <!-- Follows a controller button icon, so it reads as "[X] Set up displays". Keep it short
+         enough to sit on one line beside the icon. -->
+    <string name="notif_new_display_action">Set up displays</string>
 </resources>
