@@ -36,9 +36,12 @@ fun PresentationSlotContent(slot: PresentationSlot) {
         is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
         is PresentationSlot.ScreenIdentity -> Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.BottomEnd
         ) {
-            ScreenNumberBadge(slot.number)
+            ScreenNumberBadge(
+                number = slot.number,
+                modifier = Modifier.padding(Dimens.spacingLg)
+            )
         }
     }
 }
