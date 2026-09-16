@@ -27,6 +27,8 @@ sealed interface PresentationSlot {
         val games: List<PlayTimeSlotGame>,
         val dateLabel: String? = null
     ) : PresentationSlot
+
+    data class ScreenIdentity(val number: Int) : PresentationSlot
 }
 
 data class PlayTimeSlotGame(

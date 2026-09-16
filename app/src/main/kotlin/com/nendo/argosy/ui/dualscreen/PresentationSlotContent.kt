@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.nendo.argosy.ui.components.HomeLayoutPreview
+import com.nendo.argosy.ui.components.ScreenNumberBadge
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 
@@ -33,6 +34,12 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             HomeLayoutPreview(settings = slot.settings, modifier = Modifier.fillMaxWidth())
         }
         is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
+        is PresentationSlot.ScreenIdentity -> Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            ScreenNumberBadge(slot.number)
+        }
     }
 }
 

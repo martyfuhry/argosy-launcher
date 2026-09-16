@@ -18,11 +18,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.core.content.ContextCompat
 import com.nendo.argosy.R
 import com.nendo.argosy.domain.model.ScreenRole
+import com.nendo.argosy.ui.components.ScreenNumberBadge
+import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
+import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.dualscreen.SlotOwner
 import com.nendo.argosy.ui.primitives.FocusIndicators
 import com.nendo.argosy.ui.primitives.argosyFocusIndicators
 import com.nendo.argosy.ui.screens.settings.ScreenAssignment
@@ -56,6 +62,23 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val widestPx = remember(screens) { screens.maxOfOrNull { it.widthPx }?.coerceAtLeast(1) ?: 1 }
     val perPixel = Dimens.screenMapCardWidth / widestPx.toFloat()
 
+    val context = LocalContext.current
+    val hereDisplayId = remember(context) { ContextCompat.getDisplayOrDefault(context).displayId }
+    val hereNumber = remember(screens, hereDisplayId) {
+        screens.find { it.displayId == hereDisplayId }?.number
+    }
+    val thereNumber = remember(screens, hereDisplayId) {
+        screens.firstOrNull { it.displayId != hereDisplayId }?.number
+    }
+
+    if (thereNumber != null) {
+        PresentOnCompanion(
+            owner = SlotOwner("settings.screens"),
+            slot = PresentationSlot.ScreenIdentity(thereNumber)
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier = Modifier.fillMaxSize().padding(Dimens.spacingLg),
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
@@ -109,6 +132,16 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
             }
         }
 
+    }
+
+        if (hereNumber != null) {
+            ScreenNumberBadge(
+                number = hereNumber,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(Dimens.spacingLg)
+            )
+        }
     }
 
     if (uiState.display.screenRoleModalOpen) {
