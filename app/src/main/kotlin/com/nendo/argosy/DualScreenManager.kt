@@ -727,8 +727,7 @@ class DualScreenManager(
      * and never noticed. A flow that nobody collects renders nothing; a callback that nobody
      * implements looks exactly like one that works.
      *
-     * Null means the driven screen is on Home, and the showcase falls back to the game it has
-     * focused there.
+     * Null means no screen is describing anything, and the showcase falls back to the wallpaper.
      */
     val companionDetail: StateFlow<CompanionDetail?> = _companionDetail
 
