@@ -397,7 +397,10 @@ class MainActivity : ComponentActivity() {
                     }
                     val companionHoldsPrimary =
                         dualScreenManager.companionHoldsPrimary.collectAsState()
-                    if (companionHoldsPrimary.value) {
+                    val gameActive = dualScreenManager.swappedIsGameActive.collectAsState()
+                    val gameElsewhere = gameActive.value &&
+                        dualScreenManager.emulatorDisplayId != display?.displayId
+                    if (companionHoldsPrimary.value || gameElsewhere) {
                         val slot by dualScreenManager.presentationSlot.collectAsState()
                         com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
                     } else {
