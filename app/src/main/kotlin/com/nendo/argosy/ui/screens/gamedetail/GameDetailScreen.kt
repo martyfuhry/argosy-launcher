@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationText
 import com.nendo.argosy.ui.common.rememberFileImageModel
@@ -700,9 +701,12 @@ private fun GameDetailContent(
                                     .verticalScroll(scrollState)
                                     .padding(start = Dimens.spacingMd, top = Dimens.spacingXl, end = Dimens.spacingXl, bottom = Dimens.spacingXl)
                             ) {
-                                ExpandedHeader(game = game)
-
-                                Spacer(modifier = Modifier.height(Dimens.spacingXl))
+                                val heroOnOtherScreen = DualScreenManagerHolder.instance
+                                    ?.isCompanionActive?.collectAsState()?.value == true
+                                if (!heroOnOtherScreen) {
+                                    ExpandedHeader(game = game)
+                                    Spacer(modifier = Modifier.height(Dimens.spacingXl))
+                                }
 
                             if (!game.description.isNullOrBlank()) {
                                 DescriptionSection(

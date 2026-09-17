@@ -58,6 +58,8 @@ import com.nendo.argosy.util.formatPlayTime
 import com.nendo.argosy.util.formatTimeToBeat
 
 private val EXPANDED_COVER_WIDTH = 200.dp
+private val EXPANDED_LANDSCAPE_MIN_WIDTH =
+    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.gameHeaderLandscapeMin.dp
 private val COLLAPSED_THUMBNAIL_SIZE = 48.dp
 private val COLLAPSED_BAR_HEIGHT = 64.dp
 
@@ -118,12 +120,8 @@ fun ExpandedHeader(
     game: GameDetailUi,
     modifier: Modifier = Modifier
 ) {
-    val aspectRatioClass = LocalUiScale.current.aspectRatioClass
-    val isWideDisplay = aspectRatioClass == AspectRatioClass.WIDE ||
-                        aspectRatioClass == AspectRatioClass.ULTRA_WIDE
-
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        if (isWideDisplay) {
+        if (maxWidth >= EXPANDED_LANDSCAPE_MIN_WIDTH) {
             LandscapeExpandedHeader(game = game)
         } else {
             PortraitExpandedHeader(game = game, maxWidth = maxWidth)

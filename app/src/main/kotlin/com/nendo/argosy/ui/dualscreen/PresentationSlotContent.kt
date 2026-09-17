@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,7 @@ import kotlinx.coroutines.delay
 private const val TIMELINE_SCROLL_DELAY_MS = 1500L
 private const val PLAY_SHARE_COLUMNS = 2
 private const val PLAY_SHARE_TOP_GAMES = 2
+private const val GAME_HERO_SCRIM = 0.88f
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
@@ -70,6 +72,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
             is PresentationSlot.PlayTimeline -> PlayTimelineSlot(slot)
             is PresentationSlot.PlayShare -> PlayShareSlot(slot)
+            is PresentationSlot.GameHero -> GameHeroSlot(slot)
             is PresentationSlot.Breakdown -> BreakdownSlot(slot)
             is PresentationSlot.Detail -> CompanionDetailScreen(
                 detail = slot.detail,
@@ -100,6 +103,34 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     number = slot.number,
                     modifier = Modifier.padding(Dimens.spacingLg)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GameHeroSlot(slot: PresentationSlot.GameHero) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        slot.game.backgroundPath?.let { backdrop ->
+            AsyncImage(
+                model = rememberFileImageModel(backdrop),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = GAME_HERO_SCRIM))
+        )
+        com.nendo.argosy.ui.screens.gamedetail.components.ExpandedHeader(
+            game = slot.game,
+            modifier = Modifier.align(Alignment.Center).padding(Dimens.spacingXl)
+        )
+        if (slot.hints.isNotEmpty()) {
+            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                FooterBar(hints = slot.hints.map { it.button to it.label })
             }
         }
     }

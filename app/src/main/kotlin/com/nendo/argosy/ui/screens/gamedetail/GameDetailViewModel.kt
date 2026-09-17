@@ -2168,44 +2168,15 @@ class GameDetailViewModel @Inject constructor(
 
     private fun publishCompanionDetail(game: GameDetailUi?) {
         if (!isDescribing) return
-        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(
-            companionOwner,
-            game?.let {
-                com.nendo.argosy.ui.dualscreen.CompanionDetail(
-                    title = it.title,
-                    subtitle = it.platformName,
-                    artUrl = it.coverPath,
-                    backdropUrl = it.backgroundPath,
-                    isGameTitle = true,
-                    facts = buildList {
-                        it.developer?.let { developer ->
-                            add(
-                                com.nendo.argosy.ui.dualscreen.CompanionFact(
-                                    context.getString(R.string.home_companion_fact_developer),
-                                    developer
-                                )
-                            )
-                        }
-                        it.releaseYear?.let { year ->
-                            add(
-                                com.nendo.argosy.ui.dualscreen.CompanionFact(
-                                    context.getString(R.string.home_companion_fact_released),
-                                    year.toString()
-                                )
-                            )
-                        }
-                        it.genre?.let { genre ->
-                            add(
-                                com.nendo.argosy.ui.dualscreen.CompanionFact(
-                                    context.getString(R.string.home_companion_fact_genre),
-                                    genre
-                                )
-                            )
-                        }
-                    }
-                )
-            }
-        )
+        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
+        if (game == null) {
+            dsm.releaseSlot(companionOwner)
+        } else {
+            dsm.presentSlot(
+                companionOwner,
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.GameHero(game, emptyList())
+            )
+        }
     }
 
     fun republishCompanionDetail() {
@@ -2215,7 +2186,7 @@ class GameDetailViewModel @Inject constructor(
 
     fun clearCompanionDetail() {
         isDescribing = false
-        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
+        com.nendo.argosy.DualScreenManagerHolder.instance?.releaseSlot(companionOwner)
     }
 
     private fun resetAllModals() {
