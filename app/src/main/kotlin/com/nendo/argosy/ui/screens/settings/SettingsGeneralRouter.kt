@@ -493,21 +493,14 @@ internal fun routeSetDisplayRoleOverride(
     next: com.nendo.argosy.data.preferences.DisplayRoleOverride
 ) {
     vm.viewModelScope.launch {
-        vm.preferencesRepository.setDisplayRoleOverride(next)
-        val sessionStore = com.nendo.argosy.data.preferences.SessionStateStore(vm.context)
-        sessionStore.setDisplayRoleOverride(next.name)
         vm.displayDelegate.updateState(vm._uiState.value.display.copy(displayRoleOverride = next))
-
-        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance ?: return@launch
-        val resolver = com.nendo.argosy.util.DisplayRoleResolver(
-            vm.displayAffinityHelper, sessionStore
-        )
-        val newSwapped = resolver.isSwapped
-        if (newSwapped != dsm.isRolesSwapped.value) {
-            dsm.setRolesSwapped(newSwapped)
-            dsm.sessionStateStore.setRolesSwapped(newSwapped)
-            dsm.onRoleSwapped?.invoke(newSwapped)
-            dsm.companionHost?.onRoleSwapped(newSwapped)
+        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance
+        if (dsm != null) {
+            dsm.applyDisplayRoleOverride(next)
+        } else {
+            vm.preferencesRepository.setDisplayRoleOverride(next)
+            com.nendo.argosy.data.preferences.SessionStateStore(vm.context)
+                .setDisplayRoleOverride(next.name)
         }
     }
 }

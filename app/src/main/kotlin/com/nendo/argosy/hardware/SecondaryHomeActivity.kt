@@ -502,10 +502,6 @@ class SecondaryHomeActivity :
 
     override fun onOverlayRequested(eventName: String) = Unit
 
-    override fun onOpenLibrary() = Unit
-
-    override fun onOpenMediaGrid() = Unit
-
     override fun onRoleSwapped(isSwapped: Boolean) {
         isShowcaseRole = isSwapped
     }

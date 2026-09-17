@@ -396,9 +396,10 @@ class HomeViewModel @Inject constructor(
             var previousGameId: Long? = null
             _uiState.collect { state ->
                 val focusedGame = state.focusedGame
-                if (focusedGame?.id != previousGameId) publishCompanionDetail(focusedGame)
-                if (focusedGame != null && focusedGame.id != previousGameId) {
-                    previousGameId = focusedGame.id
+                if (focusedGame?.id == previousGameId) return@collect
+                previousGameId = focusedGame?.id
+                publishCompanionDetail(focusedGame)
+                if (focusedGame != null) {
                     ambientLedManager.setContext(AmbientLedContext.GAME_HOVER)
                     if (ambientLedManager.coverArtEnabled) {
                         val colors = focusedGame.gradientColors
@@ -409,8 +410,7 @@ class HomeViewModel @Inject constructor(
                             ambientLedManager.clearHoverColors()
                         }
                     }
-                } else if (focusedGame == null && previousGameId != null) {
-                    previousGameId = null
+                } else {
                     ambientLedManager.clearHoverColors()
                     ambientLedManager.setContext(AmbientLedContext.ARGOSY_UI)
                 }
@@ -566,7 +566,8 @@ class HomeViewModel @Inject constructor(
                         carouselConfig = prefs.homeLayout.carousel,
                         autoGridConfig = prefs.homeLayout.autoGrid,
                         customGridConfig = prefs.homeLayout.customGrid,
-                        layoutKind = prefs.homeLayout.selected
+                        layoutKind = prefs.homeLayout.selected,
+                        homeApps = prefs.secondaryHomeApps.toList()
                     )
                 }
                 customGrid.applyConfig(

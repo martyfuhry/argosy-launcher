@@ -240,6 +240,7 @@ sealed class HomeRow(
 }
 
 data class HomeUiState(
+    val homeApps: List<String> = emptyList(),
     val platforms: List<HomePlatformUi> = emptyList(),
     val platformItems: List<HomeRowItem> = emptyList(),
     val platformItemsFor: Long? = null,

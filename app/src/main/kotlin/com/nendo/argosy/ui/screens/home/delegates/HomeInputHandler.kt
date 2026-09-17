@@ -519,6 +519,11 @@ class HomeInputHandler(
         if (state.showAddToCollectionModal) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (state.customGrid.engagedTileId != null) return InputResult.HANDLED
+        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance
+        if (dsm != null && dsm.hasPresentationScreen.value) {
+            dsm.swapRoles()
+            return InputResult.HANDLED
+        }
         if (isCustomGrid(state)) return InputResult.UNHANDLED
         if (state.isMediaRow) return InputResult.HANDLED
         if (state.focusedGame != null) {

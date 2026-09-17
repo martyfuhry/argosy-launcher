@@ -270,33 +270,6 @@ class DualScreenManager(
     fun showcaseDisplayId(): Int? =
         displayAffinityHelper.getRoleDisplayIds(_isRolesSwapped.value)?.second
 
-    /**
-     * Opens the library grid on whichever surface currently holds the interactive role, resolved
-     * from the role state rather than a display id. Answers false when no dual surface can host it,
-     * which is the caller's cue to navigate its own screen instead.
-     */
-    fun openLibraryOnInteractiveSurface(): Boolean {
-        if (!_isDualScreenDevice.value) return false
-        if (_isRolesSwapped.value) return false
-        if (!_isCompanionActive.value) return false
-        val host = companionHost ?: return false
-        host.onOpenLibrary()
-        return true
-    }
-
-    /**
-     * Opens the media browser on the interactive surface, the same way [openLibraryOnInteractiveSurface]
-     * places the library.
-     */
-    fun openMediaOnInteractiveSurface(): Boolean {
-        if (!_isDualScreenDevice.value) return false
-        if (_isRolesSwapped.value) return false
-        if (!_isCompanionActive.value) return false
-        val host = companionHost ?: return false
-        host.onOpenMediaGrid()
-        return true
-    }
-
     private val _isDualScreenDevice = MutableStateFlow(displayAffinityHelper.hasSecondaryDisplay)
     val isDualScreenDevice: StateFlow<Boolean> = _isDualScreenDevice
 
@@ -619,8 +592,6 @@ class DualScreenManager(
         fun onLibraryRefresh()
         fun onAccountSwitched()
         fun onOverlayRequested(eventName: String)
-        fun onOpenLibrary()
-        fun onOpenMediaGrid()
         fun onRoleSwapped(isSwapped: Boolean)
         fun onOverlayClosed()
         fun onBackgroundForward()
@@ -1818,6 +1789,18 @@ class DualScreenManager(
         }
 
         commitRoleSwap(newSwapped)
+    }
+
+    /**
+     * Stores the override and applies the arrangement it resolves to, skipping the live commit
+     * while a game is running.
+     */
+    fun applyDisplayRoleOverride(override: DisplayRoleOverride) {
+        sessionStateStore.setDisplayRoleOverride(override.name)
+        scope.launch { preferencesRepository.setDisplayRoleOverride(override) }
+        if (sessionStateStore.hasActiveSession()) return
+        val resolved = DisplayRoleResolver(displayAffinityHelper, sessionStateStore).isSwapped
+        if (resolved != _isRolesSwapped.value) commitRoleSwap(resolved)
     }
 
     private fun commitRoleSwap(newSwapped: Boolean) {

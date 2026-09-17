@@ -1474,6 +1474,20 @@ fun HomeScreen(
                 }
             )
         }
+
+        val hasPresentationScreen by (
+            com.nendo.argosy.DualScreenManagerHolder.instance?.hasPresentationScreen
+                ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
+            ).collectAsState()
+        if (hasPresentationScreen && uiState.homeApps.isNotEmpty()) {
+            com.nendo.argosy.ui.components.CompanionAppBar(
+                apps = uiState.homeApps,
+                onAppClick = { viewModel.launchTileApp(it) },
+                focusedIndex = com.nendo.argosy.ui.components.APP_BAR_NOTHING_FOCUSED,
+                onOpenDrawer = onDrawerToggle,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
         }
     }

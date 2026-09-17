@@ -362,17 +362,8 @@ fun ArgosyApp(
 
     val navigateFromDrawer: (String) -> Unit = remember {
         { route ->
-            val handledOnDual = when (route) {
-                Screen.Library.route -> dsm?.openLibraryOnInteractiveSurface() == true
-                Screen.MediaLibrary.route -> dsm?.openMediaOnInteractiveSurface() == true
-                else -> false
-            }
             val current = navController.currentDestination?.route
-            if (handledOnDual) {
-                if (current != Screen.Home.route) {
-                    navController.popBackStack(Screen.Home.route, false)
-                }
-            } else if (route != current) {
+            if (route != current) {
                 navController.navigate(route) {
                     popUpTo(Screen.Home.route) { saveState = true }
                     launchSingleTop = true

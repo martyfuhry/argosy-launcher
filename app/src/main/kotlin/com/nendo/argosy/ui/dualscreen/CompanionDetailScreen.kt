@@ -49,7 +49,7 @@ fun CompanionDetailScreen(
     Box(modifier = modifier.fillMaxSize().background(theme.surfaceBase)) {
         detail.backdropUrl?.let { backdrop ->
             AsyncImage(
-                model = backdrop,
+                model = com.nendo.argosy.ui.common.rememberFileImageModel(backdrop),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -75,7 +75,7 @@ fun CompanionDetailScreen(
         ) {
             detail.artUrl?.let { art ->
                 AsyncImage(
-                    model = art,
+                    model = com.nendo.argosy.ui.common.rememberFileImageModel(art),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     alignment = Alignment.Center,
