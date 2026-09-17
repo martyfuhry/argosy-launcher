@@ -32,6 +32,13 @@ sealed interface PresentationSlot {
 
     data class Detail(val detail: CompanionDetail) : PresentationSlot
 
+    data class PlatformShowcase(
+        val name: String,
+        val yearSpan: String?,
+        val coverPaths: List<String>,
+        val facts: List<CompanionFact>
+    ) : PresentationSlot
+
     data class InGame(
         val state: com.nendo.argosy.hardware.CompanionInGameState,
         val achievements: List<com.nendo.argosy.core.game.AchievementUi>

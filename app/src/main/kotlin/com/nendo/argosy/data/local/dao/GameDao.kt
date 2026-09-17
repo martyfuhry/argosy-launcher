@@ -14,9 +14,22 @@ import com.nendo.argosy.data.model.GameSource
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
+const val SHOWCASE_COVER_LIMIT = 250
+
 data class PlatformGameCount(
     val platformId: Long,
     val gameCount: Int
+)
+
+data class PlatformShowcaseStats(
+    val platformId: Long,
+    val gameCount: Int,
+    val installedCount: Int,
+    val achievementsEarned: Int,
+    val achievementsTotal: Int,
+    val playTimeMinutes: Int,
+    val earliestYear: Int?,
+    val latestYear: Int?
 )
 
 /**
@@ -540,6 +553,35 @@ interface GameDao {
         GROUP BY platformId
     """)
     fun observeCountsByPlatform(ownerUserId: Long?): Flow<List<PlatformGameCount>>
+
+    @Query("""
+        SELECT platformId,
+               COUNT(*) AS gameCount,
+               SUM(CASE WHEN localPath IS NOT NULL THEN 1 ELSE 0 END) AS installedCount,
+               SUM(earnedAchievementCount) AS achievementsEarned,
+               SUM(achievementCount) AS achievementsTotal,
+               SUM(playTimeMinutes) AS playTimeMinutes,
+               MIN(releaseYear) AS earliestYear,
+               MAX(releaseYear) AS latestYear
+        FROM games
+        WHERE NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        GROUP BY platformId
+    """)
+    suspend fun statsByPlatform(ownerUserId: Long?): List<PlatformShowcaseStats>
+
+    @Query("""
+        SELECT coverPath FROM games
+        WHERE (:platformId IS NULL OR platformId = :platformId)
+          AND coverPath IS NOT NULL AND coverPath != ''
+          AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        ORDER BY (localPath IS NOT NULL) DESC, isFavorite DESC, rating DESC, sortTitle ASC
+        LIMIT :limit
+    """)
+    suspend fun showcaseCovers(
+        platformId: Long?,
+        ownerUserId: Long?,
+        limit: Int = SHOWCASE_COVER_LIMIT
+    ): List<String>
 
     /**
      * Counts only what the library also counts, so a downloaded total can never exceed the total

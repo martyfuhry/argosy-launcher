@@ -14,6 +14,7 @@ import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.GameDiscDao
 import com.nendo.argosy.data.local.dao.GameFileDao
 import com.nendo.argosy.data.local.dao.PlatformDao
+import com.nendo.argosy.data.local.dao.PlatformShowcaseStats
 import com.nendo.argosy.data.local.dao.SearchCandidate
 import com.nendo.argosy.data.local.dao.UserRomsHiddenDao
 import com.nendo.argosy.data.local.dao.getByIdsChunked
@@ -955,6 +956,12 @@ class GameRepository @Inject constructor(
      */
     suspend fun countsByPlatform(): Map<Long, Int> =
         gameDao.countsByPlatform(hiddenOwnerId()).associate { it.platformId to it.gameCount }
+
+    suspend fun statsByPlatform(): Map<Long, PlatformShowcaseStats> =
+        gameDao.statsByPlatform(hiddenOwnerId()).associateBy { it.platformId }
+
+    suspend fun showcaseCovers(platformId: Long?): List<String> =
+        gameDao.showcaseCovers(platformId, hiddenOwnerId())
 
     /**
      * The same counts as a flow, re-keyed whenever the signed-in account changes so a switch does

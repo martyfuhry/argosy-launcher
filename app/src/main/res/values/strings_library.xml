@@ -373,4 +373,31 @@
         <item quantity="one">%d result</item>
         <item quantity="other">%d results</item>
     </plurals>
+
+    <!-- Heading on the second screen while the cell that opens every game at once is highlighted.
+         Noun phrase, not a command. -->
+    <string name="library_showcase_all_games">All Games</string>
+    <!-- Label under a number on the second screen while a platform is highlighted. Noun, how many
+         games that platform holds. -->
+    <string name="library_showcase_fact_games">Games</string>
+    <!-- Label under a number on the second screen while a movie library is highlighted. Noun. -->
+    <string name="library_showcase_fact_movies">Movies</string>
+    <!-- Label under a number on the second screen while a TV library is highlighted. Noun. -->
+    <string name="library_showcase_fact_shows">Shows</string>
+    <!-- Label under a number on the second screen. Noun, how many titles of a video library are
+         downloaded to this device. -->
+    <string name="library_showcase_fact_downloaded">Downloaded</string>
+    <!-- Label under a number on the second screen. Past participle, how many titles of a video
+         library have been watched to the end. -->
+    <string name="library_showcase_fact_watched">Watched</string>
+    <!-- Label under a number on the second screen. Noun, how many of them are held on this device. -->
+    <string name="library_showcase_fact_installed">Installed</string>
+    <!-- Label under a pair of numbers on the second screen, earned over total. -->
+    <string name="library_showcase_fact_achievements">Achievements</string>
+    <!-- Label under a duration on the second screen. Noun, time spent playing this platform. -->
+    <string name="library_showcase_fact_play_time">Play Time</string>
+    <!-- A duration under an hour. %1$d is a whole number of minutes. "m" is the unit symbol. -->
+    <string name="library_showcase_play_time_minutes">%1$dm</string>
+    <!-- A duration of an hour or more. %1$d is a whole number of hours. "h" is the unit symbol. -->
+    <string name="library_showcase_play_time_hours">%1$dh</string>
 </resources>

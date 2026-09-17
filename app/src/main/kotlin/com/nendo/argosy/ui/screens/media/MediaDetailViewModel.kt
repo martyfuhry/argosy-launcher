@@ -31,6 +31,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 private const val PLAY_TARGET_WAIT_MS = 10_000L
+private val COMPANION_OWNER = com.nendo.argosy.ui.dualscreen.SlotOwner("media.detail")
 
 @HiltViewModel
 class MediaDetailViewModel @Inject constructor(
@@ -178,12 +179,13 @@ class MediaDetailViewModel @Inject constructor(
      */
     fun republishCompanionDetail() {
         DualScreenManagerHolder.instance?.setCompanionDetail(
+            COMPANION_OWNER,
             _uiState.value.item?.toCompanionDetail(context)
         )
     }
 
     fun clearCompanionDetail() {
-        DualScreenManagerHolder.instance?.setCompanionDetail(null)
+        DualScreenManagerHolder.instance?.setCompanionDetail(COMPANION_OWNER, null)
     }
 
     /**

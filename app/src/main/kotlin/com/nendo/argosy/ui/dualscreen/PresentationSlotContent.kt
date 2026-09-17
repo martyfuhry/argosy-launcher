@@ -42,6 +42,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                         { FooterBar(hints = hints.map { it.button to it.label }) }
                     }
             )
+            is PresentationSlot.PlatformShowcase -> PlatformShowcaseContent(slot)
             is PresentationSlot.InGame -> {
                 val manager = com.nendo.argosy.DualScreenManagerHolder.instance
                 CompanionDashboard(

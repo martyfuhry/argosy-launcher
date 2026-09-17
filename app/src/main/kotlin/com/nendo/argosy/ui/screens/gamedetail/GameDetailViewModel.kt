@@ -80,6 +80,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private val COMPANION_OWNER = com.nendo.argosy.ui.dualscreen.SlotOwner("game.detail")
+
 @HiltViewModel
 class GameDetailViewModel @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
@@ -2165,6 +2167,7 @@ class GameDetailViewModel @Inject constructor(
 
     private fun publishCompanionDetail(game: GameDetailUi?) {
         com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(
+            COMPANION_OWNER,
             game?.let {
                 com.nendo.argosy.ui.dualscreen.CompanionDetail(
                     title = it.title,
@@ -2208,7 +2211,7 @@ class GameDetailViewModel @Inject constructor(
     }
 
     fun clearCompanionDetail() {
-        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(null)
+        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(COMPANION_OWNER, null)
     }
 
     private fun resetAllModals() {

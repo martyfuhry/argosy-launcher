@@ -2,6 +2,7 @@ package com.nendo.argosy.data.repository
 
 import com.nendo.argosy.data.local.dao.MediaCreditDao
 import com.nendo.argosy.data.local.dao.MediaItemDao
+import com.nendo.argosy.data.local.dao.MediaLibraryStats
 import com.nendo.argosy.data.local.dao.MediaLibraryDao
 import com.nendo.argosy.data.local.dao.MediaDownloadQueueDao
 import com.nendo.argosy.data.local.dao.MediaSourceDao
@@ -105,8 +106,7 @@ class MediaRepository @Inject constructor(
     fun observeLibraryItems(libraryId: String): Flow<List<MediaItemEntity>> =
         scoped(emptyList()) { owner ->
             flow {
-                val library = mediaLibraryDao.getByLibraryId(owner, libraryId)
-                val itemType = topLevelTypeOf(library?.collectionType)
+                val itemType = topLevelTypeOfLibrary(owner, libraryId)
                 if (itemType == null) emit(emptyList())
                 else emitAll(mediaItemDao.observeByLibrary(owner, libraryId, itemType.wireValue))
             }
@@ -311,6 +311,22 @@ class MediaRepository @Inject constructor(
         }
         return collected
     }
+
+    suspend fun showcasePosterUrls(libraryId: String, limit: Int): List<String> {
+        val owner = currentOwner() ?: return emptyList()
+        val itemType = topLevelTypeOfLibrary(owner, libraryId) ?: return emptyList()
+        return mediaItemDao.showcasePosters(owner, libraryId, itemType.wireValue, limit)
+            .map { posterUrl(it.itemId, it.primaryImageTag, SHOWCASE_POSTER_WIDTH) }
+    }
+
+    suspend fun libraryStats(libraryId: String): MediaLibraryStats? {
+        val owner = currentOwner() ?: return null
+        val itemType = topLevelTypeOfLibrary(owner, libraryId) ?: return null
+        return mediaItemDao.libraryStats(owner, libraryId, itemType.wireValue)
+    }
+
+    private suspend fun topLevelTypeOfLibrary(owner: String, libraryId: String): MediaItemType? =
+        topLevelTypeOf(mediaLibraryDao.getByLibraryId(owner, libraryId)?.collectionType)
 
     suspend fun getLibraryName(libraryId: String): String? {
         val owner = currentOwner() ?: return null
@@ -574,6 +590,7 @@ class MediaRepository @Inject constructor(
     companion object {
         const val TICKS_PER_SECOND = 10_000_000L
         private const val SEARCH_LIMIT = 50
+        private const val SHOWCASE_POSTER_WIDTH = 300
 
         private val SEARCHABLE_TYPES = listOf(
             MediaItemType.MOVIE.wireValue,

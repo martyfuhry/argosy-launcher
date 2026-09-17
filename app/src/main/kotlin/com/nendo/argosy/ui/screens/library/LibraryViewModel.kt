@@ -14,6 +14,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.R
 import com.nendo.argosy.data.cache.ImageCacheManager
+import com.nendo.argosy.data.local.dao.MediaLibraryStats
+import com.nendo.argosy.data.local.dao.PlatformShowcaseStats
+import com.nendo.argosy.data.local.dao.SHOWCASE_COVER_LIMIT
 import com.nendo.argosy.data.emulator.EmulatorDetector
 import com.nendo.argosy.data.repository.CollectionRepository
 import com.nendo.argosy.data.repository.GameRepository
@@ -73,6 +76,8 @@ import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionFact
+import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.dualscreen.SlotOwner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
@@ -398,6 +403,9 @@ data class LibraryUiState(
 }
 
 private const val TAG = "LibraryVM"
+private const val MINUTES_PER_HOUR = 60
+private val COMPANION_OWNER = SlotOwner("library")
+private val PLATFORM_SHOWCASE_OWNER = SlotOwner("library.platforms")
 
 sealed class LibraryEvent {
     data class LaunchIntent(val intent: Intent, val options: android.os.Bundle? = null) : LibraryEvent()
@@ -453,6 +461,7 @@ class LibraryViewModel @Inject constructor(
     private var explicitDestinationRequested = false
     private var cachedPlatformDisplayNames: Map<Long, String> = emptyMap()
     private var cachedPlatformEntities: List<PlatformEntity> = emptyList()
+    private var platformStatsCache: Map<Long, PlatformShowcaseStats>? = null
     private var cachedMediaLibraries: List<MediaLibraryEntity> = emptyList()
 
     private val pendingCoverRepairs = mutableSetOf<Long>()
@@ -582,6 +591,7 @@ class LibraryViewModel @Inject constructor(
      * one press up from the first row however many platforms sit between.
      */
     private suspend fun refreshPlatformCells() {
+        platformStatsCache = null
         val counts = gameRepository.countsByPlatform()
         val mediaCounts: Map<String, Int> = if (cachedMediaLibraries.isEmpty()) {
             emptyMap()
@@ -739,10 +749,125 @@ class LibraryViewModel @Inject constructor(
      */
     private fun observeFocusForCompanion() {
         _uiState
-            .map { it.focusedGame }
+            .map { if (it.view == LibraryView.PLATFORM_GRID) null else it.focusedGame }
             .distinctUntilChanged()
             .onEach { publishCompanionDetail(it) }
             .launchIn(viewModelScope)
+
+        _uiState
+            .map { it.focusedPlatformCell }
+            .distinctUntilChanged()
+            .onEach { cell -> publishPlatformShowcase(cell) }
+            .launchIn(viewModelScope)
+    }
+
+    private val LibraryUiState.focusedPlatformCell: LibraryCellUi?
+        get() = if (view == LibraryView.PLATFORM_GRID) platformCells.getOrNull(platformGridFocusedIndex) else null
+
+    private suspend fun publishPlatformShowcase(cell: LibraryCellUi?) {
+        val dsm = DualScreenManagerHolder.instance ?: return
+        val owner = PLATFORM_SHOWCASE_OWNER
+        if (cell == null) {
+            dsm.releaseSlot(owner)
+            return
+        }
+        val showcase = when (val target = cell.target) {
+            LibraryCellTarget.AllGames -> gameShowcaseFor(
+                cell,
+                platformStats().values.reduceOrNull(::combineStats),
+                gameRepository.showcaseCovers(null)
+            )
+            is LibraryCellTarget.Platform -> gameShowcaseFor(
+                cell,
+                platformStats()[target.platformId],
+                gameRepository.showcaseCovers(target.platformId)
+            )
+            is LibraryCellTarget.Media -> mediaShowcaseFor(
+                cell,
+                mediaRepository.libraryStats(target.libraryId),
+                mediaRepository.showcasePosterUrls(target.libraryId, SHOWCASE_COVER_LIMIT)
+            )
+        }
+        dsm.presentSlot(owner, showcase)
+    }
+
+    private suspend fun platformStats(): Map<Long, PlatformShowcaseStats> =
+        platformStatsCache ?: gameRepository.statsByPlatform().also { platformStatsCache = it }
+
+    private fun combineStats(a: PlatformShowcaseStats, b: PlatformShowcaseStats) = a.copy(
+        gameCount = a.gameCount + b.gameCount,
+        installedCount = a.installedCount + b.installedCount,
+        achievementsEarned = a.achievementsEarned + b.achievementsEarned,
+        achievementsTotal = a.achievementsTotal + b.achievementsTotal,
+        playTimeMinutes = a.playTimeMinutes + b.playTimeMinutes,
+        earliestYear = listOfNotNull(a.earliestYear, b.earliestYear).minOrNull(),
+        latestYear = listOfNotNull(a.latestYear, b.latestYear).maxOrNull()
+    )
+
+    private fun gameShowcaseFor(
+        cell: LibraryCellUi,
+        stats: PlatformShowcaseStats?,
+        covers: List<String>
+    ) = PresentationSlot.PlatformShowcase(
+        name = if (cell.isAllGames) context.getString(R.string.library_showcase_all_games) else cell.name,
+        yearSpan = yearSpan(stats?.earliestYear, stats?.latestYear),
+        coverPaths = covers,
+        facts = buildList {
+            add(fact(R.string.library_showcase_fact_games, (stats?.gameCount ?: cell.itemCount).toString()))
+            stats ?: return@buildList
+            add(fact(R.string.library_showcase_fact_installed, stats.installedCount.toString()))
+            if (stats.achievementsTotal > 0) {
+                add(
+                    fact(
+                        R.string.library_showcase_fact_achievements,
+                        "${stats.achievementsEarned} / ${stats.achievementsTotal}"
+                    )
+                )
+            }
+            if (stats.playTimeMinutes > 0) {
+                add(fact(R.string.library_showcase_fact_play_time, formatPlayTime(stats.playTimeMinutes)))
+            }
+        }
+    )
+
+    private fun mediaShowcaseFor(
+        cell: LibraryCellUi,
+        stats: MediaLibraryStats?,
+        posters: List<String>
+    ) = PresentationSlot.PlatformShowcase(
+        name = cell.name,
+        yearSpan = yearSpan(stats?.earliestYear, stats?.latestYear),
+        coverPaths = posters,
+        facts = buildList {
+            val countLabel = when (cell.mediaKind) {
+                MediaCellKind.MOVIES -> R.string.library_showcase_fact_movies
+                MediaCellKind.SHOWS, null -> R.string.library_showcase_fact_shows
+            }
+            add(fact(countLabel, (stats?.itemCount ?: cell.itemCount).toString()))
+            stats ?: return@buildList
+            if (stats.downloadedCount > 0) {
+                add(fact(R.string.library_showcase_fact_downloaded, stats.downloadedCount.toString()))
+            }
+            add(fact(R.string.library_showcase_fact_watched, stats.watchedCount.toString()))
+        }
+    )
+
+    private fun fact(@StringRes label: Int, value: String) =
+        CompanionFact(context.getString(label), value)
+
+    private fun yearSpan(from: Int?, to: Int?): String? = when {
+        from == null || to == null -> null
+        from == to -> from.toString()
+        else -> "$from-$to"
+    }
+
+    private fun formatPlayTime(minutes: Int): String = when {
+        minutes < MINUTES_PER_HOUR -> context.getString(
+            R.string.library_showcase_play_time_minutes, minutes
+        )
+        else -> context.getString(
+            R.string.library_showcase_play_time_hours, minutes / MINUTES_PER_HOUR
+        )
     }
 
     /**
@@ -753,11 +878,17 @@ class LibraryViewModel @Inject constructor(
      * the viewer happens to move.
      */
     fun republishCompanionDetail() {
-        publishCompanionDetail(_uiState.value.focusedGame)
+        val state = _uiState.value
+        if (state.view == LibraryView.PLATFORM_GRID) {
+            viewModelScope.launch { publishPlatformShowcase(state.focusedPlatformCell) }
+        } else {
+            publishCompanionDetail(state.focusedGame)
+        }
     }
 
     private fun publishCompanionDetail(game: LibraryGameUi?) {
         DualScreenManagerHolder.instance?.setCompanionDetail(
+            COMPANION_OWNER,
             game?.let {
                 CompanionDetail(
                     title = it.title,
@@ -795,7 +926,9 @@ class LibraryViewModel @Inject constructor(
      * Stops describing this screen once it is no longer the one being driven.
      */
     fun clearCompanionDetail() {
-        DualScreenManagerHolder.instance?.setCompanionDetail(null)
+        val dsm = DualScreenManagerHolder.instance ?: return
+        dsm.setCompanionDetail(COMPANION_OWNER, null)
+        dsm.releaseSlot(PLATFORM_SHOWCASE_OWNER)
     }
 
     private fun extractGradientsForVisibleGames(focusedIndex: Int) {

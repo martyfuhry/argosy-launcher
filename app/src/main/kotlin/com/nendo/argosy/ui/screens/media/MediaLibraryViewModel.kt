@@ -27,6 +27,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private val COMPANION_OWNER = com.nendo.argosy.ui.dualscreen.SlotOwner("media.library")
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class MediaLibraryViewModel @Inject constructor(
@@ -207,7 +209,10 @@ class MediaLibraryViewModel @Inject constructor(
     }
 
     private fun publishCompanionDetail(item: MediaItemUi?) {
-        DualScreenManagerHolder.instance?.setCompanionDetail(item?.toCompanionDetail(context))
+        DualScreenManagerHolder.instance?.setCompanionDetail(
+            COMPANION_OWNER,
+            item?.toCompanionDetail(context)
+        )
     }
 
     /**
@@ -215,7 +220,7 @@ class MediaLibraryViewModel @Inject constructor(
      * standing over a cursor that no longer exists.
      */
     fun clearCompanionDetail() {
-        DualScreenManagerHolder.instance?.setCompanionDetail(null)
+        DualScreenManagerHolder.instance?.setCompanionDetail(COMPANION_OWNER, null)
     }
 
     /**

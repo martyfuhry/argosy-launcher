@@ -688,22 +688,19 @@ class DualScreenManager(
      */
     val inputFeedback = com.nendo.argosy.ui.input.InputFeedbackPlayer(hapticManager, soundManager)
 
-    private val _companionDetail = MutableStateFlow<CompanionDetail?>(null)
+    private val _companionDetail =
+        MutableStateFlow<Pair<com.nendo.argosy.ui.dualscreen.SlotOwner, CompanionDetail>?>(null)
 
     /**
-     * What the showcase screen shows while the driven screen is on Library or Media.
-     *
-     * Held here rather than pushed through a callback because the two surfaces live in different
-     * activities and the callback route has already proved it can be implemented as an empty method
-     * and never noticed. A flow that nobody collects renders nothing; a callback that nobody
-     * implements looks exactly like one that works.
-     *
-     * Null means no screen is describing anything, and the showcase falls back to the wallpaper.
+     * Describes [owner]'s selection on the presentation screen. Null withdraws only [owner]'s
+     * description.
      */
-    val companionDetail: StateFlow<CompanionDetail?> = _companionDetail
-
-    fun setCompanionDetail(detail: CompanionDetail?) {
-        _companionDetail.value = detail
+    fun setCompanionDetail(owner: com.nendo.argosy.ui.dualscreen.SlotOwner, detail: CompanionDetail?) {
+        if (detail == null) {
+            _companionDetail.update { current -> if (current?.first == owner) null else current }
+        } else {
+            _companionDetail.value = owner to detail
+        }
     }
 
     private val _isCompanionActive = MutableStateFlow(false)
@@ -1267,7 +1264,7 @@ class DualScreenManager(
                 gameActive && inGame.isLoaded ->
                     com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame(inGame, achievements)
                 slots.isNotEmpty() -> slots.last().second
-                detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail)
+                detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail.second)
                 else -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
             }
         }

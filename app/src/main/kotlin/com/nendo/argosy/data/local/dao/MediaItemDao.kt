@@ -8,6 +8,19 @@ import com.nendo.argosy.data.local.entity.MediaItemEntity
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
+data class MediaPosterRef(
+    val itemId: String,
+    val primaryImageTag: String
+)
+
+data class MediaLibraryStats(
+    val itemCount: Int,
+    val downloadedCount: Int,
+    val watchedCount: Int,
+    val earliestYear: Int?,
+    val latestYear: Int?
+)
+
 /**
  * Every read is scoped to a media account: an item row exists per account that can see it, so an
  * unscoped read mixes two users' libraries and their download state together.
@@ -142,6 +155,32 @@ interface MediaItemDao {
             "AND itemType = :itemType"
     )
     suspend fun countByLibrary(ownerUserId: String, libraryId: String, itemType: String): Int
+
+    @Query(
+        "SELECT m.itemId, m.primaryImageTag FROM media_items m " +
+            "LEFT JOIN media_user_data u ON u.ownerUserId = m.ownerUserId AND u.itemId = m.itemId " +
+            "WHERE m.ownerUserId = :ownerUserId AND m.libraryId = :libraryId " +
+            "AND m.itemType = :itemType AND m.primaryImageTag IS NOT NULL " +
+            "ORDER BY (m.localPath IS NOT NULL) DESC, COALESCE(u.isFavorite, 0) DESC, " +
+            "m.communityRating DESC, m.sortName ASC LIMIT :limit"
+    )
+    suspend fun showcasePosters(
+        ownerUserId: String,
+        libraryId: String,
+        itemType: String,
+        limit: Int
+    ): List<MediaPosterRef>
+
+    @Query(
+        "SELECT COUNT(*) AS itemCount, " +
+            "SUM(CASE WHEN m.localPath IS NOT NULL THEN 1 ELSE 0 END) AS downloadedCount, " +
+            "SUM(CASE WHEN u.played THEN 1 ELSE 0 END) AS watchedCount, " +
+            "MIN(m.productionYear) AS earliestYear, MAX(m.productionYear) AS latestYear " +
+            "FROM media_items m " +
+            "LEFT JOIN media_user_data u ON u.ownerUserId = m.ownerUserId AND u.itemId = m.itemId " +
+            "WHERE m.ownerUserId = :ownerUserId AND m.libraryId = :libraryId AND m.itemType = :itemType"
+    )
+    suspend fun libraryStats(ownerUserId: String, libraryId: String, itemType: String): MediaLibraryStats
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: MediaItemEntity): Long
