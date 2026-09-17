@@ -31,7 +31,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 private const val PLAY_TARGET_WAIT_MS = 10_000L
-private val COMPANION_OWNER = com.nendo.argosy.ui.dualscreen.SlotOwner("media.detail")
 
 @HiltViewModel
 class MediaDetailViewModel @Inject constructor(
@@ -45,6 +44,8 @@ class MediaDetailViewModel @Inject constructor(
     private val gradientExtractionDelegate: com.nendo.argosy.ui.screens.common.GradientExtractionDelegate,
     preferencesRepository: UserPreferencesRepository
 ) : ViewModel() {
+
+    private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("media.detail", this)
 
     private val _uiState = MutableStateFlow(MediaDetailUiState())
     val uiState: StateFlow<MediaDetailUiState> = _uiState.asStateFlow()
@@ -179,13 +180,13 @@ class MediaDetailViewModel @Inject constructor(
      */
     fun republishCompanionDetail() {
         DualScreenManagerHolder.instance?.setCompanionDetail(
-            COMPANION_OWNER,
+            companionOwner,
             _uiState.value.item?.toCompanionDetail(context)
         )
     }
 
     fun clearCompanionDetail() {
-        DualScreenManagerHolder.instance?.setCompanionDetail(COMPANION_OWNER, null)
+        DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 
     /**

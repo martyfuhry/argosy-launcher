@@ -80,8 +80,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-private val COMPANION_OWNER = com.nendo.argosy.ui.dualscreen.SlotOwner("game.detail")
-
 @HiltViewModel
 class GameDetailViewModel @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
@@ -134,6 +132,8 @@ class GameDetailViewModel @Inject constructor(
     private val gradientExtractionDelegate: com.nendo.argosy.ui.screens.common.GradientExtractionDelegate,
     private val gameThemeAudio: com.nendo.argosy.ui.audio.GameThemeAudioCoordinator
 ) : ViewModel() {
+
+    private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("game.detail", this)
 
     private val sessionStateStore by lazy { com.nendo.argosy.data.preferences.SessionStateStore(context) }
 
@@ -2167,7 +2167,7 @@ class GameDetailViewModel @Inject constructor(
 
     private fun publishCompanionDetail(game: GameDetailUi?) {
         com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(
-            COMPANION_OWNER,
+            companionOwner,
             game?.let {
                 com.nendo.argosy.ui.dualscreen.CompanionDetail(
                     title = it.title,
@@ -2211,7 +2211,7 @@ class GameDetailViewModel @Inject constructor(
     }
 
     fun clearCompanionDetail() {
-        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(COMPANION_OWNER, null)
+        com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 
     private fun resetAllModals() {

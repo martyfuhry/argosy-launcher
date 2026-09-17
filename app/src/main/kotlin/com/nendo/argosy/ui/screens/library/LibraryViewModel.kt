@@ -404,8 +404,6 @@ data class LibraryUiState(
 
 private const val TAG = "LibraryVM"
 private const val MINUTES_PER_HOUR = 60
-private val COMPANION_OWNER = SlotOwner("library")
-private val PLATFORM_SHOWCASE_OWNER = SlotOwner("library.platforms")
 
 sealed class LibraryEvent {
     data class LaunchIntent(val intent: Intent, val options: android.os.Bundle? = null) : LibraryEvent()
@@ -442,6 +440,9 @@ class LibraryViewModel @Inject constructor(
     private val steamDownloadPromptController: com.nendo.argosy.data.steam.SteamDownloadPromptController,
     private val downloadFileStatusRepository: com.nendo.argosy.data.repository.DownloadFileStatusRepository
 ) : ViewModel() {
+
+    private val companionOwner = SlotOwner.of("library", this)
+    private val platformShowcaseOwner = SlotOwner.of("library.platforms", this)
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
@@ -766,7 +767,7 @@ class LibraryViewModel @Inject constructor(
 
     private suspend fun publishPlatformShowcase(cell: LibraryCellUi?) {
         val dsm = DualScreenManagerHolder.instance ?: return
-        val owner = PLATFORM_SHOWCASE_OWNER
+        val owner = platformShowcaseOwner
         if (cell == null) {
             dsm.releaseSlot(owner)
             return
@@ -888,7 +889,7 @@ class LibraryViewModel @Inject constructor(
 
     private fun publishCompanionDetail(game: LibraryGameUi?) {
         DualScreenManagerHolder.instance?.setCompanionDetail(
-            COMPANION_OWNER,
+            companionOwner,
             game?.let {
                 CompanionDetail(
                     title = it.title,
@@ -927,8 +928,8 @@ class LibraryViewModel @Inject constructor(
      */
     fun clearCompanionDetail() {
         val dsm = DualScreenManagerHolder.instance ?: return
-        dsm.setCompanionDetail(COMPANION_OWNER, null)
-        dsm.releaseSlot(PLATFORM_SHOWCASE_OWNER)
+        dsm.setCompanionDetail(companionOwner, null)
+        dsm.releaseSlot(platformShowcaseOwner)
     }
 
     private fun extractGradientsForVisibleGames(focusedIndex: Int) {

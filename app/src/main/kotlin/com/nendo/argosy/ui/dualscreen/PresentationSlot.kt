@@ -8,7 +8,14 @@ import com.nendo.argosy.domain.model.HomeLayoutSettings
  * the later publish being undone by the earlier release.
  */
 @JvmInline
-value class SlotOwner(val id: String)
+value class SlotOwner(val id: String) {
+    companion object {
+        /**
+         * An owner unique to [holder], for a screen that more than one surface can host at once.
+         */
+        fun of(name: String, holder: Any): SlotOwner = SlotOwner("$name@${System.identityHashCode(holder)}")
+    }
+}
 
 /**
  * What the presentation screen shows while a screen on the control surface is open.

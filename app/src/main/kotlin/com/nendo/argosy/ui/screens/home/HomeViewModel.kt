@@ -86,8 +86,6 @@ private val HOME_FEATURE_TILE_PICKER_STRINGS = com.nendo.argosy.ui.common.Featur
     raSubtitle = R.string.tile_picker_feature_ra_subtitle
 )
 
-private val COMPANION_OWNER = com.nendo.argosy.ui.dualscreen.SlotOwner("home")
-
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
@@ -129,6 +127,8 @@ class HomeViewModel @Inject constructor(
     private val homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue,
     private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
 ) : ViewModel(), HomeInputActions {
+
+    private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home", this)
 
     private val _uiState = MutableStateFlow(restoreInitialState())
     override val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -423,7 +423,7 @@ class HomeViewModel @Inject constructor(
 
     private fun publishCompanionDetail(game: HomeGameUi?) {
         DualScreenManagerHolder.instance?.setCompanionDetail(
-            COMPANION_OWNER,
+            companionOwner,
             game?.let {
                 CompanionDetail(
                     title = it.title,
@@ -493,7 +493,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun clearCompanionDetail() {
-        DualScreenManagerHolder.instance?.setCompanionDetail(COMPANION_OWNER, null)
+        DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 
     private fun observeAchievementUpdates() {

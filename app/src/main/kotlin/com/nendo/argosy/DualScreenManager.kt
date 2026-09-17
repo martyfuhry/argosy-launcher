@@ -688,18 +688,16 @@ class DualScreenManager(
      */
     val inputFeedback = com.nendo.argosy.ui.input.InputFeedbackPlayer(hapticManager, soundManager)
 
-    private val _companionDetail =
-        MutableStateFlow<Pair<com.nendo.argosy.ui.dualscreen.SlotOwner, CompanionDetail>?>(null)
+    private val _companionDetails =
+        MutableStateFlow<List<Pair<com.nendo.argosy.ui.dualscreen.SlotOwner, CompanionDetail>>>(emptyList())
 
     /**
-     * Describes [owner]'s selection on the presentation screen. Null withdraws only [owner]'s
-     * description.
+     * Describes [owner]'s selection on the presentation screen, above every other owner's. Null
+     * withdraws only [owner]'s description, uncovering the one beneath it.
      */
     fun setCompanionDetail(owner: com.nendo.argosy.ui.dualscreen.SlotOwner, detail: CompanionDetail?) {
-        if (detail == null) {
-            _companionDetail.update { current -> if (current?.first == owner) null else current }
-        } else {
-            _companionDetail.value = owner to detail
+        _companionDetails.update { entries ->
+            entries.filterNot { it.first == owner } + listOfNotNull(detail?.let { owner to it })
         }
     }
 
@@ -1255,16 +1253,17 @@ class DualScreenManager(
     val presentationSlot: StateFlow<com.nendo.argosy.ui.dualscreen.PresentationSlot> =
         kotlinx.coroutines.flow.combine(
             _presentationSlots,
-            _companionDetail,
+            _companionDetails,
             _swappedIsGameActive,
             _swappedCompanionState,
             _companionAchievements
-        ) { slots, detail, gameActive, inGame, achievements ->
+        ) { slots, details, gameActive, inGame, achievements ->
+            val detail = details.lastOrNull()?.second
             when {
                 gameActive && inGame.isLoaded ->
                     com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame(inGame, achievements)
                 slots.isNotEmpty() -> slots.last().second
-                detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail.second)
+                detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail)
                 else -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
             }
         }
