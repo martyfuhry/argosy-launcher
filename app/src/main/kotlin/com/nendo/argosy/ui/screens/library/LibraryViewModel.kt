@@ -443,6 +443,7 @@ class LibraryViewModel @Inject constructor(
 
     private val companionOwner = SlotOwner.of("library", this)
     private val platformShowcaseOwner = SlotOwner.of("library.platforms", this)
+    private var isDescribing = false
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
@@ -766,6 +767,7 @@ class LibraryViewModel @Inject constructor(
         get() = if (view == LibraryView.PLATFORM_GRID) platformCells.getOrNull(platformGridFocusedIndex) else null
 
     private suspend fun publishPlatformShowcase(cell: LibraryCellUi?) {
+        if (!isDescribing) return
         val dsm = DualScreenManagerHolder.instance ?: return
         val owner = platformShowcaseOwner
         if (cell == null) {
@@ -879,6 +881,7 @@ class LibraryViewModel @Inject constructor(
      * the viewer happens to move.
      */
     fun republishCompanionDetail() {
+        isDescribing = true
         val state = _uiState.value
         if (state.view == LibraryView.PLATFORM_GRID) {
             viewModelScope.launch { publishPlatformShowcase(state.focusedPlatformCell) }
@@ -888,6 +891,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun publishCompanionDetail(game: LibraryGameUi?) {
+        if (!isDescribing) return
         DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
             game?.let {
@@ -927,6 +931,7 @@ class LibraryViewModel @Inject constructor(
      * Stops describing this screen once it is no longer the one being driven.
      */
     fun clearCompanionDetail() {
+        isDescribing = false
         val dsm = DualScreenManagerHolder.instance ?: return
         dsm.setCompanionDetail(companionOwner, null)
         dsm.releaseSlot(platformShowcaseOwner)

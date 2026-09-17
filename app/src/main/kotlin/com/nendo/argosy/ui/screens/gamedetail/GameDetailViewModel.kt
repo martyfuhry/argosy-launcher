@@ -134,6 +134,7 @@ class GameDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("game.detail", this)
+    private var isDescribing = false
 
     private val sessionStateStore by lazy { com.nendo.argosy.data.preferences.SessionStateStore(context) }
 
@@ -2166,6 +2167,7 @@ class GameDetailViewModel @Inject constructor(
     }
 
     private fun publishCompanionDetail(game: GameDetailUi?) {
+        if (!isDescribing) return
         com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
             game?.let {
@@ -2207,10 +2209,12 @@ class GameDetailViewModel @Inject constructor(
     }
 
     fun republishCompanionDetail() {
+        isDescribing = true
         publishCompanionDetail(_uiState.value.game)
     }
 
     fun clearCompanionDetail() {
+        isDescribing = false
         com.nendo.argosy.DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 

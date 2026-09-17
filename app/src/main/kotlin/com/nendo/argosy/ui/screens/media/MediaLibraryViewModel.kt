@@ -37,6 +37,7 @@ class MediaLibraryViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("media.library", this)
+    private var isDescribing = false
 
     private val _uiState = MutableStateFlow(MediaLibraryUiState())
     val uiState: StateFlow<MediaLibraryUiState> = _uiState.asStateFlow()
@@ -204,11 +205,13 @@ class MediaLibraryViewModel @Inject constructor(
      * the viewer happens to move.
      */
     fun republishCompanionDetail() {
+        isDescribing = true
         val state = _uiState.value
         publishCompanionDetail(state.items.getOrNull(state.focusedIndex))
     }
 
     private fun publishCompanionDetail(item: MediaItemUi?) {
+        if (!isDescribing) return
         DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
             item?.toCompanionDetail(context)
@@ -220,6 +223,7 @@ class MediaLibraryViewModel @Inject constructor(
      * standing over a cursor that no longer exists.
      */
     fun clearCompanionDetail() {
+        isDescribing = false
         DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 

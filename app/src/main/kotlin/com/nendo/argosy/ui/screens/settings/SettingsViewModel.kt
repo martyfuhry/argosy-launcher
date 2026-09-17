@@ -151,6 +151,10 @@ class SettingsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var jellyfinSignInJob: Job? = null
+    private var ambientCovers: List<String>? = null
+
+    suspend fun ambientShowcaseCovers(): List<String> =
+        ambientCovers ?: gameRepository.showcaseCovers(null).also { ambientCovers = it }
 
     internal val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()

@@ -46,6 +46,7 @@ class MediaDetailViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("media.detail", this)
+    private var isDescribing = false
 
     private val _uiState = MutableStateFlow(MediaDetailUiState())
     val uiState: StateFlow<MediaDetailUiState> = _uiState.asStateFlow()
@@ -168,7 +169,7 @@ class MediaDetailViewModel @Inject constructor(
         if (mode == MediaDetailMode.SERIES && seasonsJob == null) observeSeasons(itemId)
         if (downloadJob == null) observeDownloadSummary(item)
         if (extrasJob == null) loadExtras(itemId)
-        republishCompanionDetail()
+        publishCompanionDetail()
     }
 
     /**
@@ -179,6 +180,12 @@ class MediaDetailViewModel @Inject constructor(
      * question nobody asked.
      */
     fun republishCompanionDetail() {
+        isDescribing = true
+        publishCompanionDetail()
+    }
+
+    private fun publishCompanionDetail() {
+        if (!isDescribing) return
         DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
             _uiState.value.item?.toCompanionDetail(context)
@@ -186,6 +193,7 @@ class MediaDetailViewModel @Inject constructor(
     }
 
     fun clearCompanionDetail() {
+        isDescribing = false
         DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 

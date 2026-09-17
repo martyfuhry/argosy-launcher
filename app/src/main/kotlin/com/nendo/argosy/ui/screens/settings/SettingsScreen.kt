@@ -43,7 +43,11 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
+import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.dualscreen.SlotOwner
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.backdrop.BackdropRole
 import com.nendo.argosy.ui.theme.backdrop.surfaceBackdrop
@@ -589,62 +593,9 @@ fun SettingsScreen(
         ) {
             if (uiState.currentSection != SettingsSection.SHADER_STACK &&
                 uiState.currentSection != SettingsSection.FRAME_PICKER) {
+                SettingsAmbientPresentation(uiState, viewModel)
                 SettingsHeader(
-                    title = when (uiState.currentSection) {
-                        SettingsSection.MAIN -> stringResource(R.string.settings_shell_header_main)
-                        SettingsSection.ACCOUNTS -> stringResource(R.string.settings_shell_header_accounts)
-                        SettingsSection.ROMM -> stringResource(R.string.settings_shell_header_romm)
-                        SettingsSection.SAVES -> stringResource(R.string.settings_shell_header_saves)
-                        SettingsSection.SYNC_SETTINGS -> stringResource(R.string.settings_shell_header_sync_settings)
-                        SettingsSection.STEAM_SETTINGS -> stringResource(R.string.settings_shell_header_steam)
-                        SettingsSection.JELLYFIN -> stringResource(R.string.settings_shell_header_jellyfin)
-                        SettingsSection.RETRO_ACHIEVEMENTS -> stringResource(R.string.settings_shell_header_retroachievements)
-                        SettingsSection.STORAGE -> stringResource(R.string.settings_shell_header_storage)
-                        SettingsSection.STORAGE_GAMES -> stringResource(R.string.settings_shell_header_storage_games)
-                        SettingsSection.STORAGE_MEDIA -> stringResource(R.string.settings_shell_header_storage_media)
-                        SettingsSection.STORAGE_PLATFORM_GAMES ->
-                            uiState.storagePlatformGames.platformName.uppercase().ifBlank {
-                                stringResource(R.string.settings_shell_header_storage_platform_games_fallback)
-                            }
-                        SettingsSection.STORAGE_CACHES -> stringResource(R.string.settings_shell_header_storage_caches)
-                        SettingsSection.PLAY_TIME -> stringResource(R.string.settings_shell_header_play_time)
-                        SettingsSection.PLAY_TIME_PLATFORMS -> stringResource(R.string.settings_shell_header_play_time_platforms)
-                        SettingsSection.PLAY_TIME_DEVICES -> stringResource(R.string.settings_shell_header_play_time_devices)
-                        SettingsSection.PLAY_TIME_GAMES -> stringResource(R.string.settings_shell_header_play_time_games)
-                        SettingsSection.THEME -> stringResource(R.string.settings_shell_header_theme)
-                        SettingsSection.AUDIO -> stringResource(R.string.settings_shell_header_audio)
-                        SettingsSection.THEME_SOUNDS -> stringResource(R.string.settings_shell_header_theme_sounds)
-                        SettingsSection.THEME_MUSIC -> stringResource(R.string.settings_shell_header_theme_music)
-                        SettingsSection.THEME_FONTS -> stringResource(R.string.settings_shell_header_theme_fonts)
-                        SettingsSection.THEME_BACKDROP -> stringResource(R.string.settings_shell_header_theme_backdrop)
-                        SettingsSection.INTERFACE -> stringResource(R.string.settings_shell_header_interface)
-                        SettingsSection.BOX_ART -> stringResource(R.string.settings_shell_header_box_art)
-                        SettingsSection.CONTROLLER_GRIP -> stringResource(R.string.settings_shell_header_controller_grip)
-                        SettingsSection.HOME_SCREEN -> stringResource(R.string.settings_shell_header_home_screen)
-                        SettingsSection.LIBRARY_VIEW -> stringResource(R.string.settings_shell_header_library_view)
-                        SettingsSection.DISPLAYS -> stringResource(R.string.settings_shell_header_displays)
-                        SettingsSection.SCREENS -> stringResource(R.string.settings_shell_header_screens)
-                        SettingsSection.AMBIENT_LED -> stringResource(R.string.settings_shell_header_ambient_led)
-                        SettingsSection.NAVIGATION -> stringResource(R.string.settings_shell_header_navigation)
-                        SettingsSection.PLATFORMS -> stringResource(R.string.settings_shell_header_platforms)
-                        SettingsSection.BUILTIN_EMULATOR -> stringResource(R.string.settings_shell_header_builtin_emulator)
-                        SettingsSection.PLATFORM_DETAIL -> {
-                            val config = uiState.emulators.platforms.getOrNull(uiState.platformDetail.platformIndex)
-                            config?.platform?.name?.uppercase()
-                                ?: stringResource(R.string.settings_shell_header_platform_detail_fallback)
-                        }
-                        SettingsSection.BUILTIN_VIDEO -> stringResource(R.string.settings_shell_header_builtin_video)
-                        SettingsSection.BUILTIN_CONTROLS -> stringResource(R.string.settings_shell_header_builtin_controls)
-                        SettingsSection.CORE_MANAGEMENT -> stringResource(R.string.settings_shell_header_core_management)
-                        SettingsSection.CORE_OPTIONS -> stringResource(R.string.settings_shell_header_core_options)
-                        SettingsSection.BIOS -> stringResource(R.string.settings_shell_header_bios)
-                        SettingsSection.SHADER_STACK -> stringResource(R.string.settings_shell_header_shader_stack)
-                        SettingsSection.FRAME_PICKER -> stringResource(R.string.settings_shell_header_frame_picker)
-                        SettingsSection.PERMISSIONS -> stringResource(R.string.settings_shell_header_permissions)
-                        SettingsSection.DRIVERS -> stringResource(R.string.settings_shell_header_drivers)
-                        SettingsSection.ABOUT -> stringResource(R.string.settings_shell_header_about)
-                        SettingsSection.SOCIAL -> stringResource(R.string.settings_shell_header_social)
-                    },
+                    title = settingsSectionTitle(uiState),
                     rightContent = if ((uiState.currentSection == SettingsSection.BUILTIN_VIDEO ||
                         uiState.currentSection == SettingsSection.BUILTIN_CONTROLS) &&
                         uiState.builtinVideo.availablePlatforms.isNotEmpty()) {
@@ -1466,6 +1417,81 @@ fun SettingsScreen(
             }
         )
     }
+}
+
+@Composable
+private fun settingsSectionTitle(uiState: SettingsUiState): String = when (uiState.currentSection) {
+    SettingsSection.MAIN -> stringResource(R.string.settings_shell_header_main)
+    SettingsSection.ACCOUNTS -> stringResource(R.string.settings_shell_header_accounts)
+    SettingsSection.ROMM -> stringResource(R.string.settings_shell_header_romm)
+    SettingsSection.SAVES -> stringResource(R.string.settings_shell_header_saves)
+    SettingsSection.SYNC_SETTINGS -> stringResource(R.string.settings_shell_header_sync_settings)
+    SettingsSection.STEAM_SETTINGS -> stringResource(R.string.settings_shell_header_steam)
+    SettingsSection.JELLYFIN -> stringResource(R.string.settings_shell_header_jellyfin)
+    SettingsSection.RETRO_ACHIEVEMENTS -> stringResource(R.string.settings_shell_header_retroachievements)
+    SettingsSection.STORAGE -> stringResource(R.string.settings_shell_header_storage)
+    SettingsSection.STORAGE_GAMES -> stringResource(R.string.settings_shell_header_storage_games)
+    SettingsSection.STORAGE_MEDIA -> stringResource(R.string.settings_shell_header_storage_media)
+    SettingsSection.STORAGE_PLATFORM_GAMES ->
+        uiState.storagePlatformGames.platformName.uppercase().ifBlank {
+            stringResource(R.string.settings_shell_header_storage_platform_games_fallback)
+        }
+    SettingsSection.STORAGE_CACHES -> stringResource(R.string.settings_shell_header_storage_caches)
+    SettingsSection.PLAY_TIME -> stringResource(R.string.settings_shell_header_play_time)
+    SettingsSection.PLAY_TIME_PLATFORMS -> stringResource(R.string.settings_shell_header_play_time_platforms)
+    SettingsSection.PLAY_TIME_DEVICES -> stringResource(R.string.settings_shell_header_play_time_devices)
+    SettingsSection.PLAY_TIME_GAMES -> stringResource(R.string.settings_shell_header_play_time_games)
+    SettingsSection.THEME -> stringResource(R.string.settings_shell_header_theme)
+    SettingsSection.AUDIO -> stringResource(R.string.settings_shell_header_audio)
+    SettingsSection.THEME_SOUNDS -> stringResource(R.string.settings_shell_header_theme_sounds)
+    SettingsSection.THEME_MUSIC -> stringResource(R.string.settings_shell_header_theme_music)
+    SettingsSection.THEME_FONTS -> stringResource(R.string.settings_shell_header_theme_fonts)
+    SettingsSection.THEME_BACKDROP -> stringResource(R.string.settings_shell_header_theme_backdrop)
+    SettingsSection.INTERFACE -> stringResource(R.string.settings_shell_header_interface)
+    SettingsSection.BOX_ART -> stringResource(R.string.settings_shell_header_box_art)
+    SettingsSection.CONTROLLER_GRIP -> stringResource(R.string.settings_shell_header_controller_grip)
+    SettingsSection.HOME_SCREEN -> stringResource(R.string.settings_shell_header_home_screen)
+    SettingsSection.LIBRARY_VIEW -> stringResource(R.string.settings_shell_header_library_view)
+    SettingsSection.DISPLAYS -> stringResource(R.string.settings_shell_header_displays)
+    SettingsSection.SCREENS -> stringResource(R.string.settings_shell_header_screens)
+    SettingsSection.AMBIENT_LED -> stringResource(R.string.settings_shell_header_ambient_led)
+    SettingsSection.NAVIGATION -> stringResource(R.string.settings_shell_header_navigation)
+    SettingsSection.PLATFORMS -> stringResource(R.string.settings_shell_header_platforms)
+    SettingsSection.BUILTIN_EMULATOR -> stringResource(R.string.settings_shell_header_builtin_emulator)
+    SettingsSection.PLATFORM_DETAIL -> {
+        val config = uiState.emulators.platforms.getOrNull(uiState.platformDetail.platformIndex)
+        config?.platform?.name?.uppercase()
+            ?: stringResource(R.string.settings_shell_header_platform_detail_fallback)
+    }
+    SettingsSection.BUILTIN_VIDEO -> stringResource(R.string.settings_shell_header_builtin_video)
+    SettingsSection.BUILTIN_CONTROLS -> stringResource(R.string.settings_shell_header_builtin_controls)
+    SettingsSection.CORE_MANAGEMENT -> stringResource(R.string.settings_shell_header_core_management)
+    SettingsSection.CORE_OPTIONS -> stringResource(R.string.settings_shell_header_core_options)
+    SettingsSection.BIOS -> stringResource(R.string.settings_shell_header_bios)
+    SettingsSection.SHADER_STACK -> stringResource(R.string.settings_shell_header_shader_stack)
+    SettingsSection.FRAME_PICKER -> stringResource(R.string.settings_shell_header_frame_picker)
+    SettingsSection.PERMISSIONS -> stringResource(R.string.settings_shell_header_permissions)
+    SettingsSection.DRIVERS -> stringResource(R.string.settings_shell_header_drivers)
+    SettingsSection.ABOUT -> stringResource(R.string.settings_shell_header_about)
+    SettingsSection.SOCIAL -> stringResource(R.string.settings_shell_header_social)
+}
+
+@Composable
+private fun SettingsAmbientPresentation(uiState: SettingsUiState, viewModel: SettingsViewModel) {
+    val active = DualScreenManagerHolder.instance
+        ?.isCompanionActive?.collectAsState()?.value == true
+    if (!active) return
+    var covers by remember { mutableStateOf(emptyList<String>()) }
+    LaunchedEffect(Unit) { covers = viewModel.ambientShowcaseCovers() }
+    PresentOnCompanion(
+        SlotOwner("settings.ambient"),
+        PresentationSlot.PlatformShowcase(
+            name = settingsSectionTitle(uiState),
+            yearSpan = null,
+            coverPaths = covers,
+            facts = emptyList()
+        )
+    )
 }
 
 @Composable

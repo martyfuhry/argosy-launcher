@@ -129,6 +129,7 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel(), HomeInputActions {
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home", this)
+    private var isDescribing = false
 
     private val _uiState = MutableStateFlow(restoreInitialState())
     override val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -422,6 +423,7 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun publishCompanionDetail(game: HomeGameUi?) {
+        if (!isDescribing) return
         DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
             game?.let {
@@ -489,10 +491,12 @@ class HomeViewModel @Inject constructor(
     }
 
     fun republishCompanionDetail() {
+        isDescribing = true
         publishCompanionDetail(_uiState.value.focusedGame)
     }
 
     fun clearCompanionDetail() {
+        isDescribing = false
         DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
     }
 
