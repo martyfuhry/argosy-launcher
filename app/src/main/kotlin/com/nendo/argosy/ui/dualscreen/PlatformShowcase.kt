@@ -37,7 +37,7 @@ import com.nendo.argosy.ui.theme.LocalArgosyTheme
 
 private const val COLLAGE_ALPHA = 0.35f
 private const val SCROLL_PIXELS_PER_SECOND = 14f
-private val COVER_ASPECT = 3f / 4f
+internal val COVER_ASPECT = 3f / 4f
 
 @Composable
 fun PlatformShowcaseContent(slot: PresentationSlot.PlatformShowcase) {

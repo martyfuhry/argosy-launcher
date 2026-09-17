@@ -99,6 +99,11 @@ object DimensionTokens {
         const val playerTrickplayWidth = 160
         const val playerTrickplayHeight = 90
         const val playerSkipButtonWidth = 180
+        const val timelineTrackHeight = 48
+        const val timelineDotEmpty = 10
+        const val timelineDotActive = 12
+        const val timelineDotSelected = 20
+        const val timelineCoverHeight = 64
     }
 
     object Elevation {

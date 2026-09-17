@@ -35,6 +35,14 @@ sealed interface PresentationSlot {
         val dateLabel: String? = null
     ) : PresentationSlot
 
+    data class PlayTimeline(
+        val dots: List<TimelineDot>,
+        val selectedIndex: Int,
+        val dayLabel: String,
+        val dayTotal: String?,
+        val games: List<PlayTimeSlotGame>
+    ) : PresentationSlot
+
     data class ScreenIdentity(val number: Int) : PresentationSlot
 
     data class Detail(val detail: CompanionDetail) : PresentationSlot
@@ -69,5 +77,12 @@ data class PlayTimeSlotGame(
     val gameId: Long,
     val title: String,
     val coverPath: String?,
-    val detail: String
+    val detail: String,
+    val subtitle: String? = null
+)
+
+data class TimelineDot(
+    val hasActivity: Boolean,
+    val color: androidx.compose.ui.graphics.Color,
+    val label: String?
 )

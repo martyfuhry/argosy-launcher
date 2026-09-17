@@ -2,6 +2,7 @@ package com.nendo.argosy.ui.screens.settings.sections
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import com.nendo.argosy.DualScreenManagerHolder
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -52,6 +54,7 @@ import com.nendo.argosy.ui.components.playtime.ShareSegment
 import com.nendo.argosy.ui.components.playtime.waveformPeak
 import com.nendo.argosy.ui.screens.settings.PlayTimeEntryUi
 import com.nendo.argosy.ui.screens.settings.PlayTimeScrub
+import com.nendo.argosy.ui.screens.settings.PlayTimeSessionUi
 import com.nendo.argosy.ui.screens.settings.PlayTimeState
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
@@ -119,6 +122,20 @@ internal fun PlayTimeMessageCard(title: String, message: String, isWorking: Bool
     }
 }
 
+internal fun PlayTimeState.sessionsByDate(zone: ZoneId): Map<java.time.LocalDate, List<PlayTimeSessionUi>> =
+    sessions.groupBy { it.startTime.atZone(zone).toLocalDate() }
+
+internal fun PlayTimeState.dayPlatformSlots(
+    sessionsByDate: Map<java.time.LocalDate, List<PlayTimeSessionUi>>,
+    slotOfSlug: Map<String, Int>
+): List<Int?> = days.map { day ->
+    sessionsByDate[day.date]
+        ?.groupBy { it.platformSlug }
+        ?.maxByOrNull { (_, rows) -> rows.sumOf { it.activeMs } }
+        ?.key
+        ?.let { slotOfSlug[it] }
+}
+
 internal data class DayGame(
     val title: String,
     val platformName: String,
@@ -145,17 +162,9 @@ internal fun PlayTimeCalendarCard(
     val slotOfSlug = remember(state.platforms, slots) {
         state.platforms.take(slots).withIndex().associate { (index, entry) -> entry.key to index }
     }
-    val sessionsByDate = remember(state.sessions) {
-        state.sessions.groupBy { it.startTime.atZone(zone).toLocalDate() }
-    }
+    val sessionsByDate = remember(state.sessions) { state.sessionsByDate(zone) }
     val daySlots = remember(state.days, sessionsByDate, slotOfSlug) {
-        state.days.map { day ->
-            sessionsByDate[day.date]
-                ?.groupBy { it.platformSlug }
-                ?.maxByOrNull { (_, rows) -> rows.sumOf { it.activeMs } }
-                ?.key
-                ?.let { slotOfSlug[it] }
-        }
+        state.dayPlatformSlots(sessionsByDate, slotOfSlug)
     }
     val legend = remember(daySlots, state.platforms, series) {
         val present = daySlots.filterNotNull().toSet()
@@ -226,15 +235,19 @@ internal fun PlayTimeCalendarCard(
                     )
                 }
             }
-            Crossfade(
-                targetState = isEngaged,
-                label = "playTimeCalendarPanel",
-                modifier = Modifier.width((ComponentDefaults.PlayTimeChart.calendarPanelWidth * s).dp)
-            ) { engaged ->
-                if (engaged) {
-                    DayBreakdown(games = dayGames)
-                } else {
-                    WindowSummary(state = state)
+            val presentedElsewhere = DualScreenManagerHolder.instance
+                ?.isCompanionActive?.collectAsState()?.value == true
+            if (!presentedElsewhere) {
+                Crossfade(
+                    targetState = isEngaged,
+                    label = "playTimeCalendarPanel",
+                    modifier = Modifier.width((ComponentDefaults.PlayTimeChart.calendarPanelWidth * s).dp)
+                ) { engaged ->
+                    if (engaged) {
+                        DayBreakdown(games = dayGames)
+                    } else {
+                        WindowSummary(state = state)
+                    }
                 }
             }
         }

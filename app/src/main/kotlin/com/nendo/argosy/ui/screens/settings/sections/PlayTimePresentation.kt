@@ -3,14 +3,20 @@ package com.nendo.argosy.ui.screens.settings.sections
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.common.ChartPalette
 import com.nendo.argosy.ui.dualscreen.PlayTimeSlotGame
 import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
 import com.nendo.argosy.ui.dualscreen.PresentationSlot
 import com.nendo.argosy.ui.dualscreen.SlotOwner
+import com.nendo.argosy.ui.dualscreen.TimelineDot
+import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
+import com.nendo.argosy.util.formatMonthDay
 import com.nendo.argosy.ui.screens.settings.PlayTimeEntryUi
 import com.nendo.argosy.ui.screens.settings.PlayTimeScrub
 import com.nendo.argosy.ui.screens.settings.PlayTimeState
@@ -40,15 +46,9 @@ internal fun PlayTimePresentation(
     val playTime = uiState.playTime
     val focused = playTimeLayout.itemAtFocusIndex(uiState.focusedIndex, layoutState)
         ?: visibleItems.firstOrNull { it.isFocusable }
-    val scrubbedDay = playTime.scrubbedDate()
-
     val slot = when {
         focused == null -> PresentationSlot.Fallback
-        scrubbedDay != null && focused.section == "activity" -> PresentationSlot.PlayTime(
-            sectionLabel = stringResource(R.string.settings_play_time_section_activity),
-            dateLabel = scrubbedDay.toString(),
-            games = playTime.gamesPlayedOn(scrubbedDay, context)
-        )
+        focused.section == "activity" -> playTime.timelineSlot(context)
         focused.section == "platforms" -> PresentationSlot.PlayTime(
             sectionLabel = stringResource(R.string.settings_play_time_section_platforms),
             games = playTime.platforms.toSlotGames(context)
@@ -69,10 +69,42 @@ internal fun PlayTimePresentation(
     PresentOnCompanion(SlotOwner("settings.playTime"), slot)
 }
 
-private fun PlayTimeState.scrubbedDate(): java.time.LocalDate? {
-    if (engagedFigure == null) return null
-    val index = scrubs[PlayTimeScrub.CALENDAR] ?: return null
-    return days.getOrNull(index)?.date
+@Composable
+private fun PlayTimeState.timelineSlot(context: android.content.Context): PresentationSlot {
+    if (days.isEmpty()) return PresentationSlot.Fallback
+    val zone = remember { ZoneId.systemDefault() }
+    val theme = LocalArgosyTheme.current
+    val series = remember(theme.isDark) { ChartPalette.series(theme.isDark) }
+    val slots = ComponentDefaults.PlayTimeChart.seriesSlots
+    val slotOfSlug = remember(platforms, slots) {
+        platforms.take(slots).withIndex().associate { (index, entry) -> entry.key to index }
+    }
+    val sessionsByDate = remember(sessions) { sessionsByDate(zone) }
+    val daySlots = remember(days, sessionsByDate, slotOfSlug) {
+        dayPlatformSlots(sessionsByDate, slotOfSlug)
+    }
+    val selectedIndex = playTimeScrubIndex(PlayTimeScrub.CALENDAR, this)
+        ?.coerceIn(days.indices)
+        ?: days.lastIndex
+    val selectedDay = days[selectedIndex]
+    return PresentationSlot.PlayTimeline(
+        dots = days.mapIndexed { index, day ->
+            TimelineDot(
+                hasActivity = day.activeMs > 0L,
+                color = daySlots[index]?.let { series[it] } ?: theme.textMute,
+                label = day.date
+                    .takeIf { it.dayOfMonth == 1 }
+                    ?.month
+                    ?.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
+            )
+        },
+        selectedIndex = selectedIndex,
+        dayLabel = formatMonthDay(selectedDay.date.atStartOfDay(zone).toInstant()),
+        dayTotal = selectedDay.activeMs
+            .takeIf { it > 0L }
+            ?.let { formatPlayTime(context, (it / MS_PER_MIN).toInt()) },
+        games = gamesPlayedOn(selectedDay.date, context)
+    )
 }
 
 private fun PlayTimeState.gamesPlayedOn(
@@ -88,7 +120,8 @@ private fun PlayTimeState.gamesPlayedOn(
                 gameId = gameId,
                 title = played.first().gameTitle,
                 coverPath = coverPaths[gameId],
-                detail = formatPlayTime(context, (played.sumOf { it.activeMs } / MS_PER_MIN).toInt())
+                detail = formatPlayTime(context, (played.sumOf { it.activeMs } / MS_PER_MIN).toInt()),
+                subtitle = played.first().platformName
             )
         }
         .sortedByDescending { it.detail }

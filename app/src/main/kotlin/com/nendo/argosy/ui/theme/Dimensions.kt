@@ -86,6 +86,11 @@ object Dimens {
     val playerTrickplayWidth: Dp @Composable get() = DimensionTokens.Layout.playerTrickplayWidth.dp * scale
     val playerTrickplayHeight: Dp @Composable get() = DimensionTokens.Layout.playerTrickplayHeight.dp * scale
     val playerSkipButtonWidth: Dp @Composable get() = DimensionTokens.Layout.playerSkipButtonWidth.dp * scale
+    val timelineTrackHeight: Dp @Composable get() = DimensionTokens.Layout.timelineTrackHeight.dp * scale
+    val timelineDotEmpty: Dp @Composable get() = DimensionTokens.Layout.timelineDotEmpty.dp * scale
+    val timelineDotActive: Dp @Composable get() = DimensionTokens.Layout.timelineDotActive.dp * scale
+    val timelineDotSelected: Dp @Composable get() = DimensionTokens.Layout.timelineDotSelected.dp * scale
+    val timelineCoverHeight: Dp @Composable get() = DimensionTokens.Layout.timelineCoverHeight.dp * scale
 
     val borderThin = DimensionTokens.Border.thin.dp
     val borderMedium = DimensionTokens.Border.medium.dp
