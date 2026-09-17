@@ -1483,8 +1483,15 @@ fun HomeScreen(
             com.nendo.argosy.ui.components.CompanionAppBar(
                 apps = uiState.homeApps,
                 onAppClick = { viewModel.launchTileApp(it) },
-                focusedIndex = com.nendo.argosy.ui.components.APP_BAR_NOTHING_FOCUSED,
+                focusedIndex = if (uiState.appBarFocused) {
+                    uiState.appBarIndex
+                } else {
+                    com.nendo.argosy.ui.components.APP_BAR_NOTHING_FOCUSED
+                },
                 onOpenDrawer = onDrawerToggle,
+                onKeyboardToggle = {
+                    com.nendo.argosy.DualScreenManagerHolder.instance?.toggleUpperKeyboard()
+                },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }

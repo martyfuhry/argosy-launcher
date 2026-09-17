@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.components.APP_BAR_DRAWER_INDEX
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionFact
@@ -720,8 +721,36 @@ class HomeViewModel @Inject constructor(
 
     // --- Public API: Navigation ---
 
+    private fun appBarSlotCount(): Int = _uiState.value.homeApps.size + 1
+
+    override fun focusAppBar() {
+        if (_uiState.value.homeApps.isEmpty()) return
+        _uiState.update { it.copy(appBarFocused = true, appBarIndex = 0) }
+    }
+
+    override fun releaseAppBar() {
+        _uiState.update { it.copy(appBarFocused = false) }
+    }
+
+    override fun moveAppBarFocus(delta: Int) {
+        val slots = appBarSlotCount()
+        _uiState.update { it.copy(appBarIndex = (it.appBarIndex + delta).mod(slots + 1) - 1) }
+    }
+
+    override fun activateAppBarSlot(onOpenDrawer: () -> Unit) {
+        val state = _uiState.value
+        when (val index = state.appBarIndex) {
+            APP_BAR_DRAWER_INDEX -> onOpenDrawer()
+            in state.homeApps.indices -> launchTileApp(state.homeApps[index])
+            else -> DualScreenManagerHolder.instance?.toggleUpperKeyboard()
+        }
+    }
+
     override fun nextRow() {
-        val result = navigationDelegate.nextRow(_uiState.value) ?: return
+        val result = navigationDelegate.nextRow(_uiState.value) ?: run {
+            focusAppBar()
+            return
+        }
         _uiState.update { it.copy(currentRow = result.first, focusedGameIndex = result.second) }
         syncSelectedMediaLibrary()
         navigationDelegate.loadRow(viewModelScope, result.first) { row ->

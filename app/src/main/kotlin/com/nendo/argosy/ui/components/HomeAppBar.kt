@@ -47,6 +47,8 @@ private val COMPANION_APP_BAR_SLOT_WIDTH = 64.dp
  */
 const val APP_BAR_NOTHING_FOCUSED = -2
 
+const val APP_BAR_DRAWER_INDEX = -1
+
 data class CompanionMediaToggle(
     val showingMedia: Boolean,
     val isPlaying: Boolean

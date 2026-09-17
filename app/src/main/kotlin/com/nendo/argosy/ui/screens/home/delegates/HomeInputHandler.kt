@@ -26,6 +26,10 @@ interface HomeInputActions {
     fun confirmGameMenuSelection(onGameSelect: (Long) -> Unit)
     fun previousRow()
     fun nextRow()
+    fun focusAppBar()
+    fun releaseAppBar()
+    fun moveAppBarFocus(delta: Int)
+    fun activateAppBarSlot(onOpenDrawer: () -> Unit)
     fun previousGame(): Boolean
     fun nextGame(): Boolean
     fun moveGridFocus(direction: GridDirection): AutoGridMove
@@ -125,6 +129,10 @@ class HomeInputHandler(
 
     override fun onUp(): InputResult {
         val state = actions.uiState.value
+        if (state.appBarFocused) {
+            actions.releaseAppBar()
+            return InputResult.handled(SoundType.SECTION_CHANGE)
+        }
         if (state.customGrid.engagedTileId != null) return InputResult.handled(SoundType.BOUNDARY)
         if (state.customGrid.mediaTileNotice != null) return InputResult.HANDLED
         if (state.customGrid.isMediaSetupOpen) {
@@ -198,6 +206,7 @@ class HomeInputHandler(
                 actions.moveTilePickerFocus(1)
                 InputResult.HANDLED
             }
+            state.appBarFocused -> InputResult.handled(SoundType.BOUNDARY)
             isCustomGrid(state) -> customMove(GridDirection2D.DOWN)
             isGrid(state) -> gridMove(GridDirection.DOWN)
             else -> {
@@ -208,6 +217,10 @@ class HomeInputHandler(
     }
 
     override fun onLeft(): InputResult {
+        if (actions.uiState.value.appBarFocused) {
+            actions.moveAppBarFocus(-1)
+            return InputResult.HANDLED
+        }
         if (actions.uiState.value.customGrid.engagedTileId != null) {
             if (!actions.stepEngagedTile(-1)) actions.seekEngagedTile(false)
             return InputResult.HANDLED
@@ -234,6 +247,10 @@ class HomeInputHandler(
     }
 
     override fun onRight(): InputResult {
+        if (actions.uiState.value.appBarFocused) {
+            actions.moveAppBarFocus(1)
+            return InputResult.HANDLED
+        }
         if (actions.uiState.value.customGrid.engagedTileId != null) {
             if (!actions.stepEngagedTile(1)) actions.seekEngagedTile(true)
             return InputResult.HANDLED
@@ -375,11 +392,18 @@ class HomeInputHandler(
                 actions.nextRow()
                 InputResult.handled(SoundType.SECTION_CHANGE)
             }
-            AutoGridMove.None -> InputResult.HANDLED
+            AutoGridMove.None -> {
+                if (direction == GridDirection.DOWN) actions.focusAppBar()
+                InputResult.HANDLED
+            }
         }
 
     override fun onConfirm(): InputResult {
         val state = actions.uiState.value
+        if (state.appBarFocused) {
+            actions.activateAppBarSlot(onDrawerToggle)
+            return InputResult.handled(SoundType.SELECT)
+        }
         if (state.customGrid.engagedTileId != null) {
             if (!confirmEngagedRaTile(state)) actions.toggleEngagedPlayback()
             return InputResult.HANDLED
@@ -434,6 +458,10 @@ class HomeInputHandler(
 
     override fun onBack(): InputResult {
         val state = actions.uiState.value
+        if (state.appBarFocused) {
+            actions.releaseAppBar()
+            return InputResult.handled(SoundType.SECTION_CHANGE)
+        }
         if (actions.disengageTile()) return InputResult.handled(SoundType.CLOSE_MODAL)
         if (state.customGrid.pendingAdd != null) {
             actions.dismissPendingTileAdd()
