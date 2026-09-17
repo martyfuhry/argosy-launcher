@@ -10,6 +10,9 @@
 ## Testing evidence
 <sup>Hardware used, the flow you drove, and what you observed. Screenshots welcome where UI is involved.</sup>
 
+## Review summary
+<sup>Paste the summary from `scripts/review.sh --pr-body <this description>`. The Takt summary check fails without an APPROVE summary for the PR's head commit. See CONTRIBUTING.md (Review before opening a PR).</sup>
+
 ## AI assistance
 <sup>What role did AI play, and to what extent? (e.g. "written primarily by Claude Code", "consulted for design, authored manually", "none")</sup>
 

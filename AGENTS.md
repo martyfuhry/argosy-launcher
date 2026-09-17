@@ -11,10 +11,11 @@ exception is legitimate, and the boundary where it becomes a violation again.
 
 - Layers: ui/ -> domain/ -> data/. Dependencies flow inward only.
   - domain/ is Compose-free (hard rule). Android-framework-free is
-    aspirational with known debt across 12 files (Intent in LaunchGameUseCase,
+    aspirational with known debt across 13 files (Intent in LaunchGameUseCase,
     Log in several use cases, and a whole media-codec pipeline in
-    MeasureTrackLoudnessUseCase); the code-quality skill lists all 12. Existing
-    debt is not a licence - do not add new framework imports.
+    MeasureTrackLoudnessUseCase); grep `^import android\.` under domain/ for
+    the current list. Existing debt is not a licence - do not add new
+    framework imports.
   - ui/ reaches game/platform/collection data through repositories, never
     GameDao/PlatformDao/CollectionDao directly (aspirational with a known
     violator list in the code-quality skill; do not add new ones).
@@ -22,10 +23,12 @@ exception is legitimate, and the boundary where it becomes a violation again.
   ~300 then extract services; routers split method routing (see
   GameDetailViewModel + delegates/, SaveSyncRepository + services).
 - Compose stability contract: app/compose_stability_config.conf declares
-  data.model.**, data.local.entity.**, ui.screens.**, ui.components.** and
-  ui.dualscreen.** stable - those five, not all of ui/. ui.primitives is NOT
-  covered despite holding FocusIndicators, InputGlyph and ConfirmModal.
-  val-only state in covered packages; violations silently skip recomposition.
+  six packages stable (data.model.**, data.local.entity.**, domain.model.**,
+  ui.screens.**, ui.components.**, ui.dualscreen.**) plus two single classes
+  (core.game.AchievementUi, hardware.CompanionInGameState). That is not all of
+  ui/. ui.primitives is NOT covered despite holding FocusIndicators, InputGlyph
+  and ConfirmModal. val-only state in covered packages and classes; violations
+  silently skip recomposition.
   Non-negotiable.
 - Settings chain: DataStore key -> domain prefs repo -> UserPreferences
   aggregation -> SettingsModels state -> SettingsInitRouter hydrate -> owning
@@ -86,7 +89,8 @@ Every user-facing feature, no exceptions unless justified in review:
 - Native red zone: libretrodroid/ (C++/JNI/GLRetroView/rcheevos bridge) is
   maintainer-locked; do not modify without maintainer discussion.
 - Maintainer domains (not open without prior discussion): social, netplay,
-  music/BGM. Releases are maintainer-only.
+  music/BGM. Releases are maintainer-only, and so are release builds, signing
+  config, applicationId and the version fields.
 
 ## Handling user data that looks wrong
 
@@ -130,8 +134,9 @@ folder resolution); "tidying" them breaks resolution.
   a changed archive shape invalidates every save already on a server.
 - Input: InputDispatcher + per-screen InputHandler; index wrap via .mod().
   No Compose focus for navigation or selection - focusable() appears nowhere
-  and must not. The legitimate exception is FocusRequester for soft-keyboard
-  text entry and the root key sink in ArgosyApp; it becomes a violation the
+  except the root key sink in ArgosyApp. The legitimate exceptions are that
+  sink and FocusRequester for soft-keyboard text entry; either becomes a
+  violation the
   moment focus decides what is selected rather than what is typed into.
 - Tokens: design-system-docs/tokens.json -> scripts/gen-tokens.mjs ->
   ui/theme/generated/*.
@@ -153,3 +158,9 @@ folder resolution); "tidying" them breaks resolution.
 - Any user-facing text -> the label-vs-token law above, CONTRIBUTING.md AS-7/AS-8.
 - Platforms/emulators/cores -> platform-support. RA -> ra-compliance.
 - Contributor expectations, smells, PR evidence -> CONTRIBUTING.md.
+- Before opening a PR -> run `scripts/review.sh --pr-body <file>` and fix every
+  blocking finding. `gh pr create` and the PR's Takt summary check refuse a
+  head commit without an APPROVE summary. Never bypass the gate to get past a
+  finding you have not fixed; a `Takt-ack:` trailer (plus `ARGOSY_SKIP_TAKT=1`
+  for `gh pr create`) is for a reviewed false positive, and the trailer states
+  what was checked.
