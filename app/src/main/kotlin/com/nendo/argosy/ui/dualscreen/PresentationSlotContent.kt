@@ -197,13 +197,14 @@ private fun PlayTimelineSlot(slot: PresentationSlot.PlayTimeline) {
                 }
             }
         }
-        val selectedDotCenter by remember {
+        val selectedDotCenter by remember(slot.selectedIndex) {
             derivedStateOf {
                 listState.layoutInfo.visibleItemsInfo
                     .firstOrNull { it.index == slot.selectedIndex }
                     ?.let { it.offset + it.size / 2 }
             }
         }
+        if (slot.games.isEmpty()) return@Column
         val cardWidth = Dimens.modalWidthXl
         val stemWidth = Dimens.borderMedium
         val stemHeight = Dimens.spacingLg
@@ -216,7 +217,7 @@ private fun PlayTimelineSlot(slot: PresentationSlot.PlayTimeline) {
                 .coerceIn(0, (trackWidthPx - cardWidthPx).coerceAtLeast(0))
             val stemStartPx = dotCenterPx - with(density) { stemWidth.roundToPx() } / 2
             val stemRisePx = with(density) {
-                (Dimens.spacingLg + Dimens.timelineTrackHeight - Dimens.timelineDotSelected / 2).roundToPx()
+                (Dimens.spacingLg + Dimens.timelineTrackHeight - Dimens.timelineDotSelected).roundToPx()
             }
             Box(
                 modifier = Modifier

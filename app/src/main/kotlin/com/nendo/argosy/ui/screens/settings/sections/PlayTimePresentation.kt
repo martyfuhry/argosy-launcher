@@ -8,6 +8,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
+import com.nendo.argosy.data.repository.MIN_DISPLAY_MS
+import androidx.compose.ui.graphics.compositeOver
 import com.nendo.argosy.ui.common.ChartPalette
 import com.nendo.argosy.ui.dualscreen.PlayTimeSlotGame
 import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
@@ -91,7 +93,8 @@ private fun PlayTimeState.timelineSlot(context: android.content.Context): Presen
         dots = days.mapIndexed { index, day ->
             TimelineDot(
                 hasActivity = day.activeMs > 0L,
-                color = daySlots[index]?.let { series[it] } ?: theme.textMute,
+                color = daySlots[index]?.let { series[it] }
+                    ?: theme.textMute.compositeOver(theme.surfaceBase),
                 label = day.date
                     .takeIf { it.dayOfMonth == 1 }
                     ?.month
@@ -115,6 +118,7 @@ private fun PlayTimeState.gamesPlayedOn(
     return sessions
         .filter { it.startTime.atZone(zone).toLocalDate() == date }
         .groupBy { it.gameId }
+        .filterValues { played -> played.sumOf { it.activeMs } >= MIN_DISPLAY_MS }
         .map { (gameId, played) ->
             PlayTimeSlotGame(
                 gameId = gameId,
