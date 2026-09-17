@@ -65,6 +65,7 @@ import com.nendo.argosy.ui.input.HapticFeedbackManager
 import com.nendo.argosy.ui.input.HapticPattern
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
+import com.nendo.argosy.ui.input.buttonGlyphSwaps
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.ui.navigation.Screen
@@ -488,15 +489,15 @@ class ArgosyViewModel @Inject constructor(
         _startupComplete,
         _startupStatus
     ) { prefs, detectedLayout, startupDone, status ->
-        val isNintendoLayout = ControllerDetector.isNintendoLayout(prefs.controllerLayout, detectedLayout)
+        val glyphSwaps = prefs.buttonGlyphSwaps(detectedLayout)
         val hasExistingConfig = prefs.rommBaseUrl != null || prefs.romStoragePath != null
         ArgosyUiState(
             isFirstRun = !prefs.firstRunComplete && !hasExistingConfig,
             isLoading = !startupDone,
             startupStatusRes = status,
-            abIconsSwapped = isNintendoLayout xor prefs.swapAB,
-            xyIconsSwapped = isNintendoLayout xor prefs.swapXY,
-            swapStartSelect = prefs.swapStartSelect,
+            abIconsSwapped = glyphSwaps.ab,
+            xyIconsSwapped = glyphSwaps.xy,
+            swapStartSelect = glyphSwaps.startSelect,
             menuWrapMode = prefs.menuWrapMode
         )
     }.stateIn(

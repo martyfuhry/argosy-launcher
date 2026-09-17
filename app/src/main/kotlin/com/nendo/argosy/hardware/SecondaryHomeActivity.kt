@@ -31,13 +31,10 @@ import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.repository.AppsRepository
 import com.nendo.argosy.ui.ScreenDimmerPreferences
 import com.nendo.argosy.ui.components.ScreenDimmerOverlay
-import com.nendo.argosy.ui.input.LocalABIconsSwapped
-import com.nendo.argosy.ui.input.LocalXYIconsSwapped
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionDetailScreen
 import com.nendo.argosy.ui.input.GamepadEvent
 import com.nendo.argosy.ui.input.InputResult
-import com.nendo.argosy.ui.input.LocalSwapStartSelect
 import com.nendo.argosy.ui.input.SelectModifier
 import com.nendo.argosy.ui.input.mapKeycodeToGamepadEvent
 import com.nendo.argosy.util.Logger
@@ -109,9 +106,6 @@ class SecondaryHomeActivity :
     var swapXY = false; private set
     var swapStartSelect = false; private set
 
-    private var abIconsSwapped by mutableStateOf(false)
-    private var xyIconsSwapped by mutableStateOf(false)
-    private var startSelectSwapped by mutableStateOf(false)
     private val selectModifier = SelectModifier()
 
     private var displayListener: DisplayManager.DisplayListener? = null
@@ -180,19 +174,18 @@ class SecondaryHomeActivity :
                 val dimmerEnabled = dimmerPrefs.enabled &&
                     !isGameActive && !isWizardActive && mediaPlayback == null
                 androidx.compose.runtime.CompositionLocalProvider(
-                    LocalABIconsSwapped provides abIconsSwapped,
-                    LocalXYIconsSwapped provides xyIconsSwapped,
-                    LocalSwapStartSelect provides startSelectSwapped,
                     com.nendo.argosy.ui.components.LocalArtworkScraping provides scrapingArtwork
                 ) {
-                    ScreenDimmerOverlay(
-                        enabled = dimmerEnabled,
-                        timeoutMs = dimmerPrefs.timeoutMinutes * 60_000L,
-                        dimLevel = dimmerPrefs.level / 100f,
-                        lastActivityAtMs = lastUserActivityAtMs,
-                        onWake = { dsm.notifyUserActivity("companionDimmerTap") }
-                    ) {
-                        CompanionRoleContent()
+                    com.nendo.argosy.ui.input.ProvideButtonGlyphs(dsm.preferencesRepository.userPreferences) {
+                        ScreenDimmerOverlay(
+                            enabled = dimmerEnabled,
+                            timeoutMs = dimmerPrefs.timeoutMinutes * 60_000L,
+                            dimLevel = dimmerPrefs.level / 100f,
+                            lastActivityAtMs = lastUserActivityAtMs,
+                            onWake = { dsm.notifyUserActivity("companionDimmerTap") }
+                        ) {
+                            CompanionRoleContent()
+                        }
                     }
                 }
             }

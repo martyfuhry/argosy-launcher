@@ -402,7 +402,11 @@ class MainActivity : ComponentActivity() {
                         dualScreenManager.emulatorDisplayId != display?.displayId
                     if (companionHoldsPrimary.value || gameElsewhere) {
                         val slot by dualScreenManager.presentationSlot.collectAsState()
-                        com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+                        com.nendo.argosy.ui.input.ProvideButtonGlyphs(
+                            dualScreenManager.preferencesRepository.userPreferences
+                        ) {
+                            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+                        }
                     } else {
                         ArgosyApp(
                             onStartupComplete = { dualScreenManager.stopStartupGuard() }
