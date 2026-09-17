@@ -3,8 +3,9 @@ package com.nendo.argosy.ui.dualscreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +51,7 @@ import com.nendo.argosy.ui.theme.backdrop.surfaceBackdrop
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import kotlinx.coroutines.delay
 
-private const val TIMELINE_SCROLL_DELAY_MS = 500L
+private const val TIMELINE_SCROLL_DELAY_MS = 1500L
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
@@ -190,49 +197,79 @@ private fun PlayTimelineSlot(slot: PresentationSlot.PlayTimeline) {
                 }
             }
         }
-        LazyColumn(
-            state = gamesState,
-            userScrollEnabled = false,
-            verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
-            contentPadding = PaddingValues(Dimens.spacingLg),
-            modifier = Modifier
-                .widthIn(max = Dimens.modalWidthXl)
-                .clip(RoundedCornerShape(Dimens.radiusPanel))
-                .background(theme.surfaceRaised)
-        ) {
-            items(slot.games, key = { it.gameId }) { game ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    AsyncImage(
-                        model = rememberFileImageModel(game.coverPath),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .height(Dimens.timelineCoverHeight)
-                            .aspectRatio(COVER_ASPECT)
-                            .clip(RoundedCornerShape(Dimens.radiusSm))
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = game.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = theme.textPrimary
+        val selectedDotCenter by remember {
+            derivedStateOf {
+                listState.layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == slot.selectedIndex }
+                    ?.let { it.offset + it.size / 2 }
+            }
+        }
+        val cardWidth = Dimens.modalWidthXl
+        val stemWidth = Dimens.borderMedium
+        val stemHeight = Dimens.spacingLg
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val density = LocalDensity.current
+            val trackWidthPx = with(density) { maxWidth.roundToPx() }
+            val cardWidthPx = with(density) { cardWidth.roundToPx() }
+            val dotCenterPx = selectedDotCenter ?: (trackWidthPx / 2)
+            val cardStartPx = (dotCenterPx - cardWidthPx / 2)
+                .coerceIn(0, (trackWidthPx - cardWidthPx).coerceAtLeast(0))
+            val stemStartPx = dotCenterPx - with(density) { stemWidth.roundToPx() } / 2
+            val stemRisePx = with(density) {
+                (Dimens.spacingLg + Dimens.timelineTrackHeight - Dimens.timelineDotSelected / 2).roundToPx()
+            }
+            Box(
+                modifier = Modifier
+                    .offset { IntOffset(stemStartPx, -stemRisePx) }
+                    .width(stemWidth)
+                    .height(stemHeight + with(density) { stemRisePx.toDp() })
+                    .background(theme.surfaceRaised)
+            )
+            LazyColumn(
+                state = gamesState,
+                userScrollEnabled = false,
+                verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
+                contentPadding = PaddingValues(Dimens.spacingLg),
+                modifier = Modifier
+                    .offset { IntOffset(cardStartPx, with(density) { stemHeight.roundToPx() }) }
+                    .width(cardWidth)
+                    .clip(RoundedCornerShape(Dimens.radiusPanel))
+                    .background(theme.surfaceRaised)
+            ) {
+                items(slot.games, key = { it.gameId }) { game ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = rememberFileImageModel(game.coverPath),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .height(Dimens.timelineCoverHeight)
+                                .aspectRatio(COVER_ASPECT)
+                                .clip(RoundedCornerShape(Dimens.radiusSm))
                         )
-                        game.subtitle?.let {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = theme.textDim
+                                text = game.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = theme.textPrimary
                             )
+                            game.subtitle?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = theme.textDim
+                                )
+                            }
                         }
+                        Text(
+                            text = game.detail,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = theme.textDim
+                        )
                     }
-                    Text(
-                        text = game.detail,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = theme.textDim
-                    )
                 }
             }
         }
