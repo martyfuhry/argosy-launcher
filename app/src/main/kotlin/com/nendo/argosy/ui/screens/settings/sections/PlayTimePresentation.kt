@@ -5,12 +5,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.data.repository.MIN_DISPLAY_MS
 import androidx.compose.ui.graphics.compositeOver
 import com.nendo.argosy.ui.common.ChartPalette
+import com.nendo.argosy.ui.components.PlatformIconAssets
+import com.nendo.argosy.ui.dualscreen.PlayShareRow
 import com.nendo.argosy.ui.dualscreen.PlayTimeSlotGame
 import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
 import com.nendo.argosy.ui.dualscreen.PresentationSlot
@@ -28,6 +31,9 @@ import java.time.ZoneId
 
 private const val MS_PER_MIN = 60_000L
 private const val PRESENTED_ROWS = 12
+private const val PERCENT = 100L
+private const val TOP_GAMES_PER_ROW = 2
+private const val PRESENTED_SHARE_ROWS = 4
 
 /**
  * Hands the other display what the cursor is resting on: the run of games behind the focused
@@ -51,17 +57,38 @@ internal fun PlayTimePresentation(
     val slot = when {
         focused == null -> PresentationSlot.Fallback
         focused.section == "activity" -> playTime.timelineSlot(context)
-        focused.section == "platforms" -> PresentationSlot.PlayTime(
-            sectionLabel = stringResource(R.string.settings_play_time_section_platforms),
-            games = playTime.platforms.toSlotGames(context)
+        focused.section == "platforms" -> playTime.shareSlot(
+            title = stringResource(R.string.settings_play_time_section_platforms),
+            subtitle = pluralStringResource(
+                R.plurals.settings_play_time_platforms_tile_count,
+                playTime.platforms.size,
+                playTime.platforms.size
+            ),
+            entries = playTime.platforms,
+            context = context,
+            withIcons = true
         )
-        focused.section == "where" -> PresentationSlot.PlayTime(
-            sectionLabel = stringResource(R.string.settings_play_time_section_where),
-            games = playTime.devices.toSlotGames(context)
+        focused.section == "where" -> playTime.shareSlot(
+            title = stringResource(R.string.settings_play_time_section_where),
+            subtitle = pluralStringResource(
+                R.plurals.settings_play_time_devices_tile_count,
+                playTime.devices.size,
+                playTime.devices.size
+            ),
+            entries = playTime.devices,
+            context = context,
+            withIcons = false
         )
-        focused.section == "what" -> PresentationSlot.PlayTime(
-            sectionLabel = stringResource(R.string.settings_play_time_section_what),
-            games = playTime.games.toSlotGames(context)
+        focused.section == "what" -> playTime.shareSlot(
+            title = stringResource(R.string.settings_play_time_section_what),
+            subtitle = pluralStringResource(
+                R.plurals.settings_play_time_games_tile_count,
+                playTime.games.size,
+                playTime.games.size
+            ),
+            entries = playTime.games,
+            context = context,
+            withIcons = false
         )
         else -> PresentationSlot.Fallback
     }
@@ -69,6 +96,53 @@ internal fun PlayTimePresentation(
     if (slot is PresentationSlot.PlayTime && slot.games.isEmpty()) return
     if (slot == PresentationSlot.Fallback) return
     PresentOnCompanion(SlotOwner("settings.playTime"), slot)
+}
+
+@Composable
+private fun PlayTimeState.shareSlot(
+    title: String,
+    subtitle: String,
+    entries: List<PlayTimeEntryUi>,
+    context: android.content.Context,
+    withIcons: Boolean
+): PresentationSlot {
+    if (entries.isEmpty()) return PresentationSlot.Fallback
+    val theme = LocalArgosyTheme.current
+    val series = remember(theme.isDark) { ChartPalette.series(theme.isDark) }
+    val total = entries.sumOf { it.activeMs }
+    val topMs = entries.first().activeMs.toFloat().coerceAtLeast(1f)
+    val gamesByPlatform = remember(games) { games.groupBy { it.platformSlug } }
+    return PresentationSlot.PlayShare(
+        title = title,
+        totalLabel = formatPlayTime(context, (total / MS_PER_MIN).toInt()),
+        subtitle = subtitle,
+        rows = entries.take(PRESENTED_SHARE_ROWS).mapIndexed { index, entry ->
+            PlayShareRow(
+                label = entry.name,
+                valueLabel = formatPlayTime(context, (entry.activeMs / MS_PER_MIN).toInt()),
+                shareLabel = context.getString(
+                    R.string.settings_play_time_share_percent,
+                    ((entry.activeMs * PERCENT) / total.coerceAtLeast(1L)).toInt()
+                ),
+                fraction = entry.activeMs / topMs,
+                color = series[index],
+                iconModel = entry.key
+                    .takeIf { withIcons }
+                    ?.let { PlatformIconAssets.resolveAssetUri(context, it) },
+                topGames = gamesByPlatform[entry.key]
+                    .orEmpty()
+                    .take(TOP_GAMES_PER_ROW)
+                    .map { game ->
+                        PlayTimeSlotGame(
+                            gameId = game.key.toLongOrNull() ?: game.name.hashCode().toLong(),
+                            title = game.name,
+                            coverPath = game.coverPath,
+                            detail = formatPlayTime(context, (game.activeMs / MS_PER_MIN).toInt())
+                        )
+                    }
+            )
+        }
+    )
 }
 
 @Composable

@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.nendo.argosy.ui.common.rememberFileImageModel
@@ -52,6 +53,8 @@ import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import kotlinx.coroutines.delay
 
 private const val TIMELINE_SCROLL_DELAY_MS = 1500L
+private const val PLAY_SHARE_COLUMNS = 2
+private const val PLAY_SHARE_TOP_GAMES = 2
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
@@ -66,6 +69,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             }
             is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
             is PresentationSlot.PlayTimeline -> PlayTimelineSlot(slot)
+            is PresentationSlot.PlayShare -> PlayShareSlot(slot)
             is PresentationSlot.Breakdown -> BreakdownSlot(slot)
             is PresentationSlot.Detail -> CompanionDetailScreen(
                 detail = slot.detail,
@@ -96,6 +100,151 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     number = slot.number,
                     modifier = Modifier.padding(Dimens.spacingLg)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayShareSlot(slot: PresentationSlot.PlayShare) {
+    val theme = LocalArgosyTheme.current
+    Column(
+        modifier = Modifier.fillMaxSize().padding(Dimens.spacingXl),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spacingLg)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column {
+                Text(
+                    text = slot.title,
+                    style = MaterialTheme.typography.displaySmall,
+                    color = theme.textPrimary
+                )
+                Text(
+                    text = slot.subtitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = theme.textDim
+                )
+            }
+            Text(
+                text = slot.totalLabel,
+                style = MaterialTheme.typography.headlineSmall,
+                color = theme.focusAccent
+            )
+        }
+        slot.rows.chunked(PLAY_SHARE_COLUMNS).forEach { pair ->
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXl)) {
+                pair.forEach { row ->
+                    PlayShareCard(row = row, modifier = Modifier.weight(1f))
+                }
+                repeat(PLAY_SHARE_COLUMNS - pair.size) {
+                    Box(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayShareCard(row: PlayShareRow, modifier: Modifier = Modifier) {
+    val theme = LocalArgosyTheme.current
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(Dimens.radiusPanel))
+            .background(theme.surfaceRaised)
+            .padding(Dimens.spacingMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+        ) {
+            row.iconModel?.let {
+                AsyncImage(
+                    model = it,
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(Dimens.iconLg)
+                )
+            }
+            Text(
+                text = row.label,
+                style = MaterialTheme.typography.titleMedium,
+                color = theme.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                text = row.valueLabel,
+                style = MaterialTheme.typography.titleMedium,
+                color = theme.textPrimary
+            )
+            Text(
+                text = row.shareLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = theme.textDim
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(ComponentDefaults.VolumeMeter.height.dp)
+                .clip(RoundedCornerShape(ComponentDefaults.VolumeMeter.radius.dp))
+                .background(theme.surfaceBase)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(row.fraction.coerceIn(0f, 1f))
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(ComponentDefaults.VolumeMeter.radius.dp))
+                    .background(row.color)
+            )
+        }
+        if (row.topGames.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd)) {
+                row.topGames.forEach { game ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .height(Dimens.timelineCoverHeight)
+                                .aspectRatio(COVER_ASPECT)
+                                .clip(RoundedCornerShape(Dimens.radiusSm))
+                                .background(theme.surfaceBase)
+                        ) {
+                            AsyncImage(
+                                model = rememberFileImageModel(game.coverPath),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)) {
+                            Text(
+                                text = game.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = theme.textPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = game.detail,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = theme.textDim
+                            )
+                        }
+                    }
+                }
+                repeat(PLAY_SHARE_TOP_GAMES - row.topGames.size) {
+                    Box(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
