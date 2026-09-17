@@ -38,6 +38,13 @@ def matches_any(path, globs):
 
 KDOC_PATHS = ["app/src/main/**/*.kt", "libretrodroid/src/**/*.kt"]
 
+PROSE_PATHS = [
+    "**/*.conf", "**/*.gradle", "**/*.gradle.kts", "**/*.pro",
+    "**/*.properties", "**/*.sh", "**/*.xml", "**/*.json",
+]
+PROSE_COMMENT_RE = re.compile(r"^\s*(//|#|<!--)")
+MAX_PROSE_COMMENT_LINES = 4
+
 DECL_RE = re.compile(
     r"^\s*(?:(?P<vis>public|internal|private|protected)\s+)?"
     r"(?:(?:suspend|inline|noinline|crossinline|open|override|abstract|final|sealed|data|value|"
@@ -54,6 +61,9 @@ NARRATIVE_TELLS = [
     "it is worth", "note that", "in practice", "let", "used to be",
     "this used", "originally", "at one point", "for now", "as discussed",
     "temporarily", "TODO", "FIXME", "XXX", "HACK",
+    "because", "rather than", "instead of", "so that", "in order to",
+    "to avoid", "which means", "this ensures", "that way", "otherwise",
+    "the reason", "not just", "on purpose", "deliberately", "intentionally",
 ]
 
 NARRATIVE_RE = re.compile(
@@ -107,6 +117,35 @@ def documented_declaration(lines, end):
             continue
         return lines[j]
     return None
+
+
+def prose_findings(text, rel, added=None):
+    if not matches_any(rel, PROSE_PATHS):
+        return []
+
+    out = []
+    run = []
+    for line in text.splitlines():
+        if PROSE_COMMENT_RE.match(line):
+            run.append(line)
+            continue
+        out.extend(flag_prose_run(run, added))
+        run = []
+    out.extend(flag_prose_run(run, added))
+    return out
+
+
+def flag_prose_run(run, added):
+    if len(run) <= MAX_PROSE_COMMENT_LINES:
+        return []
+    if added is not None and not any(ln in added for ln in run):
+        return []
+    return [(
+        "prose-comment-block",
+        "A comment block this long in a config or build file is narration. State the "
+        "constraint in a line, or delete it and put the reasoning in the commit message.",
+        "{} lines starting: {}".format(len(run), run[0].strip()[:90]),
+    )]
 
 
 def kdoc_findings(text, rel, added=None):
@@ -240,6 +279,7 @@ def main():
 
     try:
         doc_findings = kdoc_findings(block_text, rel, added_lines)
+        doc_findings += prose_findings(block_text, rel, added_lines)
     except Exception:
         doc_findings = []
 
