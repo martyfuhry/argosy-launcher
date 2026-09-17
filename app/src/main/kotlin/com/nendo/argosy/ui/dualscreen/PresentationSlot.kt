@@ -95,6 +95,8 @@ data class PlayShareRow(
     val fraction: Float,
     val color: androidx.compose.ui.graphics.Color,
     val iconModel: Any?,
+    val showsCover: Boolean,
+    val coverPath: String?,
     val topGames: List<PlayTimeSlotGame>
 )
 

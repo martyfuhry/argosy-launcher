@@ -170,6 +170,22 @@ private fun PlayShareCard(row: PlayShareRow, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(Dimens.iconLg)
                 )
             }
+            if (row.showsCover) {
+                Box(
+                    modifier = Modifier
+                        .height(Dimens.timelineCoverHeight)
+                        .aspectRatio(COVER_ASPECT)
+                        .clip(RoundedCornerShape(Dimens.radiusSm))
+                        .background(theme.surfaceBase)
+                ) {
+                    AsyncImage(
+                        model = rememberFileImageModel(row.coverPath),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
             Text(
                 text = row.label,
                 style = MaterialTheme.typography.titleMedium,

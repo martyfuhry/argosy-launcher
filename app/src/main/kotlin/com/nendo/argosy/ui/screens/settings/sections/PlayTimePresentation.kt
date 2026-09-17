@@ -34,6 +34,7 @@ private const val PRESENTED_ROWS = 12
 private const val PERCENT = 100L
 private const val TOP_GAMES_PER_ROW = 2
 private const val PRESENTED_SHARE_ROWS = 4
+private const val PRESENTED_GAME_ROWS = 6
 
 /**
  * Hands the other display what the cursor is resting on: the run of games behind the focused
@@ -58,6 +59,7 @@ internal fun PlayTimePresentation(
         focused == null -> PresentationSlot.Fallback
         focused.section == "activity" -> playTime.timelineSlot(context)
         focused.section == "platforms" -> playTime.shareSlot(
+            kind = ShareKind.PLATFORM,
             title = stringResource(R.string.settings_play_time_section_platforms),
             subtitle = pluralStringResource(
                 R.plurals.settings_play_time_platforms_tile_count,
@@ -65,10 +67,10 @@ internal fun PlayTimePresentation(
                 playTime.platforms.size
             ),
             entries = playTime.platforms,
-            context = context,
-            withIcons = true
+            context = context
         )
         focused.section == "where" -> playTime.shareSlot(
+            kind = ShareKind.DEVICE,
             title = stringResource(R.string.settings_play_time_section_where),
             subtitle = pluralStringResource(
                 R.plurals.settings_play_time_devices_tile_count,
@@ -76,10 +78,10 @@ internal fun PlayTimePresentation(
                 playTime.devices.size
             ),
             entries = playTime.devices,
-            context = context,
-            withIcons = false
+            context = context
         )
         focused.section == "what" -> playTime.shareSlot(
+            kind = ShareKind.GAME,
             title = stringResource(R.string.settings_play_time_section_what),
             subtitle = pluralStringResource(
                 R.plurals.settings_play_time_games_tile_count,
@@ -87,8 +89,7 @@ internal fun PlayTimePresentation(
                 playTime.games.size
             ),
             entries = playTime.games,
-            context = context,
-            withIcons = false
+            context = context
         )
         else -> PresentationSlot.Fallback
     }
@@ -98,13 +99,18 @@ internal fun PlayTimePresentation(
     PresentOnCompanion(SlotOwner("settings.playTime"), slot)
 }
 
+private enum class ShareKind { PLATFORM, DEVICE, GAME }
+
+private fun shareRowsFor(kind: ShareKind) =
+    if (kind == ShareKind.GAME) PRESENTED_GAME_ROWS else PRESENTED_SHARE_ROWS
+
 @Composable
 private fun PlayTimeState.shareSlot(
+    kind: ShareKind,
     title: String,
     subtitle: String,
     entries: List<PlayTimeEntryUi>,
-    context: android.content.Context,
-    withIcons: Boolean
+    context: android.content.Context
 ): PresentationSlot {
     if (entries.isEmpty()) return PresentationSlot.Fallback
     val theme = LocalArgosyTheme.current
@@ -112,11 +118,12 @@ private fun PlayTimeState.shareSlot(
     val total = entries.sumOf { it.activeMs }
     val topMs = entries.first().activeMs.toFloat().coerceAtLeast(1f)
     val gamesByPlatform = remember(games) { games.groupBy { it.platformSlug } }
+    val gamesByDevice = remember(sessions, coverPaths) { topGamesByDevice(context) }
     return PresentationSlot.PlayShare(
         title = title,
         totalLabel = formatPlayTime(context, (total / MS_PER_MIN).toInt()),
         subtitle = subtitle,
-        rows = entries.take(PRESENTED_SHARE_ROWS).mapIndexed { index, entry ->
+        rows = entries.take(shareRowsFor(kind)).mapIndexed { index, entry ->
             PlayShareRow(
                 label = entry.name,
                 valueLabel = formatPlayTime(context, (entry.activeMs / MS_PER_MIN).toInt()),
@@ -127,23 +134,52 @@ private fun PlayTimeState.shareSlot(
                 fraction = entry.activeMs / topMs,
                 color = series[index],
                 iconModel = entry.key
-                    .takeIf { withIcons }
+                    .takeIf { kind == ShareKind.PLATFORM }
                     ?.let { PlatformIconAssets.resolveAssetUri(context, it) },
-                topGames = gamesByPlatform[entry.key]
-                    .orEmpty()
-                    .take(TOP_GAMES_PER_ROW)
-                    .map { game ->
-                        PlayTimeSlotGame(
-                            gameId = game.key.toLongOrNull() ?: game.name.hashCode().toLong(),
-                            title = game.name,
-                            coverPath = game.coverPath,
-                            detail = formatPlayTime(context, (game.activeMs / MS_PER_MIN).toInt())
-                        )
-                    }
+                showsCover = kind == ShareKind.GAME,
+                coverPath = entry.coverPath,
+                topGames = when (kind) {
+                    ShareKind.PLATFORM -> gamesByPlatform[entry.key].orEmpty().toSlotGames(context)
+                    ShareKind.DEVICE -> gamesByDevice[entry.name].orEmpty()
+                    ShareKind.GAME -> emptyList()
+                }
             )
         }
     )
 }
+
+private fun PlayTimeState.topGamesByDevice(
+    context: android.content.Context
+): Map<String, List<PlayTimeSlotGame>> =
+    sessions
+        .groupBy { it.deviceName }
+        .mapValues { (_, deviceSessions) ->
+            deviceSessions
+                .groupBy { it.gameId }
+                .map { (gameId, played) ->
+                    PlayTimeSlotGame(
+                        gameId = gameId,
+                        title = played.first().gameTitle,
+                        coverPath = coverPaths[gameId],
+                        detail = formatPlayTime(
+                            context,
+                            (played.sumOf { it.activeMs } / MS_PER_MIN).toInt()
+                        )
+                    )
+                }
+                .sortedByDescending { it.detail }
+                .take(TOP_GAMES_PER_ROW)
+        }
+
+private fun List<PlayTimeEntryUi>.toSlotGames(context: android.content.Context) =
+    take(TOP_GAMES_PER_ROW).map { entry ->
+        PlayTimeSlotGame(
+            gameId = entry.key.toLongOrNull() ?: entry.name.hashCode().toLong(),
+            title = entry.name,
+            coverPath = entry.coverPath,
+            detail = formatPlayTime(context, (entry.activeMs / MS_PER_MIN).toInt())
+        )
+    }
 
 @Composable
 private fun PlayTimeState.timelineSlot(context: android.content.Context): PresentationSlot {
@@ -205,13 +241,3 @@ private fun PlayTimeState.gamesPlayedOn(
         .sortedByDescending { it.detail }
         .take(PRESENTED_ROWS)
 }
-
-private fun List<PlayTimeEntryUi>.toSlotGames(context: android.content.Context) =
-    take(PRESENTED_ROWS).mapIndexed { index, entry ->
-        PlayTimeSlotGame(
-            gameId = entry.key.toLongOrNull() ?: index.toLong(),
-            title = entry.name,
-            coverPath = entry.coverPath,
-            detail = formatPlayTime(context, (entry.activeMs / MS_PER_MIN).toInt())
-        )
-    }
