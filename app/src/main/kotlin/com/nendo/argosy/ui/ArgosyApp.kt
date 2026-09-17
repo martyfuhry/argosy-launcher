@@ -1123,7 +1123,8 @@ fun ArgosyApp(
                     screenBrightness = quickSettingsUiState.screenBrightness,
                     isDualScreenActive = isDualScreenDevice && companionActive,
                     isSocialLinked = quickSettingsUiState.isSocialLinked,
-                    quayPassEnabled = quickSettingsUiState.quayPassEnabled
+                    quayPassEnabled = quickSettingsUiState.quayPassEnabled,
+                    isRolesSwapped = isRolesSwapped
                 ),
                 focusedIndex = quickSettingsFocusIndex,
                 onThemeCycle = { viewModel.cycleTheme() },
@@ -1137,6 +1138,7 @@ fun ArgosyApp(
                 onVolumeChange = { viewModel.setSystemVolume(it) },
                 onBrightnessChange = { viewModel.setScreenBrightness(it) },
                 onQuayPassToggle = { viewModel.toggleQuayPassFromQuickSettings() },
+                onSwapDisplays = { dsm?.swapRoles() },
                 onDismiss = closeQuickSettings,
                 footerHints = quickSettingsFooterHints.map { (button, labelRes) ->
                     button to stringResource(labelRes)

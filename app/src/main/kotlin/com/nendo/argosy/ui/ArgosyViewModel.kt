@@ -1516,6 +1516,10 @@ class ArgosyViewModel @Inject constructor(
                     toggleQuayPassFromQuickSettings()
                     InputResult.handled(SoundType.TOGGLE)
                 }
+                QuickSettingsItem.SwapDisplays -> {
+                    com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                    InputResult.handled(SoundType.TOGGLE)
+                }
                 else -> InputResult.HANDLED
             }
         }

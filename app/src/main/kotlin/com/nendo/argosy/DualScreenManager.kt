@@ -183,7 +183,7 @@ class DualScreenManager(
         _isRolesSwapped.value = value
     }
 
-    private val _hasPresentationScreen = MutableStateFlow(true)
+    private val _hasPresentationScreen = MutableStateFlow(false)
     val hasPresentationScreen: StateFlow<Boolean> = _hasPresentationScreen
 
 

@@ -104,6 +104,7 @@ data class QuickSettingsState(
     val systemVolume: Float = 1f,
     val screenBrightness: Float = 0.5f,
     val isDualScreenActive: Boolean = false,
+    val isRolesSwapped: Boolean = false,
     val isSocialLinked: Boolean = false,
     val quayPassEnabled: Boolean = false
 )
@@ -140,6 +141,10 @@ sealed class QuickSettingsItem(
     )
     data object UISounds : QuickSettingsItem("uiSounds", "audioVisual")
     data object BGM : QuickSettingsItem("bgm", "audioVisual")
+    data object SwapDisplays : QuickSettingsItem(
+        "swapDisplays", "audioVisual",
+        visibleWhen = { it.isDualScreenActive }
+    )
     data object QuayPass : QuickSettingsItem(
         "quaypass", "social",
         visibleWhen = { it.isSocialLinked }
@@ -154,7 +159,7 @@ sealed class QuickSettingsItem(
                 Performance, Fan, FanSpeed,
                 DeviceDivider,
                 Theme, SystemVolume, ScreenBrightness,
-                Haptic, VibrationStrength, UISounds, BGM,
+                Haptic, VibrationStrength, UISounds, BGM, SwapDisplays,
                 SocialDivider,
                 QuayPass
             )
@@ -193,6 +198,7 @@ fun QuickSettingsPanel(
     onVolumeChange: (Float) -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onQuayPassToggle: () -> Unit = {},
+    onSwapDisplays: () -> Unit = {},
     onDismiss: () -> Unit,
     footerHints: List<Pair<InputButton, String>> = listOf(
         InputButton.B to stringResource(R.string.ui_quick_settings_footer_close)
@@ -363,6 +369,14 @@ fun QuickSettingsPanel(
                                 isEnabled = state.ambientAudioEnabled,
                                 isFocused = isFocused(item),
                                 onClick = onAmbientToggle
+                            )
+
+                            QuickSettingsItem.SwapDisplays -> QuickSettingToggle(
+                                icon = Icons.Default.SwapHoriz,
+                                label = stringResource(R.string.ui_quick_settings_swap_displays),
+                                isEnabled = state.isRolesSwapped,
+                                isFocused = isFocused(item),
+                                onClick = onSwapDisplays
                             )
 
                             QuickSettingsItem.QuayPass -> QuickSettingToggle(
