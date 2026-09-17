@@ -39,6 +39,12 @@ sealed interface PresentationSlot {
 
     data class Detail(val detail: CompanionDetail) : PresentationSlot
 
+    data class Breakdown(
+        val title: String,
+        val subtitle: String?,
+        val rows: List<BreakdownRow>
+    ) : PresentationSlot
+
     data class PlatformShowcase(
         val name: String,
         val yearSpan: String?,
@@ -51,6 +57,13 @@ sealed interface PresentationSlot {
         val achievements: List<com.nendo.argosy.core.game.AchievementUi>
     ) : PresentationSlot
 }
+
+data class BreakdownRow(
+    val label: String,
+    val value: String,
+    val fraction: Float,
+    val color: androidx.compose.ui.graphics.Color
+)
 
 data class PlayTimeSlotGame(
     val gameId: Long,

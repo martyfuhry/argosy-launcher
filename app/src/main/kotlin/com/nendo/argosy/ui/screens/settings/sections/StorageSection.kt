@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.data.steam.SteamConnectionState
 import com.nendo.argosy.data.storage.StorageCategory
@@ -50,6 +51,10 @@ import com.nendo.argosy.ui.components.SliderPreference
 import com.nendo.argosy.ui.components.SwitchPreference
 import androidx.compose.material3.MaterialTheme
 import com.nendo.argosy.ui.components.VolumeMeterCategory
+import com.nendo.argosy.ui.dualscreen.BreakdownRow
+import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
+import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.dualscreen.SlotOwner
 import com.nendo.argosy.ui.components.VolumeMeterHero
 import com.nendo.argosy.ui.components.storageComputedLabel
 import com.nendo.argosy.ui.components.volumeMeterCategoryColors
@@ -178,6 +183,34 @@ internal fun storageFocusIndexOf(item: StorageItem, info: StorageLayoutInfo): In
 
 internal fun storageSections(info: StorageLayoutInfo): List<ListSection> =
     info.layout.buildSections(info.state)
+
+@Composable
+private fun StoragePresentation(categories: List<VolumeMeterCategory>, availableSpace: Long) {
+    val active = DualScreenManagerHolder.instance
+        ?.isCompanionActive?.collectAsState()?.value == true
+    if (!active) return
+    val rows = categories.filter { it.bytes > 0L }.sortedByDescending { it.bytes }
+    if (rows.isEmpty()) return
+    val largest = rows.first().bytes.toFloat()
+    PresentOnCompanion(
+        SlotOwner("settings.storage"),
+        PresentationSlot.Breakdown(
+            title = stringResource(R.string.settings_shell_header_storage),
+            subtitle = stringResource(
+                R.string.settings_storage_rom_path_free,
+                formatBytes(availableSpace)
+            ),
+            rows = rows.map {
+                BreakdownRow(
+                    label = it.label,
+                    value = formatBytes(it.bytes),
+                    fraction = it.bytes / largest,
+                    color = it.color
+                )
+            }
+        )
+    )
+}
 
 private val CACHES_CATEGORIES: Set<StorageCategory> = StorageCategory.entries.toSet() -
     setOf(
@@ -373,6 +406,8 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
             ))
         }
     }
+
+    StoragePresentation(heroCategories, storage.availableSpace)
 
     fun isFocused(item: StorageItem): Boolean =
         uiState.focusedIndex == storageLayout.focusIndexOf(item, layoutState)

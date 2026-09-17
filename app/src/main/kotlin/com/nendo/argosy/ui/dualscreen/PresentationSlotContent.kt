@@ -1,19 +1,27 @@
 package com.nendo.argosy.ui.dualscreen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import com.nendo.argosy.ui.components.FooterBar
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.ui.components.HomeLayoutPreview
 import com.nendo.argosy.ui.components.ScreenNumberBadge
 import com.nendo.argosy.ui.theme.Dimens
@@ -33,6 +41,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                 HomeLayoutPreview(settings = slot.settings, modifier = Modifier.fillMaxWidth())
             }
             is PresentationSlot.PlayTime -> PlayTimeSlot(slot)
+            is PresentationSlot.Breakdown -> BreakdownSlot(slot)
             is PresentationSlot.Detail -> CompanionDetailScreen(
                 detail = slot.detail,
                 modifier = Modifier.fillMaxSize(),
@@ -62,6 +71,63 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     number = slot.number,
                     modifier = Modifier.padding(Dimens.spacingLg)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BreakdownSlot(slot: PresentationSlot.Breakdown) {
+    val theme = LocalArgosyTheme.current
+    Column(
+        modifier = Modifier.fillMaxSize().padding(Dimens.spacingXl),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
+    ) {
+        Text(
+            text = slot.title,
+            style = MaterialTheme.typography.headlineMedium,
+            color = theme.textPrimary
+        )
+        slot.subtitle?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.titleSmall,
+                color = theme.textDim
+            )
+        }
+        slot.rows.forEach { row ->
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = row.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = theme.textPrimary
+                    )
+                    Text(
+                        text = row.value,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = theme.textDim
+                    )
+                }
+                val barShape = RoundedCornerShape(ComponentDefaults.VolumeMeter.radius.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(ComponentDefaults.VolumeMeter.height.dp)
+                        .clip(barShape)
+                        .background(theme.surfaceRaised)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(row.fraction.coerceIn(0f, 1f))
+                            .fillMaxHeight()
+                            .clip(barShape)
+                            .background(row.color)
+                    )
+                }
             }
         }
     }
