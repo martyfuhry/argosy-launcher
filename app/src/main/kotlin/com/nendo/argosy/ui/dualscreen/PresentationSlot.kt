@@ -31,6 +31,11 @@ sealed interface PresentationSlot {
     data class ScreenIdentity(val number: Int) : PresentationSlot
 
     data class Detail(val detail: CompanionDetail) : PresentationSlot
+
+    data class InGame(
+        val state: com.nendo.argosy.hardware.CompanionInGameState,
+        val achievements: List<com.nendo.argosy.core.game.AchievementUi>
+    ) : PresentationSlot
 }
 
 data class PlayTimeSlotGame(

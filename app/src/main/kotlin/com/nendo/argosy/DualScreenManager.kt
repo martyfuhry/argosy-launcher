@@ -733,18 +733,6 @@ class DualScreenManager(
      * fallback once every publisher has released. Screens publish while they are on screen and
      * release when they leave, so the surface follows navigation without either side tracking it.
      */
-    val presentationSlot: StateFlow<com.nendo.argosy.ui.dualscreen.PresentationSlot> =
-        kotlinx.coroutines.flow.combine(_presentationSlots, _companionDetail) { slots, detail ->
-            slots.lastOrNull()?.second
-                ?: detail?.let { com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(it) }
-                ?: com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
-        }
-            .stateIn(
-                scope,
-                kotlinx.coroutines.flow.SharingStarted.Eagerly,
-                com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
-            )
-
     fun presentSlot(
         owner: com.nendo.argosy.ui.dualscreen.SlotOwner,
         slot: com.nendo.argosy.ui.dualscreen.PresentationSlot
@@ -1262,6 +1250,32 @@ class DualScreenManager(
 
     var swappedSessionTimer: com.nendo.argosy.hardware.CompanionSessionTimer? = null
         private set
+
+    /**
+     * What the presentation screen shows right now. A live session outranks everything, then the
+     * most recent published slot, then whatever screen is describing its selection.
+     */
+    val presentationSlot: StateFlow<com.nendo.argosy.ui.dualscreen.PresentationSlot> =
+        kotlinx.coroutines.flow.combine(
+            _presentationSlots,
+            _companionDetail,
+            _swappedIsGameActive,
+            _swappedCompanionState,
+            _companionAchievements
+        ) { slots, detail, gameActive, inGame, achievements ->
+            when {
+                gameActive && inGame.isLoaded ->
+                    com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame(inGame, achievements)
+                slots.isNotEmpty() -> slots.last().second
+                detail != null -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(detail)
+                else -> com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
+            }
+        }
+            .stateIn(
+                scope,
+                kotlinx.coroutines.flow.SharingStarted.Eagerly,
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
+            )
 
     private var companionWatchdogJob: Job? = null
     private var companionLaunchJob: Job? = null

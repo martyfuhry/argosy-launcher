@@ -42,6 +42,17 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                         { FooterBar(hints = hints.map { it.button to it.label }) }
                     }
             )
+            is PresentationSlot.InGame -> {
+                val manager = com.nendo.argosy.DualScreenManagerHolder.instance
+                CompanionDashboard(
+                    state = slot.state,
+                    sessionTimer = manager?.swappedSessionTimer,
+                    liveAchievements = slot.achievements,
+                    onQuickSave = { manager?.sessionQuickActions?.quickSave() },
+                    onQuickLoad = { manager?.sessionQuickActions?.quickLoad() },
+                    onScreenshot = { manager?.sessionQuickActions?.screenshot() }
+                )
+            }
             is PresentationSlot.ScreenIdentity -> Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.BottomEnd
