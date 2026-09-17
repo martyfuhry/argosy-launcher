@@ -1,7 +1,10 @@
 package com.nendo.argosy.ui.dualscreen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,14 +34,17 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.nendo.argosy.ui.common.rememberFileImageModel
 import com.nendo.argosy.ui.components.FooterBar
-import com.nendo.argosy.ui.components.animateScrollToItemCentered
-import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.ui.components.HomeLayoutPreview
 import com.nendo.argosy.ui.components.ScreenNumberBadge
+import com.nendo.argosy.ui.components.animateScrollToItemCentered
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.theme.backdrop.BackdropRole
 import com.nendo.argosy.ui.theme.backdrop.surfaceBackdrop
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
+import kotlinx.coroutines.delay
+
+private const val TIMELINE_SCROLL_DELAY_MS = 500L
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
@@ -119,38 +125,51 @@ private fun PlayTimelineSlot(slot: PresentationSlot.PlayTimeline) {
                 )
             }
         }
-        LazyRow(
-            state = listState,
-            userScrollEnabled = false,
-            modifier = Modifier.fillMaxWidth().height(Dimens.timelineTrackHeight),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXl)
-        ) {
-            itemsIndexed(slot.dots) { index, dot ->
-                val selected = index == slot.selectedIndex
-                val size = when {
-                    selected && dot.hasActivity -> Dimens.timelineDotSelected
-                    dot.hasActivity -> Dimens.timelineDotActive
-                    else -> Dimens.timelineDotEmpty
-                }
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(size)
-                            .then(
-                                if (dot.hasActivity) {
-                                    Modifier.clip(CircleShape).background(dot.color)
-                                } else {
-                                    Modifier
-                                }
-                            )
-                    )
-                    dot.label?.let {
+        Box(modifier = Modifier.fillMaxWidth().height(Dimens.timelineTrackHeight)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = Dimens.timelineDotSelected / 2)
+                    .height(Dimens.borderMedium)
+                    .background(theme.surfaceRaised)
+            )
+            LazyRow(
+                state = listState,
+                userScrollEnabled = false,
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXl)
+            ) {
+                itemsIndexed(slot.dots) { index, dot ->
+                    val selected = index == slot.selectedIndex
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
+                    ) {
+                        Box(
+                            modifier = Modifier.size(Dimens.timelineDotSelected),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (selected) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .background(theme.surfaceBase)
+                                        .border(Dimens.borderMedium, theme.focusAccent, CircleShape)
+                                )
+                            }
+                            if (dot.hasActivity) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(Dimens.timelineDotActive)
+                                        .clip(CircleShape)
+                                        .background(dot.color)
+                                )
+                            }
+                        }
                         Text(
-                            text = it,
+                            text = dot.label.orEmpty(),
                             style = MaterialTheme.typography.labelSmall,
                             color = theme.textDim
                         )
@@ -158,7 +177,29 @@ private fun PlayTimelineSlot(slot: PresentationSlot.PlayTimeline) {
                 }
             }
         }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)) {
+        val gamesState = rememberLazyListState()
+        LaunchedEffect(slot.games, slot.selectedIndex) {
+            gamesState.scrollToItem(0)
+            while (true) {
+                delay(TIMELINE_SCROLL_DELAY_MS)
+                if (!gamesState.canScrollForward) {
+                    if (gamesState.firstVisibleItemIndex == 0) continue
+                    gamesState.animateScrollToItem(0)
+                } else {
+                    gamesState.animateScrollToItem(gamesState.firstVisibleItemIndex + 1)
+                }
+            }
+        }
+        LazyColumn(
+            state = gamesState,
+            userScrollEnabled = false,
+            verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
+            contentPadding = PaddingValues(Dimens.spacingLg),
+            modifier = Modifier
+                .widthIn(max = Dimens.modalWidthXl)
+                .clip(RoundedCornerShape(Dimens.radiusPanel))
+                .background(theme.surfaceRaised)
+        ) {
             items(slot.games, key = { it.gameId }) { game ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(Dimens.spacingMd),
