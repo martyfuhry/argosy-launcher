@@ -184,6 +184,21 @@ class SaveSyncRepositoryPreLaunchTest {
     }
 
     @Test
+    fun `default launch sees dirty rows stored under the autosave channel`() = runTest {
+        val server = makeServerSave(
+            id = 55L,
+            deviceSyncs = listOf(RomMDeviceSync(deviceId = "device-1", isCurrent = false))
+        )
+        coEvery { apiClient.checkSavesForGame(gameId, rommId) } returns listOf(server)
+        coEvery { saveCacheDao.hasNeedingRemoteSync(gameId, null) } returns false
+        coEvery { saveCacheDao.hasNeedingRemoteSync(gameId, "autosave") } returns true
+
+        val result = repo.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
+
+        assertTrue("Expected LocalModified, got $result", result is PreLaunchSyncResult.LocalModified)
+    }
+
+    @Test
     fun `device has no sync entry on server save defaults to serverHasNewer=true`() = runTest {
         coEvery { apiClient.checkSavesForGame(gameId, rommId) } returns listOf(
             makeServerSave(deviceSyncs = listOf(RomMDeviceSync(deviceId = "device-other", isCurrent = true)))

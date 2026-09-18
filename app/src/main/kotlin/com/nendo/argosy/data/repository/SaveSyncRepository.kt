@@ -11,6 +11,7 @@ import com.nendo.argosy.data.sync.ConflictInfo
 import com.nendo.argosy.data.sync.ConflictResolution
 import com.nendo.argosy.data.sync.SyncQueueManager
 import com.nendo.argosy.data.sync.SyncQueueState
+import com.nendo.argosy.domain.model.SaveSlotClassifier
 import com.nendo.argosy.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -393,7 +394,8 @@ class SaveSyncRepository @Inject constructor(
         val active = serverSaves
             .filter { save -> save.slot != null && SaveSyncApiClient.equalsNormalized(save.slot, effectiveChannel) }
             .maxByOrNull { SaveSyncApiClient.parseTimestamp(it.updatedAt) }
-        val localDirty = saveCacheDao.hasNeedingRemoteSync(gameId, channelName)
+        val localDirty = SaveSlotClassifier.storedChannelsFor(effectiveChannel)
+            .any { stored -> saveCacheDao.hasNeedingRemoteSync(gameId, stored) }
 
         if (active == null) {
             val decision = if (localDirty) PreLaunchSyncResult.LocalIsNewer else PreLaunchSyncResult.NoServerSave
