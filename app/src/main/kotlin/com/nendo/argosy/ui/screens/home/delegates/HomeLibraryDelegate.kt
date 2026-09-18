@@ -215,7 +215,7 @@ class HomeLibraryDelegate @Inject constructor(
                 _state.value.platforms.getOrNull(startRow.index)?.let { loadPlatformGames(it) }
             }
             loadRecommendations()
-            validateInstalledGamesInBackground(scope)
+            scope.launch(Dispatchers.IO) { gameRepository.validateLocalFiles() }
         }
     }
 
@@ -639,22 +639,6 @@ class HomeLibraryDelegate @Inject constructor(
                 .with(TemporalAdjusters.previousOrSame(DayOfWeek.SATURDAY))
                 .toString()
             preferencesRepository.setRecommendationPenalties(penalties, weekKey)
-        }
-    }
-
-    private fun validateInstalledGamesInBackground(scope: CoroutineScope) {
-        scope.launch(Dispatchers.IO) {
-            val gamesWithPaths = gameRepository.getGamesWithLocalPathInfo()
-            val staleIds = gamesWithPaths.mapNotNull { info ->
-                val path = info.localPath ?: return@mapNotNull null
-                if (info.source == GameSource.STEAM || info.source == GameSource.ANDROID_APP) return@mapNotNull null
-                if (downloadFileStatusRepository.pathExists(path)) return@mapNotNull null
-                info.id
-            }
-            if (staleIds.isEmpty()) return@launch
-            staleIds.forEach { id ->
-                gameRepository.validateAndDiscoverGame(id)
-            }
         }
     }
 

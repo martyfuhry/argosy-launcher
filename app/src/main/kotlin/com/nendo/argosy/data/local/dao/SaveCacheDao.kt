@@ -41,11 +41,11 @@ interface SaveCacheDao {
     suspend fun getByGameAndHash(gameId: Long, ownerUserId: Long?, hash: String): SaveCacheEntity?
 
     @Query("""
-        SELECT DISTINCT channelName FROM save_cache
+        SELECT * FROM save_cache
         WHERE gameId = :gameId AND contentHash = :hash
           AND (ownerUserId IS NULL OR ownerUserId = :ownerUserId)
     """)
-    suspend fun getChannelsWithHash(gameId: Long, ownerUserId: Long?, hash: String): List<String?>
+    suspend fun getAllByGameAndHash(gameId: Long, ownerUserId: Long?, hash: String): List<SaveCacheEntity>
 
     @Query("""
         SELECT * FROM save_cache

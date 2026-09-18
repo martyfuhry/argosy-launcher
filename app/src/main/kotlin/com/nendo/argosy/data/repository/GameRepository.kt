@@ -365,6 +365,7 @@ class GameRepository @Inject constructor(
         val startTime = System.currentTimeMillis()
         val gamesWithPaths = gameDao.getGamesWithLocalPathInfo()
         var invalidated = 0
+        var reclaimed = 0
         var withheld = 0
         for (info in gamesWithPaths) {
             val path = info.localPath ?: continue
@@ -375,7 +376,12 @@ class GameRepository @Inject constructor(
             }
             gameDao.clearLocalPath(info.id)
             invalidated++
-            Log.d(TAG, "Invalidated game ${info.id}: path no longer valid ($path)")
+            if (validateAndDiscoverGame(info.id)) {
+                reclaimed++
+                Log.d(TAG, "Reclaimed game ${info.id}: found a new path for ($path)")
+            } else {
+                Log.d(TAG, "Invalidated game ${info.id}: path no longer valid ($path)")
+            }
         }
         var invalidatedFiles = 0
         for (row in gameFileDao.getAllWithLocalPath()) {
@@ -390,7 +396,7 @@ class GameRepository @Inject constructor(
             Log.d(TAG, "Invalidated file row ${row.id} (${row.fileName}): path no longer valid ($path)")
         }
         val elapsed = System.currentTimeMillis() - startTime
-        Log.d(TAG, "Validation complete: $invalidated of ${gamesWithPaths.size} games and $invalidatedFiles file rows invalidated in ${elapsed}ms")
+        Log.d(TAG, "Validation complete: $invalidated of ${gamesWithPaths.size} games ($reclaimed reclaimed) and $invalidatedFiles file rows invalidated in ${elapsed}ms")
         if (withheld > 0) {
             Log.w(TAG, "validateLocalFiles: kept $withheld pointers whose volume could not be read")
         }
