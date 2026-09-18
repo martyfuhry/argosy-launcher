@@ -93,6 +93,15 @@ class SaveCacheManagerCachingTest {
         assertFalse("Autosave is not a user-created slot", captured.isLocked)
     }
 
+    @Test
+    fun `copying into a slot leaves other rows in it queued for upload`() = runTest {
+        copyToChannelCapturing("speedrun")
+
+        coVerify(exactly = 0) {
+            saveCacheDao.clearDirtyFlagForChannel(any(), any(), any(), any())
+        }
+    }
+
     private suspend fun copyToChannelCapturing(targetChannel: String): SaveCacheEntity {
         val sourceDir = File(com.nendo.argosy.util.AppPaths.saveCacheDir(tempDir), "1/20260101-000000")
         sourceDir.mkdirs()

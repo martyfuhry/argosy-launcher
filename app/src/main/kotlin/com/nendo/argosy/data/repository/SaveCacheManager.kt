@@ -755,7 +755,6 @@ class SaveCacheManager @Inject constructor(
             )
 
             val newId = saveCacheDao.insert(entity)
-            saveCacheDao.clearDirtyFlagForChannel(source.gameId, source.ownerUserId, channelName, excludeId = newId)
             Log.d(TAG, "Created channel '$channelName' from cache $cacheId -> $newId")
             newId
         } catch (e: Exception) {
