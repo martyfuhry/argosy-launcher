@@ -21,6 +21,8 @@ import com.nendo.argosy.data.sync.SaveOwnershipTracker
 import com.nendo.argosy.data.sync.SavePathResolver
 import com.nendo.argosy.data.sync.SaveUnitResolver
 import com.nendo.argosy.data.sync.platform.PlatformSaveHandlerRegistry
+import com.nendo.argosy.domain.model.SaveSlotClassifier
+import com.nendo.argosy.domain.model.SaveSlotKind
 import com.nendo.argosy.util.SaveDebugLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -741,7 +743,11 @@ class SaveCacheManager @Inject constructor(
                 saveSize = destFile.length(),
                 cachePath = cachePath,
                 note = channelName,
-                isLocked = true,
+                isLocked = SaveSlotClassifier.kindOf(
+                    channelName = channelName,
+                    isLatest = false,
+                    isArchival = false
+                ) == SaveSlotKind.NAMED,
                 contentHash = source.contentHash,
                 channelName = channelName,
                 needsRemoteSync = true,

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -76,6 +77,39 @@ class SaveCacheManagerCachingTest {
     @After
     fun tearDown() {
         tempDir.deleteRecursively()
+    }
+
+    @Test
+    fun `copying into a named slot locks the new row`() = runTest {
+        val captured = copyToChannelCapturing("speedrun")
+
+        assertTrue("A named slot is a user-created slot", captured.isLocked)
+    }
+
+    @Test
+    fun `copying into the autosave slot leaves the new row unlocked`() = runTest {
+        val captured = copyToChannelCapturing(SaveSyncApiClient.AUTOSAVE_SLOT_NAME)
+
+        assertFalse("Autosave is not a user-created slot", captured.isLocked)
+    }
+
+    private suspend fun copyToChannelCapturing(targetChannel: String): SaveCacheEntity {
+        val sourceDir = File(com.nendo.argosy.util.AppPaths.saveCacheDir(tempDir), "1/20260101-000000")
+        sourceDir.mkdirs()
+        File(sourceDir, "game.srm").writeBytes(ByteArray(64))
+        val source = SaveCacheEntity(
+            id = 5L, gameId = 1L, emulatorId = "retroarch",
+            cachedAt = Instant.now(), saveSize = 64L,
+            cachePath = "1/20260101-000000/game.srm", contentHash = "feedface",
+            channelName = SaveSyncApiClient.AUTOSAVE_SLOT_NAME,
+        )
+        coEvery { saveCacheDao.getById(5L) } returns source
+        val captured = slot<SaveCacheEntity>()
+        coEvery { saveCacheDao.insert(capture(captured)) } returns 6L
+
+        manager.copyToChannel(5L, targetChannel)
+
+        return captured.captured
     }
 
     @Test
