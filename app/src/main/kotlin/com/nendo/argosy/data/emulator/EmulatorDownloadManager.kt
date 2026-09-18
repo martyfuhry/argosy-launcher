@@ -72,7 +72,8 @@ class EmulatorDownloadManager @Inject constructor(
         emulatorId: String,
         downloadUrl: String,
         assetName: String,
-        variant: String?
+        variant: String?,
+        packageName: String? = null
     ) {
         if (_downloadProgress.value?.state is EmulatorDownloadState.Downloading) {
             Log.w(TAG, "Download already in progress")
@@ -93,7 +94,8 @@ class EmulatorDownloadManager @Inject constructor(
                     pendingInstall = PendingEmulatorInstall(
                         emulatorId = emulatorId,
                         apkPath = apkFile.absolutePath,
-                        variant = variant
+                        variant = variant,
+                        packageName = packageName ?: EmulatorRegistry.getById(emulatorId)?.packageName
                     )
 
                     _downloadProgress.value = EmulatorDownloadProgress(
@@ -188,10 +190,10 @@ class EmulatorDownloadManager @Inject constructor(
         val pending = pendingInstall ?: return
 
         val emulatorDef = EmulatorRegistry.getById(pending.emulatorId)
-        if (emulatorDef?.packageName != packageName &&
-            emulatorDef?.packagePatterns?.none { packageName.matches(Regex(it)) } != false) {
-            return
-        }
+        val matchesPending = pending.packageName == packageName
+        val matchesDef = emulatorDef?.packageName == packageName ||
+            emulatorDef?.packagePatterns?.any { packageName.matches(Regex(it)) } == true
+        if (!matchesPending && !matchesDef) return
 
         scope.launch {
             try {
@@ -302,5 +304,6 @@ class EmulatorDownloadManager @Inject constructor(
 private data class PendingEmulatorInstall(
     val emulatorId: String,
     val apkPath: String,
-    val variant: String?
+    val variant: String?,
+    val packageName: String?
 )
