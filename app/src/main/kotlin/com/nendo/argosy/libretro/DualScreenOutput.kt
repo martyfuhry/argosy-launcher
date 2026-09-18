@@ -4,17 +4,8 @@ import android.graphics.PointF
 import android.graphics.RectF
 
 /**
- * How a two-screen console's single framebuffer is split across two displays.
- *
- * The core composites both screens into one frame, so which part belongs on which display is a
- * crop of that frame. [coreOptions] are the core options that produce the arrangement these crops
- * assume - the crops are only correct while they are set, so they are applied with them and held
- * there for as long as the split is on.
- *
- * Crop values are the fraction trimmed from each edge, written as the picture reads: the console's
- * upper screen is the upper part. A hardware-rendered frame arrives bottom row first and the
- * vertical trims are swapped for it further down, so a core that can switch renderer at runtime
- * needs no second table.
+ * How a two-screen console's single framebuffer is split across two displays. Crops are the
+ * fraction trimmed from each edge and are only valid while [coreOptions] are set.
  */
 data class DualScreenOutput(
     val coreId: String,

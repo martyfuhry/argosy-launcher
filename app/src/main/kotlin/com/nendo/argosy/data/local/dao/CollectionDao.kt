@@ -120,6 +120,26 @@ interface CollectionDao {
     """)
     fun observeLocalCollectionCoverPaths(collectionId: Long): Flow<List<String>>
 
+    @Query("""
+        SELECT cg.collectionId AS collectionId, COUNT(*) AS gameCount
+        FROM collection_games cg
+        INNER JOIN games g ON cg.gameId = g.id
+        INNER JOIN platforms p ON g.platformId = p.id
+        WHERE p.syncEnabled = 1
+        GROUP BY cg.collectionId
+    """)
+    fun observeLocalGameCounts(): Flow<List<CollectionGameCount>>
+
+    @Query("""
+        SELECT cg.collectionId AS collectionId, g.coverPath AS coverPath
+        FROM games g
+        INNER JOIN collection_games cg ON g.id = cg.gameId
+        INNER JOIN platforms p ON g.platformId = p.id
+        WHERE g.coverPath IS NOT NULL AND p.syncEnabled = 1
+        ORDER BY cg.collectionId ASC, cg.addedAt DESC
+    """)
+    fun observeLocalCoverPaths(): Flow<List<CollectionCoverPath>>
+
     @Query("SELECT * FROM collections WHERE type = :type ORDER BY name ASC")
     fun observeByType(type: CollectionType): Flow<List<CollectionEntity>>
 
@@ -174,3 +194,7 @@ interface CollectionDao {
     """)
     suspend fun getNamesWithGamesByType(type: CollectionType): List<String>
 }
+
+data class CollectionGameCount(val collectionId: Long, val gameCount: Int)
+
+data class CollectionCoverPath(val collectionId: Long, val coverPath: String)

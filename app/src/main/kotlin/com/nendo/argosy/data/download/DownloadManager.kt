@@ -125,6 +125,13 @@ private sealed class DownloadResult {
 private val INVALID_CONTENT_TYPES = listOf("image/", "text/html")
 private const val MIN_ROM_SIZE_BYTES = 1024L
 
+private val SMALL_COMPANION_EXTENSIONS = setOf(
+    "cue", "m3u", "ccd", "sub", "sbi", "toc", "gdi", "xml", "txt", "nfo", "dat"
+)
+
+private fun isSmallCompanionFile(fileName: String): Boolean =
+    fileName.substringAfterLast('.', "").lowercase() in SMALL_COMPANION_EXTENSIONS
+
 data class DownloadQueueState(
     val activeDownloads: List<DownloadProgress> = emptyList(),
     val queue: List<DownloadProgress> = emptyList(),
@@ -757,6 +764,17 @@ class DownloadManager @Inject constructor(
         }
     }
 
+    private suspend fun romFileFolderName(gameId: Long): String? {
+        if (!preferencesRepository.userPreferences.first().folderNameFromRom) return null
+        val game = gameDao.getById(gameId) ?: return null
+        val fromServer = game.rommFileName?.takeIf { it.isNotBlank() }
+        val fromDisk = game.localPath
+            ?.let { File(it) }
+            ?.takeIf { it.isFile }
+            ?.name
+        return fromServer ?: fromDisk
+    }
+
     private suspend fun getGameFolder(platformSlug: String, vararg names: String): File {
         val platformDir = getDownloadDir(platformSlug)
         return resolveGameFolder(platformDir, names.map(::sanitizeFolderName)).apply { mkdirs() }
@@ -871,11 +889,15 @@ class DownloadManager @Inject constructor(
         category: String? = null
     ): File {
         val platformDir = getDownloadDir(platformSlug)
+        val romFolderName = romFileFolderName(gameId)
         if (extContentOrganizer.usesCombinedLayout(gameId)) {
             return if (isFlatUnderCombine(category)) {
                 platformDir
             } else {
-                getGameFolder(platformSlug, *listOfNotNull(gameFolderName, gameTitle).toTypedArray())
+                getGameFolder(
+                    platformSlug,
+                    *listOfNotNull(romFolderName, gameFolderName, gameTitle).toTypedArray()
+                )
             }
         }
         val game = gameDao.getById(gameId)
@@ -887,7 +909,10 @@ class DownloadManager @Inject constructor(
             return baseParent
         }
         if (hasPooledAddons(gameId, platformDir)) return platformDir
-        val gameFolder = getGameFolder(platformSlug, *listOfNotNull(gameFolderName, gameTitle).toTypedArray())
+        val gameFolder = getGameFolder(
+            platformSlug,
+            *listOfNotNull(romFolderName, gameFolderName, gameTitle).toTypedArray()
+        )
         val baseFile = basePath?.let { File(it) }
         if (baseFile != null && baseFile.isFile &&
             baseFile.parentFile?.absolutePath == platformDir.absolutePath
@@ -1123,7 +1148,9 @@ class DownloadManager @Inject constructor(
                             else -> 0L
                         }
 
-                        if (totalSize > 0 && totalSize < MIN_ROM_SIZE_BYTES) {
+                        if (totalSize > 0 && totalSize < MIN_ROM_SIZE_BYTES &&
+                            !isSmallCompanionFile(progress.fileName)
+                        ) {
                             return@withContext DownloadResult.Failure(DownloadFailureReason.FileTooSmall)
                         }
 

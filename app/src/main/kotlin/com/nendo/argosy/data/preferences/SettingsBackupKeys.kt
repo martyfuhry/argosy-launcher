@@ -247,6 +247,7 @@ object SettingsBackupKeys {
         SettingsBackupKey("max_concurrent_downloads", SettingsBackupType.INT),
         SettingsBackupKey("instant_download_threshold_mb", SettingsBackupType.INT),
         SettingsBackupKey("stage_downloads_internally", SettingsBackupType.BOOLEAN),
+        SettingsBackupKey("folder_name_from_rom", SettingsBackupType.BOOLEAN),
         SettingsBackupKey("download_category_defaults", SettingsBackupType.STRING),
         SettingsBackupKey("download_category_platform_overrides", SettingsBackupType.STRING),
         SettingsBackupKey("save_cache_limit", SettingsBackupType.INT)

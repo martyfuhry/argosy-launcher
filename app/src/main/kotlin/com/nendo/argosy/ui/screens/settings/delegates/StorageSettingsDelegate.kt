@@ -145,6 +145,14 @@ class StorageSettingsDelegate @Inject constructor(
         }
     }
 
+    fun toggleFolderNameFromRom(scope: CoroutineScope) {
+        scope.launch {
+            val next = !_state.value.folderNameFromRom
+            preferencesRepository.setFolderNameFromRom(next)
+            _state.update { it.copy(folderNameFromRom = next) }
+        }
+    }
+
     fun cycleInstantDownloadThreshold(scope: CoroutineScope, direction: Int = 1) {
         scope.launch {
             val thresholds = listOf(50, 100, 250, 500)

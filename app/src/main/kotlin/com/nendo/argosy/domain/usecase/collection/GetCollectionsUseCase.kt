@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -28,39 +29,31 @@ class GetCollectionsUseCase @Inject constructor(
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     operator fun invoke(): Flow<List<CollectionWithCount>> {
-        return collectionDao.observeByTypes(listOf(CollectionType.REGULAR, CollectionType.SMART))
-            .onStart { Log.d("GetCollectionsUC", "observeByTypes(REGULAR, SMART): starting") }
-            .flatMapLatest { collections ->
-                val filtered = collections.filter {
-                    it.name.isNotBlank() && it.name.lowercase() != "favorites"
+        return combine(
+            collectionDao.observeByTypes(listOf(CollectionType.REGULAR, CollectionType.SMART)),
+            collectionDao.observeLocalGameCounts(),
+            collectionDao.observeLocalCoverPaths()
+        ) { collections, counts, covers ->
+            val countById = counts.associate { it.collectionId to it.gameCount }
+            val coversById = covers.groupBy { it.collectionId }
+            collections
+                .filter { it.name.isNotBlank() && it.name.lowercase() != "favorites" }
+                .map { collection ->
+                    CollectionWithCount(
+                        id = collection.id,
+                        name = collection.name,
+                        description = collection.description,
+                        gameCount = countById[collection.id] ?: 0,
+                        coverPaths = coversById[collection.id]
+                            ?.take(COLLECTION_COVER_LIMIT)
+                            ?.map { cover -> cover.coverPath }
+                            ?: emptyList(),
+                        isUserCreated = collection.isUserCreated,
+                        rommId = collection.rommId
+                    )
                 }
-                Log.d("GetCollectionsUC", "flatMapLatest: ${filtered.size} collections")
-
-                if (filtered.isEmpty()) {
-                    return@flatMapLatest flowOf(emptyList())
-                }
-
-                val collectionFlows = filtered.map { collection ->
-                    combine(
-                        collectionDao.observeLocalGameCountInCollection(collection.id)
-                            .onStart { emit(0) },
-                        collectionDao.observeLocalCollectionCoverPaths(collection.id)
-                            .onStart { emit(emptyList()) }
-                    ) { count, covers ->
-                        CollectionWithCount(
-                            id = collection.id,
-                            name = collection.name,
-                            description = collection.description,
-                            gameCount = count,
-                            coverPaths = covers,
-                            isUserCreated = collection.isUserCreated,
-                            rommId = collection.rommId
-                        )
-                    }
-                }
-
-                combine(collectionFlows) { it.toList() }
-            }
+        }
+            .distinctUntilChanged()
             .onStart { emit(emptyList()) }
             .flowOn(Dispatchers.IO)
     }

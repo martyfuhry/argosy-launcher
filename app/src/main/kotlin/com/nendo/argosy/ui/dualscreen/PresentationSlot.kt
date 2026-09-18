@@ -2,11 +2,6 @@ package com.nendo.argosy.ui.dualscreen
 
 import com.nendo.argosy.domain.model.HomeLayoutSettings
 
-/**
- * Which screen published the presentation content on the other display. Slots are held per owner so
- * that a screen taking over and the screen it replaced can publish and release in any order without
- * the later publish being undone by the earlier release.
- */
 @JvmInline
 value class SlotOwner(val id: String) {
     companion object {

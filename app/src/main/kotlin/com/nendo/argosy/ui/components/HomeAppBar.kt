@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -39,7 +40,9 @@ import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.util.touchOnly
 
-private val COMPANION_APP_BAR_SLOT_WIDTH = 64.dp
+private val COMPANION_APP_BAR_SLOT_WIDTH =
+    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionAppBarSlotWidth.dp
+private const val APP_BAR_SCRIM_ALPHA = 0.8f
 
 /**
  * Focus index meaning no slot is focused. The drawer slot owns -1, so a caller that has not placed
@@ -80,7 +83,7 @@ fun CompanionAppBar(
                 Brush.verticalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color(0xCC1E1E1E)
+                        MaterialTheme.colorScheme.scrim.copy(alpha = APP_BAR_SCRIM_ALPHA)
                     )
                 )
             )
@@ -150,11 +153,6 @@ fun CompanionAppBar(
     }
 }
 
-/**
- * The far-right slot of the launcher's app bar: raises or lowers the system keyboard for whatever
- * the other screen has focused. Devices that pin the keyboard to the lower display make this the
- * one way to bring it up without a text field asking for it.
- */
 @Composable
 private fun CompanionKeyboardButton(
     isFocused: Boolean,

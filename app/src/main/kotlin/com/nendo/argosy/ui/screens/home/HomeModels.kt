@@ -415,11 +415,6 @@ data class HomeUiState(
     val currentMediaLibrary: com.nendo.argosy.ui.screens.media.MediaLibraryUi?
         get() = (currentRow as? HomeRow.MediaLibrary)?.let { mediaLibraries.getOrNull(it.index) }
 
-    /**
-     * Whether the platform row under the cursor is still waiting on its own games. [platformItems]
-     * holds whichever platform loaded last, so a row whose platform it does not name shows nothing
-     * rather than another platform's covers.
-     */
     val isPlatformRowLoading: Boolean
         get() = currentRow is HomeRow.Platform && platformItemsFor != currentPlatform?.id
 

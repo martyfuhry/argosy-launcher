@@ -835,6 +835,7 @@ data class StorageState(
     val maxConcurrentDownloads: Int = 1,
     val instantDownloadThresholdMb: Int = 50,
     val stageDownloadsInternally: Boolean = true,
+    val folderNameFromRom: Boolean = false,
     val availableSpace: Long = 0,
     val hasAllFilesAccess: Boolean = false,
     val platformConfigs: List<PlatformStorageConfig> = emptyList(),

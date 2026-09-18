@@ -726,6 +726,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             maxConcurrentDownloads = prefs.maxConcurrentDownloads,
             instantDownloadThresholdMb = prefs.instantDownloadThresholdMb,
             stageDownloadsInternally = prefs.stageDownloadsInternally,
+            folderNameFromRom = prefs.folderNameFromRom,
             availableSpace = availableSpace,
             screenDimmerEnabled = prefs.screenDimmerEnabled,
             screenDimmerTimeoutMinutes = prefs.screenDimmerTimeoutMinutes,

@@ -63,6 +63,8 @@ private val ZIP_MAGIC_BYTES = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
 private val SEVEN_Z_MAGIC_BYTES = byteArrayOf(0x37, 0x7A, 0xBC.toByte(), 0xAF.toByte(), 0x27, 0x1C)
 private val CHD_MAGIC_BYTES = "MComprHD".toByteArray(Charsets.US_ASCII)
 
+private val PACKAGED_ROM_EXTENSIONS = setOf("apk", "jar")
+
 private val ZIP_AS_ROM_PLATFORMS = setOf(
     "arcade", "mame", "fbneo", "fba",
     "neogeo", "neogeoaes", "neogeomvs", "neogeocd",
@@ -199,7 +201,14 @@ object ZipExtractor {
         }
     }
 
-    fun isArchiveFile(file: File): Boolean = isZipFile(file) || isSevenZFile(file)
+    fun isArchiveFile(file: File): Boolean =
+        !isPackagedRom(file) && (isZipFile(file) || isSevenZFile(file))
+
+    /**
+     * Zip-based formats that emulators load as-is, so unpacking one destroys the rom.
+     */
+    fun isPackagedRom(file: File): Boolean =
+        file.extension.lowercase() in PACKAGED_ROM_EXTENSIONS
 
     /**
      * Sniff magic bytes and return the canonical ROM extension ("chd", ...) if the
@@ -319,7 +328,7 @@ object ZipExtractor {
     }
 
     fun shouldExtractArchive(archiveFile: File, platformSlug: String? = null): Boolean {
-        if (archiveFile.extension.equals("apk", ignoreCase = true)) return false
+        if (isPackagedRom(archiveFile)) return false
 
         val slug = platformSlug?.lowercase()
         val canonical = slug?.let { PlatformDefinitions.getCanonicalSlug(it) }

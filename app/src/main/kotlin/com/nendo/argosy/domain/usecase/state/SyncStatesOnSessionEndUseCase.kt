@@ -55,14 +55,8 @@ class SyncStatesOnSessionEndUseCase @Inject constructor(
 
     /**
      * Adopts states written outside an Argosy session, which only happens with Secure Saves off.
-     *
-     * A slot whose file matches the cached state for the same slot in the active channel is left
-     * alone, because a file Argosy itself restored there would otherwise be re-cached and uploaded
-     * as a new server state beside the one it came from.
-     *
-     * A file older than the server's copy of its slot is backed up as a state of its own rather
-     * than over the newer one, so every local state reaches the server and no server state is
-     * traded away for it.
+     * A slot matching the cached state for the active channel is left alone, and a file older than
+     * the server's copy is backed up as a state of its own.
      */
     suspend fun adoptOffSessionStates(
         gameId: Long,

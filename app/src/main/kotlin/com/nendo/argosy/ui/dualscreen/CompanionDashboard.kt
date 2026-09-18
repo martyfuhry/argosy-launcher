@@ -48,8 +48,14 @@ import com.nendo.argosy.hardware.CompanionSessionTimer
 import com.nendo.argosy.ui.theme.ALauncherColors
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.util.touchOnly
 import kotlinx.coroutines.delay
+
+private val COMPANION_ART_HEIGHT =
+    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionArtHeight.dp
+private val COMPANION_PROGRESS_HEIGHT =
+    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionProgressHeight.dp
 
 @Composable
 fun CompanionDashboard(
@@ -192,7 +198,7 @@ private fun HeroGameCard(state: CompanionInGameState) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(COMPANION_ART_HEIGHT)
     ) {
         if (state.coverPath != null) {
             AsyncImage(
@@ -314,8 +320,7 @@ private fun SessionTimerCard(activeMillis: Long) {
             text = formatted,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = Color.White,
-            letterSpacing = 1.sp
+            color = Color.White
         )
     }
 }
@@ -352,7 +357,7 @@ private fun AchievementProgress(earned: Int, total: Int) {
             progress = { progress },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(6.dp)
+                .height(COMPANION_PROGRESS_HEIGHT)
                 .clip(RoundedCornerShape(Dimens.radiusPill)),
             color = ALauncherColors.TrophyAmber,
             trackColor = Color.White.copy(alpha = 0.12f),
@@ -444,7 +449,7 @@ private fun SaveStateDot(isDirty: Boolean) {
             .size(Dimens.iconLg)
             .clip(CircleShape)
             .background(
-                if (isDirty) Color(0xFFFF9800) else Color(0xFF4CAF50)
+                with(LocalLauncherTheme.current.semanticColors) { if (isDirty) warning else success }
             ),
         contentAlignment = Alignment.Center
     ) {

@@ -554,6 +554,10 @@ private fun routeStorageConfirm(vm: SettingsViewModel, state: SettingsUiState): 
             vm.toggleStageDownloadsInternally()
             return InputResult.handled(SoundType.TOGGLE)
         }
+        StorageItem.FolderNameFromRom -> {
+            vm.toggleFolderNameFromRom()
+            return InputResult.handled(SoundType.TOGGLE)
+        }
         StorageItem.ResetLibrary -> vm.requestPurgeAll()
         StorageItem.HardReset -> {
             if (!state.storage.isHardResetting && !state.storage.isPurgingAll) vm.requestHardReset()

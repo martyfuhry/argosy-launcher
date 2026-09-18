@@ -1439,6 +1439,12 @@
     <!-- Second line of that row. "ROM folder" is the folder named by the Global ROM Path row. -->
     <string name="settings_storage_internal_staging_subtitle">Download and extract compressed games internally, then move the finished game to your ROM folder. Falls back to the ROM folder when internal space is short.</string>
 
+    <!-- Row title. Verb phrase: give a game's folder the same name as the game file inside it. -->
+    <string name="settings_storage_folder_name_from_rom_title">Name Folders After the ROM</string>
+    <!-- Second line of that row. A game with updates or DLC is stored as a folder; some frontends
+         only recognise it when the folder name matches the game file, extension included. -->
+    <string name="settings_storage_folder_name_from_rom_subtitle">Name a game\'s folder after its main ROM file, extension included, so other frontends recognise it. Applies to new downloads.</string>
+
     <!-- Row that empties the library records. Verb phrase. -->
     <string name="settings_storage_reset_library_title">Reset Library</string>
     <!-- Second line of that row. -->

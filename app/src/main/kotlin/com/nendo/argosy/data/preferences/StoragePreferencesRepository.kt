@@ -20,6 +20,7 @@ data class StoragePreferences(
     val maxConcurrentDownloads: Int = 1,
     val instantDownloadThresholdMb: Int = 50,
     val stageDownloadsInternally: Boolean = true,
+    val folderNameFromRom: Boolean = false,
     val customBiosPath: String? = null,
     val weeklyIntegrityCheckEnabled: Boolean = true,
     val lastIntegrityCheckTime: Long? = null,
@@ -38,6 +39,7 @@ class StoragePreferencesRepository @Inject constructor(
         val MAX_CONCURRENT_DOWNLOADS = intPreferencesKey("max_concurrent_downloads")
         val INSTANT_DOWNLOAD_THRESHOLD_MB = intPreferencesKey("instant_download_threshold_mb")
         val STAGE_DOWNLOADS_INTERNALLY = booleanPreferencesKey("stage_downloads_internally")
+        val FOLDER_NAME_FROM_ROM = booleanPreferencesKey("folder_name_from_rom")
         val CUSTOM_BIOS_PATH = stringPreferencesKey("custom_bios_path")
         val WEEKLY_INTEGRITY_CHECK = booleanPreferencesKey("weekly_integrity_check_enabled")
         val LAST_INTEGRITY_CHECK = longPreferencesKey("last_integrity_check_time")
@@ -56,6 +58,7 @@ class StoragePreferencesRepository @Inject constructor(
             maxConcurrentDownloads = prefs[Keys.MAX_CONCURRENT_DOWNLOADS] ?: 1,
             instantDownloadThresholdMb = prefs[Keys.INSTANT_DOWNLOAD_THRESHOLD_MB] ?: 50,
             stageDownloadsInternally = prefs[Keys.STAGE_DOWNLOADS_INTERNALLY] ?: true,
+            folderNameFromRom = prefs[Keys.FOLDER_NAME_FROM_ROM] ?: false,
             customBiosPath = prefs[Keys.CUSTOM_BIOS_PATH],
             weeklyIntegrityCheckEnabled = prefs[Keys.WEEKLY_INTEGRITY_CHECK] ?: true,
             lastIntegrityCheckTime = prefs[Keys.LAST_INTEGRITY_CHECK],
@@ -94,6 +97,10 @@ class StoragePreferencesRepository @Inject constructor(
 
     suspend fun setStageDownloadsInternally(enabled: Boolean) {
         dataStore.edit { it[Keys.STAGE_DOWNLOADS_INTERNALLY] = enabled }
+    }
+
+    suspend fun setFolderNameFromRom(enabled: Boolean) {
+        dataStore.edit { it[Keys.FOLDER_NAME_FROM_ROM] = enabled }
     }
 
     suspend fun setCustomBiosPath(path: String?) {

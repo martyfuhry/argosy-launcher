@@ -126,6 +126,7 @@ internal sealed class StorageItem(
     data object MaxDownloads : StorageItem("maxDownloads", "downloads")
     data object Threshold : StorageItem("threshold", "downloads")
     data object InternalStaging : StorageItem("internalStaging", "downloads")
+    data object FolderNameFromRom : StorageItem("folderNameFromRom", "downloads")
 
     data object ResetLibrary : StorageItem("resetLibrary", "danger")
     data object HardReset : StorageItem("hardReset", "danger")
@@ -146,6 +147,7 @@ internal sealed class StorageItem(
                 LocationsSpacer, LocationsHeader,
                 GlobalRomPath, ImageCache, MusicLocation, BiosFolder, BuiltinSavePath, BuiltinStatePath,
                 DownloadsSpacer, DownloadsHeader, MaxDownloads, Threshold, InternalStaging,
+                FolderNameFromRom,
                 DangerSpacer, DangerHeader, ResetLibrary, HardReset
             )
     }
@@ -626,6 +628,14 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 isEnabled = storage.stageDownloadsInternally,
                 isFocused = isFocused(item),
                 onToggle = { viewModel.toggleStageDownloadsInternally() }
+            )
+
+            StorageItem.FolderNameFromRom -> SwitchPreference(
+                title = stringResource(R.string.settings_storage_folder_name_from_rom_title),
+                subtitle = stringResource(R.string.settings_storage_folder_name_from_rom_subtitle),
+                isEnabled = storage.folderNameFromRom,
+                isFocused = isFocused(item),
+                onToggle = { viewModel.toggleFolderNameFromRom() }
             )
 
             StorageItem.ResetLibrary -> {
