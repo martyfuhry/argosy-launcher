@@ -730,8 +730,12 @@ class HomeViewModel @Inject constructor(
 
     private fun appBarSlotCount(): Int = _uiState.value.homeApps.size + 1
 
+    private fun appBarIsDrawn(): Boolean =
+        _uiState.value.homeApps.isNotEmpty() &&
+            DualScreenManagerHolder.instance?.hasPresentationScreen?.value == true
+
     override fun focusAppBar() {
-        if (_uiState.value.homeApps.isEmpty()) return
+        if (!appBarIsDrawn()) return
         _uiState.update { it.copy(appBarFocused = true, appBarIndex = 0) }
     }
 
@@ -745,6 +749,10 @@ class HomeViewModel @Inject constructor(
     }
 
     override fun activateAppBarSlot(onOpenDrawer: () -> Unit) {
+        if (!appBarIsDrawn()) {
+            releaseAppBar()
+            return
+        }
         val state = _uiState.value
         when (val index = state.appBarIndex) {
             APP_BAR_DRAWER_INDEX -> onOpenDrawer()

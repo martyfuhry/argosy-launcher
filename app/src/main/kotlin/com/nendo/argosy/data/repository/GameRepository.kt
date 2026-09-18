@@ -339,10 +339,18 @@ class GameRepository @Inject constructor(
      * request that arrives while a pass runs, or within [VALIDATION_COALESCE_MS] of one finishing,
      * is answered by that pass. [force] is for the caller that reports the count back to the user,
      * which must see its own numbers.
+     *
+     * The count is the pointers left cleared. A row whose file is found again elsewhere is
+     * repointed and not counted. A pass that never walked the rows leaves the coalescing window
+     * unstamped, and the next request gets its own pass.
      */
     suspend fun validateLocalFiles(force: Boolean = false): Int {
         val requestedAt = validationPass.get()
         return validationMutex.withLock {
+            if (!withContext(Dispatchers.IO) { isStorageReady() }) {
+                Log.w(TAG, "validateLocalFiles: storage not ready, skipping")
+                return@withLock 0
+            }
             if (!force) {
                 if (validationPass.get() != requestedAt) return@withLock 0
                 val sinceLast = System.currentTimeMillis() - lastValidationAt
@@ -356,11 +364,6 @@ class GameRepository @Inject constructor(
     }
 
     private suspend fun runValidation(): Int = withContext(Dispatchers.IO) {
-        if (!isStorageReady()) {
-            Log.w(TAG, "validateLocalFiles: storage not ready, skipping")
-            return@withContext 0
-        }
-
         val probe = volumeHealth.newProbe()
         val startTime = System.currentTimeMillis()
         val gamesWithPaths = gameDao.getGamesWithLocalPathInfo()
@@ -375,11 +378,11 @@ class GameRepository @Inject constructor(
                 continue
             }
             gameDao.clearLocalPath(info.id)
-            invalidated++
             if (validateAndDiscoverGame(info.id)) {
                 reclaimed++
                 Log.d(TAG, "Reclaimed game ${info.id}: found a new path for ($path)")
             } else {
+                invalidated++
                 Log.d(TAG, "Invalidated game ${info.id}: path no longer valid ($path)")
             }
         }
