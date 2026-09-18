@@ -237,7 +237,14 @@ class DualScreenManager(
             val setKey = resolved.setKey
             val known = resolved.known
             val layout = resolved.layout
-            val primary = attached.find { it.key == layout.primaryKey } ?: return@launch
+            val overridePrimaryId = when (sessionStateStore.getDisplayRoleOverride()) {
+                "SWAPPED" -> displayAffinityHelper.getRoleDisplayIds(true)?.first
+                "STANDARD" -> displayAffinityHelper.getRoleDisplayIds(false)?.first
+                else -> null
+            }
+            val primary = overridePrimaryId?.let { id -> attached.find { it.displayId == id } }
+                ?: attached.find { it.key == layout.primaryKey }
+                ?: return@launch
             applyScreenLayout(
                 primaryDisplayId = primary.displayId,
                 appTargetDisplayId = attached.find { it.key == layout.appTargetKey }?.displayId,
@@ -1811,8 +1818,7 @@ class DualScreenManager(
         }
         val newSwapped = newOverride == "SWAPPED" ||
             (newOverride == "AUTO" && displayAffinityHelper.secondaryDisplayType == SecondaryDisplayType.EXTERNAL)
-        commitRoleSwap(newSwapped)
-        persistPrimaryRole(newSwapped)
+        applyRoleChange(newSwapped)
     }
 
     /**
@@ -1825,22 +1831,26 @@ class DualScreenManager(
         if (sessionStateStore.hasActiveSession()) return
         val resolved = DisplayRoleResolver(displayAffinityHelper, sessionStateStore).isSwapped
         if (resolved == _isRolesSwapped.value) return
-        commitRoleSwap(resolved)
-        persistPrimaryRole(resolved)
+        applyRoleChange(resolved)
     }
 
-    private fun persistPrimaryRole(swapped: Boolean) {
-        val primaryDisplayId = displayAffinityHelper.getRoleDisplayIds(swapped)?.first ?: return
+    private fun applyRoleChange(swapped: Boolean) {
+        commitRoleSwap(swapped)
         activityIndependentScope.launch {
-            val resolved = resolveScreenLayout() ?: return@launch
-            val primary = resolved.attached.find { it.displayId == primaryDisplayId } ?: return@launch
-            val next = resolved.layout.withRole(
-                primary.key,
-                com.nendo.argosy.domain.model.ScreenRole.PRIMARY
-            )
-            if (next.roles == resolved.layout.roles) return@launch
-            preferencesRepository.setScreenLayouts(resolved.stored.with(resolved.setKey, next))
+            withContext(Dispatchers.IO) { persistPrimaryRole(swapped) }
         }
+    }
+
+    private suspend fun persistPrimaryRole(swapped: Boolean) {
+        val primaryDisplayId = displayAffinityHelper.getRoleDisplayIds(swapped)?.first ?: return
+        val resolved = resolveScreenLayout() ?: return
+        val primary = resolved.attached.find { it.displayId == primaryDisplayId } ?: return
+        val next = resolved.layout.withRole(
+            primary.key,
+            com.nendo.argosy.domain.model.ScreenRole.PRIMARY
+        )
+        if (next.roles == resolved.layout.roles) return
+        preferencesRepository.setScreenLayouts(resolved.stored.with(resolved.setKey, next))
     }
 
     private fun commitRoleSwap(newSwapped: Boolean) {
