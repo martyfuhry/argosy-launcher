@@ -52,6 +52,7 @@ import javax.inject.Singleton
 
 private const val TAG = "GameRepository"
 private const val COVER_RATIO_TOLERANCE = 0.001f
+private const val VALIDATION_COALESCE_MS = 10_000L
 
 data class PlatformStats(
     val platformId: Long,
@@ -82,6 +83,7 @@ class GameRepository @Inject constructor(
 
     private val validationMutex = Mutex()
     private val validationPass = AtomicInteger()
+    private var lastValidationAt = 0L
 
     /**
      * Where this platform's roms are written.
@@ -331,17 +333,25 @@ class GameRepository @Inject constructor(
     }
 
     /**
-     * Cold start asks for this twice, from the launcher resuming and from the startup pass, and
-     * both walk every downloaded game. A request that was already pending when another pass began
-     * is answered by that pass instead of repeating the walk. [force] is for the caller that
-     * reports the count back to the user, which must see its own numbers.
+     * Walks every downloaded game and drops the pointers whose file is gone.
+     *
+     * Startup asks several times over, from the launcher resuming and from the startup pass, so a
+     * request that arrives while a pass runs, or within [VALIDATION_COALESCE_MS] of one finishing,
+     * is answered by that pass. [force] is for the caller that reports the count back to the user,
+     * which must see its own numbers.
      */
     suspend fun validateLocalFiles(force: Boolean = false): Int {
         val requestedAt = validationPass.get()
         return validationMutex.withLock {
-            if (!force && validationPass.get() != requestedAt) return@withLock 0
+            if (!force) {
+                if (validationPass.get() != requestedAt) return@withLock 0
+                val sinceLast = System.currentTimeMillis() - lastValidationAt
+                if (lastValidationAt > 0L && sinceLast < VALIDATION_COALESCE_MS) return@withLock 0
+            }
             validationPass.incrementAndGet()
-            runValidation()
+            val invalidated = runValidation()
+            lastValidationAt = System.currentTimeMillis()
+            invalidated
         }
     }
 
