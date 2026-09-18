@@ -185,11 +185,13 @@ def main():
     try:
         findings += evaluate_comments(added, root)
     except Exception as e:
-        print("smell check: comment checks failed ({}), skipping them".format(e))
+        print("smell check: comment checks could not run ({})".format(e))
+        sys.exit(2)
     try:
         findings += evaluate_stability(added, root)
     except Exception as e:
-        print("smell check: stability checks failed ({}), skipping them".format(e))
+        print("smell check: stability checks could not run ({})".format(e))
+        sys.exit(2)
     if not findings:
         print("smell check: clean")
         sys.exit(0)

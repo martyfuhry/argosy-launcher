@@ -26,8 +26,11 @@ RULES = {
     ),
 }
 
-DATA_CLASS_RE = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:public|internal|private|protected\s+)?data\s+class\s+\w+")
-VAR_RE = re.compile(r"^\s*(?:@\w+(?:\([^)]*\))?\s+)*(?:public|internal|private|protected\s+)?var\s+\w+")
+MODIFIER = r"(?:(?:public|internal|private|protected)\s+)*"
+ANNOTATION = r"(?:@\w+(?:\([^)]*\))?\s+)*"
+
+DATA_CLASS_RE = re.compile(r"^\s*" + ANNOTATION + MODIFIER + r"data\s+class\s+\w+")
+VAR_RE = re.compile(r"(?:^|[(,])\s*" + ANNOTATION + MODIFIER + r"var\s+\w+")
 MUTABLE_COLLECTION_RE = re.compile(r":\s*(?:kotlin\.collections\.)?Mutable(?:List|Set|Map|Collection)\s*<")
 
 
@@ -59,7 +62,7 @@ def stability_findings(lines, touched=None):
                 continue
             if touched is not None and not touched(index):
                 continue
-            if VAR_RE.match(line):
+            if VAR_RE.search(line):
                 rule_id = "stability-var-in-data-class"
             elif MUTABLE_COLLECTION_RE.search(line):
                 rule_id = "stability-mutable-collection-in-data-class"

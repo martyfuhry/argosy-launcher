@@ -14,9 +14,9 @@
           "when": {
             "path_glob": "**/ui/**/*.kt",
             "exclude_path_glob": "**/Modifiers.kt",
-            "added_regex": "Modifier\\s*\\.\\s*clickable\\s*[({]"
+            "added_regex": "\\b(?:clickable|combinedClickable)\\s*[({]"
           },
-          "message": "Plain Modifier.clickable() added in UI. Use clickableNoFocus and ensure an InputHandler covers it. Dual-modality (touch AND gamepad) is non-negotiable; a one-modality component is INCOMPLETE."
+          "message": "Plain clickable or combinedClickable added in UI. Use clickableNoFocus and ensure an InputHandler covers it. Dual-modality (touch AND gamepad) is non-negotiable; a one-modality component is INCOMPLETE."
         }
       ]
     },
@@ -72,7 +72,8 @@
             "read path (Flow mapping) + write setter",
             "UserPreferencesRepository aggregation",
             "SettingsModels UI state + SettingsInitRouter hydrate",
-            "SettingsGeneralRouter route + SettingsViewModel method",
+            "SettingsConfirmRouter.routeConfirm branch for the gamepad A-press + the SettingsViewModel method it calls",
+            "SettingsGeneralRouter route for section navigation (routeNavigateTo*) and Left/Right adjust (routeCycle*/routeAdjust*)",
             "section render (CyclePreference/SwitchPreference/...)",
             "CONSUMPTION SITE -- where behavior actually changes (the ghost-setting trap)",
             "SessionStateStore (if dual-screen/in-game) / RetroArch propagation (if it must reach the emulator)",

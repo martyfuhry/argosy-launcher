@@ -25,6 +25,11 @@ silently mismatches saves rather than failing loudly.
 
 ## Per platform
 
+`N3dsFolderHandler`, `Ps2FolderHandler`, `PspFolderHandler`, `Ps3FolderHandler`
+and `Xbox360FolderHandler` are private classes inside
+`data/sync/platform/PlatformSaveHandlerRegistry.kt`, not files of their own.
+The other handlers named below each have their own file in the same package.
+
 ### 3DS (`N3dsFolderHandler`)
 
 `save_id` is the on-disk location, already split: `00040000/00033500`. The
@@ -265,9 +270,10 @@ XenDroid base:
 ```
 
 The layout is Xenia's `ResolvePackageRoot()`, so desktop Xenia matches below
-its own content root. AX360E is deliberately unregistered: its layout has not
-been read from the app, and a guessed path resolves to a directory the emulator
-never writes.
+its own content root. AX360E has no save path config on purpose. Its layout has
+not been read from the app, and a guessed path resolves to a directory the
+emulator never writes. `EmulatorRegistry` still routes `xbox360` to `ax360e`
+and `ax360e_free`, so AX360E launches games but does not sync their saves.
 
 ### Xbox (the path names an image, not a folder)
 
@@ -304,7 +310,9 @@ written cannot be introduced. Growing a file or creating one needs cluster
 allocation, which means updating the qcow2 refcount tables, and a mistake there
 damages an image the user cannot rebuild.
 
-The image is also registered `writeOnce` in `BiosPathRegistry`, so BIOS
+The image is also registered in `BiosPathRegistry` under the firmware name
+`xbox_hdd.qcow2`, mapped to `hdd.img` on disk and listed in
+`writeOnceFileNames`, so BIOS
 redistribution never copies a fresh one over it. Every other firmware entry is a
 static blob where overwriting is harmless; this one is a volume the user's saves
 live inside.
@@ -331,7 +339,10 @@ are invisible without it. `PlatformDefinitions.TITLE_ID_PLATFORMS` guards
 `TitleIdDownloadObserver` at all three of its entry points, which is what
 extracts an id after a download, plus the title-id row on both game-detail
 surfaces. Registering a layout for a platform outside that set builds a lookup
-nothing ever supplies a key to.
+nothing ever supplies a key to. A second, smaller set with the same name,
+`VariantCategory.TITLE_ID_PLATFORMS` in `data/model/VariantCategory.kt`, only
+drives variant and base-ROM grouping. It has no say in save layouts; the
+`PlatformDefinitions` set is the gate.
 
 **The config ids stayed bare.** `aps3e` and `xendroid`, not `aps3e_ps3` and
 `xendroid_xbox360`. Platform-qualifying a single-platform emulator here would
@@ -419,12 +430,18 @@ Two consequences that have each already caused a bug:
   same way; `SavePathAuthority.configIdFor` is that derivation.
 
 A platform-qualified config id names a layout, not an installed app. Do not hand one
-to sibling-family logic: `familyBaseIdFor("dolphin_wii")` resolves to `dolphin`, which
-is how the GameCube override became the Wii save base.
+to sibling-family logic: `EmulatorRegistry.familyBaseIdFor("dolphin_wii")` resolves to
+`dolphin`, which is how the GameCube override became the Wii save base
+(`EmulatorSaveConfigRepository.resolveUserSavePath` guards against it). The private
+`SavePathRegistry.familyBaseIdFor` is a different function: it answers null for any id
+that is not a strictly longer family variant, and only feeds the registry's own config
+fallback.
 
 Two key conventions are live in the registry today and have not been reconciled:
-`builtin_gc` is keyed by the canonical slug while `retroarch_ngc` is keyed by the raw
-one. `getCanonicalSlug("ngc")` is `gc`, so `retroarch_ngc` is reachable only where
+the built-in GameCube entry is keyed by the canonical slug while `retroarch_ngc` is
+keyed by the raw one. `SavePathRegistry` builds the built-in key as
+`"${BUILTIN_EMULATOR_ID}_gc"`, which is `argosy_gc` because `BUILTIN_EMULATOR_ID` is
+`EmulatorRegistry.BUILTIN_ID`. `getCanonicalSlug("ngc")` is `gc`, so `retroarch_ngc` is reachable only where
 RomM's raw slug survives. Settle this before adding entries.
 
 ## Why this matters when changing anything

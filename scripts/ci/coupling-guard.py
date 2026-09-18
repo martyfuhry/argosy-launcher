@@ -10,6 +10,7 @@ past a single commit still gets caught across the PR.
 
 Fails open on any internal error so it never wedges legitimate work."""
 
+import importlib
 import json
 import os
 import re
@@ -182,13 +183,29 @@ def main_sweep(root, rng):
 ACK_TRAILER_RE = re.compile(r"^Coupling-ack:\s*(.+)$", re.M)
 MIN_ACK = 20
 
-"""A `git add` chained ahead of the commit in the same command.
+COMMIT_ALL_RE = re.compile(r"\A-[A-Za-z]*a[A-Za-z]*\Z")
 
-The hook runs before the command does, so the index is still empty at that point and the
-staged diff shows nothing. Without this the guard passes silently on the shape an agent
-reaches for most, and the breakpoint is never seen rather than deliberately waved.
-"""
-STAGES_FIRST_RE = re.compile(r"\bgit\b[^|;&]*\badd\b")
+
+def load_git_command():
+    ci_dir = os.path.dirname(os.path.abspath(__file__))
+    if ci_dir not in sys.path:
+        sys.path.insert(0, ci_dir)
+    return importlib.import_module("git_command")
+
+
+def includes_unstaged(invocations):
+    """Whether the commit will also carry changes not yet in the index.
+
+    True for a `git add` chained ahead of the commit, or a commit run with -a/--all. The hook
+    runs before the command does, so the index is still empty at that point and the staged
+    diff shows nothing.
+    """
+    for subcommand, args in invocations:
+        if subcommand == "add":
+            return True
+        if subcommand == "commit" and any(a == "--all" or COMMIT_ALL_RE.match(a) for a in args):
+            return True
+    return False
 
 
 def commit_message(cmd, root):
@@ -239,7 +256,11 @@ def main():
     if (payload.get("tool_name") or "") != "Bash":
         sys.exit(0)
     cmd = (payload.get("tool_input") or {}).get("command", "") or ""
-    if "git commit" not in cmd:
+    try:
+        invocations = load_git_command().git_invocations(cmd)
+    except Exception:
+        sys.exit(0)
+    if not any(subcommand == "commit" for subcommand, _ in invocations):
         sys.exit(0)
 
     root = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
@@ -253,7 +274,7 @@ def main():
     skipped = ack is not None and len(ack) >= MIN_ACK
 
     diff = run_git(["git", "diff", "--cached", "--unified=0"], root)
-    if STAGES_FIRST_RE.search(cmd) or re.search(r"(?:\s-[A-Za-z]*a[A-Za-z]*\b|\s--all\b)", cmd):
+    if includes_unstaged(invocations):
         diff += "\n" + run_git(["git", "diff", "--unified=0"], root)
     added = parse_added(diff)
     if not added:
