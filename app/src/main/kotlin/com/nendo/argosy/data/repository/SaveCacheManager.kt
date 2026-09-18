@@ -716,13 +716,13 @@ class SaveCacheManager @Inject constructor(
         saveCacheDao.getById(cacheId)?.contentHash
     }
 
-    suspend fun channelsHoldingHash(gameId: Long, contentHash: String): Set<String?> =
+    suspend fun channelsHoldingHash(gameId: Long, contentHash: String): Set<String> =
         withContext(Dispatchers.IO) {
             saveCacheDao.getAllByGameAndHash(
                 gameId = gameId,
                 ownerUserId = syncPreferencesRepository.getRommUserId(),
                 hash = contentHash
-            ).map { it.channelName?.lowercase() }.toSet()
+            ).mapNotNull { it.channelName?.lowercase() }.toSet()
         }
 
     suspend fun copyToChannel(cacheId: Long, channelName: String): Long? = withContext(Dispatchers.IO) {

@@ -545,9 +545,9 @@ class SaveChannelSavesDelegate @Inject constructor(
                 ?: emptySet()
 
             val sourceSlotKey = SaveSlotClassifier.slotKeyOf(
-                channelName = historyItem.channelName,
-                isLatest = historyItem.isLatest,
-                isArchival = historyItem.isArchival
+                channelName = entry.channelName,
+                isLatest = entry.isLatest,
+                isArchival = entry.isArchival
             )
 
             val destinations = state.saveSlots
@@ -559,7 +559,7 @@ class SaveChannelSavesDelegate @Inject constructor(
                         channelName = slot.channelName,
                         displayName = slot.displayName,
                         isBlocked = SaveSlotClassifier.storedChannelsFor(slot.channelName)
-                            .any { stored -> stored?.lowercase() in blockedChannels }
+                            .any { stored -> stored != null && stored.lowercase() in blockedChannels }
                     )
                 }
 

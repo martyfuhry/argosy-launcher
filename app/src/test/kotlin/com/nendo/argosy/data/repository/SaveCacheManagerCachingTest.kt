@@ -102,6 +102,27 @@ class SaveCacheManagerCachingTest {
         }
     }
 
+    @Test
+    fun `an archived row holding the same content does not count as a slot`() = runTest {
+        val archival = SaveCacheEntity(
+            id = 1L, gameId = 1L, emulatorId = "retroarch",
+            cachedAt = Instant.now(), saveSize = 64L,
+            cachePath = "1/archive/game.srm", contentHash = "shared-H",
+            channelName = null,
+        )
+        val named = SaveCacheEntity(
+            id = 2L, gameId = 1L, emulatorId = "retroarch",
+            cachedAt = Instant.now(), saveSize = 64L,
+            cachePath = "1/speedrun/game.srm", contentHash = "shared-H",
+            channelName = "Speedrun",
+        )
+        coEvery { saveCacheDao.getAllByGameAndHash(1L, any(), "shared-H") } returns listOf(archival, named)
+
+        val holders = manager.channelsHoldingHash(1L, "shared-H")
+
+        assertEquals(setOf("speedrun"), holders)
+    }
+
     private suspend fun copyToChannelCapturing(targetChannel: String): SaveCacheEntity {
         val sourceDir = File(com.nendo.argosy.util.AppPaths.saveCacheDir(tempDir), "1/20260101-000000")
         sourceDir.mkdirs()

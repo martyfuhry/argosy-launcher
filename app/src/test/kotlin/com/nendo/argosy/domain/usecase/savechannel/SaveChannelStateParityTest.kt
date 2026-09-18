@@ -7,6 +7,7 @@ import com.nendo.argosy.data.repository.StateCacheManager
 import com.nendo.argosy.domain.usecase.save.GetUnifiedSavesUseCase
 import com.nendo.argosy.domain.usecase.save.RestoreCachedSaveUseCase
 import com.nendo.argosy.domain.usecase.state.RestoreCachedStatesUseCase
+import com.nendo.argosy.data.local.entity.SaveCacheEntity
 import com.nendo.argosy.data.local.entity.StateCacheEntity
 import com.nendo.argosy.data.sync.SyncPayloadCodec
 import com.squareup.moshi.Moshi
@@ -16,6 +17,8 @@ import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
@@ -117,16 +120,56 @@ class SaveChannelStateParityTest {
     }
 
     @Test
-    fun `copying a save leaves every state in the slot it was made in`() = runTest {
+    fun `copying a save lands in the target slot and leaves every state in the slot it was made in`() = runTest {
         stubContext()
-        coEvery { saveCacheManager.copyToChannel(42L, "locked") } returns 99L
+        val saveRows = mutableListOf(
+            SaveCacheEntity(
+                id = 42L,
+                gameId = GAME_ID,
+                emulatorId = EMULATOR_ID,
+                cachedAt = Instant.EPOCH,
+                saveSize = 10L,
+                cachePath = "saves/autosave/game.srm",
+                channelName = "autosave"
+            )
+        )
+        val stateRows = mutableListOf(
+            StateCacheEntity(
+                id = 5L,
+                gameId = GAME_ID,
+                platformSlug = "snes",
+                emulatorId = EMULATOR_ID,
+                slotNumber = 1,
+                channelName = "autosave",
+                cachedAt = Instant.EPOCH,
+                stateSize = 10L,
+                cachePath = "states/autosave/snes9x/slot1.state"
+            )
+        )
+        coEvery { saveCacheManager.copyToChannel(42L, "locked") } answers {
+            val copy = saveRows.first { it.id == 42L }
+                .copy(id = 99L, channelName = "locked", cachePath = "saves/locked/game.srm")
+            saveRows.add(copy)
+            copy.id
+        }
+        coEvery { stateCacheManager.moveStatesToChannel(GAME_ID, any(), any()) } answers {
+            val target = thirdArg<String>()
+            val moved = stateRows.map { it.copy(channelName = target) }
+            stateRows.clear()
+            stateRows.addAll(moved)
+            moved.size
+        }
+        coEvery { stateCacheManager.copyStateToSlot(any(), any()) } answers {
+            stateRows.add(stateRows.first().copy(id = 6L, channelName = "locked"))
+            true
+        }
         val useCase = CopySaveChannelUseCase(saveCacheManager, saveSyncRepository)
 
         val copied = useCase(GAME_ID, "locked", 42L, null, EMULATOR_ID)
 
-        assert(copied)
-        coVerify(exactly = 0) { stateCacheManager.moveStatesToChannel(any(), any(), any()) }
-        coVerify(exactly = 0) { stateCacheManager.copyStateToSlot(any(), any()) }
+        assertTrue(copied)
+        assertEquals(listOf("autosave", "locked"), saveRows.map { it.channelName })
+        assertEquals(listOf("autosave"), stateRows.map { it.channelName })
     }
 
     @Test

@@ -181,6 +181,42 @@ class SaveChannelSavesDelegateTest {
     }
 
     @Test
+    fun `the newest save of a named slot cannot be copied into that same slot`() = runTest {
+        val entries = listOf(
+            UnifiedSaveEntry(
+                localCacheId = 4L,
+                timestamp = Instant.ofEpochMilli(3000),
+                size = 100L,
+                channelName = "speedrun",
+                source = UnifiedSaveEntry.Source.LOCAL,
+                isUserCreatedSlot = true,
+                isLocked = true
+            )
+        )
+        holder.rawEntries = entries
+        val slots = delegate.buildSaveSlots(entries, activeChannel = null)
+        holder.state.value = holder.state.value.copy(
+            saveSlots = slots,
+            selectedSlotIndex = slots.indexOfFirst { it.channelName == "speedrun" }
+        )
+        delegate.updateHistoryForFocusedSlot()
+        delegate.focusHistoryColumn()
+
+        delegate.showSlotPicker(this)
+        advanceUntilIdle()
+
+        val destinations = holder.state.value.slotPickerItems.map { it.channelName }
+        assertTrue(
+            "the slot the save already lives in must not be offered: $destinations",
+            destinations.none { it.equals("speedrun", ignoreCase = true) }
+        )
+        assertTrue(
+            "every other slot stays available: $destinations",
+            destinations.any { it.equals(SaveSyncApiClient.AUTOSAVE_SLOT_NAME, ignoreCase = true) }
+        )
+    }
+
+    @Test
     fun `confirmRename rejects a reserved autosave name`() = runTest {
         holder.state.value = holder.state.value.copy(
             renameMode = RenameMode.NEW_SLOT,

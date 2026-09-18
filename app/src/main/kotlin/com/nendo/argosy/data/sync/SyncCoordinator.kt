@@ -745,10 +745,9 @@ class SyncCoordinator @Inject constructor(
             saveSyncRepository.get().flushPendingDeviceSync(gid)
         }
 
-        val channelCaches = dirtySaves.filter { it.channelName != null }
+        val channelCaches = dirtySaves.filter { it.channelName != null }.sortedBy { it.cachedAt }
         val nonChannelCaches = dirtySaves.filter { it.channelName == null }
 
-        // Phase 1: Pre-check non-channel saves for conflicts (channel saves skip conflict check)
         val conflicts = mutableMapOf<Long, Pair<SaveCacheEntity, ConflictInfo>>()
         val resolutions = mutableMapOf<Long, ConflictResolution>()
 
@@ -771,7 +770,6 @@ class SyncCoordinator @Inject constructor(
             }
         }
 
-        // Phase 2: Wait for conflict resolutions if any
         if (conflicts.isNotEmpty()) {
             Logger.debug(TAG, "processDirtySaveCaches: Found ${conflicts.size} conflicts, awaiting resolution")
 
@@ -791,7 +789,6 @@ class SyncCoordinator @Inject constructor(
 
         var synced = 0
 
-        // Phase 3a: Upload channel caches directly from cached files
         for (cache in channelCaches) {
             val game = gameDao.getById(cache.gameId) ?: continue
             if (game.rommId == null) continue
@@ -901,7 +898,6 @@ class SyncCoordinator @Inject constructor(
             }
         }
 
-        // Phase 3b: Process non-channel saves with conflict resolution
         for (cache in nonChannelCaches) {
             val game = gameDao.getById(cache.gameId) ?: continue
             if (game.rommId == null) continue

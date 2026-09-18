@@ -16,6 +16,7 @@ import com.nendo.argosy.data.preferences.SyncPreferencesRepository
 import com.nendo.argosy.data.repository.StateCacheManager
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -309,6 +310,100 @@ class SyncCoordinatorChannelConflictTest {
         coVerify(exactly = 0) { mockSyncRepo.rekeySaveSyncToLocalEmulators() }
 
         cacheFile.delete()
+    }
+
+    @Test
+    fun `dirty rows in one slot upload oldest first so the newest save wins the slot`() = runTest {
+        val olderFile = File.createTempFile("older_cache", ".zip").apply {
+            writeBytes(byteArrayOf(1))
+            deleteOnExit()
+        }
+        val newerFile = File.createTempFile("newer_cache", ".zip").apply {
+            writeBytes(byteArrayOf(2))
+            deleteOnExit()
+        }
+
+        val older = SaveCacheEntity(
+            id = 10L,
+            gameId = 1L,
+            emulatorId = "retroarch",
+            cachedAt = Instant.parse("2025-01-14T12:00:00Z"),
+            saveSize = 1024L,
+            cachePath = "1/20250114_120000/save.zip",
+            channelName = "slot1",
+            needsRemoteSync = true,
+            contentHash = "hash-older"
+        )
+        val newer = older.copy(
+            id = 11L,
+            cachedAt = Instant.parse("2025-01-15T12:00:00Z"),
+            cachePath = "1/20250115_120000/save.zip",
+            contentHash = "hash-newer"
+        )
+
+        coEvery { saveCacheDao.getNeedingRemoteSync() } returns listOf(newer, older)
+        every { mockCacheManager.getCacheFile(older) } returns olderFile
+        every { mockCacheManager.getCacheFile(newer) } returns newerFile
+        coEvery { mockSyncRepo.checkForConflict(1L, "retroarch", "slot1") } returns null
+        coEvery {
+            mockSyncRepo.uploadCacheEntry(any(), any(), any(), any(), any(), any(), any(), any())
+        } returns SaveSyncResult.Success(rommSaveId = 42L)
+
+        coordinator = SyncCoordinator(
+            context = io.mockk.mockk(relaxed = true) { io.mockk.every { filesDir } returns java.io.File(System.getProperty("java.io.tmpdir")) },
+            pendingSyncQueueDao = pendingSyncQueueDao,
+            saveCacheDao = saveCacheDao,
+            saveSyncDao = mockk(relaxed = true),
+            emulatorSaveConfigDao = mockk(relaxed = true),
+            gameDao = gameDao,
+            activeSaveRepository = mockk<com.nendo.argosy.data.repository.ActiveSaveRepository>(relaxed = true),
+            romMRepository = romMRepository,
+            saveSyncRepository = saveSyncRepository,
+            saveCacheManager = saveCacheManager,
+            stateCacheManager = stateCacheManager,
+            syncQueueManager = syncQueueManager,
+            syncPreferencesRepository = mockk(relaxed = true) {
+                every { preferences } returns kotlinx.coroutines.flow.MutableStateFlow(SyncPreferences(saveSyncEnabled = true))
+            },
+            payloadCodec = SyncPayloadCodec(com.squareup.moshi.Moshi.Builder().build()),
+            savePathResolver = mockk(relaxed = true),
+            strategySelector = mockk(relaxed = true),
+            pendingConflictDao = mockk(relaxed = true),
+            reconcileEffectApplier = mockk(relaxed = true),
+            saveRecoveryGate = mockk(relaxed = true),
+            screenshotUploader = mockk(relaxed = true),
+            rommApiProvider = mockk(relaxed = true),
+            accountSwitchMarkerStore = mockk(relaxed = true),
+            syncStatesOnSessionEndUseCase = mockk(relaxed = true)
+        )
+
+        coordinator.processQueue()
+
+        coVerifyOrder {
+            mockSyncRepo.uploadCacheEntry(
+                gameId = 1L,
+                rommId = 100L,
+                emulatorId = "retroarch",
+                channelName = "slot1",
+                cacheFile = olderFile,
+                contentHash = "hash-older",
+                overwrite = false,
+                uploadedCacheId = 10L
+            )
+            mockSyncRepo.uploadCacheEntry(
+                gameId = 1L,
+                rommId = 100L,
+                emulatorId = "retroarch",
+                channelName = "slot1",
+                cacheFile = newerFile,
+                contentHash = "hash-newer",
+                overwrite = false,
+                uploadedCacheId = 11L
+            )
+        }
+
+        olderFile.delete()
+        newerFile.delete()
     }
 
     private fun makeDirtyChannelCache(channelName: String) = SaveCacheEntity(
