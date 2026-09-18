@@ -178,7 +178,13 @@ class SaveChannelSavesDelegate @Inject constructor(
         val filtered = if (slot.isArchivedBucket) {
             holder.rawEntries.filter { it.isArchival }
         } else {
-            holder.rawEntries.filter { it.channelName == channelName && !it.isArchival }
+            holder.rawEntries.filter { entry ->
+                !entry.isArchival && SaveSlotClassifier.slotKeyOf(
+                    channelName = entry.channelName,
+                    isLatest = entry.isLatest,
+                    isArchival = entry.isArchival
+                )?.equals(channelName, ignoreCase = true) == true
+            }
         }.sortedByDescending { it.timestamp }
 
         val history = filtered.mapIndexed { i, entry ->

@@ -98,6 +98,39 @@ class SaveChannelSavesDelegateTest {
     }
 
     @Test
+    fun `a server-only latest save appears in the autosave slot's history`() {
+        val entries = listOf(
+            UnifiedSaveEntry(
+                localCacheId = null,
+                serverSaveId = 9,
+                timestamp = Instant.ofEpochMilli(2000),
+                size = 100L,
+                channelName = null,
+                source = UnifiedSaveEntry.Source.SERVER,
+                isLatest = true
+            )
+        )
+        holder.rawEntries = entries
+        val slots = delegate.buildSaveSlots(entries, activeChannel = null)
+        val autosaveIndex = slots.indexOfFirst {
+            it.channelName.equals(SaveSyncApiClient.AUTOSAVE_SLOT_NAME, ignoreCase = true)
+        }
+        holder.state.value = holder.state.value.copy(
+            saveSlots = slots,
+            selectedSlotIndex = autosaveIndex
+        )
+
+        delegate.updateHistoryForFocusedSlot()
+
+        assertEquals(1, slots[autosaveIndex].saveCount)
+        assertEquals(
+            "the slot counts it, so its history must list it",
+            1,
+            holder.state.value.saveHistory.size
+        )
+    }
+
+    @Test
     fun `channel colliding with autosave does not produce duplicate slot keys`() {
         val entries = listOf(entry(channelName = "Autosave", userCreated = true))
 
