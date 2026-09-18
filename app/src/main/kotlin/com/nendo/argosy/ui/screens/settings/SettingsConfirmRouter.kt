@@ -321,6 +321,10 @@ private fun routeInstallersConfirm(vm: SettingsViewModel, state: SettingsUiState
             vm.showInstallerImePicker()
             InputResult.handled(SoundType.SELECT)
         }
+        is InstallerItem.Remove -> {
+            vm.requestInstallerRemove(item.row.id)
+            InputResult.handled(SoundType.OPEN_MODAL)
+        }
         null -> InputResult.HANDLED
     }
 }

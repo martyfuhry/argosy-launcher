@@ -11,6 +11,10 @@ import com.nendo.argosy.data.installer.ManagedInstallerRepository
 import com.nendo.argosy.data.installer.SeededInstallers
 import com.nendo.argosy.data.local.entity.ManagedInstallerEntity
 import com.nendo.argosy.data.remote.github.GitHubAsset
+import com.nendo.argosy.ui.components.TEXT_ENTRY_CANCEL_BUTTON
+import com.nendo.argosy.ui.components.TEXT_ENTRY_CONFIRM_BUTTON
+import com.nendo.argosy.ui.components.TextEntryFocus
+import com.nendo.argosy.ui.components.TextEntryRow
 import com.nendo.argosy.ui.screens.settings.ManagedInstallerRow
 import com.nendo.argosy.ui.screens.settings.ManagedInstallersState
 import kotlinx.coroutines.CoroutineScope
@@ -57,7 +61,14 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
         scope.launch {
             withContext(Dispatchers.IO) { repository.ensureSeeded() }
             val seeded = withContext(Dispatchers.IO) { repository.getAll() }
-            _state.update { it.copy(rows = seeded.map(::toRow), checking = true) }
+            _state.update {
+                it.copy(
+                    rows = seeded.map(::toRow),
+                    checking = true,
+                    failedId = null,
+                    failedRes = null
+                )
+            }
             withContext(Dispatchers.IO) { manager.refresh(seeded) }
             val refreshed = withContext(Dispatchers.IO) { repository.getAll() }
             _state.update { it.copy(rows = refreshed.map(::toRow), checking = false) }
@@ -76,15 +87,51 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
     }
 
     fun openAddModal() {
-        _state.update { it.copy(showAddModal = true, addText = "", addErrorRes = null) }
+        _state.update {
+            it.copy(
+                showAddModal = true,
+                addText = "",
+                addFocus = TextEntryFocus(),
+                addErrorRes = null
+            )
+        }
     }
 
     fun dismissAddModal() {
-        _state.update { it.copy(showAddModal = false, addText = "", addErrorRes = null) }
+        _state.update {
+            it.copy(
+                showAddModal = false,
+                addText = "",
+                addFocus = TextEntryFocus(),
+                addErrorRes = null
+            )
+        }
     }
 
     fun updateAddText(text: String) {
         _state.update { it.copy(addText = text, addErrorRes = null) }
+    }
+
+    fun moveAddRow(row: TextEntryRow) {
+        _state.update { it.copy(addFocus = it.addFocus.copy(row = row)) }
+    }
+
+    fun moveAddButton(delta: Int) {
+        _state.update { state ->
+            if (state.addFocus.row != TextEntryRow.BUTTONS) return@update state
+            val next = (state.addFocus.buttonIndex + delta)
+                .coerceIn(TEXT_ENTRY_CANCEL_BUTTON, TEXT_ENTRY_CONFIRM_BUTTON)
+            state.copy(addFocus = state.addFocus.copy(buttonIndex = next))
+        }
+    }
+
+    fun confirmAdd(scope: CoroutineScope) {
+        val focus = _state.value.addFocus
+        when {
+            focus.row == TextEntryRow.FIELD -> moveAddRow(TextEntryRow.BUTTONS)
+            focus.buttonIndex == TEXT_ENTRY_CANCEL_BUTTON -> dismissAddModal()
+            else -> submitAdd(scope)
+        }
     }
 
     fun submitAdd(scope: CoroutineScope) {
@@ -100,24 +147,43 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
                 return@launch
             }
             withContext(Dispatchers.IO) { repository.add(ref, ref.name) }
-            _state.update { it.copy(showAddModal = false, addText = "", addErrorRes = null) }
+            _state.update {
+                it.copy(
+                    showAddModal = false,
+                    addText = "",
+                    addFocus = TextEntryFocus(),
+                    addErrorRes = null
+                )
+            }
             openScreen(scope)
         }
     }
 
     fun requestRemove(rowId: Long) {
-        _state.update { it.copy(confirmRemoveId = rowId) }
+        _state.update { state ->
+            val row = state.rows.firstOrNull { it.id == rowId } ?: return@update state
+            if (row.locked) return@update state
+            state.copy(confirmRemoveId = rowId, confirmRemoveName = row.displayName)
+        }
     }
 
     fun dismissRemove() {
-        _state.update { it.copy(confirmRemoveId = null) }
+        _state.update { it.copy(confirmRemoveId = null, confirmRemoveName = "") }
     }
 
     fun confirmRemove(scope: CoroutineScope) {
         val id = _state.value.confirmRemoveId ?: return
         scope.launch {
             withContext(Dispatchers.IO) { repository.remove(id) }
-            _state.update { it.copy(confirmRemoveId = null) }
+            _state.update { state ->
+                val staleFailure = state.failedId == id
+                state.copy(
+                    confirmRemoveId = null,
+                    confirmRemoveName = "",
+                    failedId = if (staleFailure) null else state.failedId,
+                    failedRes = if (staleFailure) null else state.failedRes
+                )
+            }
             load(scope)
         }
     }
@@ -148,6 +214,11 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
         }
     }
 
+    fun selectVariantAt(scope: CoroutineScope, index: Int) {
+        _state.update { it.copy(variantFocusIndex = index) }
+        confirmVariant(scope)
+    }
+
     fun reconcilePendingInstall() = manager.reconcilePendingInstall()
 
     fun openImeSettings() = manager.openImeSettings()
@@ -164,7 +235,9 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
                     it.copy(
                         busyId = rowId,
                         busyProgress = 0f,
-                        statusRes = R.string.settings_installers_status_checking
+                        statusRes = R.string.settings_installers_status_checking,
+                        failedId = null,
+                        failedRes = null
                     )
                 }
 
@@ -208,7 +281,9 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
                     it.copy(
                         busyId = null,
                         busyProgress = 0f,
-                        statusRes = failureRes(jobState.reason)
+                        statusRes = null,
+                        failedId = rowId,
+                        failedRes = failureRes(jobState.reason)
                     )
                 }
         }
@@ -226,6 +301,7 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
             installed = installed,
             locked = entity.locked,
             updateAvailable = installed &&
+                entity.tagAtInstall != null &&
                 entity.latestSeenTag != null &&
                 entity.latestSeenTag != entity.tagAtInstall,
             tagAtInstall = entity.tagAtInstall,

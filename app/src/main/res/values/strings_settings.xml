@@ -56,12 +56,33 @@
     <string name="settings_installers_add_modal_label">GitHub link</string>
     <!-- Placeholder shown in the empty text field. Not translated: it is an example URL. -->
     <string name="settings_installers_add_modal_placeholder" translatable="false">https://github.com/owner/repo</string>
+    <!-- Button that commits the typed link in that modal. Verb. -->
+    <string name="settings_installers_add_modal_confirm">Add</string>
+    <!-- Button that closes that modal without adding anything. Verb. -->
+    <string name="settings_installers_add_modal_cancel">Cancel</string>
     <!-- Error under the field when the text is not a GitHub repository link. -->
     <string name="settings_installers_add_error_invalid">That is not a GitHub repository link</string>
     <!-- Error under the field when the repository is already in the list. -->
     <string name="settings_installers_add_error_duplicate">That repository is already listed</string>
     <!-- Subtitle on an installed row. %1$s is the release tag recorded when it was installed. -->
     <string name="settings_installers_subtitle_installed">Installed: %1$s</string>
+    <!-- Subtitle on a row whose app is installed but was not installed by Argosy, so no release
+         tag is recorded for it. -->
+    <string name="settings_installers_subtitle_version_unknown">Installed, version unknown</string>
+    <!-- Row title under a user-added repository. Verb phrase: drop it from the list. -->
+    <string name="settings_installers_remove_title">Remove Repository</string>
+    <!-- Subtitle of that row. Removing the entry leaves the installed app in place. -->
+    <string name="settings_installers_remove_subtitle">Stop tracking releases from this repository</string>
+    <!-- Title of the modal asking to confirm the removal. -->
+    <string name="settings_installers_remove_confirm_title">Remove Repository</string>
+    <!-- Body of that modal. %1$s is the name shown on the row being removed. -->
+    <string name="settings_installers_remove_confirm_message">%1$s stops being tracked. The installed app stays on the device.</string>
+    <!-- Confirm button of that modal. Verb. -->
+    <string name="settings_installers_remove_confirm_action">Remove</string>
+    <!-- Title of the modal listing the packages in a release when there is more than one. -->
+    <string name="settings_installers_variant_title">Choose A Package</string>
+    <!-- Subtitle of that modal. -->
+    <string name="settings_installers_variant_subtitle">This release carries more than one Android package</string>
     <!-- Subtitle on a row whose repository has published a newer release. %1$s is that release tag. -->
     <string name="settings_installers_subtitle_update">Update available: %1$s</string>
     <!-- Short badge on a row with a newer release. Keep it to one word. -->

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,6 +62,7 @@ fun TextEntryModal(
     onSubmit: () -> Unit,
     focus: TextEntryFocus?,
     placeholder: String? = null,
+    errorMessage: String? = null,
     canSubmit: Boolean = text.isNotBlank(),
     keyboardType: KeyboardType = KeyboardType.Text
 ) {
@@ -105,6 +107,14 @@ fun TextEntryModal(
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { submit() })
         )
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(Dimens.spacingSm))
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
         Spacer(modifier = Modifier.height(Dimens.spacingLg))
         Row(
             modifier = Modifier.fillMaxWidth(),

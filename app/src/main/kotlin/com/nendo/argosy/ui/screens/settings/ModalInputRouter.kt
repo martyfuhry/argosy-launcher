@@ -43,8 +43,40 @@ internal class ModalInputRouter(private val viewModel: SettingsViewModel) {
         interceptDownloadDefaultsModal(state, method)?.let { return it }
         interceptShaderPicker(method)?.let { return it }
         interceptScreenRoleModal(state, method)?.let { return it }
+        interceptInstallerVariantPicker(state, method)?.let { return it }
+        interceptInstallerAddModal(state, method)?.let { return it }
 
         return null
+    }
+
+    private fun interceptInstallerVariantPicker(state: SettingsUiState, method: InputMethod): InputResult? {
+        if (!state.managedInstallers.showVariantPicker) return null
+        return when (method) {
+            InputMethod.UP -> { viewModel.moveInstallerVariantFocus(-1); InputResult.HANDLED }
+            InputMethod.DOWN -> { viewModel.moveInstallerVariantFocus(1); InputResult.HANDLED }
+            InputMethod.CONFIRM -> { viewModel.confirmInstallerVariant(); InputResult.HANDLED }
+            InputMethod.BACK -> {
+                viewModel.dismissInstallerVariantPicker()
+                InputResult.handled(SoundType.CLOSE_MODAL)
+            }
+            else -> InputResult.HANDLED
+        }
+    }
+
+    private fun interceptInstallerAddModal(state: SettingsUiState, method: InputMethod): InputResult? {
+        if (!state.managedInstallers.showAddModal) return null
+        return when (method) {
+            InputMethod.UP -> { viewModel.moveInstallerAddRow(TextEntryRow.FIELD); InputResult.HANDLED }
+            InputMethod.DOWN -> { viewModel.moveInstallerAddRow(TextEntryRow.BUTTONS); InputResult.HANDLED }
+            InputMethod.LEFT -> { viewModel.moveInstallerAddButton(-1); InputResult.HANDLED }
+            InputMethod.RIGHT -> { viewModel.moveInstallerAddButton(1); InputResult.HANDLED }
+            InputMethod.CONFIRM -> { viewModel.confirmInstallerAdd(); InputResult.HANDLED }
+            InputMethod.BACK -> {
+                viewModel.dismissInstallerAddModal()
+                InputResult.handled(SoundType.CLOSE_MODAL)
+            }
+            else -> InputResult.HANDLED
+        }
     }
 
     private fun interceptScreenRoleModal(state: SettingsUiState, method: InputMethod): InputResult? {

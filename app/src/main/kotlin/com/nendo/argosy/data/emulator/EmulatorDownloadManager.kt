@@ -13,6 +13,7 @@ import com.nendo.argosy.data.update.AppInstaller
 import com.nendo.argosy.core.emulator.EmulatorDownloadState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import com.nendo.argosy.util.SafeCoroutineScope
+import com.nendo.argosy.util.apkArchivePackageName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,8 +73,7 @@ class EmulatorDownloadManager @Inject constructor(
         emulatorId: String,
         downloadUrl: String,
         assetName: String,
-        variant: String?,
-        packageName: String? = null
+        variant: String?
     ) {
         if (_downloadProgress.value?.state is EmulatorDownloadState.Downloading) {
             Log.w(TAG, "Download already in progress")
@@ -95,7 +95,8 @@ class EmulatorDownloadManager @Inject constructor(
                         emulatorId = emulatorId,
                         apkPath = apkFile.absolutePath,
                         variant = variant,
-                        packageName = packageName ?: EmulatorRegistry.getById(emulatorId)?.packageName
+                        packageName = apkArchivePackageName(context, apkFile)
+                            ?: EmulatorRegistry.getById(emulatorId)?.packageName
                     )
 
                     _downloadProgress.value = EmulatorDownloadProgress(

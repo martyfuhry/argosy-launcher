@@ -1408,12 +1408,18 @@ class SettingsViewModel @Inject constructor(
     fun dismissInstallerAddModal() = installerDelegate.dismissAddModal()
     fun updateInstallerAddText(text: String) = installerDelegate.updateAddText(text)
     fun submitInstallerAdd() = installerDelegate.submitAdd(viewModelScope)
+    fun moveInstallerAddRow(row: com.nendo.argosy.ui.components.TextEntryRow) =
+        installerDelegate.moveAddRow(row)
+    fun moveInstallerAddButton(delta: Int) = installerDelegate.moveAddButton(delta)
+    fun confirmInstallerAdd() = installerDelegate.confirmAdd(viewModelScope)
     fun requestInstallerRemove(rowId: Long) = installerDelegate.requestRemove(rowId)
     fun dismissInstallerRemove() = installerDelegate.dismissRemove()
     fun confirmInstallerRemove() = installerDelegate.confirmRemove(viewModelScope)
     fun moveInstallerVariantFocus(delta: Int) = installerDelegate.moveVariantFocus(delta)
     fun dismissInstallerVariantPicker() = installerDelegate.dismissVariantPicker()
     fun confirmInstallerVariant() = installerDelegate.confirmVariant(viewModelScope)
+    fun selectInstallerVariantAt(index: Int) =
+        installerDelegate.selectVariantAt(viewModelScope, index)
     fun openInstallerImeSettings() = installerDelegate.openImeSettings()
     fun showInstallerImePicker() = installerDelegate.showImePicker()
     fun openStorageSettings() = permissionsDelegate.openStorageSettings()

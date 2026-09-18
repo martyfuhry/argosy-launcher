@@ -293,20 +293,6 @@ class EmulatorSettingsDelegate @Inject constructor(
      * `sdmc`, a title folder below it) settles on one stored path. [onLoadSettings] receives
      * that resolved path; callers displaying it elsewhere must show this, not their input.
      */
-    private fun savePathStorageId(
-        emulatorId: String,
-        platformSlug: String?,
-        emulatorPackage: String?
-    ): String {
-        val slug = platformSlug?.takeIf { it.isNotBlank() } ?: return emulatorId
-        val request = SavePathRequest(
-            platformSlug = slug,
-            emulatorId = emulatorId,
-            emulatorPackage = emulatorPackage
-        )
-        return savePathAuthority.configIdFor(request) ?: emulatorId
-    }
-
     fun setEmulatorSavePath(
         scope: CoroutineScope,
         emulatorId: String,
@@ -338,6 +324,20 @@ class EmulatorSettingsDelegate @Inject constructor(
             }
             onLoadSettings(resolved)
         }
+    }
+
+    private fun savePathStorageId(
+        emulatorId: String,
+        platformSlug: String?,
+        emulatorPackage: String?
+    ): String {
+        val slug = platformSlug?.takeIf { it.isNotBlank() } ?: return emulatorId
+        val request = SavePathRequest(
+            platformSlug = slug,
+            emulatorId = emulatorId,
+            emulatorPackage = emulatorPackage
+        )
+        return savePathAuthority.configIdFor(request) ?: emulatorId
     }
 
     /**

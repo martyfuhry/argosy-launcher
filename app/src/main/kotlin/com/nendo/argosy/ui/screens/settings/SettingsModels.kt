@@ -360,14 +360,18 @@ data class ManagedInstallersState(
     val busyId: Long? = null,
     val busyProgress: Float = 0f,
     @androidx.annotation.StringRes val statusRes: Int? = null,
+    val failedId: Long? = null,
+    @androidx.annotation.StringRes val failedRes: Int? = null,
     val checking: Boolean = false,
     val showAddModal: Boolean = false,
     val addText: String = "",
+    val addFocus: TextEntryFocus = TextEntryFocus(),
     @androidx.annotation.StringRes val addErrorRes: Int? = null,
     val showVariantPicker: Boolean = false,
     val variantNames: List<String> = emptyList(),
     val variantFocusIndex: Int = 0,
-    val confirmRemoveId: Long? = null
+    val confirmRemoveId: Long? = null,
+    val confirmRemoveName: String = ""
 )
 
 data class SoundValueLabel(

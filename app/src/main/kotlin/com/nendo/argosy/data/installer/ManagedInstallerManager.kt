@@ -17,6 +17,7 @@ import com.nendo.argosy.data.remote.github.ReleaseLookup
 import com.nendo.argosy.data.update.AppInstaller
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SafeCoroutineScope
+import com.nendo.argosy.util.apkArchivePackageName
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,19 +82,21 @@ class ManagedInstallerManager @Inject constructor(
             val packageName = intent.data?.schemeSpecificPart ?: return
             val waiting = pending ?: return
             if (waiting.expectedPackage != null && waiting.expectedPackage != packageName) return
-            scope.launch {
-                repository.recordInstall(
-                    id = waiting.installerId,
-                    tag = waiting.tag,
-                    packageName = packageName,
-                    assetVariant = waiting.variant
-                )
-                File(waiting.apkPath).delete()
-                pending = null
-                _job.value = null
-                unregisterPackageReceiver()
-            }
+            scope.launch { completeInstall(waiting, packageName) }
         }
+    }
+
+    private suspend fun completeInstall(waiting: PendingInstall, packageName: String) {
+        repository.recordInstall(
+            id = waiting.installerId,
+            tag = waiting.tag,
+            packageName = packageName,
+            assetVariant = waiting.variant
+        )
+        File(waiting.apkPath).delete()
+        pending = null
+        _job.value = null
+        unregisterPackageReceiver()
     }
 
     fun isInstalled(packageName: String?): Boolean {
@@ -139,21 +142,36 @@ class ManagedInstallerManager @Inject constructor(
         _job.value = null
     }
 
-    /**
-     * Settles a job left waiting on the system installer. A declined install sends no broadcast, so
-     * the row waits forever unless the state is reconciled once the installer is gone.
-     */
     fun reconcilePendingInstall() {
         val waiting = pending ?: return
         if (_job.value?.state !is InstallerJobState.WaitingForInstall) return
         val expected = waiting.expectedPackage
-        if (expected != null && isInstalled(expected)) return
+        val stampNow = expected?.let { packageStamp(it) }
+        if (expected != null && stampNow != null && stampNow != waiting.stampBeforeInstall) {
+            scope.launch { completeInstall(waiting, expected) }
+            return
+        }
         scope.launch {
             File(waiting.apkPath).delete()
             pending = null
             _job.value = null
             unregisterPackageReceiver()
         }
+    }
+
+    private fun packageStamp(packageName: String): PackageStamp? = try {
+        val info = context.packageManager.getPackageInfo(packageName, 0)
+        PackageStamp(
+            versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                info.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                info.versionCode.toLong()
+            },
+            lastUpdateTime = info.lastUpdateTime
+        )
+    } catch (_: PackageManager.NameNotFoundException) {
+        null
     }
 
     suspend fun refresh(rows: List<ManagedInstallerEntity>) {
@@ -168,11 +186,16 @@ class ManagedInstallerManager @Inject constructor(
     }
 
     fun install(row: ManagedInstallerEntity, chosenAsset: GitHubAsset? = null) {
-        if (_job.value?.state is InstallerJobState.Downloading) return
+        val current = _job.value
+        if (current != null && !current.state.isTerminal()) {
+            val resumingVariantChoice = chosenAsset != null &&
+                current.installerId == row.id &&
+                current.state is InstallerJobState.NeedsVariantChoice
+            if (!resumingVariantChoice) return
+        }
+        _job.value = InstallerJob(row.id, InstallerJobState.Checking)
 
         scope.launch {
-            _job.value = InstallerJob(row.id, InstallerJobState.Checking)
-
             val release = when (val lookup = releaseClient.latestRelease(row.repoOwner, row.repoName)) {
                 is ReleaseLookup.Found -> lookup.release
                 ReleaseLookup.NotFound -> return@launch fail(row.id, InstallerFailure.NOT_FOUND)
@@ -206,12 +229,14 @@ class ManagedInstallerManager @Inject constructor(
             val apkFile = download(row.id, asset)
                 ?: return@launch fail(row.id, InstallerFailure.DOWNLOAD)
 
+            val expectedPackage = row.packageName ?: apkArchivePackageName(context, apkFile)
             pending = PendingInstall(
                 installerId = row.id,
                 apkPath = apkFile.absolutePath,
                 tag = release.tagName,
                 variant = variant,
-                expectedPackage = row.packageName ?: archivePackageName(apkFile)
+                expectedPackage = expectedPackage,
+                stampBeforeInstall = expectedPackage?.let { packageStamp(it) }
             )
             _job.value = InstallerJob(row.id, InstallerJobState.WaitingForInstall)
             registerPackageReceiver()
@@ -263,21 +288,6 @@ class ManagedInstallerManager @Inject constructor(
             }
         }
 
-    private fun archivePackageName(apkFile: File): String? = try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.getPackageArchiveInfo(
-                apkFile.absolutePath,
-                PackageManager.PackageInfoFlags.of(0)
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, 0)
-        }?.packageName
-    } catch (e: Exception) {
-        Logger.warn(TAG, "Could not read package from archive: ${e.message}")
-        null
-    }
-
     private fun registerPackageReceiver() {
         if (isReceiverRegistered) return
         val filter = IntentFilter().apply {
@@ -307,6 +317,12 @@ class ManagedInstallerManager @Inject constructor(
         val apkPath: String,
         val tag: String,
         val variant: String?,
-        val expectedPackage: String?
+        val expectedPackage: String?,
+        val stampBeforeInstall: PackageStamp?
     )
+
+    private data class PackageStamp(val versionCode: Long, val lastUpdateTime: Long)
 }
+
+private fun InstallerJobState.isTerminal(): Boolean =
+    this is InstallerJobState.Idle || this is InstallerJobState.Failed
