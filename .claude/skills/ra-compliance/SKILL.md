@@ -265,7 +265,9 @@ exception itself.
 - **Exception**: `RESUME_HARDCORE` with no hardcore save falls back to the
   active (casual) SRAM, flagged `casualSaveInHardcore` in
   `SaveStateManager.restoreSaveForLaunchMode`; the UI surfaces "Continuing
-  casual save in hardcore" (grep that string in `LibretroActivity.kt`).
+  casual save in hardcore" (grep `ingame_libretro_casual_save_in_hardcore`,
+  defined in `res/values/strings_ingame.xml` and shown from
+  `LibretroActivity.kt`).
 - **Why**: RA forbids save STATES in hardcore, not SRAM battery-save
   continuity - stated in the `restoreSaveForLaunchMode` KDoc and mirrored in
   `PlayOptionsState.showResumeHardcore`.
@@ -328,8 +330,8 @@ grep -rn "hardcore" app/src/main/kotlin/com/nendo/argosy/libretro/speedrun/
   The hardcore gate is unconditional in all three cases and sits after the
   netplay check, so hardcore compliance does not depend on the role.
 - **RA session carries the flag, not the heartbeat**:
-  `RetroAchievementsSessionManager` starts the session with `hardcoreMode`
-  (`raRepository.startSession(gameRaId, hardcoreMode)`, sent as
+  `RetroAchievementsSessionManager` starts the session with `requestedHardcore`
+  (`raRepository.startSession(gameRaId!!, requestedHardcore)`, sent as
   `hardcore = 0/1`); awards send `forHardcoreMode`; the periodic
   `sendHeartbeat` carries no mode. Unlocks are stored split
   (`markUnlockedHardcore` vs `markUnlocked`) and social/LED surfaces receive

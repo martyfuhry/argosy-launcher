@@ -26,7 +26,7 @@ Verify platform, emulator, and file type support against authoritative sources b
 
 ## Upstream Research Mandate (Non-Negotiable)
 
-libretro / RetroArch / core identifiers are NEVER inferred, guessed, or pattern-matched from sibling entries. Every core id, option value token, file extension, save/state format, and BIOS filename is verified against upstream (docs.libretro.com, the core's own repo, RetroArch source) via WebFetch BEFORE it lands in a registry. A plausible-looking core id that does not exist upstream or on the buildbot produces a platform that can never launch - this has happened (an invented `vice_x128` id survived review because it looked like its siblings).
+libretro / RetroArch / core identifiers are NEVER inferred, guessed, or pattern-matched from sibling entries. Every core id, option value token, file extension, save/state format, and BIOS filename is verified against upstream (docs.libretro.com, the core's own repo, RetroArch source) via WebFetch BEFORE it lands in a registry. A plausible-looking core id that does not exist upstream or on the buildbot produces a platform that can never launch, and it passes review because it looks like its siblings. Looking like a sibling proves nothing in either direction. `vice_x128` reads like a guess and is real (see Known traps below).
 
 ## Verification Sources
 
@@ -198,7 +198,7 @@ Contains:
 Do NOT keep extension/core tables in this skill - they duplicate code as doc and drift. For current slugs, extensions, and core routing, read `PlatformDefinitions.kt`, `LibretroCoreRegistry.kt`, and `EmulatorRegistry.kt` directly.
 
 Known traps:
-- **C128**: `vice_x128` is REAL - RetroArch's bundled `commodore_c128` info file declares it and the arm64-v8a buildbot ships `vice_x128_libretro_android.so` (verified 2026-07-30). The earlier warning here was that the id had been asserted without evidence, not that it does not exist; `c128` now routes to it in `EmulatorRegistry`.
+- **C128**: `vice_x128` is REAL - RetroArch's bundled `commodore_c128` info file declares it and the arm64-v8a buildbot ships `vice_x128_libretro_android.so` (verified 2026-07-30). `c128` routes to it in `EmulatorRegistry`.
 - **Arcade is split**: RomM `arcade` re-slugs by fs_slug via `manyToOneSlugs` + `resolveImportSlug` in `PlatformDefinitions.kt`; `fbneo` and `mame` are distinct platforms. Defaults in `EmulatorRegistry.kt`: arcade/fbneo/neogeo/cps1-3 -> `fbneo`, mame -> `mame2003_plus`.
 - **Arcade ROMs stay zipped** - DO NOT EXTRACT (romset zips are the loadable unit).
 - **Local platforms**: android, steam, ios are launcher-local with fixed negative IDs via `localPlatformIdMap`; do not treat them as emulated platforms. They are not uniformly extension-free: `android` carries `setOf("apk", "xapk")`, while `steam` and `ios` are `emptySet()`. Do not "clean up" the android extensions.

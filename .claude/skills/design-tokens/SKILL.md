@@ -32,7 +32,7 @@ The system exists because we caught the same bug class repeatedly: a default in 
 | `app/src/main/kotlin/com/nendo/argosy/ui/theme/ArgosyTokens.kt` | `ArgosyThemeTokens` / `argosyThemeTokens` - the surface + text ramp every V2 primitive reads via `LocalArgosyTheme` |
 | `scripts/ci/smell-rules.json` | `raw-dp-literal` - the enforced half of hard rule 2 |
 
-The generator emits Kotlin only. The design side reads tokens via Penpot, whose token names mirror this tree.
+The generator emits Kotlin only. `tokens.json` is the design source; no design tool holds a second copy of these values.
 
 ---
 
@@ -133,10 +133,10 @@ If a value is computed, do NOT tokenize the output - tokenize its inputs.
 
 ## Anti-patterns (still live in the tree, not yet remediated)
 
-- `private val goldColor = Color(0xFFFFD700)` declared locally in a screen file → use `ColorTokens.Domain.ratingStar`. `ALauncherColors.StarGold` in `Color.kt` is the same value again.
-- `Color(0xFF4CAF50)` for "synced" / "online" / "charging" → use `ColorTokens.Semantic.{Dark, Light}.success` or `ColorTokens.Domain.Presence.online` depending on intent. Currently in `DualGameDetailUpperScreen.kt`, `DualGameDetailLowerScreen.kt`, `SaveChannelModal.kt`, `StateSlotRow.kt`, `SystemStatusBar.kt`, `RASettingsSection.kt` and `CompanionContent.kt`.
-- `Color(0xFF6366F1)` (Tailwind indigo-500) → use `ColorTokens.Domain.SocialBrand.accent`. Currently in `InlineMarkdown.kt` and `FeedEventDetailScreen.kt`.
-- `padding(15.dp)` when `spacingMd = 16` exists → use `Dimens.spacingMd`. If `12.dp` recurs (it does), argue for a new `spacingMs = 12` token.
+- A gold `Color(0xFFFFD700)` declared locally in a file → use `ColorTokens.Domain.ratingStar`. `ALauncherColors.StarGold` in `Color.kt` is the same value again.
+- `Color(0xFF4CAF50)` for "synced" / "online" / "charging" → use `ColorTokens.Semantic.{Dark, Light}.success`, `ColorTokens.Domain.Presence.online` or `ColorTokens.Domain.Battery.charging` depending on intent.
+- `Color(0xFF6366F1)` (Tailwind indigo-500) → use `ColorTokens.Domain.SocialBrand.accent`.
+- `padding(15.dp)` when `spacingMd = 16` exists → use `Dimens.spacingMd`. `12.dp` recurs across the tree; if it keeps recurring, propose a new spacing step at 12 in `tokens.json`.
 - Adding a knob to `BoxArtStyleConfig` without also adding it to `tokens.components.boxArt` → the data-class default and the JSON default WILL drift, and you have just recreated the bug class this system exists to prevent.
 - Editing a file under `ui/theme/generated/` directly → next `node scripts/gen-tokens.mjs` erases the change.
 
@@ -144,4 +144,6 @@ If a value is computed, do NOT tokenize the output - tokenize its inputs.
 
 ## Tertiary color is intentionally absent
 
-`tertiaryColor` is a stored, settable, but never-read user preference (the `tertiaryColor` field on the aggregated `UserPreferences` in `UserPreferencesRepository.kt`). It is intentionally NOT in tokens.json. If you find code referencing or trying to revive a user-selectable tertiary, that is a bug to remove, not a feature to wire up.
+This section is about the user-selectable tertiary preference, not the Material scheme's `tertiary` role. `Theme.kt` fills the scheme's `tertiary` and `tertiaryContainer` from `secondary`, and that role is what `design-handoff/CONTROL-FOUNDATIONS.md` means by the scheme's primary/secondary/tertiary triad.
+
+`tertiaryColor` is a stored, settable user preference (the `tertiaryColor` field on the aggregated `UserPreferences` in `UserPreferencesRepository.kt`). `HomeSyncDelegate` and `ThemeViewModel` pass it through, but nothing consumes it for rendering. It is intentionally NOT in tokens.json. If you find code trying to revive a user-selectable tertiary, that is a bug to remove, not a feature to wire up.

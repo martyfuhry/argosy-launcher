@@ -63,12 +63,20 @@ where an app-target screen must survive a swap.
 
 ## What each surface renders
 
+Both activities choose from the same flow, with opposite polarity:
+
 ```
-MainActivity.setContent          SecondaryHomeActivity.CompanionRoleContent
-  companionHoldsPrimary            !isShowcaseRole
-    ? PresentationSlotContent        ? ArgosyApp()
-    : ArgosyApp()                    : PresentationSlotContent(slot)
+MainActivity                         SecondaryHomeActivity
+  companionHoldsPrimary                !companionHoldsPrimary
+  || game on another screen            || game on another screen
+    ? PresentationSlotContent(slot)      ? PresentationSlotContent(slot)
+    : ArgosyApp()                        : ArgosyApp()
 ```
+
+RULE: an activity's render choice reads `DualScreenManager.companionHoldsPrimary`, the same
+flow its input routing reads. A render flag held on the activity (a `mutableStateOf` set from
+role callbacks) is a second copy of "who is hosting" and violates the law above.
+`SecondaryHomeActivity.isShowcaseRole` is that second copy today and is due to be replaced.
 
 `ArgosyApp` takes no dual-screen parameters. It reads `DualScreenManagerHolder.instance`.
 
@@ -90,15 +98,29 @@ LAW: inside `ArgosyApp` and anything it hosts, reach DSM through the Holder, nev
 | `PlayTime` | `PlayTimePresentation` via `PresentOnCompanion` |
 | `ScreenIdentity` | `ScreensSection`, the numbered badge |
 | `Detail` | `setCompanionDetail` from Home, Library, Media, GameDetail |
+| `PlatformShowcase` | `LibraryViewModel` via `DualScreenManager.presentSlot` while the platform grid is focused |
 | `InGame` | DSM while a session is live |
 
-Two publishing mechanisms, deliberately:
+Three publishing mechanisms, deliberately:
 - `PresentOnCompanion(SlotOwner("id"), slot)` - a composable publishes while on screen and
   releases on dispose. Held per owner so a screen taking over and the screen it replaced can
-  publish and release in any order.
+  publish and release in any order. The default for a slot built from what the composable
+  already has.
 - `setCompanionDetail(CompanionDetail?)` - a ViewModel describes its focused item. Publish on
   focus change, republish on resume, clear on dispose. Copy `MediaLibraryScreen`'s
   `DisposableEffect`; it is the canonical shape.
+- `DualScreenManager.presentSlot(owner, slot)` / `releaseSlot(owner)` called from a ViewModel -
+  for a dedicated slot case (not a `Detail`) that the ViewModel builds from suspend repository
+  queries, in step with its own focus flow. `LibraryViewModel`'s
+  `publishPlatformShowcase` is the reference. The contract comes from DSM:
+  - Slots are keyed by `SlotOwner`. `presentSlot` replaces that owner's entry and moves it to
+    the top; `releaseSlot` removes only that owner's entry. Use one fixed owner id per publisher.
+  - The most recently presented slot wins over any `Detail`, so a slot left published hides
+    every later `setCompanionDetail`. The ViewModel owns the release: call `releaseSlot` when
+    focus leaves the thing it describes, and on every path that stops driving the screen.
+  - Reach DSM through `DualScreenManagerHolder.instance` and return early when it is null.
+  - Not for a composable that can publish from state it already holds. Use
+    `PresentOnCompanion` there, because composition gives it release on dispose for free.
 
 `presentationSlot` combines them with a live session outranking everything, then the most recent
 published slot, then the described detail, then Fallback.

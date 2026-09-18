@@ -10,15 +10,21 @@ Fails open on any internal error. ARGOSY_SKIP_VERIFY_CHECK=1 acknowledges a push
 needs no test run.
 """
 
+import importlib
 import json
 import os
-import re
 import subprocess
 import sys
 
 TEST_RESULTS = "app/build/test-results/testDebugUnitTest"
 SOURCE_ROOTS = ("app/src/main", "app/src/test")
-PUSH_RE = re.compile(r"\bgit\b[^|;&]*\bpush\b")
+
+
+def load_ci_module(root, name):
+    ci_dir = os.path.join(root, "scripts", "ci")
+    if ci_dir not in sys.path:
+        sys.path.insert(0, ci_dir)
+    return importlib.import_module(name)
 
 
 def git(args, root):
@@ -75,12 +81,18 @@ def main():
     if (payload.get("tool_name") or "") != "Bash":
         return 0
     cmd = (payload.get("tool_input") or {}).get("command", "") or ""
-    if not PUSH_RE.search(cmd) or "ARGOSY_SKIP_VERIFY_CHECK=1" in cmd:
-        return 0
-    if "--dry-run" in cmd:
+    if "ARGOSY_SKIP_VERIFY_CHECK=1" in cmd:
         return 0
 
     root = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+    try:
+        git_command = load_ci_module(root, "git_command")
+    except Exception:
+        return 0
+    pushes = [args for subcommand, args in git_command.git_invocations(cmd) if subcommand == "push"]
+    if all("--dry-run" in args for args in pushes):
+        return 0
+
     changed = outgoing_kotlin(root)
     if not changed:
         return 0

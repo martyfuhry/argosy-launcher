@@ -9,8 +9,8 @@ Standardized patterns for constructing menus across the Argosy launcher, coverin
 
 > V2 NOTE: `design-handoff/CONTROL-FOUNDATIONS.md` is the design authority and the V2
 > components are SHIPPED: `CyclePreference` renders `EnumValueControl` and opens
-> `EnumPickerModal` on A, `SliderPreference` renders `StepperControl`, and
-> `FooterHint.hidePriority()` implements the V2 shed order. Non-negotiables from the spec:
+> `EnumPickerModal` on A, `SliderPreference` renders `StepperControl`, and the private
+> `InputButton.hidePriority()` in `FooterHint.kt` implements the V2 shed order. Non-negotiables from the spec:
 > A/Confirm means enter/commit/toggle, NEVER adjust; focus never moves an element
 > (fill/stripe/ring/halo only); inline affordances are always visible on every row;
 > menu rows are 40dp (52 two-line).
@@ -56,8 +56,8 @@ section's own input handler when it cycles the value.
 `options.indexOf(currentValue)`, and the value it writes back is an element of
 `options`, so those entries are the persisted DataStore tokens and must stay byte-exact
 literals. Only the rendered label becomes a `stringResource`. `LibretroSettingDef.Cycle`
-models this directly: `options` (on-disk, upstream-exact) alongside `labels`, resolved
-through `labelFor()`. Getting it backwards is silent - a miss coerces to index 0 rather
+models this directly: `options` (on-disk, upstream-exact) alongside a parallel `labels` list
+of `@StringRes` ids, and `labelResFor(value)` maps a stored option to its label. Getting it backwards is silent - a miss coerces to index 0 rather
 than throwing, so the user's setting resets to the first option with nothing logged.
 
 ---
@@ -257,7 +257,7 @@ private val sectionLayout = SettingsLayout<SectionItem, SectionState>(
 
 ### Render Shell
 `SectionPaneLayout` (`ui/screens/settings/components/SectionPaneLayout.kt`) is the shell
-26 section files render into. It owns `SectionFocusedScroll` and switches between a
+settings sections render into. It owns `SectionFocusedScroll` and switches between a
 split-pane layout (wide displays with 2+ named sections: nav rail on the left, content on
 the right) and a plain sticky-header LazyColumn. A new section renders through it rather
 than building its own LazyColumn.
@@ -269,20 +269,40 @@ fun isFocused(item: SectionItem): Boolean =
 ```
 
 ### Input Handler Pattern
+
+`SettingsInputHandler.dispatch` runs every button in a fixed order: `ModalInputRouter.intercept`
+first, then the section handler, then a per-button fallback when the section returns UNHANDLED.
+A section handler owns LEFT/RIGHT adjust and section-specific buttons. It does not own A or Back:
+- A falls through to `viewModel.handleConfirm()`, which is `routeConfirm` in
+  `SettingsConfirmRouter`. Wire a confirmable row there, never in the section handler.
+- Back never reaches a section handler. `SettingsInputHandler.onBack` asks
+  `ModalInputRouter` and then calls `viewModel.navigateBack()` (see Settings Back Stack below).
+
+Section handler, LEFT/RIGHT only (shape of `LightSectionsInput`):
 ```kotlin
-override fun onLeft(): InputResult {
-    when (itemAtFocusIndex(state.focusedIndex, state)) {
-        is SectionItem.Slider1 -> {
-            viewModel.adjustSlider1(-STEP)
-            return InputResult.HANDLED
+override fun onLeft(): InputResult = handleLeftRight(-1)
+
+override fun onRight(): InputResult = handleLeftRight(1)
+
+private fun handleLeftRight(direction: Int): InputResult {
+    val state = viewModel.uiState.value
+    return when (sectionItemAtFocusIndex(state.focusedIndex, state)) {
+        SectionItem.Slider1 -> {
+            viewModel.adjustSlider1(direction * SettingsInputHandler.SLIDER_STEP)
+            InputResult.HANDLED
         }
-        is SectionItem.Enum1 -> {
-            viewModel.cycleEnum1(direction = -1)
-            return InputResult.HANDLED
+        SectionItem.Enum1 -> {
+            viewModel.cycleEnum1(direction)
+            InputResult.HANDLED
         }
-        else -> return InputResult.UNHANDLED
+        else -> InputResult.UNHANDLED
     }
 }
+```
+
+Confirm, in `routeConfirm`:
+```kotlin
+SettingsSection.JELLYFIN -> routeJellyfinConfirm(vm, state)
 ```
 
 ---
@@ -298,10 +318,10 @@ what is NOT obvious from the focused control.
 - A / B / d-pad / Back are LOW priority: alone they never justify a bar. If they are the only
   candidates, show no bar (it collapses by sliding below the edge, never blanks).
 - One app-root bottom bar (singleton). No modal or drawer owns its own footer.
-  **Committed exception:** a modal rendered above an overlay that covers the root bar
-  shows its own hints inline -- pass `inlineFooterHints = true` + `footerHints = ...` to
-  `Modal` (see `HotkeysModal` and `InputMappingModal` in
-  `ui/screens/settings/components/`).
+  **Exception:** a modal may render its hints inline when it sits above an overlay that
+  covers the root footer bar, because the root bar is not visible there. Pass
+  `inlineFooterHints = true` with `footerHints` to `Modal`. A modal the root bar is still
+  visible under keeps its hints in the root bar.
 
 ### Space-Constrained Filtering (Auto-Hide Order, V2)
 Shed the OBVIOUS guides first; never drop a non-obvious hint to keep an obvious one:
@@ -309,13 +329,14 @@ Shed the OBVIOUS guides first; never drop a non-obvious hint to keep an obvious 
 2. A/B standard hints (then Start/Select, then bumpers/triggers)
 3. Non-obvious hints (X/Y) - last to hide
 
-**Shipped:** `FooterHint.hidePriority()` implements this order (X/Y=4, bumpers/triggers=3,
+**Shipped:** the private `InputButton.hidePriority()` in `FooterHint.kt` implements this order (X/Y=4, bumpers/triggers=3,
 Start/Select=2, A/B=1, d-pad=0; higher survives longer).
 
 ### Hint Labels Are Resources, Never Button Letters
 
-A hint's label is the action ("Select", "Back", "Filter") as a `@StringRes Int`, and the
-button is rendered as an `InputGlyph` from the hint's `InputButton`. Never write the
+A hint's label is the action ("Select", "Back", "Filter"), and it resolves from a string
+resource, never a literal. `FooterHintItem.action` and the `FooterBar` pairs take a `String`,
+so resolve it with `stringResource` at the call site. The button is rendered as an `InputGlyph` from the hint's `InputButton`. Never write the
 letter into the label text: A/B are user-swappable, so a baked-in letter describes the
 wrong button the moment someone swaps them, and it hardcodes an English glyph into every
 translation. Identical hint text on two screens gets two keys.
@@ -363,16 +384,19 @@ All footer hints MUST support tap via `onHintClick` callback.
 A never adjusts a value. A hint on an adjustable item is only valid when A opens
 something (the enum picker modal); "A=Cycle" is always wrong.
 
-### Defaults + Overrides Pattern
+### Section-Specific Hints
+`SettingsFooter` in `ui/screens/settings/SettingsScreen.kt` resolves every label up front and
+adds hints per section. List order does not decide what survives a narrow screen;
+`hidePriority()` does.
 ```kotlin
+val previewShapeHint = stringResource(R.string.settings_shell_footer_preview_shape)
+val previewGameHint = stringResource(R.string.settings_shell_footer_preview_game)
+
 val hints = buildList {
-    // Section-specific hints first (higher priority)
-    if (currentSection == SettingsSection.BOX_ART) {
-        add(FooterHintItem(LB_RB, "Preview Shape"))
-        add(FooterHintItem(LT_RT, "Preview Game"))
+    if (uiState.currentSection == SettingsSection.BOX_ART) {
+        add(InputButton.LB_RB to previewShapeHint)
+        add(InputButton.LT_RT to previewGameHint)
     }
-    // Then add defaults for focused item type
-    addAll(defaultHintsFor(focusedItemType))
 }
 ```
 
@@ -399,12 +423,13 @@ val hints = buildList {
 - `SettingsConfirmRouter` (`ui/screens/settings/SettingsConfirmRouter.kt`) routes
   `onConfirm` per section via file-level `routeConfirm(vm)` + per-section
   `route*Confirm` functions -- trace it before wiring a new confirmable row.
-- `SettingsGeneralRouter` (`ui/screens/settings/SettingsGeneralRouter.kt`) owns section
-  navigation (`routeNavigateToSection` and the `routeNavigateTo*` family) and the LEFT/RIGHT
+- `SettingsGeneralRouter` (`ui/screens/settings/SettingsGeneralRouter.kt`) owns the section
+  back stack (`routePushSection`, `routePopSection`, `routeStartAtSection`) and the LEFT/RIGHT
   adjust routes, including the `HapticPattern.BOUNDARY_HIT` fired when a value is already
   clamped.
 - `LightSectionsInput` (`ui/screens/settings/sections/input/LightSectionsInput.kt`) is the
-  shared handler `SettingsInputHandler` installs for 14 sections. A section that only needs
+  shared handler `SettingsInputHandler` installs for every section in its `lightHandler`
+  loop. A section that only needs
   standard up/down/confirm needs NO new handler file - add it to that list instead.
 - `ModalScaffold` is visuals only; pair it with one of the capture mechanisms from the
   code-quality skill (modal input capture rules).
@@ -414,60 +439,57 @@ val hints = buildList {
 data class SectionState(
     val showMyModal: Boolean = false,
     val myModalFocusIndex: Int = 0,
-    val myModalButtonIndex: Int = 0,  // For multi-button modals
+    val myModalButtonIndex: Int = 0,
     val myModalInfo: ModalInfo? = null
 )
 ```
+`myModalButtonIndex` exists only for modals with a row of buttons.
 
 ### Modal Input Handling
 
-Input handler checks modals FIRST (deepest modal first):
+Section handlers never check modal flags. A settings modal gets one `intercept*` function in
+`ModalInputRouter`, called from `intercept` before any section handler sees the button:
 ```kotlin
-override fun onDown(): InputResult {
-    val state = viewModel.uiState.value
-
-    if (state.showNestedModal) {
-        viewModel.moveNestedModalFocus(1)
-        return InputResult.HANDLED
+private fun interceptMyModal(state: SettingsUiState, method: InputMethod): InputResult? {
+    if (!state.mySection.showMyModal) return null
+    return when (method) {
+        InputMethod.UP -> { viewModel.moveMyModalFocus(-1); InputResult.HANDLED }
+        InputMethod.DOWN -> { viewModel.moveMyModalFocus(1); InputResult.HANDLED }
+        InputMethod.CONFIRM -> { viewModel.confirmMyModalSelection(); InputResult.HANDLED }
+        InputMethod.BACK -> { viewModel.dismissMyModal(); InputResult.HANDLED }
+        else -> InputResult.HANDLED
     }
-    if (state.showMainModal) {
-        viewModel.moveMainModalFocus(1)
-        return InputResult.HANDLED
-    }
-
-    viewModel.moveFocus(1)
-    return InputResult.HANDLED
-}
-
-override fun onBack(): InputResult {
-    if (state.showNestedModal) {
-        viewModel.dismissNestedModal()
-        return InputResult.HANDLED
-    }
-    if (state.showMainModal) {
-        viewModel.dismissMainModal()
-        return InputResult.HANDLED
-    }
-    // Handle normal back
 }
 ```
+- Return null when the modal is closed, so the next check runs.
+- `else -> InputResult.HANDLED` swallows every other button, so nothing leaks to the section
+  behind the modal.
+- A modal that opens above another one wins. Either list its check first in `intercept`, or
+  make the lower modal return null while the upper one is open (`interceptDriverPicker`
+  yields to an active download this way).
+- `intercept` returns null outright for the controller-order, input-mapping, hotkeys and
+  grip-controller modals, which capture input themselves. See the code-quality skill's modal
+  input capture rules before adding another self-capturing modal.
 
 ### Modal Focus Management
 - Modal focus is independent from main menu focus
 - Reset modal focus to 0 when opening (exception: pickers showing current value may pre-select it)
 - Preserve main menu focus while modal is open
-- Modal content must scroll if it would overflow and hide the footer
+- Modal content must scroll when it can overflow. `Modal` caps its height at 85% of the
+  screen and gives its content column `weight(1f, fill = false)`, so put a list in a
+  `LazyColumn` with `Modifier.weight(1f, fill = false)` (see `GameNativeFoldersModal`). The
+  title and inline footer hints then stay on screen while the list scrolls.
 
 ### Nested Modals
 ```kotlin
 if (showOuterModal) {
-    Modal(title = "Outer", onDismiss = { dismissOuter() }) {
-        // Content that can trigger nested modal
+    Modal(title = stringResource(R.string.my_outer_title), onDismiss = { dismissOuter() }) {
+        OuterContent()
     }
 }
 if (showNestedModal) {
-    NestedModal(title = "Nested", onDismiss = { dismissNested() }) {
-        // Nested content
+    NestedModal(title = stringResource(R.string.my_nested_title), onDismiss = { dismissNested() }) {
+        NestedContent()
     }
 }
 ```
@@ -477,9 +499,12 @@ if (showNestedModal) {
 | Input | Action |
 |-------|--------|
 | UP/DOWN | Navigate options |
-| A/Tap | Confirm selection |
+| A/Tap | Confirm the selection, toggle, or open. Never adjust a value. |
 | B/Back | Dismiss modal |
-| LEFT/RIGHT | Adjust values (sliders/enums) |
+| LEFT/RIGHT | Adjust values (steppers/enums) or move between buttons |
+
+The A-never-adjusts rule holds inside modals too. A cyclable row in a modal cycles on
+LEFT/RIGHT only, and A on that row either does nothing or opens its option list.
 
 ---
 
@@ -489,7 +514,7 @@ if (showNestedModal) {
 ```kotlin
 private sealed class SectionItem(
     val key: String,
-    val section: String,  // Section identifier
+    val section: String,
     val visibleWhen: (State) -> Boolean = { true }
 ) {
     data object Item1 : SectionItem("item1", "general")
@@ -526,16 +551,16 @@ name means the section renders no nav entry in the split-pane layout.
 ### Section Jump Implementation
 
 The idiom is to hand the section list to the ViewModel and let it move focus. Do not
-hand-roll the search:
+hand-roll the search. `onPrevSection` is LB and `onNextSection` is RB:
 ```kotlin
-override fun onPrevSection(): InputResult {  // LB
+override fun onPrevSection(): InputResult {
     if (viewModel.jumpToPrevSection(themeSections())) {
         return InputResult.HANDLED
     }
     return InputResult.UNHANDLED
 }
 
-override fun onNextSection(): InputResult {  // RB
+override fun onNextSection(): InputResult {
     if (viewModel.jumpToNextSection(themeSections())) {
         return InputResult.HANDLED
     }
@@ -580,23 +605,45 @@ UNHANDLED, `SettingsInputHandler` swallows it - its fallbacks return a bare
 companion object holds only `SLIDER_STEP`, `FONT_SCALE_STEP` and `HUE_STEP`.
 
 The top level is a list of rows, `MainSettingsItem.ALL` in
-`ui/screens/settings/sections/MainSettingsSection.kt`, grouped under headers:
-
-```
-LAUNCHER     Theme, Interface, Navigation, Audio, Displays
-GAMEPLAY     BuiltinEmulator, Saves, RetroAchievements, Bios, Drivers
-LIBRARY      Platforms, Storage
-CONNECTIONS  RomM, Steam, Social
-SYSTEM       Permissions, DeviceSettings, About
-```
-
-Navigating INTO one of those rows goes through `routeNavigateToSection`, which resets focus
-to 0 and preserves `parentFocusIndex`.
+`ui/screens/settings/sections/MainSettingsSection.kt`, grouped under `Header` rows. Read the
+grouping there; the list changes as connections and tools are added.
 
 There is no `EMULATORS` section; emulator config lives under `PLATFORMS` (which binds to
-`EmulatorsSectionInput`) and `BUILTIN_EMULATOR`. Theme sub-sections exist in
-`SettingsSection`, but `THEME_SOUNDS` and `THEME_MUSIC` now back out to `AUDIO`, not
-`THEME` - check `SettingsConfirmRouter`'s back routing before assuming a parent.
+`EmulatorsSectionInput`) and `BUILTIN_EMULATOR`.
+
+### Settings Back Stack
+
+Settings navigation is a stack. `SettingsUiState.backStack` is a `List<SettingsNavEntry>`,
+oldest first. Each entry is a `section` plus the `focusedIndex` it was left on, and the list
+excludes `currentSection`.
+
+Entering a screen, all in `SettingsGeneralRouter`:
+- `routePushSection(vm, section, entryFocus = 0)` pushes the section on screen with its
+  focus, then opens `section` at `entryFocus`. Every route into a sub-screen goes through it.
+- `routeNavigateToSection(vm, section)` is a push plus `routeApplySectionEntry`, the per-section
+  load work (`vm.navigateToSection` calls it; `routeConfirm` uses it for the top-level rows).
+- The `routeNavigateTo*` helpers wrap a push with their own load work.
+- `routeStartAtSection(vm, section)` clears the stack for deep links that land mid-tree, so
+  Back from there leaves settings.
+
+LAW: a destination never declares its own parent. The parent is whatever was on screen at push
+time.
+- Why: a hardcoded parent is wrong the moment a second route into the screen exists.
+- Boundary: a back target written into a section, a router branch, or `SettingsSection` itself
+  is a violation.
+
+Leaving a screen: `SettingsInputHandler.onBack` asks `ModalInputRouter`, then calls
+`viewModel.navigateBack()`, which is `routeNavigateBack`. That dismisses the top overlay first
+(`routeDismissTopOverlay`), otherwise calls `routePopSection`. The pop:
+1. Runs `routeApplySectionExit` for the section being left (exit work runs on pops only).
+2. Restores the parent's remembered `focusedIndex`.
+3. Clamps focus to the parent's max focus index.
+4. Returns false on an empty stack, and the caller leaves settings.
+
+Parent focus is a position by default. When a parent list can reorder or lose rows while a
+child is open, `routeReresolveParentFocus` re-resolves focus by identity instead
+(`PLATFORM_DETAIL` back to `PLATFORMS`, `STORAGE_PLATFORM_GAMES` back to `STORAGE_GAMES`). A
+new child of a parent like that adds a case there.
 
 ---
 
@@ -611,9 +658,18 @@ import com.nendo.argosy.ui.util.clickableNoFocus
 
 Modifier.clickableNoFocus { onItemClick() }
 Modifier.clickableNoFocus(enabled = isEnabled) { onItemClick() }
+Modifier.clickableNoFocus(onClick = { onItemClick() }, onLongClick = { onItemLongClick() })
+Modifier.doubleTapNoFocus { onItemDoubleTap() }
 ```
 
-**NEVER use plain `Modifier.clickable()`** - it enables Compose TV focus which conflicts with our InputHandler-based focus system.
+**NEVER use plain `Modifier.clickable()` or `Modifier.combinedClickable()`** - both enable
+Compose TV focus, which conflicts with our InputHandler-based focus system. Long press goes
+through the `clickableNoFocus(onClick, onLongClick)` overload and double tap through
+`doubleTapNoFocus`.
+
+Touch alone is never enough. Every element with a `clickableNoFocus` also has a gamepad path
+through its screen's InputHandler and a ViewModel-owned focus index, and in settings the A
+press for it is wired in `SettingsConfirmRouter`.
 
 ---
 
@@ -634,10 +690,10 @@ Modifier.clickableNoFocus(enabled = isEnabled) { onItemClick() }
 | `ui/screens/settings/menu/SettingsLayout.kt` | Layout manager |
 | `ui/screens/settings/components/SectionPaneLayout.kt` | Section render shell (split-pane / sticky-header list) |
 | `ui/screens/settings/SettingsInputHandler.kt` | Per-section handler map, dispatch, fallbacks |
-| `ui/screens/settings/sections/input/LightSectionsInput.kt` | Shared handler for 14 plain sections |
+| `ui/screens/settings/sections/input/LightSectionsInput.kt` | Shared handler for plain sections |
 | `ui/screens/settings/ModalInputRouter.kt` | Modal-first input routing |
 | `ui/screens/settings/SettingsConfirmRouter.kt` | Per-section confirm routing |
-| `ui/screens/settings/SettingsGeneralRouter.kt` | Section navigation, LEFT/RIGHT adjust, boundary haptics |
+| `ui/screens/settings/SettingsGeneralRouter.kt` | Section back stack, LEFT/RIGHT adjust, boundary haptics |
 | `ui/screens/settings/SettingsModels.kt` | State data classes, SettingsSection enum |
 | `ui/screens/settings/sections/*.kt` | Section examples |
 | `ui/input/HapticFeedback.kt` | HapticPattern enum |
