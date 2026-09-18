@@ -103,14 +103,4 @@ object ApkAssetMatcher {
 
         return null
     }
-
-    fun formatVariantDisplay(variant: String?): String = when (variant) {
-        "arm64-v8a", "arm64", "aarch64", "64bit", "a64" -> "ARM64"
-        "armeabi-v7a", "armeabi", "arm32", "armv7", "32bit", "a32" -> "ARM32"
-        "x86_64", "x86-64", "x64" -> "x86_64"
-        "x86", "i686", "i386" -> "x86"
-        "universal", "all", "fat", "multi" -> "Universal"
-        null -> "Default"
-        else -> variant.replaceFirstChar { it.uppercase() }
-    }
 }

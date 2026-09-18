@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.nendo.argosy.R
-import com.nendo.argosy.data.emulator.ApkAssetMatcher
 import com.nendo.argosy.util.formatBytes
 import com.nendo.argosy.ui.components.FocusedScroll
 import com.nendo.argosy.ui.components.FooterHints
@@ -128,7 +127,7 @@ private fun VariantPickerItem(
     isFocused: Boolean,
     onClick: () -> Unit
 ) {
-    val displayName = ApkAssetMatcher.formatVariantDisplay(variant.variant)
+    val displayName = com.nendo.argosy.ui.common.variantLabelText(variant.variant)
     val fileSize = formatBytes(variant.fileSize)
     val focusContent = lerp(LocalArgosyTheme.current.focusAccent, Color.White, 0.45f)
 

@@ -4,7 +4,6 @@ import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.domain.model.ScreenLayout
 import com.nendo.argosy.domain.model.ScreenLayouts
 import com.nendo.argosy.domain.model.ScreenRole
-import com.nendo.argosy.util.ScreenCatalog
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -78,15 +77,9 @@ internal fun routeAssignScreenRole(vm: SettingsViewModel, role: ScreenRole) {
 }
 
 private suspend fun refreshScreens(vm: SettingsViewModel) {
-    val catalog = ScreenCatalog(vm.context)
-    val attached = catalog.attachedScreens()
-    if (attached.isEmpty()) return
-
-    val keys = attached.map { it.key }
-    val setKey = ScreenLayouts.setKeyOf(keys)
-    val stored = vm.preferencesRepository.userPreferences.first().screenLayouts
-    val layout = stored.layoutFor(setKey)
-        ?: ScreenLayout.defaultFor(keys, attached.filter { it.builtIn }.map { it.key })
+    val resolved = com.nendo.argosy.DualScreenManagerHolder.instance?.resolveScreenLayout() ?: return
+    val attached = resolved.attached
+    val layout = resolved.layout
 
     vm.displayDelegate.updateState(
         vm._uiState.value.display.copy(

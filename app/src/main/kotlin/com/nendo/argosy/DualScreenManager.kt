@@ -208,7 +208,7 @@ class DualScreenManager(
         _unconfiguredScreenSet.value = null
     }
 
-    private class ResolvedScreenLayout(
+    class ResolvedScreenLayout(
         val attached: List<com.nendo.argosy.util.AttachedScreen>,
         val setKey: String,
         val stored: com.nendo.argosy.domain.model.ScreenLayouts,
@@ -216,7 +216,7 @@ class DualScreenManager(
         val layout: com.nendo.argosy.domain.model.ScreenLayout
     )
 
-    private suspend fun resolveScreenLayout(): ResolvedScreenLayout? {
+    suspend fun resolveScreenLayout(): ResolvedScreenLayout? {
         val attached = com.nendo.argosy.util.ScreenCatalog(appContext).attachedScreens()
         if (attached.isEmpty()) return null
         val keys = attached.map { it.key }

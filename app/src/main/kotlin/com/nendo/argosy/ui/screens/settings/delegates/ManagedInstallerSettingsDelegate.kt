@@ -2,7 +2,6 @@ package com.nendo.argosy.ui.screens.settings.delegates
 
 import androidx.annotation.StringRes
 import com.nendo.argosy.R
-import com.nendo.argosy.data.emulator.ApkAssetMatcher
 import com.nendo.argosy.data.installer.GitHubRepoUrl
 import com.nendo.argosy.data.installer.InstallerFailure
 import com.nendo.argosy.data.installer.InstallerJobState
@@ -190,7 +189,7 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
 
     fun moveVariantFocus(delta: Int) {
         _state.update { state ->
-            val size = state.variants.size
+            val size = state.variantAssetNames.size
             if (size == 0) return@update state
             state.copy(variantFocusIndex = (state.variantFocusIndex + delta).mod(size))
         }
@@ -200,14 +199,14 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
         pendingVariantAssets = emptyList()
         pendingVariantRowId = null
         manager.clearJob()
-        _state.update { it.copy(showVariantPicker = false, variants = emptyList()) }
+        _state.update { it.copy(showVariantPicker = false, variantAssetNames = emptyList()) }
     }
 
     fun confirmVariant(scope: CoroutineScope) {
         val index = _state.value.variantFocusIndex
         val asset = pendingVariantAssets.getOrNull(index) ?: return
         val rowId = pendingVariantRowId ?: return
-        _state.update { it.copy(showVariantPicker = false, variants = emptyList()) }
+        _state.update { it.copy(showVariantPicker = false, variantAssetNames = emptyList()) }
         scope.launch {
             val entity = withContext(Dispatchers.IO) { repository.getById(rowId) } ?: return@launch
             manager.install(entity, asset)
@@ -267,9 +266,7 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
                         statusRes = null,
                         showVariantPicker = true,
                         variantFocusIndex = 0,
-                        variants = jobState.assets.map {
-                            com.nendo.argosy.ui.common.installerVariantUi(it.name)
-                        }
+                        variantAssetNames = jobState.assets.map { it.name }
                     )
                 }
             }

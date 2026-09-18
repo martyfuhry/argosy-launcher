@@ -193,7 +193,7 @@ private fun ManagedInstallerModals(state: ManagedInstallersState, viewModel: Set
 
     if (state.showVariantPicker) {
         InstallerVariantModal(
-            variants = state.variants,
+            assetNames = state.variantAssetNames,
             focusIndex = state.variantFocusIndex,
             onItemTap = { viewModel.selectInstallerVariantAt(it) },
             onDismiss = { viewModel.dismissInstallerVariantPicker() }
@@ -216,7 +216,7 @@ private fun ManagedInstallerModals(state: ManagedInstallersState, viewModel: Set
 
 @Composable
 private fun InstallerVariantModal(
-    variants: List<com.nendo.argosy.ui.common.InstallerVariantUi>,
+    assetNames: List<String>,
     focusIndex: Int,
     onItemTap: (Int) -> Unit,
     onDismiss: () -> Unit
@@ -235,13 +235,9 @@ private fun InstallerVariantModal(
             modifier = Modifier.weight(1f, fill = false),
             verticalArrangement = Arrangement.spacedBy(Dimens.listGap)
         ) {
-            itemsIndexed(variants, key = { _, it -> it.assetName }) { index, variant ->
+            itemsIndexed(assetNames, key = { _, name -> name }) { index, name ->
                 InstallerVariantRow(
-                    label = stringResource(
-                        R.string.settings_installers_variant_entry,
-                        variant.labelRes?.let { stringResource(it) } ?: variant.label.orEmpty(),
-                        variant.assetName
-                    ),
+                    label = com.nendo.argosy.ui.common.installerVariantLabel(name),
                     isFocused = index == focusIndex,
                     onClick = { onItemTap(index) }
                 )

@@ -37,6 +37,27 @@ class ServerRomLayoutTest {
     }
 
     @Test
+    fun `a base file left flat beside the rom folder does not nest the folder inside itself`() {
+        val paths = listOf("roms/nes", "roms/nes/720 Degrees (USA)/soundtrack")
+
+        assertEquals(
+            "soundtrack",
+            ServerRomLayout.relativeDir(
+                "roms/nes/720 Degrees (USA)/soundtrack",
+                paths,
+                romFolderNames = listOf("720 Degrees (USA).nes", "720 Degrees (USA)")
+            )
+        )
+        assertNull(
+            ServerRomLayout.relativeDir(
+                "roms/nes",
+                paths,
+                romFolderNames = listOf("720 Degrees (USA).nes", "720 Degrees (USA)")
+            )
+        )
+    }
+
+    @Test
     fun `a deeper tree keeps every segment below the root`() {
         val paths = listOf("roms/ps3/Game", "roms/ps3/Game/PS3_GAME/USRDIR")
 

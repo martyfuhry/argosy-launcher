@@ -891,7 +891,9 @@ class DownloadManager @Inject constructor(
     private suspend fun resolveServerRelativeDir(gameId: Long, gameFileId: Long): String? {
         val row = gameFileDao.getById(gameFileId) ?: return null
         val siblings = gameFileDao.getFilesForGame(gameId).map { it.filePath }
-        return ServerRomLayout.relativeDir(row.filePath, siblings)
+        val rommFileName = gameDao.getById(gameId)?.rommFileName
+        val romFolderNames = listOfNotNull(rommFileName, rommFileName?.substringBeforeLast('.'))
+        return ServerRomLayout.relativeDir(row.filePath, siblings, romFolderNames)
     }
 
     private suspend fun resolveAddonFolder(
@@ -909,7 +911,7 @@ class DownloadManager @Inject constructor(
             } else {
                 getGameFolder(
                     platformSlug,
-                    *listOfNotNull(romFolderName, gameFolderName, gameTitle).toTypedArray()
+                    *listOfNotNull(romFolderName, gameTitle, gameFolderName).toTypedArray()
                 )
             }
         }
@@ -924,7 +926,7 @@ class DownloadManager @Inject constructor(
         if (hasPooledAddons(gameId, platformDir)) return platformDir
         val gameFolder = getGameFolder(
             platformSlug,
-            *listOfNotNull(romFolderName, gameFolderName, gameTitle).toTypedArray()
+            *listOfNotNull(romFolderName, gameTitle, gameFolderName).toTypedArray()
         )
         val baseFile = basePath?.let { File(it) }
         if (baseFile != null && baseFile.isFile &&
