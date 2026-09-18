@@ -875,10 +875,8 @@ class DownloadManager @Inject constructor(
 
     private suspend fun resolveServerRelativeDir(gameId: Long, gameFileId: Long): String? {
         val row = gameFileDao.getById(gameFileId) ?: return null
-        val rootLen = gameFileDao.getFilesForGame(gameId)
-            .minOfOrNull { it.filePath.length } ?: return null
-        return row.filePath.takeIf { it.length > rootLen }
-            ?.substring(rootLen)?.trim('/')?.takeIf { it.isNotEmpty() }
+        val siblings = gameFileDao.getFilesForGame(gameId).map { it.filePath }
+        return ServerRomLayout.relativeDir(row.filePath, siblings)
     }
 
     private suspend fun resolveAddonFolder(

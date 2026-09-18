@@ -1,0 +1,48 @@
+package com.nendo.argosy.data.download
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class ServerRomLayoutTest {
+
+    @Test
+    fun `a file beside the base rom has no relative dir`() {
+        val paths = listOf("roms/gc/Baten Kaitos", "roms/gc/Baten Kaitos")
+
+        assertNull(ServerRomLayout.relativeDir("roms/gc/Baten Kaitos", paths))
+    }
+
+    @Test
+    fun `a nested file keeps its own subdirectory`() {
+        val paths = listOf("roms/switch/Game", "roms/switch/Game/update")
+
+        assertEquals("update", ServerRomLayout.relativeDir("roms/switch/Game/update", paths))
+    }
+
+    @Test
+    fun `subdirectories survive when no file sits at the rom root`() {
+        val paths = listOf("roms/switch/Game/dlc", "roms/switch/Game/update1")
+
+        assertEquals("dlc", ServerRomLayout.relativeDir("roms/switch/Game/dlc", paths))
+        assertEquals("update1", ServerRomLayout.relativeDir("roms/switch/Game/update1", paths))
+    }
+
+    @Test
+    fun `a shorter sibling directory does not become the root`() {
+        val paths = listOf("roms/ps3/Game/PS3_GAME", "roms/ps3/Game/USRDIR/x")
+
+        assertEquals("PS3_GAME", ServerRomLayout.relativeDir("roms/ps3/Game/PS3_GAME", paths))
+        assertEquals("USRDIR/x", ServerRomLayout.relativeDir("roms/ps3/Game/USRDIR/x", paths))
+    }
+
+    @Test
+    fun `a deeper tree keeps every segment below the root`() {
+        val paths = listOf("roms/ps3/Game", "roms/ps3/Game/PS3_GAME/USRDIR")
+
+        assertEquals(
+            "PS3_GAME/USRDIR",
+            ServerRomLayout.relativeDir("roms/ps3/Game/PS3_GAME/USRDIR", paths)
+        )
+    }
+}
