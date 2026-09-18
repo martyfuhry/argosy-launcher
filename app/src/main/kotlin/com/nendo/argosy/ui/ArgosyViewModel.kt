@@ -410,7 +410,7 @@ class ArgosyViewModel @Inject constructor(
             }
         )
         add(
-            StartupStep(R.string.ui_startup_status_repairing_library) {
+            StartupStep(R.string.ui_startup_status_verifying_library) {
                 gameRepository.repairFolderRomPointers()
                 gameRepository.repairVariantFilePointers()
                 gameRepository.repairUnnecessaryM3uPointers()
