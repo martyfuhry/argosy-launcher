@@ -49,7 +49,13 @@
     <string name="ui_save_channel_footer_rename">Umbenennen</string>
     <string name="ui_save_channel_footer_delete_slot">Löschen</string>
     <string name="ui_save_channel_footer_restore_save">Wiederherstellen</string>
-    <string name="ui_save_channel_footer_save_as">Speichern unter</string>
+    <string name="ui_save_channel_footer_save_as">In Slot kopieren</string>
+    <string name="ui_save_channel_slot_picker_title">Spielstand kopieren nach</string>
+    <string name="ui_save_channel_slot_picker_new_save">Neuer Spielstand</string>
+    <string name="ui_save_channel_slot_picker_confirm">Hierhin kopieren</string>
+    <string name="ui_save_channel_slot_picker_cancel">Abbrechen</string>
+    <string name="ui_save_channel_slot_picker_has_save_tag">Bereits vorhanden</string>
+    <string name="ui_save_channel_notice_slot_has_this_save">%1$s enthält diesen Spielstand bereits</string>
     <string name="ui_save_channel_footer_restore_state">Wiederherstellen</string>
     <string name="ui_save_channel_footer_preview_state">Vorschau</string>
     <string name="ui_save_channel_footer_delete_state">Löschen</string>

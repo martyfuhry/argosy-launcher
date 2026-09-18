@@ -50,7 +50,11 @@ data class SaveChannelState(
     val showDeleteLegacyConfirmation: Boolean = false,
     val deleteLegacyChannelName: String? = null,
     val showScreenshotPreview: Boolean = false,
-    val screenshotPreviewEntry: UnifiedStateEntry? = null
+    val screenshotPreviewEntry: UnifiedStateEntry? = null,
+    val showSlotPicker: Boolean = false,
+    val slotPickerEntry: UnifiedSaveEntry? = null,
+    val slotPickerItems: List<SlotPickerItem> = emptyList(),
+    val slotPickerIndex: Int = 0
 ) {
     val hasSaveSlots: Boolean get() = saveSlots.any { !it.isCreateAction }
     val hasStates: Boolean get() = supportsStates
@@ -89,6 +93,9 @@ data class SaveChannelState(
         get() = selectedTab == SaveTab.SAVES &&
             saveFocusColumn == SaveFocusColumn.HISTORY &&
             focusedHistoryItem != null
+
+    val focusedSlotPickerItem: SlotPickerItem?
+        get() = slotPickerItems.getOrNull(slotPickerIndex)
 
     val canDeleteState: Boolean
         get() = selectedTab == SaveTab.STATES &&

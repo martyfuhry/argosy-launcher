@@ -47,7 +47,13 @@
     <string name="ui_save_channel_footer_rename">重命名</string>
     <string name="ui_save_channel_footer_delete_slot">删除</string>
     <string name="ui_save_channel_footer_restore_save">恢复</string>
-    <string name="ui_save_channel_footer_save_as">另存为</string>
+    <string name="ui_save_channel_footer_save_as">复制到存档位</string>
+    <string name="ui_save_channel_slot_picker_title">将存档复制到</string>
+    <string name="ui_save_channel_slot_picker_new_save">新建存档</string>
+    <string name="ui_save_channel_slot_picker_confirm">复制到此处</string>
+    <string name="ui_save_channel_slot_picker_cancel">取消</string>
+    <string name="ui_save_channel_slot_picker_has_save_tag">已存在</string>
+    <string name="ui_save_channel_notice_slot_has_this_save">%1$s 已有此存档</string>
     <string name="ui_save_channel_footer_restore_state">恢复</string>
     <string name="ui_save_channel_footer_preview_state">预览</string>
     <string name="ui_save_channel_footer_delete_state">删除</string>

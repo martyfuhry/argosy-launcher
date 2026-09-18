@@ -19,6 +19,15 @@ data class SaveSlotItem(
     }
 }
 
+data class SlotPickerItem(
+    val channelName: String?,
+    val displayName: String,
+    val isNewSave: Boolean = false,
+    val isBlocked: Boolean = false
+) {
+    val pickerKey: String get() = if (isNewSave) "__new_save__" else channelName ?: "__none__"
+}
+
 data class SaveHistoryItem(
     val cacheId: Long,
     val timestamp: Long,

@@ -137,6 +137,7 @@ class SaveChannelDelegate @Inject constructor(
 
     fun switchTab(tab: SaveTab) {
         val state = _state.value
+        if (state.showSlotPicker) return
         if (tab == SaveTab.STATES && !state.supportsStates) return
         if (tab == state.selectedTab) return
 
@@ -149,9 +150,15 @@ class SaveChannelDelegate @Inject constructor(
         }
     }
 
-    fun focusSlotsColumn() = savesDelegate.focusSlotsColumn()
+    fun focusSlotsColumn() {
+        if (_state.value.showSlotPicker) return
+        savesDelegate.focusSlotsColumn()
+    }
 
-    fun focusHistoryColumn() = savesDelegate.focusHistoryColumn()
+    fun focusHistoryColumn() {
+        if (_state.value.showSlotPicker) return
+        savesDelegate.focusHistoryColumn()
+    }
 
     fun setSlotIndex(index: Int) = savesDelegate.setSlotIndex(index)
 
@@ -161,6 +168,10 @@ class SaveChannelDelegate @Inject constructor(
 
     fun moveFocus(delta: Int) {
         val state = _state.value
+        if (state.showSlotPicker) {
+            savesDelegate.moveSlotPickerFocus(delta)
+            return
+        }
         when (state.selectedTab) {
             SaveTab.SAVES -> {
                 when (state.saveFocusColumn) {
@@ -172,8 +183,9 @@ class SaveChannelDelegate @Inject constructor(
         }
     }
 
-    fun handleLongPress(index: Int) {
+    fun handleLongPress(scope: CoroutineScope, index: Int) {
         val state = _state.value
+        if (state.showSlotPicker) return
         when (state.selectedTab) {
             SaveTab.SAVES -> {
                 when (state.saveFocusColumn) {
@@ -183,7 +195,7 @@ class SaveChannelDelegate @Inject constructor(
                     }
                     SaveFocusColumn.HISTORY -> {
                         savesDelegate.setHistoryIndex(index)
-                        savesDelegate.showCreateChannelFromHistory()
+                        savesDelegate.showSlotPicker(scope)
                     }
                 }
             }
@@ -198,6 +210,12 @@ class SaveChannelDelegate @Inject constructor(
         onRestored: () -> Unit = {}
     ) {
         val state = _state.value
+        if (state.showSlotPicker) {
+            savesDelegate.confirmSlotPicker(
+                scope, emulatorId, onSaveStatusChanged, refreshingStates(scope, onRestored)
+            )
+            return
+        }
         when (state.selectedTab) {
             SaveTab.SAVES -> savesDelegate.confirmSlotOrHistory(
                 scope, emulatorId, onSaveStatusChanged, refreshingStates(scope, onRestored)
@@ -281,6 +299,7 @@ class SaveChannelDelegate @Inject constructor(
         onSaveStatusChanged: (SaveStatusEvent) -> Unit
     ) {
         val state = _state.value
+        if (state.showSlotPicker) return
         if (state.showRestoreConfirmation || state.showRenameDialog ||
             state.showDeleteConfirmation || state.showMigrateConfirmation ||
             state.showDeleteLegacyConfirmation ||
@@ -298,15 +317,20 @@ class SaveChannelDelegate @Inject constructor(
                             savesDelegate.showDeleteConfirmation()
                         }
                     }
-                    SaveFocusColumn.HISTORY -> savesDelegate.showCreateChannelFromHistory()
+                    SaveFocusColumn.HISTORY -> savesDelegate.showSlotPicker(scope)
                 }
             }
             SaveTab.STATES -> statesDelegate.showStateDeleteConfirmation()
         }
     }
 
+    fun dismissSlotPicker() = savesDelegate.dismissSlotPicker()
+
+    fun setSlotPickerIndex(index: Int) = savesDelegate.setSlotPickerIndex(index)
+
     fun tertiaryAction() {
         val state = _state.value
+        if (state.showSlotPicker) return
         if (state.showRestoreConfirmation || state.showRenameDialog ||
             state.showDeleteConfirmation || state.showMigrateConfirmation ||
             state.showDeleteLegacyConfirmation ||

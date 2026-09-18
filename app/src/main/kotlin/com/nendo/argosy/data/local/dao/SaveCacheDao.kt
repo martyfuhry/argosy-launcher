@@ -41,6 +41,13 @@ interface SaveCacheDao {
     suspend fun getByGameAndHash(gameId: Long, ownerUserId: Long?, hash: String): SaveCacheEntity?
 
     @Query("""
+        SELECT DISTINCT channelName FROM save_cache
+        WHERE gameId = :gameId AND contentHash = :hash
+          AND (ownerUserId IS NULL OR ownerUserId = :ownerUserId)
+    """)
+    suspend fun getChannelsWithHash(gameId: Long, ownerUserId: Long?, hash: String): List<String?>
+
+    @Query("""
         SELECT * FROM save_cache
         WHERE gameId = :gameId
           AND ((channelName IS NULL AND :channelName IS NULL) OR channelName = :channelName)

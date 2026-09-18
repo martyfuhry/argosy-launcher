@@ -519,7 +519,7 @@ class SaveChannelSavesDelegate @Inject constructor(
         }
     }
 
-    fun showCreateChannelFromHistory() {
+    fun showSlotPicker(scope: CoroutineScope) {
         val state = _state.value
         if (state.selectedTab != SaveTab.SAVES) return
         if (state.saveFocusColumn != SaveFocusColumn.HISTORY) return
@@ -531,13 +531,137 @@ class SaveChannelSavesDelegate @Inject constructor(
             )
             return
         }
-        _state.update {
-            it.copy(
-                showRenameDialog = true,
-                renameEntry = entry,
-                renameText = "",
-                renameMode = RenameMode.SAVE_AS
+
+        scope.launch {
+            val blockedChannels = entry.localCacheId
+                ?.let { saveCacheManager.contentHashOf(it) }
+                ?.let { saveCacheManager.channelsHoldingHash(currentGameId, it) }
+                ?: emptySet()
+
+            val sourceSlotKey = SaveSlotClassifier.slotKeyOf(
+                channelName = historyItem.channelName,
+                isLatest = historyItem.isLatest,
+                isArchival = historyItem.isArchival
             )
+
+            val destinations = state.saveSlots
+                .filter { !it.isCreateAction && !it.isArchivedBucket && !it.isMigrationCandidate }
+                .filter { it.channelName != null }
+                .filterNot { it.channelName.equals(sourceSlotKey, ignoreCase = true) }
+                .map { slot ->
+                    SlotPickerItem(
+                        channelName = slot.channelName,
+                        displayName = slot.displayName,
+                        isBlocked = SaveSlotClassifier.storedChannelsFor(slot.channelName)
+                            .any { stored -> stored?.lowercase() in blockedChannels }
+                    )
+                }
+
+            val newSave = SlotPickerItem(
+                channelName = null,
+                displayName = context.getString(R.string.ui_save_channel_slot_picker_new_save),
+                isNewSave = true
+            )
+
+            _state.update {
+                it.copy(
+                    showSlotPicker = true,
+                    slotPickerEntry = entry,
+                    slotPickerItems = listOf(newSave) + destinations,
+                    slotPickerIndex = 0
+                )
+            }
+        }
+    }
+
+    fun moveSlotPickerFocus(delta: Int) {
+        val state = _state.value
+        if (!state.showSlotPicker || state.slotPickerItems.isEmpty()) return
+        _state.update {
+            it.copy(slotPickerIndex = (it.slotPickerIndex + delta).mod(it.slotPickerItems.size))
+        }
+    }
+
+    fun setSlotPickerIndex(index: Int) {
+        val state = _state.value
+        if (!state.showSlotPicker) return
+        if (index !in state.slotPickerItems.indices) return
+        _state.update { it.copy(slotPickerIndex = index) }
+    }
+
+    fun dismissSlotPicker() {
+        _state.update {
+            it.copy(showSlotPicker = false, slotPickerEntry = null, slotPickerItems = emptyList())
+        }
+    }
+
+    fun confirmSlotPicker(
+        scope: CoroutineScope,
+        emulatorId: String,
+        onSaveStatusChanged: (SaveStatusEvent) -> Unit,
+        onRestored: () -> Unit
+    ) {
+        val state = _state.value
+        val entry = state.slotPickerEntry ?: return
+        val item = state.focusedSlotPickerItem ?: return
+
+        if (item.isBlocked) {
+            notificationManager.showError(
+                NotificationText.Res(
+                    R.string.ui_save_channel_notice_slot_has_this_save,
+                    listOf(item.displayName)
+                )
+            )
+            return
+        }
+
+        if (item.isNewSave) {
+            holder.pendingSaveStatusChanged = onSaveStatusChanged
+            _state.update {
+                it.copy(
+                    showSlotPicker = false,
+                    slotPickerEntry = null,
+                    slotPickerItems = emptyList(),
+                    showRenameDialog = true,
+                    renameEntry = entry,
+                    renameText = "",
+                    renameMode = RenameMode.SAVE_AS
+                )
+            }
+            return
+        }
+
+        val target = item.channelName ?: return
+        dismissSlotPicker()
+        scope.launch {
+            val copied = copySaveChannelUseCase(
+                gameId = currentGameId,
+                targetChannel = target,
+                localCacheId = entry.localCacheId,
+                serverSaveId = entry.serverSaveId,
+                emulatorId = state.emulatorId
+            )
+            if (!copied) {
+                notificationManager.showError(
+                    NotificationText.Res(R.string.ui_save_channel_notice_save_as_failed)
+                )
+                return@launch
+            }
+            refreshEntries()
+            activateSlot(
+                scope,
+                SaveSlotItem(
+                    channelName = target,
+                    displayName = item.displayName,
+                    isActive = true,
+                    saveCount = 0,
+                    latestTimestamp = null
+                ),
+                emulatorId,
+                onSaveStatusChanged,
+                onRestored
+            )
+            scope.launch { syncCoordinator.processQueue() }
         }
     }
 
@@ -695,6 +819,24 @@ class SaveChannelSavesDelegate @Inject constructor(
                 notificationManager.showSuccess(
                     NotificationText.Res(R.string.ui_save_channel_notice_save_as_created, listOf(newName))
                 )
+                val emulatorId = state.emulatorId
+                val onSaveStatusChanged = holder.pendingSaveStatusChanged
+                if (emulatorId != null && onSaveStatusChanged != null) {
+                    holder.pendingSaveStatusChanged = null
+                    activateSlot(
+                        scope,
+                        SaveSlotItem(
+                            channelName = newName,
+                            displayName = newName,
+                            isActive = true,
+                            saveCount = 0,
+                            latestTimestamp = null
+                        ),
+                        emulatorId,
+                        onSaveStatusChanged,
+                        {}
+                    )
+                }
                 scope.launch { syncCoordinator.processQueue() }
             } else {
                 notificationManager.showError(

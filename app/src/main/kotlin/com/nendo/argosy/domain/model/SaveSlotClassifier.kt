@@ -31,9 +31,6 @@ object SaveSlotClassifier {
             SaveSlotKind.NAMED -> channelName
         }
 
-    /**
-     * Every `save_cache.channelName` value that files under [channelName]'s slot.
-     */
     fun storedChannelsFor(channelName: String?): List<String?> {
         val isAutosave = channelName == null ||
             channelName.equals(SaveSyncApiClient.AUTOSAVE_SLOT_NAME, ignoreCase = true) ||

@@ -1365,7 +1365,12 @@ class GameDetailViewModel @Inject constructor(
 
     fun setHistoryIndex(index: Int) = saveManagement.saveChannelDelegate.setHistoryIndex(index)
 
-    fun handleSaveCacheLongPress(index: Int) = saveManagement.saveChannelDelegate.handleLongPress(index)
+    fun handleSaveCacheLongPress(index: Int) =
+        saveManagement.saveChannelDelegate.handleLongPress(viewModelScope, index)
+
+    fun dismissSlotPicker() = saveManagement.saveChannelDelegate.dismissSlotPicker()
+
+    fun setSlotPickerIndex(index: Int) = saveManagement.saveChannelDelegate.setSlotPickerIndex(index)
 
     fun focusSlotsColumn() = saveManagement.saveChannelDelegate.focusSlotsColumn()
 
@@ -2446,6 +2451,7 @@ class GameDetailViewModel @Inject constructor(
             val pickerState = pickerModalDelegate.state.value
             when {
                 state.reviewEditor != null -> backFromReviewEditor()
+                saveState.showSlotPicker -> dismissSlotPicker()
                 saveState.showRenameDialog -> dismissRenameDialog()
                 saveState.showDeleteConfirmation -> dismissDeleteConfirmation()
                 saveState.showRestoreConfirmation -> dismissRestoreConfirmation()
@@ -2485,6 +2491,7 @@ class GameDetailViewModel @Inject constructor(
             val saveState = state.saveChannel
             val pickerState = pickerModalDelegate.state.value
             if (state.reviewEditor != null) { submitReview(); return InputResult.HANDLED }
+            if (saveState.showSlotPicker) { dismissSlotPicker(); return InputResult.UNHANDLED }
             if (saveState.showRenameDialog) { dismissRenameDialog(); return InputResult.UNHANDLED }
             if (saveState.showDeleteConfirmation) { dismissDeleteConfirmation(); return InputResult.UNHANDLED }
             if (saveState.showRestoreConfirmation) { dismissRestoreConfirmation(); return InputResult.UNHANDLED }

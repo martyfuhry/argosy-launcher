@@ -4,9 +4,6 @@ import com.nendo.argosy.data.repository.SaveCacheManager
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import javax.inject.Inject
 
-/**
- * Copies one save into a slot. States stay in the slot they were made in.
- */
 class CopySaveChannelUseCase @Inject constructor(
     private val saveCacheManager: SaveCacheManager,
     private val saveSyncRepository: SaveSyncRepository

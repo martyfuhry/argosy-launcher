@@ -1303,6 +1303,7 @@ private fun GameDetailModals(
         onTabSwitch = viewModel::switchSaveTab,
         onStateClick = viewModel::setSaveCacheFocusIndex,
         onDismissScreenshotPreview = viewModel::dismissScreenshotPreview,
+        onSlotPickerClick = viewModel::setSlotPickerIndex,
         onDismiss = viewModel::dismissSaveCacheDialog
     )
 

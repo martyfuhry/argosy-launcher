@@ -24,9 +24,6 @@ private const val EMULATOR_PACKAGE = "com.retroarch"
 private const val EMULATOR_ID = "retroarch"
 private const val CORE_ID = "snes9x"
 
-/**
- * Which channel operations carry states with the save: activate, rename and delete do, copy does not.
- */
 class SaveChannelStateParityTest {
 
     private val activeSaveRepository: ActiveSaveRepository = mockk(relaxed = true)

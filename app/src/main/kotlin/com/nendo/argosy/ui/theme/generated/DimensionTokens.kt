@@ -105,6 +105,7 @@ object DimensionTokens {
         const val timelineDotSelected = 20
         const val timelineCoverHeight = 64
         const val gameHeaderLandscapeMin = 720
+        const val slotPickerListMaxHeight = 260
     }
 
     object Elevation {

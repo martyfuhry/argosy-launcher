@@ -49,7 +49,13 @@
     <string name="ui_save_channel_footer_rename">Renombrar</string>
     <string name="ui_save_channel_footer_delete_slot">Eliminar</string>
     <string name="ui_save_channel_footer_restore_save">Restaurar</string>
-    <string name="ui_save_channel_footer_save_as">Guardar como</string>
+    <string name="ui_save_channel_footer_save_as">Copiar a ranura</string>
+    <string name="ui_save_channel_slot_picker_title">Copiar partida a</string>
+    <string name="ui_save_channel_slot_picker_new_save">Nueva partida</string>
+    <string name="ui_save_channel_slot_picker_confirm">Copiar aquí</string>
+    <string name="ui_save_channel_slot_picker_cancel">Cancelar</string>
+    <string name="ui_save_channel_slot_picker_has_save_tag">Ya está aquí</string>
+    <string name="ui_save_channel_notice_slot_has_this_save">%1$s ya tiene esta partida</string>
     <string name="ui_save_channel_footer_restore_state">Restaurar</string>
     <string name="ui_save_channel_footer_preview_state">Vista previa</string>
     <string name="ui_save_channel_footer_delete_state">Eliminar</string>

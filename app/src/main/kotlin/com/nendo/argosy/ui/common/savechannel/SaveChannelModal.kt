@@ -66,6 +66,9 @@ import com.nendo.argosy.ui.common.displayName
 import com.nendo.argosy.util.formatSaveSize
 import com.nendo.argosy.util.formatSaveTimestamp
 
+private val SLOT_PICKER_LIST_MAX_HEIGHT =
+    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.slotPickerListMaxHeight.dp
+
 @Composable
 fun SaveChannelModal(
     state: SaveChannelState,
@@ -78,6 +81,7 @@ fun SaveChannelModal(
     onTabSwitch: (SaveTab) -> Unit = {},
     onStateClick: (Int) -> Unit = {},
     onDismissScreenshotPreview: () -> Unit = {},
+    onSlotPickerClick: (Int) -> Unit = {},
     onDismiss: () -> Unit = {}
 ) {
     if (!state.isVisible) return
@@ -236,6 +240,14 @@ fun SaveChannelModal(
             state.migrateChannelName != null) {
             MigrateConfirmationOverlay(
                 channelName = state.migrateChannelName
+            )
+        }
+
+        if (state.showSlotPicker) {
+            SlotPickerOverlay(
+                items = state.slotPickerItems,
+                selectedIndex = state.slotPickerIndex,
+                onItemClick = onSlotPickerClick
             )
         }
 
@@ -751,6 +763,8 @@ private fun formatTruncatedPath(path: String, maxSegments: Int = 3): String {
 private fun buildFooterHints(state: SaveChannelState): List<FooterHintItem> {
     val hints = mutableListOf<FooterHintItem>()
 
+    if (state.showSlotPicker) return emptyList()
+
     when (state.selectedTab) {
         SaveTab.SAVES -> {
             when (state.saveFocusColumn) {
@@ -965,6 +979,97 @@ internal fun RenameChannelOverlay(
                 onClick = onConfirm,
                 enabled = text.isNotBlank(),
                 modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SlotPickerOverlay(
+    items: List<SlotPickerItem>,
+    selectedIndex: Int,
+    onItemClick: (Int) -> Unit
+) {
+    val listState = rememberLazyListState()
+    FocusedScroll(listState = listState, focusedIndex = selectedIndex)
+
+    NestedModal(
+        title = stringResource(R.string.ui_save_channel_slot_picker_title),
+        footerHints = listOf(
+            InputButton.A to stringResource(R.string.ui_save_channel_slot_picker_confirm),
+            InputButton.B to stringResource(R.string.ui_save_channel_slot_picker_cancel)
+        )
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.heightIn(max = SLOT_PICKER_LIST_MAX_HEIGHT),
+            verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
+        ) {
+            itemsIndexed(items, key = { _, item -> item.pickerKey }) { index, item ->
+                SlotPickerRow(
+                    item = item,
+                    isSelected = index == selectedIndex,
+                    onClick = { onItemClick(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SlotPickerRow(
+    item: SlotPickerItem,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val labelColor = when {
+        item.isBlocked -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+        item.isNewSave -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Dimens.radiusMd))
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+                else Color.Transparent
+            )
+            .then(
+                if (isSelected) Modifier.border(
+                    width = Dimens.borderMedium,
+                    color = MaterialTheme.colorScheme.secondary,
+                    shape = RoundedCornerShape(Dimens.radiusMd)
+                ) else Modifier
+            )
+            .clickableNoFocus(onClick = onClick)
+            .padding(horizontal = Dimens.spacingMd, vertical = Dimens.spacingSm),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+        ) {
+            Icon(
+                imageVector = if (item.isNewSave) Icons.Filled.Add else Icons.Filled.Save,
+                contentDescription = null,
+                tint = labelColor,
+                modifier = Modifier.size(if (item.isNewSave) Dimens.iconSm else Dimens.iconXs)
+            )
+            Text(
+                text = item.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = labelColor
+            )
+        }
+        if (item.isBlocked) {
+            Text(
+                text = stringResource(R.string.ui_save_channel_slot_picker_has_save_tag),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
     }
