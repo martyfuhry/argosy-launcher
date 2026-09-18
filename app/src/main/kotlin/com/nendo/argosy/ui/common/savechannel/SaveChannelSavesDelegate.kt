@@ -677,7 +677,6 @@ class SaveChannelSavesDelegate @Inject constructor(
         scope.launch {
             val success = copySaveChannelUseCase(
                 gameId = currentGameId,
-                sourceChannel = entry.channelName,
                 targetChannel = newName,
                 localCacheId = entry.localCacheId,
                 serverSaveId = entry.serverSaveId,

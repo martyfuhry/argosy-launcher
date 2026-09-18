@@ -25,9 +25,7 @@ private const val EMULATOR_ID = "retroarch"
 private const val CORE_ID = "snes9x"
 
 /**
- * Every channel operation moves the save half and the state half together. These are the assertions
- * that catch the half that goes missing; the audit that prompted them found five call sites where
- * the save moved alone.
+ * Which channel operations carry states with the save: activate, rename and delete do, copy does not.
  */
 class SaveChannelStateParityTest {
 
@@ -122,31 +120,27 @@ class SaveChannelStateParityTest {
     }
 
     @Test
-    fun `copying a slot duplicates its states`() = runTest {
+    fun `copying a save leaves every state in the slot it was made in`() = runTest {
         stubContext()
         coEvery { saveCacheManager.copyToChannel(42L, "locked") } returns 99L
-        val useCase = CopySaveChannelUseCase(
-            saveCacheManager, saveSyncRepository, stateCacheManager
-        )
+        val useCase = CopySaveChannelUseCase(saveCacheManager, saveSyncRepository)
 
-        val copied = useCase(GAME_ID, "primary", "locked", 42L, null, EMULATOR_ID)
+        val copied = useCase(GAME_ID, "locked", 42L, null, EMULATOR_ID)
 
         assert(copied)
-        coVerify { stateCacheManager.duplicateStatesForChannel(GAME_ID, "primary", "locked") }
+        coVerify(exactly = 0) { stateCacheManager.moveStatesToChannel(any(), any(), any()) }
+        coVerify(exactly = 0) { stateCacheManager.copyStateToSlot(any(), any()) }
     }
 
     @Test
-    fun `a copy that fails does not duplicate states`() = runTest {
+    fun `a copy that fails reports failure`() = runTest {
         stubContext()
         coEvery { saveCacheManager.copyToChannel(42L, "locked") } returns null
-        val useCase = CopySaveChannelUseCase(
-            saveCacheManager, saveSyncRepository, stateCacheManager
-        )
+        val useCase = CopySaveChannelUseCase(saveCacheManager, saveSyncRepository)
 
-        val copied = useCase(GAME_ID, "primary", "locked", 42L, null, EMULATOR_ID)
+        val copied = useCase(GAME_ID, "locked", 42L, null, EMULATOR_ID)
 
         assert(!copied)
-        coVerify(exactly = 0) { stateCacheManager.duplicateStatesForChannel(any(), any(), any()) }
     }
 
     @Test

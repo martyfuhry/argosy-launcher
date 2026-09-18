@@ -1600,13 +1600,8 @@ class DualScreenManager(
     private fun handleLockAsSlot(gameId: Long, cacheId: Long?, name: String) {
         if (cacheId == null) return
         scope.launch(Dispatchers.IO) {
-            val sourceChannel = getUnifiedSavesUseCase(gameId, expandHistory = true)
-                .firstOrNull { it.localCacheId == cacheId }
-                ?.channelName
-
             copySaveChannelUseCase(
                 gameId = gameId,
-                sourceChannel = sourceChannel,
                 targetChannel = name,
                 localCacheId = cacheId,
                 serverSaveId = null,

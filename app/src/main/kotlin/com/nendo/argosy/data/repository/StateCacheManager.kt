@@ -588,69 +588,6 @@ class StateCacheManager @Inject constructor(
         return "$stem$suffix"
     }
 
-    suspend fun duplicateStatesForChannel(
-        gameId: Long,
-        sourceChannel: String?,
-        targetChannel: String
-    ): Int = withContext(Dispatchers.IO) {
-        val ownerUserId = syncPreferencesRepository.getRommUserId()
-        val sourceStates = if (sourceChannel != null) {
-            stateCacheDao.getByChannel(gameId, sourceChannel, ownerUserId)
-        } else {
-            stateCacheDao.getDefaultChannel(gameId, ownerUserId)
-        }
-
-        if (sourceStates.isEmpty()) return@withContext 0
-
-        var copied = 0
-        for (source in sourceStates) {
-            val sourceFile = File(cacheBaseDir, source.cachePath)
-            if (!sourceFile.exists()) continue
-
-            val targetRelativeDir = channelRelativeDir(source.cachePath, source.coreId, targetChannel)
-            val targetDir = File(cacheBaseDir, targetRelativeDir)
-            targetDir.mkdirs()
-
-            val targetFile = File(targetDir, sourceFile.name)
-            sourceFile.copyTo(targetFile, overwrite = true)
-
-            val targetCachePath = "$targetRelativeDir/${sourceFile.name}"
-
-            var targetScreenshotPath: String? = null
-            source.screenshotPath?.let { ssPath ->
-                val ssFile = File(cacheBaseDir, ssPath)
-                if (ssFile.exists()) {
-                    val targetSsFile = File(targetDir, ssFile.name)
-                    ssFile.copyTo(targetSsFile, overwrite = true)
-                    targetScreenshotPath = "$targetRelativeDir/${ssFile.name}"
-                }
-            }
-
-            val entity = StateCacheEntity(
-                gameId = gameId,
-                platformSlug = source.platformSlug,
-                emulatorId = source.emulatorId,
-                slotNumber = source.slotNumber,
-                channelName = targetChannel,
-                cachedAt = source.cachedAt,
-                stateSize = targetFile.length(),
-                cachePath = targetCachePath,
-                screenshotPath = targetScreenshotPath,
-                coreId = source.coreId,
-                coreVersion = source.coreVersion,
-                isLocked = true,
-                note = null,
-                syncStatus = StateCacheEntity.STATUS_PENDING_UPLOAD,
-                ownerUserId = source.ownerUserId ?: ownerUserId
-            )
-            stateCacheDao.upsert(entity)
-            copied++
-        }
-
-        Log.d(TAG, "Duplicated $copied states from channel ${sourceChannel ?: "default"} to $targetChannel for game $gameId")
-        copied
-    }
-
     /**
      * Where a channel's states for one core are cached, relative to the cache root.
      *
