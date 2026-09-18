@@ -237,19 +237,13 @@ class DualScreenManager(
             val setKey = resolved.setKey
             val known = resolved.known
             val layout = resolved.layout
-            val overridePrimaryId = when (sessionStateStore.getDisplayRoleOverride()) {
-                "SWAPPED" -> displayAffinityHelper.getRoleDisplayIds(true)?.first
-                "STANDARD" -> displayAffinityHelper.getRoleDisplayIds(false)?.first
-                else -> null
-            }
-            val primary = overridePrimaryId?.let { id -> attached.find { it.displayId == id } }
-                ?: attached.find { it.key == layout.primaryKey }
-                ?: return@launch
+            val primary = attached.find { it.key == layout.primaryKey } ?: return@launch
             applyScreenLayout(
                 primaryDisplayId = primary.displayId,
                 appTargetDisplayId = attached.find { it.key == layout.appTargetKey }?.displayId,
                 hasPresentation = !layout.isSingleDisplay
             )
+            mirrorOverrideTo(primary.displayId == android.view.Display.DEFAULT_DISPLAY)
             _unconfiguredScreenSet.value = setKey.takeIf {
                 promptWhenUnknown && known == null && attached.size > 1
             }
@@ -1804,21 +1798,18 @@ class DualScreenManager(
 
         if (sessionStateStore.hasActiveSession()) return
 
-        val current = sessionStateStore.getDisplayRoleOverride()
-        val newOverride = when (current) {
-            "SWAPPED" -> "STANDARD"
-            "STANDARD" -> "SWAPPED"
-            else -> {
-                if (_isRolesSwapped.value) "STANDARD" else "SWAPPED"
-            }
-        }
-        sessionStateStore.setDisplayRoleOverride(newOverride)
-        scope.launch {
-            preferencesRepository.setDisplayRoleOverride(DisplayRoleOverride.fromString(newOverride))
-        }
-        val newSwapped = newOverride == "SWAPPED" ||
-            (newOverride == "AUTO" && displayAffinityHelper.secondaryDisplayType == SecondaryDisplayType.EXTERNAL)
+        val newSwapped = !_isRolesSwapped.value
+        mirrorOverrideTo(newSwapped)
         applyRoleChange(newSwapped)
+    }
+
+    private fun mirrorOverrideTo(swapped: Boolean) {
+        val value = if (swapped) "SWAPPED" else "STANDARD"
+        if (sessionStateStore.getDisplayRoleOverride() == value) return
+        sessionStateStore.setDisplayRoleOverride(value)
+        scope.launch {
+            preferencesRepository.setDisplayRoleOverride(DisplayRoleOverride.fromString(value))
+        }
     }
 
     /**
