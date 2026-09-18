@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.components.ActionPreference
 import com.nendo.argosy.ui.screens.settings.ManagedInstallerRow
@@ -52,6 +54,10 @@ internal fun installerItemAtFocusIndex(index: Int, state: ManagedInstallersState
 fun ManagedInstallersSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val state = uiState.managedInstallers
     val items = remember(state.rows, state.busyId) { installerItems(state) }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.reconcileManagedInstall()
+    }
 
     fun isFocused(index: Int): Boolean = uiState.focusedIndex == index
 

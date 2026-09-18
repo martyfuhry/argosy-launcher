@@ -139,6 +139,23 @@ class ManagedInstallerManager @Inject constructor(
         _job.value = null
     }
 
+    /**
+     * Settles a job left waiting on the system installer. A declined install sends no broadcast, so
+     * the row waits forever unless the state is reconciled once the installer is gone.
+     */
+    fun reconcilePendingInstall() {
+        val waiting = pending ?: return
+        if (_job.value?.state !is InstallerJobState.WaitingForInstall) return
+        val expected = waiting.expectedPackage
+        if (expected != null && isInstalled(expected)) return
+        scope.launch {
+            File(waiting.apkPath).delete()
+            pending = null
+            _job.value = null
+            unregisterPackageReceiver()
+        }
+    }
+
     suspend fun refresh(rows: List<ManagedInstallerEntity>) {
         rows.forEach { row ->
             when (val lookup = releaseClient.latestRelease(row.repoOwner, row.repoName)) {

@@ -148,6 +148,8 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
         }
     }
 
+    fun reconcilePendingInstall() = manager.reconcilePendingInstall()
+
     fun openImeSettings() = manager.openImeSettings()
 
     fun showImePicker() = manager.showImePicker()

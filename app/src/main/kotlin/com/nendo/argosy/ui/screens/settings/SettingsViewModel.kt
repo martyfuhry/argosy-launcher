@@ -1402,6 +1402,7 @@ class SettingsViewModel @Inject constructor(
     fun refreshUsageStatsPermission() = controlsDelegate.refreshUsageStatsPermission()
     fun openUsageStatsSettings() = controlsDelegate.openUsageStatsSettings()
     fun openManagedInstallers() = installerDelegate.openScreen(viewModelScope)
+    fun reconcileManagedInstall() = installerDelegate.reconcilePendingInstall()
     fun installManagedInstaller(rowId: Long) = installerDelegate.install(viewModelScope, rowId)
     fun openInstallerAddModal() = installerDelegate.openAddModal()
     fun dismissInstallerAddModal() = installerDelegate.dismissAddModal()
