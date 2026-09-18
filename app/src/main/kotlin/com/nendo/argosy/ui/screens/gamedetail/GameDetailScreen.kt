@@ -503,7 +503,9 @@ private fun GameDetailContent(
     var relatedTopY by remember { mutableIntStateOf(0) }
 
     val headerScrollThreshold = 200
-    val isHeaderCollapsed = scrollState.value > headerScrollThreshold
+    val heroOnOtherScreen = DualScreenManagerHolder.instance
+        ?.isCompanionActive?.collectAsState()?.value == true
+    val isHeaderCollapsed = !heroOnOtherScreen && scrollState.value > headerScrollThreshold
 
     val contentHasSaveSync = uiState.saveStatusInfo?.status?.let {
         it != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NO_SAVE &&
@@ -701,8 +703,6 @@ private fun GameDetailContent(
                                     .verticalScroll(scrollState)
                                     .padding(start = Dimens.spacingMd, top = Dimens.spacingXl, end = Dimens.spacingXl, bottom = Dimens.spacingXl)
                             ) {
-                                val heroOnOtherScreen = DualScreenManagerHolder.instance
-                                    ?.isCompanionActive?.collectAsState()?.value == true
                                 if (!heroOnOtherScreen) {
                                     ExpandedHeader(game = game)
                                     Spacer(modifier = Modifier.height(Dimens.spacingXl))
