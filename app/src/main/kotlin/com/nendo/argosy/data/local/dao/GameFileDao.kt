@@ -105,6 +105,13 @@ interface GameFileDao {
         FROM game_files gf
         INNER JOIN games g ON gf.gameId = g.id
         WHERE gf.localPath IS NULL
+          AND (
+            g.localPath IS NOT NULL
+            OR EXISTS (
+                SELECT 1 FROM game_files sibling
+                WHERE sibling.gameId = gf.gameId AND sibling.localPath IS NOT NULL
+            )
+          )
     """)
     suspend fun getMissingFilesWithGameInfo(): List<MissingGameFile>
 

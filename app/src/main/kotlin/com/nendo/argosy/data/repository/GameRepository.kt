@@ -466,7 +466,11 @@ class GameRepository @Inject constructor(
         val startTime = System.currentTimeMillis()
         val missing = gameFileDao.getMissingFilesWithGameInfo()
         if (missing.isEmpty()) return@withContext 0
-        Log.d(TAG, "repairVariantFilePointers: checking ${missing.size} entries without localPath")
+        Log.d(
+            TAG,
+            "repairVariantFilePointers: checking ${missing.size} entries without localPath " +
+                "(query ${System.currentTimeMillis() - startTime}ms)"
+        )
 
         var repaired = 0
         for ((platformId, entries) in missing.groupBy { it.platformId }) {
@@ -474,7 +478,7 @@ class GameRepository @Inject constructor(
             val platformDir = getDownloadDirForPlatformId(platformId)
             if (!platformDir.isDirectory) continue
             val fileIndex by lazy { buildPlatformFileIndex(platformDir) }
-            val folderExists = HashMap<String, Boolean>()
+            val listings = HashMap<String, Map<String, File>>()
 
             for (entry in entries) {
                 val folderCandidates = buildList {
@@ -485,13 +489,9 @@ class GameRepository @Inject constructor(
                     (listOf(entry.category) + ZipExtractor.addonFolderNames(entry.category)).distinct()
 
                 val found = folderCandidates.firstNotNullOfOrNull { folderName ->
-                    val gameFolder = File(platformDir, folderName)
-                    val exists = folderExists.getOrPut(folderName) { gameFolder.isDirectory }
-                    if (!exists) return@firstNotNullOfOrNull null
                     categoryCandidates.firstNotNullOfOrNull { category ->
-                        val categoryFolder = File(gameFolder, category)
-                        val candidate = File(categoryFolder, entry.fileName)
-                        candidate.takeIf { it.isFile }
+                        val categoryFolder = File(File(platformDir, folderName), category)
+                        listings.getOrPut(categoryFolder.path) { listFilesByName(categoryFolder) }[entry.fileName]
                     }
                 } ?: fileIndex[entry.fileName]
                 ?: continue
@@ -505,6 +505,9 @@ class GameRepository @Inject constructor(
         Log.d(TAG, "repairVariantFilePointers: $repaired repaired in ${elapsed}ms")
         repaired
     }
+
+    private fun listFilesByName(dir: File): Map<String, File> =
+        dir.listFiles()?.filter { it.isFile }?.associateBy { it.name } ?: emptyMap()
 
     private fun buildPlatformFileIndex(platformDir: File): Map<String, File> {
         val index = HashMap<String, File>()
