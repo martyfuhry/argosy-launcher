@@ -111,7 +111,7 @@ class DownloadGameUseCase @Inject constructor(
                     val only = allFiles.first { it.id == selection.first() }
                     fileName = only.fileName
                     expectedSize = only.fileSizeBytes
-                } else if (selection != null || rom.isFolderRom) {
+                } else if (selection != null || rom.needsServerBuiltZipExtraction) {
                     val folderName = rom.fileName ?: game.title
                     fileName = if (selection == null && folderName.contains('.')) folderName
                         else "$folderName.zip"
@@ -141,7 +141,7 @@ class DownloadGameUseCase @Inject constructor(
                     platformSlug = game.platformSlug,
                     coverPath = game.coverPath,
                     expectedSizeBytes = expectedSize,
-                    isMultiFileRom = rom.isFolderRom && selection == null,
+                    isMultiFileRom = rom.needsServerBuiltZipExtraction && selection == null,
                     selectedFileIds = selection
                 )
                 DownloadResult.Queued

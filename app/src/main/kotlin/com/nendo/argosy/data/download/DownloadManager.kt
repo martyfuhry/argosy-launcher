@@ -775,6 +775,21 @@ class DownloadManager @Inject constructor(
         return fromServer ?: fromDisk
     }
 
+    private suspend fun gameFolderNameFor(
+        gameId: Long,
+        platformDir: File,
+        gameFolderName: String?,
+        gameTitle: String
+    ): String {
+        val candidates = listOfNotNull(romFileFolderName(gameId), gameFolderName, gameTitle)
+            .map(::sanitizeFolderName)
+            .filter { it.isNotBlank() }
+        if (candidates.isEmpty()) return sanitizeFolderName(gameTitle)
+        return resolveGameFolder(platformDir, candidates)
+            .name
+            .removeSuffix(".m3u")
+    }
+
     private suspend fun getGameFolder(platformSlug: String, vararg names: String): File {
         val platformDir = getDownloadDir(platformSlug)
         return resolveGameFolder(platformDir, names.map(::sanitizeFolderName)).apply { mkdirs() }
@@ -1301,6 +1316,7 @@ class DownloadManager @Inject constructor(
                 targetFile = targetFile,
                 platformDir = unpackDir,
                 platformSlug = progress.platformSlug,
+                gameId = progress.gameId,
                 gameTitle = progress.gameTitle,
                 gameFolderName = progress.gameFolderName,
                 progressId = progress.id,
@@ -1678,6 +1694,7 @@ class DownloadManager @Inject constructor(
         targetFile: File,
         platformDir: File,
         platformSlug: String,
+        gameId: Long,
         gameTitle: String,
         gameFolderName: String? = null,
         progressId: Long = 0,
@@ -1686,6 +1703,8 @@ class DownloadManager @Inject constructor(
         isMultiFileRom: Boolean = false,
         onExtractionProgress: ((bytesWritten: Long, totalBytes: Long) -> Unit)? = null
     ): String {
+        val folderName = gameFolderNameFor(gameId, platformDir, gameFolderName, gameTitle)
+
         val shouldExtract = when {
             isMultiFileRom -> ZipExtractor.isArchiveFile(targetFile)
             ZipExtractor.usesZipAsRomFormat(platformSlug) -> false
@@ -1714,7 +1733,7 @@ class DownloadManager @Inject constructor(
                 val extracted = try {
                     ZipExtractor.extractFolderRom(
                         archiveFilePath = targetFile,
-                        gameTitle = gameTitle,
+                        gameTitle = folderName,
                         platformDir = platformDir,
                         platformSlug = platformSlug,
                         onProgress = onExtractionProgress
@@ -1740,7 +1759,7 @@ class DownloadManager @Inject constructor(
                 Log.d(TAG, "processDownloadedFile: BRANCH=NSW_ORGANIZE")
                 val organizedFile = ZipExtractor.organizeNswSingleFile(
                     romFile = targetFile,
-                    gameTitle = gameTitle,
+                    gameTitle = folderName,
                     platformDir = platformDir
                 )
                 Log.d(TAG, "processDownloadedFile: organizedFile=${organizedFile.absolutePath}")
@@ -1748,7 +1767,11 @@ class DownloadManager @Inject constructor(
             }
             isDiscDownload && M3uManager.supportsM3u(platformSlug) -> {
                 Log.d(TAG, "processDownloadedFile: BRANCH=DISC_ORGANIZE")
-                val result = organizeDiscFile(targetFile, listOfNotNull(gameFolderName, gameTitle), platformDir)
+                val result = organizeDiscFile(
+                    targetFile,
+                    listOfNotNull(folderName, gameFolderName, gameTitle),
+                    platformDir
+                )
                 Log.d(TAG, "processDownloadedFile: discResult=$result")
                 result
             }
@@ -2058,6 +2081,7 @@ class DownloadManager @Inject constructor(
                 targetFile = targetFile,
                 platformDir = platformDir,
                 platformSlug = queueEntry.platformSlug,
+                gameId = queueEntry.gameId,
                 gameTitle = queueEntry.gameTitle,
                 gameFolderName = queueEntry.gameFolderName,
                 progressId = queueEntry.id,
