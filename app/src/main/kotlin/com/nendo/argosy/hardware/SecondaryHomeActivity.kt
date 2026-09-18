@@ -85,7 +85,6 @@ class SecondaryHomeActivity :
         private set
     private var isWizardActive by mutableStateOf(false)
     private var currentChannelName by mutableStateOf<String?>(null)
-    private var isSaveDirty by mutableStateOf(false)
     private var isHardcore by mutableStateOf(false)
     var homeApps by mutableStateOf<List<String>>(emptyList())
         private set
@@ -231,7 +230,6 @@ class SecondaryHomeActivity :
         isGameActive = store.hasActiveSession()
         isHardcore = store.isHardcore()
         currentChannelName = store.getChannelName()
-        isSaveDirty = store.isSaveDirty()
     }
 
     /**
@@ -348,7 +346,10 @@ class SecondaryHomeActivity :
                 return super.dispatchKeyEvent(event)
             }
         }
-        if (::dsm.isInitialized && !dsm.companionHoldsPrimary.value) return true
+        if (::dsm.isInitialized && !dsm.companionHoldsPrimary.value) {
+            handBackToPrimaryScreen()
+            return true
+        }
         if (::dsm.isInitialized && !dsm.claimInput(event)) return true
         if (event.keyCode == android.view.KeyEvent.KEYCODE_HOME ||
             event.keyCode == android.view.KeyEvent.KEYCODE_BUTTON_MODE
@@ -372,6 +373,7 @@ class SecondaryHomeActivity :
         if (event.isFromSource(android.view.InputDevice.SOURCE_JOYSTICK) &&
             ::dsm.isInitialized && !dsm.companionHoldsPrimary.value
         ) {
+            handBackToPrimaryScreen()
             return true
         }
         if (event.isFromSource(android.view.InputDevice.SOURCE_JOYSTICK) &&
@@ -391,6 +393,16 @@ class SecondaryHomeActivity :
         }
         if (gamepadInputHandler.handleMotionEvent(event)) return true
         return super.dispatchGenericMotionEvent(event)
+    }
+
+    private var lastHandBackAtMs = 0L
+
+    private fun handBackToPrimaryScreen() {
+        if (dsm.hasLiveSession()) return
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastHandBackAtMs < HAND_BACK_THROTTLE_MS) return
+        lastHandBackAtMs = now
+        dsm.onRefocusUpper()
     }
 
     /**
@@ -440,7 +452,7 @@ class SecondaryHomeActivity :
     }
 
     override fun onSaveDirtyChanged(isDirty: Boolean) {
-        isSaveDirty = isDirty; companionInGameState = companionInGameState.copy(isDirty = isDirty)
+        companionInGameState = companionInGameState.copy(isDirty = isDirty)
     }
 
     override fun onSessionActionsChanged(available: Boolean) {
@@ -461,7 +473,6 @@ class SecondaryHomeActivity :
         isGameActive = true
         this.isHardcore = isHardcore
         currentChannelName = channelName
-        isSaveDirty = false
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = CompanionSessionTimer().also {
             it.start(applicationContext)
@@ -481,7 +492,6 @@ class SecondaryHomeActivity :
         isGameActive = false
         isHardcore = false
         currentChannelName = null
-        isSaveDirty = false
         companionInGameState = CompanionInGameState()
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = null
@@ -729,7 +739,6 @@ class SecondaryHomeActivity :
         isGameActive = store.hasActiveSession()
         isWizardActive = store.isWizardActive() || !store.isFirstRunComplete()
         currentChannelName = store.getChannelName()
-        isSaveDirty = store.isSaveDirty()
         isHardcore = store.isHardcore()
 
         if (isGameActive) {
@@ -868,6 +877,7 @@ class SecondaryHomeActivity :
 }
 
 private const val CONFIRM_HOLD_MS = 500L
+private const val HAND_BACK_THROTTLE_MS = 1500L
 
 /**
  * How long this screen waits to settle on the restored position before it takes the driven role.

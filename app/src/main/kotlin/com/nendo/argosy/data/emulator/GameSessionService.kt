@@ -686,7 +686,7 @@ class GameSessionService : Service() {
 
     private fun broadcastSaveStateChanged(isDirty: Boolean) {
         sessionStateStore.setSaveDirty(isDirty)
-        DualScreenManagerHolder.instance?.companionHost?.onSaveDirtyChanged(isDirty)
+        DualScreenManagerHolder.instance?.updateCompanionSaveDirty(isDirty)
     }
 
     companion object {

@@ -17,20 +17,17 @@ data class ScreenLayout(val roles: Map<String, ScreenRole> = emptyMap()) {
 
     fun roleFor(screenKey: String): ScreenRole? = roles[screenKey]
 
+    /**
+     * Assigns [role] to [screenKey], handing the screen that held [role] the role [screenKey] is
+     * giving up. Every role stays held by at most one screen through any assignment, including a
+     * promotion out of APP_TARGET or OFF. Assigning OFF takes no role from another screen.
+     */
     fun withRole(screenKey: String, role: ScreenRole): ScreenLayout {
         val previous = roles[screenKey] ?: ScreenRole.PRESENTATION
         val holder = roles.entries.find { it.value == role && it.key != screenKey }?.key
         val next = roles.toMutableMap()
         next[screenKey] = role
-        if (holder != null && role != ScreenRole.OFF) {
-            next[holder] = when {
-                role == ScreenRole.PRIMARY && previous == ScreenRole.PRESENTATION -> ScreenRole.PRESENTATION
-                role == ScreenRole.PRESENTATION && previous == ScreenRole.PRIMARY -> ScreenRole.PRIMARY
-                role == ScreenRole.PRIMARY -> ScreenRole.PRESENTATION
-                next.none { it.value == ScreenRole.PRESENTATION } -> ScreenRole.PRESENTATION
-                else -> ScreenRole.OFF
-            }
-        }
+        if (holder != null && role != ScreenRole.OFF) next[holder] = previous
         return ScreenLayout(next)
     }
 

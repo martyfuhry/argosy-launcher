@@ -172,6 +172,10 @@ class DualScreenManager(
 ) {
 
     private val appContext: Context = context.applicationContext
+
+    private val activityIndependentScope =
+        com.nendo.argosy.util.SafeCoroutineScope(Dispatchers.Main, "DualScreenState")
+
     private var preGameRolesSwapped: Boolean? = null
     private var activityContext: Context = context
     private var lastStateEntries: Pair<Long, List<UnifiedStateEntry>>? = null
@@ -228,15 +232,17 @@ class DualScreenManager(
         }
     }
 
+    /**
+     * Moves the PRIMARY role onto [displayId]. A layout that already matches the live arrangement
+     * changes nothing and takes nobody's focus, and a running session keeps the screen it was
+     * launched on until it ends.
+     */
     fun setPrimaryDisplayId(displayId: Int) {
         val swapped = displayId == android.view.Display.DEFAULT_DISPLAY
-        if (swapped != _isRolesSwapped.value) {
-            _isRolesSwapped.value = swapped
-            sessionStateStore.setRolesSwapped(swapped)
-            onRoleSwapped?.invoke(swapped)
-            companionHost?.onRoleSwapped(swapped)
-        }
-        if (swapped) refocusMain() else companionHost?.refocusSelf()
+        if (swapped == _isRolesSwapped.value) return
+        if (sessionStateStore.hasActiveSession()) return
+        commitRoleSwap(swapped)
+        if (swapped) refocusMain()
     }
 
     /**
@@ -633,6 +639,11 @@ class DualScreenManager(
         companionHost?.onHasQuickSaveChanged(hasQuickSave)
     }
 
+    fun updateCompanionSaveDirty(isDirty: Boolean) {
+        _swappedCompanionState.update { it.copy(isDirty = isDirty) }
+        companionHost?.onSaveDirtyChanged(isDirty)
+    }
+
     var sessionRefocus: (() -> Unit)? = null
 
     var companionHost: CompanionHost? = null
@@ -716,7 +727,7 @@ class DualScreenManager(
             _isRolesSwapped
         ) { dualScreen, companionActive, swapped ->
             dualScreen && companionActive && !swapped
-        }.stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
+        }.stateIn(activityIndependentScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 
     private val _presentationSlots =
         MutableStateFlow<List<Pair<com.nendo.argosy.ui.dualscreen.SlotOwner, com.nendo.argosy.ui.dualscreen.PresentationSlot>>>(
@@ -1268,7 +1279,7 @@ class DualScreenManager(
             }
         }
             .stateIn(
-                scope,
+                activityIndependentScope,
                 kotlinx.coroutines.flow.SharingStarted.Eagerly,
                 com.nendo.argosy.ui.dualscreen.PresentationSlot.Fallback
             )
@@ -1446,6 +1457,7 @@ class DualScreenManager(
                         sessionStartTimeMillis = sessionStateStore.getSessionStartTimeMillis(),
                         channelName = sessionStateStore.getChannelName(),
                         isHardcore = sessionStateStore.isHardcore(),
+                        isDirty = sessionStateStore.isSaveDirty(),
                         isLoaded = true
                     ).withLiveQuickActionState(
                         quickActionsAvailable = sessionQuickActions != null,
@@ -1788,12 +1800,8 @@ class DualScreenManager(
         }
         val newSwapped = newOverride == "SWAPPED" ||
             (newOverride == "AUTO" && displayAffinityHelper.secondaryDisplayType == SecondaryDisplayType.EXTERNAL)
-        if (!newSwapped) {
-            commitRoleSwap(newSwapped)
-            return
-        }
-
         commitRoleSwap(newSwapped)
+        persistPrimaryRole(newSwapped)
     }
 
     /**
@@ -1805,7 +1813,28 @@ class DualScreenManager(
         scope.launch { preferencesRepository.setDisplayRoleOverride(override) }
         if (sessionStateStore.hasActiveSession()) return
         val resolved = DisplayRoleResolver(displayAffinityHelper, sessionStateStore).isSwapped
-        if (resolved != _isRolesSwapped.value) commitRoleSwap(resolved)
+        if (resolved == _isRolesSwapped.value) return
+        commitRoleSwap(resolved)
+        persistPrimaryRole(resolved)
+    }
+
+    private fun persistPrimaryRole(swapped: Boolean) {
+        val primaryDisplayId = displayAffinityHelper.getRoleDisplayIds(swapped)?.first ?: return
+        activityIndependentScope.launch {
+            val attached = com.nendo.argosy.util.ScreenCatalog(appContext).attachedScreens()
+            val primary = attached.find { it.displayId == primaryDisplayId } ?: return@launch
+            val keys = attached.map { it.key }
+            val setKey = com.nendo.argosy.domain.model.ScreenLayouts.setKeyOf(keys)
+            val stored = preferencesRepository.userPreferences.first().screenLayouts
+            val layout = stored.layoutFor(setKey)
+                ?: com.nendo.argosy.domain.model.ScreenLayout.defaultFor(
+                    keys,
+                    attached.filter { it.builtIn }.map { it.key }
+                )
+            val next = layout.withRole(primary.key, com.nendo.argosy.domain.model.ScreenRole.PRIMARY)
+            if (next.roles == layout.roles) return@launch
+            preferencesRepository.setScreenLayouts(stored.with(setKey, next))
+        }
     }
 
     private fun commitRoleSwap(newSwapped: Boolean) {

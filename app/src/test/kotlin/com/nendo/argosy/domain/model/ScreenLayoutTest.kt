@@ -61,6 +61,61 @@ class ScreenLayoutTest {
         assertEquals(BUILT_IN, next.presentationKey)
     }
 
+    /**
+     * A promotion trades roles rather than inventing one: the displaced primary takes the role the
+     * promoted screen gave up, so the arrangement keeps one screen per role instead of ending up
+     * with two presentation screens and no app target.
+     */
+    @Test
+    fun `promoting an app-target screen hands the old primary the app-target role`() {
+        val layout = layoutOf(
+            BUILT_IN to ScreenRole.PRIMARY,
+            SECOND to ScreenRole.PRESENTATION,
+            THIRD to ScreenRole.APP_TARGET
+        )
+        val next = layout.withRole(THIRD, ScreenRole.PRIMARY)
+        assertEquals(THIRD, next.primaryKey)
+        assertEquals(SECOND, next.presentationKey)
+        assertEquals(BUILT_IN, next.appTargetKey)
+    }
+
+    @Test
+    fun `promoting a disabled screen hands the old primary the off role`() {
+        val layout = layoutOf(
+            BUILT_IN to ScreenRole.PRIMARY,
+            SECOND to ScreenRole.PRESENTATION,
+            THIRD to ScreenRole.OFF
+        )
+        val next = layout.withRole(THIRD, ScreenRole.PRIMARY)
+        assertEquals(THIRD, next.primaryKey)
+        assertEquals(SECOND, next.presentationKey)
+        assertEquals(ScreenRole.OFF, next.roleFor(BUILT_IN))
+    }
+
+    @Test
+    fun `three screens keep one role each through a promotion`() {
+        val layout = layoutOf(
+            BUILT_IN to ScreenRole.PRIMARY,
+            SECOND to ScreenRole.PRESENTATION,
+            THIRD to ScreenRole.APP_TARGET
+        )
+        val next = layout.withRole(THIRD, ScreenRole.PRIMARY)
+        assertEquals(3, next.roles.size)
+        assertEquals(layout.roles.values.toSet(), next.roles.values.toSet())
+        assertEquals(3, next.roles.values.toSet().size)
+    }
+
+    @Test
+    fun `promoting an app-target screen is undone by promoting the screen it displaced`() {
+        val layout = layoutOf(
+            BUILT_IN to ScreenRole.PRIMARY,
+            SECOND to ScreenRole.PRESENTATION,
+            THIRD to ScreenRole.APP_TARGET
+        )
+        val round = layout.withRole(THIRD, ScreenRole.PRIMARY).withRole(BUILT_IN, ScreenRole.PRIMARY)
+        assertEquals(layout.roles, round.roles)
+    }
+
     @Test
     fun `claiming app target does not disturb the primary`() {
         val layout = layoutOf(
