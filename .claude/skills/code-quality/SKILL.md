@@ -33,10 +33,16 @@ Also delete any number or comparison that came out of a debugging session. "17x"
 Zero inline `//` inside function bodies. No single-line `/* */` or `/** */`
 anywhere, including declaration-level KDoc: the one-line block form is a rephrased
 `//`. A genuinely needed KDoc uses the multi-line block form above a non-obvious
-PUBLIC contract. Never on a private declaration; rename it instead.
+PUBLIC contract. Never on a private declaration; rename it instead. KDoc states the
+contract. It never narrates what the body does, argues for a design, or carries
+history.
 
-The `.claude/hooks/smell-guard.py` word list is a backstop that fires after the
-edit is written. Passing it is not the goal; not needing it is.
+Two backstops exist. For Claude sessions, `.claude/hooks/smell-guard.py` checks the
+word list after each edit is written. For every contributor, the blocking `rules` job
+in `.github/workflows/build.yml` runs `scripts/ci/agentic-smells.py` against
+`scripts/ci/smell-rules.json`, whose `inline-comment` and `disguised-block-comment`
+rules flag added lines on a pull request. Passing either is not the goal; not needing
+them is.
 
 ### 1. Input Handling (TV + Touch)
 All interactive UI components MUST have:
@@ -90,10 +96,10 @@ from the focused control; the inline affordance carries the interaction.
   Left/Right only.
 
 ### 3. Lazy List Scrolling
-Lists MUST use LazyColumn/LazyVerticalGrid, never regular Column/Row.
-- Enables efficient scrolling and memory management
-- Required for gamepad navigation patterns
-- No exceptions for "small" lists
+A scrolling collection of repeated items uses LazyColumn, LazyRow or LazyVerticalGrid.
+Column and Row stay the tools for fixed layout.
+- Lazy lists compose only visible items and keep scroll state for gamepad navigation
+- A repeated, scrolling collection gets a lazy list even when it is small today
 
 ---
 
@@ -114,7 +120,10 @@ and `scripts/ci/smell-rules.json` fails the build on one (AS-7).
   path component stays a literal. `indexOf` misses tend to `coerceAtLeast(0)` rather
   than throw, so getting this wrong resets a user's setting with nothing logged.
 - **Labels for `data/` and `domain/` types live in `ui/common/`** as extension
-  properties, following `ui/common/CompletionStatusUi.kt`. `R` never crosses inward.
+  properties, following `labelRes` in `ui/common/CompletionStatusUi.kt`. `R` never
+  crosses inward. That file is the label pattern only. Its `color` property still
+  holds raw `Color(0xFF...)` literals; completion colors come from
+  `ColorTokens.Domain.Completion`.
 - **Carriers are `@StringRes Int`, never `(Context) -> String`.** A lambda is not
   stability-safe under `compose_stability_config.conf`, and ViewModels outlive the
   activity recreation a locale change triggers.
@@ -192,23 +201,24 @@ this way while quiet screens worked. Rules:
   write pattern; use `update {}` and convert wide-window writers you touch.
 
 ### Compose Stability Contract (NON-NEGOTIABLE)
-`app/compose_stability_config.conf` declares `data.model.**`, `data.local.entity.**`,
-`ui.screens.**`, `ui.components.**`, and `ui.dualscreen.**` stable to the Compose
-compiler. This is what keeps cold compiles at ~4 min instead of 1h+ (StabilityInferencer
+`app/compose_stability_config.conf` declares four packages stable to the Compose
+compiler: `data.model.**`, `data.local.entity.**`, `domain.model.**` and `ui.**`.
+It also declares two single classes,
+`core.game.AchievementUi` and `hardware.CompanionInGameState`. This is what keeps cold compiles at ~4 min instead of 1h+ (StabilityInferencer
 recursion), but the compiler NO LONGER VERIFIES stability for covered classes -- we
 promise it. A violation does not crash or warn; it silently skips recompositions and
-the UI goes stale. Rules for ALL new/edited code in covered packages:
+the UI goes stale. Rules for ALL new/edited code in covered packages and classes:
 - State/model data classes: `val`-only, including constructor params. Never add `var`.
 - Collections in state are replaced via `copy(...)`, never mutated in place.
 - Never read a plain `var`/non-State property of a ViewModel or delegate inside
   composition. UI-visible data reaches composables ONLY via `StateFlow`/`collectAsState`
   or params.
-- A class that genuinely needs mutable fields must live OUTSIDE the covered packages,
-  or get an explicit exclusion note in the conf.
-- `ui.primitives` is NOT covered, despite hosting `FocusIndicators`, `InputGlyph` and
-  `ConfirmModal`. The compiler still infers stability there, so the val-only promise is
-  not load-bearing for those files - but do not read that as licence to put mutable
-  state in a primitive.
+- A data class that genuinely needs mutable fields must live OUTSIDE `ui/`; a `var` or
+  a `MutableList/Set/Map` in one under `ui/` fails `scripts/ci/stability_checks.py`, in
+  the write-time hook and in CI.
+- The whole of `ui/` is covered, `ui.primitives` included, so a new state class is
+  stable wherever it is written. Writing one outside `ui/` re-opens the inference
+  recursion that produces hour-long compiles.
 - If the conf file is absent on the current branch, these rules are still the house
   style; they just aren't load-bearing yet.
 
@@ -275,24 +285,22 @@ swaps are resolved at exactly two points -- never by choosing a different enum v
 
 #### CRITICAL: Never Hardcode Button Names
 
-**WRONG - Breaks when buttons are swapped:**
-```kotlin
-Text("Press X to add friend")
-Box { Text("X") }  // Custom button hint
-```
+**WRONG:** a string resource whose English names a button, or a `Text` that draws a
+button letter as a hand-built hint. Both show the wrong button once the user swaps
+them.
 
-**CORRECT - Uses FooterBar with InputButton enum:**
+**CORRECT:** `FooterBar` with the `InputButton` enum and a resource label.
 ```kotlin
 FooterBar(
     hints = listOf(
-        InputButton.Y to "Add Friend",
-        InputButton.A to "Select"
+        InputButton.Y to stringResource(R.string.social_friends_hint_favorite)
     )
 )
 ```
 
 `FooterBar` takes `hints: List<Pair<InputButton, String>>`; each hint's icon resolves the
-swap automatically via `toPainter()`.
+swap automatically via `toPainter()`. Labels come from `stringResource` with keys named
+`<area>_<component>_<role>`.
 
 #### Remove Compose Focus System
 
@@ -301,13 +309,12 @@ TV UI does NOT use Compose's built-in focus. Always use `clickableNoFocus`:
 ```kotlin
 import com.nendo.argosy.ui.util.clickableNoFocus
 
-// CORRECT - use clickableNoFocus
-Modifier.clickableNoFocus { /* action */ }
-Modifier.clickableNoFocus(enabled = isEnabled) { /* action */ }
-
-// WRONG - never use plain clickable()
-Modifier.clickable { /* action */ }  // Enables TV focus, breaks gamepad nav
+Modifier.clickableNoFocus { onItemClick(index) }
+Modifier.clickableNoFocus(enabled = isEnabled) { onItemClick(index) }
 ```
+
+Plain `Modifier.clickable { }` is the wrong form. It enables TV focus and breaks
+gamepad navigation.
 
 **Why `clickableNoFocus`?**
 
@@ -330,7 +337,6 @@ The `clickableNoFocus` extension (defined in `ui/util/Modifiers.kt`) disables Co
 Some Material3 components have built-in TV focus. Disable it:
 
 ```kotlin
-// Switch - disable focus
 Switch(
     checked = isEnabled,
     onCheckedChange = onToggle,
@@ -345,29 +351,39 @@ Other components that may need similar treatment: `Checkbox`, `RadioButton`, `Sl
 
 Use `.mod()` for wrapping, NOT `%` operator:
 ```kotlin
-// CORRECT - handles negative numbers
 val newIndex = (currentIndex + direction).mod(items.size)
-
-// WRONG - breaks on negative indices
-val newIndex = (currentIndex + direction) % items.size  // -1 % 5 = -1, not 4
 ```
+
+`%` keeps the sign of the left operand, so `-1 % 5` is `-1`, not `4`, and wrapping
+backwards past the first item breaks.
 
 #### Dual Input Support (Touch + Controller)
 
-Every interactive element needs BOTH:
+Every interactive element needs BOTH. Touch goes through `clickableNoFocus`:
 ```kotlin
-// Touch support - use clickableNoFocus
-Modifier.clickableNoFocus { onItemClick(index) }
+Modifier.clickableNoFocus { viewModel.selectItem(index) }
+```
 
-// Controller support
-class MyInputHandler : InputHandler {
+The controller goes through an `InputHandler` that moves a ViewModel-owned focus index:
+```kotlin
+class MyInputHandler(private val viewModel: MyViewModel) : InputHandler {
     override fun onConfirm(): InputResult {
-        onItemClick(focusedIndex)
+        viewModel.selectItem(viewModel.uiState.value.focusedIndex)
         return InputResult.HANDLED
     }
+
     override fun onRight(): InputResult {
-        focusedIndex = (focusedIndex + 1).mod(items.size)
+        viewModel.moveFocus(1)
         return InputResult.HANDLED
+    }
+}
+```
+
+The ViewModel owns the wrap:
+```kotlin
+fun moveFocus(delta: Int) {
+    _uiState.update { state ->
+        state.copy(focusedIndex = (state.focusedIndex + delta).mod(state.items.size))
     }
 }
 ```
@@ -429,7 +445,10 @@ class MyInputHandler : InputHandler {
   - Light mode: `Color.White.copy(alpha = X)`
 - Semantic colors via `LocalLauncherTheme.current.semanticColors`:
   - `warning`, `success`, `error` for status indicators
-- Never hardcode colors - always derive from theme
+- V2 primitives read their surface and text ramp from `LocalArgosyTheme`
+  (`ArgosyThemeTokens` in `ui/theme/ArgosyTokens.kt`)
+- Never hardcode colors - always derive from theme. New color values go through the
+  `design-tokens` skill
 
 ## Architecture Rules
 
@@ -462,6 +481,7 @@ UI (ui/) --> Domain (domain/) --> Data (data/)
 - `domain/usecase/libretro/LibretroMigrationUseCase.kt` (`android.util.Log`)
 - `domain/usecase/music/MeasureTrackLoudnessUseCase.kt` (`android.media.AudioFormat`, `MediaCodec`, `MediaExtractor`, `MediaFormat`, `android.util.Log`)
 - `domain/usecase/save/RestoreCachedSaveUseCase.kt` (`android.util.Log`)
+- `domain/usecase/state/GetUnifiedStatesUseCase.kt` (`android.util.Log`)
 - `domain/usecase/state/PreLaunchStateSyncUseCase.kt` (`android.util.Log`)
 - `domain/usecase/state/RestoreCachedStatesUseCase.kt` (`android.util.Log`)
 - `domain/usecase/state/SyncStatesOnSessionEndUseCase.kt` (`android.util.Log`)
@@ -478,7 +498,6 @@ the file, not just the import block.
 - `ui/screens/gamedetail/delegates/AchievementDelegate.kt` (`AchievementDao`)
 - `ui/screens/gamedetail/delegates/PerGameSettingsDelegate.kt` (`EmulatorConfigDao`)
 - `ui/screens/gamedetail/delegates/SaveManagementDelegate.kt` (`EmulatorSaveConfigDao`, `SaveSyncDao`)
-- `ui/dualscreen/gamedetail/DualGameDetailViewModel.kt` (`EmulatorConfigDao`)
 - `ui/ArgosyViewModel.kt` (`PendingConflictDao`, fully-qualified constructor param)
 - `ui/screens/gamedetail/delegates/DownloadDelegate.kt` (`GameFileDao`, fully-qualified constructor param)
 - `ui/screens/settings/SettingsInitRouter.kt` (`vm.saveCacheDao.countNeedingRemoteSync()`, reached through SettingsViewModel)
@@ -489,13 +508,12 @@ ViewModels and delegates in `ui/` MUST access data through repositories, never D
 
 | DAO | Repository | Notes |
 |-----|-----------|-------|
-| `GameDao` | `GameRepository` | Available everywhere, including dual-screen VMs (via `DualScreenManagerHolder`) |
+| `GameDao` | `GameRepository` | Available everywhere, including the companion (via `DualScreenManagerHolder`) |
 | `PlatformDao` | `PlatformRepository` | Simple, works everywhere |
 | `CollectionDao` | `CollectionRepository` | Simple, works everywhere |
 
-`DualHomeViewModel`, `DualGameDetailViewModel`, and `SecondaryHomeViewModel` all take
-`GameRepository` in their constructors -- there is no dual-screen DAO exception anymore.
-Remaining direct DAO use in `ui/` is tracked in the known-debt list above; do not add to it.
+There is no dual-screen DAO exception. Remaining direct DAO use in `ui/` is tracked in the
+known-debt list above; do not add to it.
 
 When adding new DAO methods that UI needs: add the method to the repository, not the ViewModel.
 
@@ -527,13 +545,12 @@ When modifying DAOs, entities, foreign keys, or database queries:
 Every `items()`, `itemsIndexed()`, and `LazyVerticalGrid` call MUST have a `key` parameter with a stable, unique identifier:
 
 ```kotlin
-// CORRECT
 itemsIndexed(games, key = { _, game -> game.id }) { index, game -> ... }
 items(apps.size, key = { apps[it].packageName }) { index -> ... }
-
-// WRONG - causes unnecessary recomposition
-itemsIndexed(games) { index, game -> ... }
 ```
+
+A call without `key`, such as `itemsIndexed(games) { index, game -> ... }`, causes
+unnecessary recomposition.
 
 ### Compose Performance
 
@@ -547,38 +564,38 @@ Before duplicating code, check for existing shared utilities:
 
 | Pattern | Shared Utility | Location |
 |---------|---------------|----------|
-| Long-press scale animation | `LongPressAnimation` | `ui/common/LongPressAnimation.kt` |
+| Long-press scale animation | `rememberLongPressAnimationState`, `Modifier.longPressGraphicsLayer`, `Modifier.longPressGesture` | `ui/common/LongPressAnimation.kt` |
 | GameEntity -> UI model | Check existing `toUi()` extensions | Model files or `*Mapper.kt` |
 | PlatformEntity -> UI model | `toHomePlatformUi()` | `ui/screens/home/HomeModels.kt` |
 | Modal dialogs | `Modal`, `CenteredModal` | `ui/components/` |
 | Gradient extraction | `GradientColorExtractor` | `ui/common/GradientColorExtractor.kt` |
 | Completion status icons/colors | Extension properties | `ui/common/CompletionStatusUi.kt` |
 
-### Dual-Screen (Companion) ViewModel Construction
+### Dual-Screen (Companion) Dependencies
 
-The companion (dual-screen secondary display) runs in the SAME process as the launcher --
-there is no `:companion` process. Its ViewModels are still manually constructed (not
-Hilt-injected at the call site) in `SecondaryHomeActivity` (`hardware/SecondaryHomeActivity.kt`),
-but their dependencies come from `DualScreenManagerHolder.instance` -- e.g.
-`dsm.gameRepository`, `dsm.platformRepository`, `dsm.collectionRepository`,
-`dsm.displayAffinityHelper`. This means:
-- Any dependency exposed on `DualScreenManager` is available, including `GameRepository`
-- `SecondaryHomeViewModel` is `@HiltViewModel @Inject` (and is also constructed manually
-  in `SecondaryHomeActivity` from `dsm` deps)
-- When adding a dependency to a dual-screen VM, expose it on `DualScreenManager` and
-  update every manual construction site (`SecondaryHomeActivity`, `DualScreenManager`)
+The companion (dual-screen secondary display) runs in the SAME process as the launcher.
+There is no `:companion` process and no companion ViewModel. `SecondaryHomeActivity`
+(`hardware/SecondaryHomeActivity.kt`) reads every dependency from
+`DualScreenManagerHolder.instance`, for example `dsm.preferencesRepository`,
+`dsm.imageCacheManager` and `dsm.sessionStateStore`. Composables under `ui/dualscreen/`
+reach the same instance (see `PresentOnCompanion.kt`).
+- Any dependency exposed on `DualScreenManager` is available to the companion, including
+  `GameRepository`
+- `MainActivity` constructs `DualScreenManager` by hand, passing its own injected fields
+- To give the companion a new dependency, add the constructor parameter to
+  `DualScreenManager` and pass it at the construction site in `MainActivity`
 
 ## Completion Criteria
 
 A feature is NOT done until all of these are true:
 
 ### Mandatory (blocking)
-- [ ] Touch input works (clickable with onClick)
-- [ ] Controller input works (InputHandler with D-pad + A/B buttons)
-- [ ] No Compose focus ring (indication = null on ALL clickables)
+- [ ] Touch input works (`clickableNoFocus` on every interactive element)
+- [ ] Controller input works (InputHandler with D-pad + A/B buttons, ViewModel-owned focus index)
+- [ ] No plain `clickable` anywhere; `clickableNoFocus` removes the Compose focus ring and indication
 - [ ] Index wrapping uses `.mod()` not `%`
-- [ ] Footer hints updated (following priority tiers)
-- [ ] Lists use LazyColumn/LazyVerticalGrid
+- [ ] Footer hints updated (non-obvious hints only)
+- [ ] Scrolling collections of repeated items use LazyColumn/LazyRow/LazyVerticalGrid
 - [ ] Error handling is explicit (no silent failures)
 - [ ] Every user-facing string is a resource id; no label doubles as a stored value
 - [ ] Builds without errors

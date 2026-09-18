@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Argosy agentic-smell check. Flags house-rule violations on ADDED lines only,
-so pre-existing code is never blamed. Driven by scripts/ci/smell-rules.json.
+so pre-existing code is never blamed. Driven by scripts/ci/smell-rules.json and
+the KDoc and block-comment checks in scripts/ci/comment_checks.py.
 
 Usage:
   agentic-smells.py --range origin/main...HEAD   # CI: diff a git range
@@ -9,6 +10,7 @@ Usage:
 Exit 0 when clean, 1 when findings exist, 0 on internal errors (fails open)."""
 
 import argparse
+import importlib
 import json
 import os
 import re
@@ -86,6 +88,56 @@ def evaluate(added, rules):
     return findings
 
 
+def load_ci_module(name):
+    ci_dir = os.path.dirname(os.path.abspath(__file__))
+    if ci_dir not in sys.path:
+        sys.path.insert(0, ci_dir)
+    return importlib.import_module(name)
+
+
+def load_comment_checks():
+    return load_ci_module("comment_checks")
+
+
+def file_lines(path, rows, root):
+    try:
+        with open(os.path.join(root, path), errors="replace") as f:
+            lines = f.read().splitlines()
+        if all(n - 1 < len(lines) and lines[n - 1] == text for n, text in rows.items()):
+            return lines
+    except OSError:
+        pass
+    sparse = [None] * (max(rows) + 1)
+    for n, text in rows.items():
+        sparse[n - 1] = text
+    return sparse
+
+
+def evaluate_comments(added, root):
+    comment_checks = load_comment_checks()
+    return evaluate_module(comment_checks, comment_checks.comment_findings, added, root)
+
+
+def evaluate_stability(added, root):
+    stability_checks = load_ci_module("stability_checks")
+    return evaluate_module(stability_checks, stability_checks.stability_findings, added, root)
+
+
+def evaluate_module(module, run, added, root):
+    by_path = {}
+    for path, lineno, text in added:
+        if matches_any(path, module.PATHS):
+            by_path.setdefault(path, {})[lineno] = text
+    findings = []
+    for path, rows in by_path.items():
+        lines = file_lines(path, rows, root)
+        for rule_id, message, snippet, index in run(lines, lambda i: (i + 1) in rows):
+            summary = module.RULES[rule_id][0]
+            rule = {"id": rule_id, "summary": summary, "message": message}
+            findings.append((rule, path, index + 1, snippet))
+    return findings
+
+
 def report(findings):
     by_rule = {}
     for rule, path, lineno, text in findings:
@@ -128,7 +180,16 @@ def main():
     else:
         parser.error("one of --range or --diff-file is required")
 
-    findings = evaluate(parse_added_with_lines(diff_text), rules)
+    added = parse_added_with_lines(diff_text)
+    findings = evaluate(added, rules)
+    try:
+        findings += evaluate_comments(added, root)
+    except Exception as e:
+        print("smell check: comment checks failed ({}), skipping them".format(e))
+    try:
+        findings += evaluate_stability(added, root)
+    except Exception as e:
+        print("smell check: stability checks failed ({}), skipping them".format(e))
     if not findings:
         print("smell check: clean")
         sys.exit(0)

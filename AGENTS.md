@@ -23,12 +23,15 @@ exception is legitimate, and the boundary where it becomes a violation again.
   ~300 then extract services; routers split method routing (see
   GameDetailViewModel + delegates/, SaveSyncRepository + services).
 - Compose stability contract: app/compose_stability_config.conf declares
-  six packages stable (data.model.**, data.local.entity.**, domain.model.**,
-  ui.screens.**, ui.components.**, ui.dualscreen.**) plus two single classes
-  (core.game.AchievementUi, hardware.CompanionInGameState). That is not all of
-  ui/. ui.primitives is NOT covered despite holding FocusIndicators, InputGlyph
-  and ConfirmModal. val-only state in covered packages and classes; violations
-  silently skip recomposition.
+  data.model.**, data.local.entity.**, domain.model.** and the whole of ui.**
+  stable, plus core.game.AchievementUi and hardware.CompanionInGameState. Every
+  data class in those packages is val-only; a var or an in-place-mutated
+  collection silently skips recomposition, and scripts/ci/stability_checks.py
+  fails the build on one under ui/. ViewModels, delegates and holders are not
+  data classes and keep their vars, which reach composition only through
+  StateFlow. A state class written outside the covered packages re-opens the
+  StabilityInferencer recursion that makes compiles take hours, so put new UI
+  state under ui/.
   Non-negotiable.
 - Settings chain: DataStore key -> domain prefs repo -> UserPreferences
   aggregation -> SettingsModels state -> SettingsInitRouter hydrate -> owning
