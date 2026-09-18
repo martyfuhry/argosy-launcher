@@ -91,6 +91,7 @@ import com.nendo.argosy.ui.screens.settings.sections.AudioSection
 import com.nendo.argosy.ui.screens.settings.sections.BoxArtSection
 import com.nendo.argosy.ui.screens.settings.sections.DisplaysSection
 import com.nendo.argosy.ui.screens.settings.sections.ScreensSection
+import com.nendo.argosy.ui.screens.settings.sections.ManagedInstallersSection
 import com.nendo.argosy.ui.screens.settings.sections.NavigationSection
 import com.nendo.argosy.ui.screens.settings.sections.BuiltinEmulatorSection
 import com.nendo.argosy.ui.screens.settings.sections.EmulatorsSection
@@ -663,6 +664,7 @@ fun SettingsScreen(
                     SettingsSection.SCREENS -> ScreensSection(uiState, viewModel)
                     SettingsSection.AMBIENT_LED -> AmbientLedSection(uiState, viewModel)
                     SettingsSection.NAVIGATION -> NavigationSection(uiState, viewModel)
+                    SettingsSection.MANAGED_INSTALLERS -> ManagedInstallersSection(uiState, viewModel)
                     SettingsSection.BUILTIN_EMULATOR -> BuiltinEmulatorSection(uiState, viewModel)
                     SettingsSection.PLATFORMS -> EmulatorsSection(
                         uiState = uiState,
@@ -1456,6 +1458,7 @@ private fun settingsSectionTitle(uiState: SettingsUiState): String = when (uiSta
     SettingsSection.SCREENS -> stringResource(R.string.settings_shell_header_screens)
     SettingsSection.AMBIENT_LED -> stringResource(R.string.settings_shell_header_ambient_led)
     SettingsSection.NAVIGATION -> stringResource(R.string.settings_shell_header_navigation)
+    SettingsSection.MANAGED_INSTALLERS -> stringResource(R.string.settings_shell_header_installers)
     SettingsSection.PLATFORMS -> stringResource(R.string.settings_shell_header_platforms)
     SettingsSection.BUILTIN_EMULATOR -> stringResource(R.string.settings_shell_header_builtin_emulator)
     SettingsSection.PLATFORM_DETAIL -> {

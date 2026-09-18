@@ -213,4 +213,7 @@
         <item quantity="one">+%1$d autre</item>
         <item quantity="other">+%1$d autres</item>
     </plurals>
+
+    <string name="notif_new_display_title">Nouvel écran détecté</string>
+    <string name="notif_new_display_action">Configurer les écrans</string>
 </resources>

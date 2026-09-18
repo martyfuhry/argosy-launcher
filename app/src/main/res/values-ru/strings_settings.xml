@@ -14,6 +14,8 @@
     <string name="settings_main_interface_subtitle">Плотность сетки, масштаб, главный экран</string>
     <string name="settings_main_navigation_title">Навигация</string>
     <string name="settings_main_navigation_subtitle">Раскладка кнопок, вибрация</string>
+    <string name="settings_main_installers_title">Управляемые установщики</string>
+    <string name="settings_main_installers_subtitle">Установка и обновление приложений из релизов GitHub</string>
     <string name="settings_main_audio_title">Аудио</string>
     <string name="settings_main_audio_subtitle">Звуки и музыка</string>
     <string name="settings_main_displays_title">Экраны</string>
@@ -118,6 +120,28 @@
     <string name="settings_navigation_section_controller">Контроллер</string>
     <string name="settings_navigation_section_feedback">Отклик</string>
     <string name="settings_navigation_section_menus">Меню</string>
+    <string name="settings_shell_header_installers">УПРАВЛЯЕМЫЕ УСТАНОВЩИКИ</string>
+    <string name="settings_installers_add_title">Добавить репозиторий</string>
+    <string name="settings_installers_add_subtitle">Вставьте ссылку на репозиторий GitHub</string>
+    <string name="settings_installers_add_modal_title">Добавить репозиторий</string>
+    <string name="settings_installers_add_modal_label">Ссылка GitHub</string>
+    <string name="settings_installers_add_error_invalid">Это не ссылка на репозиторий GitHub</string>
+    <string name="settings_installers_add_error_duplicate">Этот репозиторий уже в списке</string>
+    <string name="settings_installers_subtitle_installed">Установлено: %1$s</string>
+    <string name="settings_installers_subtitle_update">Доступно обновление: %1$s</string>
+    <string name="settings_installers_badge_update">Обновить</string>
+    <string name="settings_installers_status_checking">Поиск версии</string>
+    <string name="settings_installers_status_downloading">Загрузка %1$d%%</string>
+    <string name="settings_installers_status_installing">Ожидание установщика</string>
+    <string name="settings_installers_error_no_release">Версия не найдена</string>
+    <string name="settings_installers_error_no_apk">В этой версии нет пакета Android</string>
+    <string name="settings_installers_error_download">Не удалось загрузить</string>
+    <string name="settings_installers_error_rate_limited">GitHub ограничивает запросы. Повторите позже</string>
+    <string name="settings_installers_error_not_found">Не удалось открыть этот репозиторий</string>
+    <string name="settings_installers_ime_enable_title">Включить в настройках системы</string>
+    <string name="settings_installers_ime_enable_subtitle">Android разрешает включить клавиатуру только в настройках системы</string>
+    <string name="settings_installers_ime_select_title">Выбрать активную клавиатуру</string>
+    <string name="settings_installers_ime_select_subtitle">Назначьте её основной клавиатурой</string>
 
     <string name="settings_navigation_controller_layout_title">Раскладка контроллера</string>
     <string name="settings_navigation_controller_layout_auto">Авто</string>

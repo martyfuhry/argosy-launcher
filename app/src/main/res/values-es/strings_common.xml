@@ -869,4 +869,5 @@
 
     <string name="home_grid_local_video_row_title">Elige un video en este dispositivo</string>
     <string name="home_grid_local_video_row_subtitle">Se reproduce directamente desde tu almacenamiento</string>
+    <string name="ui_quick_settings_swap_displays">Intercambiar pantallas</string>
 </resources>

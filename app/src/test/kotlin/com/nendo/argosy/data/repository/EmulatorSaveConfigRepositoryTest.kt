@@ -152,4 +152,19 @@ class EmulatorSaveConfigRepositoryTest {
         assertEquals(SHARED, row.savePathPattern)
         assertNull(row.selectedMemcardPath)
     }
+
+    @Test
+    fun `a family base never borrows an unrelated emulator's folder`() = runTest {
+        coEvery { dao.getByEmulator("eden") } returns null
+        coEvery { dao.getAll() } returns listOf(
+            EmulatorSaveConfigEntity(
+                emulatorId = "citron",
+                savePathPattern = "/sd/citron-saves",
+                isAutoDetected = false,
+                isUserOverride = true
+            )
+        )
+
+        assertNull(repo.resolveUserSavePath("eden", "switch"))
+    }
 }

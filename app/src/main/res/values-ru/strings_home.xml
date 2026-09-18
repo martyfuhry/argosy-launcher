@@ -176,4 +176,13 @@
     <string name="home_media_season_local_all">Все %1$d на этом устройстве</string>
     <string name="home_media_season_local_partial">%1$d из %2$d на этом устройстве</string>
     <string name="home_media_download_size_gigabytes">%1$.1f GB</string>
+
+    <string name="home_companion_fact_developer">Разработчик</string>
+    <string name="home_companion_fact_genre">Жанр</string>
+    <string name="home_companion_fact_released">Выход</string>
+    <string name="home_companion_hint_details">Подробности</string>
+    <string name="home_companion_hint_download">Скачать</string>
+    <string name="home_companion_hint_favorite">В избранное</string>
+    <string name="home_companion_hint_play">Играть</string>
+    <string name="home_companion_hint_unfavorite">Из избранного</string>
 </resources>

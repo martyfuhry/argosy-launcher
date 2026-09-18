@@ -23,7 +23,10 @@ import com.nendo.argosy.ui.screens.settings.sections.biosItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.biosMaxFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.BoxArtItem
 import com.nendo.argosy.ui.screens.settings.sections.AudioItem
+import com.nendo.argosy.ui.screens.settings.sections.InstallerItem
 import com.nendo.argosy.ui.screens.settings.sections.NavigationItem
+import com.nendo.argosy.ui.screens.settings.sections.installerItemAtFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.installersMaxFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.DisplaysItem
 import com.nendo.argosy.ui.screens.settings.sections.DisplaysLayoutState
 import com.nendo.argosy.ui.screens.settings.sections.ControllerGripItem
@@ -152,9 +155,11 @@ internal fun routeConfirm(vm: SettingsViewModel): InputResult {
     val state = vm._uiState.value
     return when (state.currentSection) {
         SettingsSection.MAIN -> {
-            val item = mainSettingsItemAtFocusIndex(state.focusedIndex)
+            val item = mainSettingsItemAtFocusIndex(state.focusedIndex, state.controls)
             when (item) {
                 is MainSettingsItem.Header -> Unit
+                MainSettingsItem.ManagedInstallers ->
+                    vm.navigateToSection(SettingsSection.MANAGED_INSTALLERS)
                 MainSettingsItem.DeviceSettings -> vm.viewModelScope.launch { vm._openDeviceSettingsEvent.emit(Unit) }
                 MainSettingsItem.RomM -> vm.navigateToSection(SettingsSection.ROMM)
                 MainSettingsItem.Saves -> vm.navigateToSection(SettingsSection.SAVES)
@@ -291,6 +296,32 @@ internal fun routeConfirm(vm: SettingsViewModel): InputResult {
         }
         SettingsSection.CORE_OPTIONS -> InputResult.HANDLED
         SettingsSection.SOCIAL -> vm.handleSocialConfirm(state)
+        SettingsSection.MANAGED_INSTALLERS -> routeInstallersConfirm(vm, state)
+    }
+}
+
+private fun routeInstallersConfirm(vm: SettingsViewModel, state: SettingsUiState): InputResult {
+    val installers = state.managedInstallers
+    if (installers.busyId != null) return InputResult.HANDLED
+
+    return when (val item = installerItemAtFocusIndex(state.focusedIndex, installers)) {
+        InstallerItem.AddRepo -> {
+            vm.openInstallerAddModal()
+            InputResult.handled(SoundType.OPEN_MODAL)
+        }
+        is InstallerItem.Entry -> {
+            vm.installManagedInstaller(item.row.id)
+            InputResult.handled(SoundType.SELECT)
+        }
+        is InstallerItem.ImeEnable -> {
+            vm.openInstallerImeSettings()
+            InputResult.handled(SoundType.SELECT)
+        }
+        is InstallerItem.ImeSelect -> {
+            vm.showInstallerImePicker()
+            InputResult.handled(SoundType.SELECT)
+        }
+        null -> InputResult.HANDLED
     }
 }
 
@@ -1233,7 +1264,7 @@ private fun computeMaxFocusIndex(
     state: SettingsUiState,
     isConnected: Boolean
 ): Int = when (state.currentSection) {
-    SettingsSection.MAIN -> mainSettingsMaxFocusIndex()
+    SettingsSection.MAIN -> mainSettingsMaxFocusIndex(state.controls)
     SettingsSection.ACCOUNTS -> if (state.accounts.pairing.active || state.accounts.switchInProgress) {
         0
     } else {
@@ -1285,6 +1316,7 @@ private fun computeMaxFocusIndex(
     SettingsSection.AMBIENT_LED -> ambientLedMaxFocusIndex(state.display)
     SettingsSection.SCREENS -> screensMaxFocusIndex(state.display.screens)
     SettingsSection.NAVIGATION -> navigationMaxFocusIndex(state.controls)
+    SettingsSection.MANAGED_INSTALLERS -> installersMaxFocusIndex(state.managedInstallers)
     SettingsSection.PLATFORMS -> emulatorsMaxFocusIndex(state.emulators.platforms)
     SettingsSection.BUILTIN_EMULATOR -> when {
         !state.emulators.builtinLibretroEnabled -> BuiltinEmulatorItem.ENABLE.focusIndex

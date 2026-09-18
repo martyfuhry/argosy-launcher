@@ -172,4 +172,13 @@
     <string name="home_media_season_local_all">Los %1$d en este dispositivo</string>
     <string name="home_media_season_local_partial">%1$d de %2$d en este dispositivo</string>
     <string name="home_media_download_size_gigabytes">%1$.1f GB</string>
+
+    <string name="home_companion_fact_developer">Desarrollador</string>
+    <string name="home_companion_fact_genre">Género</string>
+    <string name="home_companion_fact_released">Lanzamiento</string>
+    <string name="home_companion_hint_details">Detalles</string>
+    <string name="home_companion_hint_download">Descargar</string>
+    <string name="home_companion_hint_favorite">Añadir a favoritos</string>
+    <string name="home_companion_hint_play">Jugar</string>
+    <string name="home_companion_hint_unfavorite">Quitar de favoritos</string>
 </resources>

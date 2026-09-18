@@ -841,4 +841,5 @@
 
     <string name="home_grid_local_video_row_title">इस डिवाइस पर एक वीडियो चुनें</string>
     <string name="home_grid_local_video_row_subtitle">सीधे आपके स्टोरेज से चलता है</string>
+    <string name="ui_quick_settings_swap_displays">डिस्प्ले बदलें</string>
 </resources>

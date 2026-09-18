@@ -222,4 +222,7 @@
         <item quantity="many">+ещё %1$d</item>
         <item quantity="other">+ещё %1$d</item>
     </plurals>
+
+    <string name="notif_new_display_title">Обнаружен новый экран</string>
+    <string name="notif_new_display_action">Настроить экраны</string>
 </resources>

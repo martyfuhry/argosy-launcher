@@ -170,4 +170,16 @@
         <item quantity="many">%d résultats</item>
         <item quantity="other">%d résultats</item>
     </plurals>
+
+    <string name="library_showcase_all_games">Tous les jeux</string>
+    <string name="library_showcase_fact_achievements">Succès</string>
+    <string name="library_showcase_fact_downloaded">Téléchargés</string>
+    <string name="library_showcase_fact_games">Jeux</string>
+    <string name="library_showcase_fact_installed">Installés</string>
+    <string name="library_showcase_fact_movies">Films</string>
+    <string name="library_showcase_fact_play_time">Temps de jeu</string>
+    <string name="library_showcase_fact_shows">Séries</string>
+    <string name="library_showcase_fact_watched">Vus</string>
+    <string name="library_showcase_play_time_hours">%1$d h</string>
+    <string name="library_showcase_play_time_minutes">%1$d min</string>
 </resources>

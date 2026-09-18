@@ -12,6 +12,8 @@
     <string name="settings_main_interface_subtitle">格線密度、縮放、主畫面</string>
     <string name="settings_main_navigation_title">導覽</string>
     <string name="settings_main_navigation_subtitle">按鍵配置、震動回饋</string>
+    <string name="settings_main_installers_title">受管安裝程式</string>
+    <string name="settings_main_installers_subtitle">從 GitHub 版本安裝與更新應用程式</string>
     <string name="settings_main_audio_title">音訊</string>
     <string name="settings_main_audio_subtitle">音效與音樂</string>
     <string name="settings_main_displays_title">顯示器</string>
@@ -102,6 +104,28 @@
     <string name="settings_navigation_section_controller">控制器</string>
     <string name="settings_navigation_section_feedback">回饋</string>
     <string name="settings_navigation_section_menus">選單</string>
+    <string name="settings_shell_header_installers">受管安裝程式</string>
+    <string name="settings_installers_add_title">新增儲存庫</string>
+    <string name="settings_installers_add_subtitle">貼上 GitHub 儲存庫連結</string>
+    <string name="settings_installers_add_modal_title">新增儲存庫</string>
+    <string name="settings_installers_add_modal_label">GitHub 連結</string>
+    <string name="settings_installers_add_error_invalid">這不是 GitHub 儲存庫連結</string>
+    <string name="settings_installers_add_error_duplicate">此儲存庫已在清單中</string>
+    <string name="settings_installers_subtitle_installed">已安裝：%1$s</string>
+    <string name="settings_installers_subtitle_update">有可用更新：%1$s</string>
+    <string name="settings_installers_badge_update">更新</string>
+    <string name="settings_installers_status_checking">正在尋找版本</string>
+    <string name="settings_installers_status_downloading">正在下載 %1$d%%</string>
+    <string name="settings_installers_status_installing">等待安裝程式</string>
+    <string name="settings_installers_error_no_release">找不到版本</string>
+    <string name="settings_installers_error_no_apk">此版本不含 Android 安裝包</string>
+    <string name="settings_installers_error_download">下載失敗</string>
+    <string name="settings_installers_error_rate_limited">GitHub 正在限制請求，請稍後再試</string>
+    <string name="settings_installers_error_not_found">無法存取此儲存庫</string>
+    <string name="settings_installers_ime_enable_title">在系統設定中啟用</string>
+    <string name="settings_installers_ime_enable_subtitle">Android 要求在系統設定中啟用鍵盤</string>
+    <string name="settings_installers_ime_select_title">選擇目前鍵盤</string>
+    <string name="settings_installers_ime_select_subtitle">將它設為輸入鍵盤</string>
 
     <string name="settings_navigation_controller_layout_title">控制器按鍵配置</string>
     <string name="settings_navigation_controller_layout_auto">自動</string>

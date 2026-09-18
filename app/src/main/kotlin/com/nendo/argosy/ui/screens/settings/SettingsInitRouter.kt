@@ -50,6 +50,10 @@ internal fun routeObserveDelegateStates(vm: SettingsViewModel) {
         vm._uiState.update { it.copy(controls = controls) }
     }.launchIn(vm.viewModelScope)
 
+    vm.installerDelegate.state.onEach { installers ->
+        vm._uiState.update { it.copy(managedInstallers = installers) }
+    }.launchIn(vm.viewModelScope)
+
     vm.soundsDelegate.state.onEach { sounds ->
         vm._uiState.update { it.copy(sounds = sounds) }
     }.launchIn(vm.viewModelScope)

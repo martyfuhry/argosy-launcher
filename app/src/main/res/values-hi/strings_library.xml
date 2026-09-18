@@ -160,4 +160,16 @@
         <item quantity="one">%d परिणाम</item>
         <item quantity="other">%d परिणाम</item>
     </plurals>
+
+    <string name="library_showcase_all_games">सभी गेम</string>
+    <string name="library_showcase_fact_achievements">उपलब्धियाँ</string>
+    <string name="library_showcase_fact_downloaded">डाउनलोड</string>
+    <string name="library_showcase_fact_games">गेम</string>
+    <string name="library_showcase_fact_installed">इंस्टॉल</string>
+    <string name="library_showcase_fact_movies">फ़िल्में</string>
+    <string name="library_showcase_fact_play_time">खेलने का समय</string>
+    <string name="library_showcase_fact_shows">शो</string>
+    <string name="library_showcase_fact_watched">देखे गए</string>
+    <string name="library_showcase_play_time_hours">%1$d घं</string>
+    <string name="library_showcase_play_time_minutes">%1$d मि</string>
 </resources>

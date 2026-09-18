@@ -25,6 +25,8 @@
     <string name="settings_main_interface_subtitle">Rasterdichte, Skalierung, Startbildschirm</string>
     <string name="settings_main_navigation_title">Navigation</string>
     <string name="settings_main_navigation_subtitle">Tastenbelegung, haptisches Feedback</string>
+    <string name="settings_main_installers_title">Verwaltete Installer</string>
+    <string name="settings_main_installers_subtitle">Apps aus GitHub-Releases installieren und aktualisieren</string>
     <string name="settings_main_audio_title">Audio</string>
     <string name="settings_main_audio_subtitle">Sounds und Musik</string>
     <string name="settings_main_displays_title">Bildschirme</string>
@@ -125,6 +127,28 @@
     <string name="settings_navigation_section_controller">Controller</string>
     <string name="settings_navigation_section_feedback">Feedback</string>
     <string name="settings_navigation_section_menus">Menüs</string>
+    <string name="settings_shell_header_installers">VERWALTETE INSTALLER</string>
+    <string name="settings_installers_add_title">Repository hinzufügen</string>
+    <string name="settings_installers_add_subtitle">Einen GitHub-Repository-Link einfügen</string>
+    <string name="settings_installers_add_modal_title">Repository hinzufügen</string>
+    <string name="settings_installers_add_modal_label">GitHub-Link</string>
+    <string name="settings_installers_add_error_invalid">Das ist kein GitHub-Repository-Link</string>
+    <string name="settings_installers_add_error_duplicate">Dieses Repository steht bereits in der Liste</string>
+    <string name="settings_installers_subtitle_installed">Installiert: %1$s</string>
+    <string name="settings_installers_subtitle_update">Update verfügbar: %1$s</string>
+    <string name="settings_installers_badge_update">Update</string>
+    <string name="settings_installers_status_checking">Version wird gesucht</string>
+    <string name="settings_installers_status_downloading">Wird heruntergeladen: %1$d%%</string>
+    <string name="settings_installers_status_installing">Warten auf das Installationsprogramm</string>
+    <string name="settings_installers_error_no_release">Keine Version gefunden</string>
+    <string name="settings_installers_error_no_apk">Diese Version enthält kein Android-Paket</string>
+    <string name="settings_installers_error_download">Download fehlgeschlagen</string>
+    <string name="settings_installers_error_rate_limited">GitHub begrenzt die Anfragen. Später erneut versuchen</string>
+    <string name="settings_installers_error_not_found">Dieses Repository ist nicht erreichbar</string>
+    <string name="settings_installers_ime_enable_title">In den Systemeinstellungen aktivieren</string>
+    <string name="settings_installers_ime_enable_subtitle">Android verlangt, dass die Tastatur in den Systemeinstellungen aktiviert wird</string>
+    <string name="settings_installers_ime_select_title">Aktive Tastatur wählen</string>
+    <string name="settings_installers_ime_select_subtitle">Sie als tippende Tastatur auswählen</string>
 
     <string name="settings_navigation_controller_layout_title">Controller-Layout</string>
     <string name="settings_navigation_controller_layout_auto">Auto</string>

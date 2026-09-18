@@ -789,4 +789,5 @@
 
     <string name="home_grid_local_video_row_title">选择此设备上的视频</string>
     <string name="home_grid_local_video_row_subtitle">直接从存储中播放</string>
+    <string name="ui_quick_settings_swap_displays">交换显示屏</string>
 </resources>

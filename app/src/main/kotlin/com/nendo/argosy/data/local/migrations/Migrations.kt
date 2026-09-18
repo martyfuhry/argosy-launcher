@@ -3607,3 +3607,29 @@ object Migration_189_190 : Migration(189, 190) {
         db.execSQL("ALTER TABLE `play_sessions` ADD COLUMN `rommSessionId` INTEGER")
     }
 }
+
+object Migration_190_191 : Migration(190, 191) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `managed_installers` (
+                `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                `repoOwner` TEXT NOT NULL,
+                `repoName` TEXT NOT NULL,
+                `displayName` TEXT NOT NULL,
+                `packageName` TEXT,
+                `assetVariant` TEXT,
+                `tagAtInstall` TEXT,
+                `latestSeenTag` TEXT,
+                `lastCheckedAt` INTEGER,
+                `locked` INTEGER NOT NULL DEFAULT 0,
+                `sortOrder` INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_managed_installers_repoOwner_repoName` " +
+                "ON `managed_installers` (`repoOwner`, `repoName`)"
+        )
+    }
+}

@@ -17,10 +17,12 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Palette
@@ -41,6 +43,7 @@ import com.nendo.argosy.ui.common.resolve
 import com.nendo.argosy.ui.components.FocusedScroll
 import com.nendo.argosy.ui.components.NavigationPreference
 import com.nendo.argosy.ui.screens.settings.ConnectionStatus
+import com.nendo.argosy.ui.screens.settings.ControlsState
 import com.nendo.argosy.ui.screens.settings.SettingsSection
 import com.nendo.argosy.ui.screens.settings.SocialAuthStatus
 import com.nendo.argosy.ui.screens.settings.SettingsUiState
@@ -56,12 +59,20 @@ internal sealed class MainSettingsItem(
     val key: String,
     val icon: ImageVector,
     @StringRes val titleRes: Int,
-    val section: String
+    val section: String,
+    val visibleWhen: (ControlsState) -> Boolean = { true }
 ) {
     val isFocusable: Boolean get() = this !is Header
 
     class Header(key: String, section: String, @StringRes titleRes: Int) :
         MainSettingsItem(key, Icons.Default.Info, titleRes, section)
+
+    data object ManagedInstallers : MainSettingsItem(
+        "managedInstallers",
+        Icons.Default.Download,
+        R.string.settings_main_installers_title,
+        "system"
+    )
 
     data object Theme :
         MainSettingsItem("theme", Icons.Default.Palette, R.string.settings_main_theme_title, "launcher")
@@ -168,23 +179,23 @@ internal sealed class MainSettingsItem(
                 Header("connectionsHeader", "connections", R.string.settings_main_section_connections),
                 RomM, Steam, Jellyfin, Social,
                 Header("systemHeader", "system", R.string.settings_main_section_system),
-                Permissions, DeviceSettings, About
+                Permissions, ManagedInstallers, DeviceSettings, About
             )
     }
 }
 
-private val mainSettingsLayout = SettingsLayout<MainSettingsItem, Unit>(
+private val mainSettingsLayout = SettingsLayout<MainSettingsItem, ControlsState>(
     allItems = MainSettingsItem.ALL,
     isFocusable = { it.isFocusable },
-    visibleWhen = { _, _ -> true },
+    visibleWhen = { item, state -> item.visibleWhen(state) },
     sectionOf = { it.section }
 )
 
-internal fun mainSettingsMaxFocusIndex(): Int =
-    mainSettingsLayout.maxFocusIndex(Unit)
+internal fun mainSettingsMaxFocusIndex(controls: ControlsState): Int =
+    mainSettingsLayout.maxFocusIndex(controls)
 
-internal fun mainSettingsItemAtFocusIndex(index: Int): MainSettingsItem? =
-    mainSettingsLayout.itemAtFocusIndex(index, Unit)
+internal fun mainSettingsItemAtFocusIndex(index: Int, controls: ControlsState): MainSettingsItem? =
+    mainSettingsLayout.itemAtFocusIndex(index, controls)
 
 
 @Composable
@@ -192,13 +203,17 @@ fun MainSettingsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
     val context = LocalContext.current
     val listState = rememberLazyListState()
 
-    val visibleItems = remember { mainSettingsLayout.visibleItems(Unit) }
+    val controls = uiState.controls
+
+    val visibleItems = remember { mainSettingsLayout.visibleItems(controls) }
 
     fun isFocused(item: MainSettingsItem): Boolean =
-        uiState.focusedIndex == mainSettingsLayout.focusIndexOf(item, Unit)
+        uiState.focusedIndex == mainSettingsLayout.focusIndexOf(item, controls)
 
     fun getSubtitle(item: MainSettingsItem): String = when (item) {
         is MainSettingsItem.Header -> ""
+        MainSettingsItem.ManagedInstallers ->
+            context.getString(R.string.settings_main_installers_subtitle)
         MainSettingsItem.DeviceSettings -> context.getString(R.string.settings_main_device_subtitle)
         MainSettingsItem.RomM -> when (uiState.server.connectionStatus) {
             ConnectionStatus.NOT_CONFIGURED ->
@@ -289,10 +304,12 @@ fun MainSettingsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
 
     fun handleClick(item: MainSettingsItem) {
         if (item !is MainSettingsItem.Header) {
-            viewModel.setFocusIndex(mainSettingsLayout.focusIndexOf(item, Unit))
+            viewModel.setFocusIndex(mainSettingsLayout.focusIndexOf(item, controls))
         }
         when (item) {
             is MainSettingsItem.Header -> Unit
+            MainSettingsItem.ManagedInstallers ->
+                viewModel.navigateToSection(SettingsSection.MANAGED_INSTALLERS)
             MainSettingsItem.DeviceSettings -> context.startActivity(Intent(Settings.ACTION_SETTINGS))
             MainSettingsItem.RomM -> viewModel.navigateToSection(SettingsSection.ROMM)
             MainSettingsItem.Saves -> viewModel.navigateToSection(SettingsSection.SAVES)
@@ -321,7 +338,7 @@ fun MainSettingsSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
 
     FocusedScroll(
         listState = listState,
-        focusedIndex = mainSettingsLayout.focusToListIndex(uiState.focusedIndex, Unit)
+        focusedIndex = mainSettingsLayout.focusToListIndex(uiState.focusedIndex, controls)
     )
 
     LazyColumn(

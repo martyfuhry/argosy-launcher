@@ -37,6 +37,60 @@
     <string name="settings_main_navigation_title">Navigation</string>
     <!-- Second line of that row, listing what is inside. -->
     <string name="settings_main_navigation_subtitle">Button layout, haptic feedback</string>
+    <!-- Row title on the settings home. Noun phrase: apps Argosy installs and keeps updated. -->
+    <string name="settings_main_installers_title">Managed Installers</string>
+    <!-- Subtitle of that row. -->
+    <string name="settings_main_installers_subtitle">Install and update apps from GitHub releases</string>
+
+    <!-- ===== Managed Installers section ===== -->
+
+    <!-- Screen heading. Rendered in caps in English; use whatever casing suits a heading. -->
+    <string name="settings_shell_header_installers">MANAGED INSTALLERS</string>
+    <!-- Row title. Verb phrase: register a new GitHub repository to install from. -->
+    <string name="settings_installers_add_title">Add Repository</string>
+    <!-- Subtitle of that row. -->
+    <string name="settings_installers_add_subtitle">Paste a GitHub repository link</string>
+    <!-- Modal title when entering a repository link. -->
+    <string name="settings_installers_add_modal_title">Add Repository</string>
+    <!-- Label above the text field in that modal. -->
+    <string name="settings_installers_add_modal_label">GitHub link</string>
+    <!-- Placeholder shown in the empty text field. Not translated: it is an example URL. -->
+    <string name="settings_installers_add_modal_placeholder" translatable="false">https://github.com/owner/repo</string>
+    <!-- Error under the field when the text is not a GitHub repository link. -->
+    <string name="settings_installers_add_error_invalid">That is not a GitHub repository link</string>
+    <!-- Error under the field when the repository is already in the list. -->
+    <string name="settings_installers_add_error_duplicate">That repository is already listed</string>
+    <!-- Subtitle on an installed row. %1$s is the release tag recorded when it was installed. -->
+    <string name="settings_installers_subtitle_installed">Installed: %1$s</string>
+    <!-- Subtitle on a row whose repository has published a newer release. %1$s is that release tag. -->
+    <string name="settings_installers_subtitle_update">Update available: %1$s</string>
+    <!-- Short badge on a row with a newer release. Keep it to one word. -->
+    <string name="settings_installers_badge_update">Update</string>
+    <!-- Progress line while the latest release is being looked up. -->
+    <string name="settings_installers_status_checking">Checking for a release</string>
+    <!-- Progress line while the package downloads. %1$d is a percentage from 0 to 100. -->
+    <string name="settings_installers_status_downloading">Downloading %1$d%%</string>
+    <!-- Progress line while the system installer has the package. -->
+    <string name="settings_installers_status_installing">Waiting for the installer</string>
+    <!-- Error line: the repository published no release. -->
+    <string name="settings_installers_error_no_release">No release was found</string>
+    <!-- Error line: the release contains no Android package. -->
+    <string name="settings_installers_error_no_apk">That release has no Android package</string>
+    <!-- Error line: the download itself failed. -->
+    <string name="settings_installers_error_download">Download failed</string>
+    <!-- Error line: GitHub refused further requests until its hourly allowance resets. -->
+    <string name="settings_installers_error_rate_limited">GitHub is limiting requests. Try again later</string>
+    <!-- Error line: the repository does not exist or is private. -->
+    <string name="settings_installers_error_not_found">That repository could not be reached</string>
+    <!-- Row title under an installed keyboard. Verb phrase: open the system screen that turns a
+         keyboard on. -->
+    <string name="settings_installers_ime_enable_title">Enable In System Settings</string>
+    <!-- Subtitle of that row. Android only lets a keyboard be switched on from its own screen. -->
+    <string name="settings_installers_ime_enable_subtitle">Android requires the keyboard to be turned on from system settings</string>
+    <!-- Row title. Verb phrase: choose which installed keyboard types. -->
+    <string name="settings_installers_ime_select_title">Choose Active Keyboard</string>
+    <!-- Subtitle of that row. -->
+    <string name="settings_installers_ime_select_subtitle">Pick it as the keyboard that types</string>
     <!-- Row opening the sound settings. Noun. -->
     <string name="settings_main_audio_title">Audio</string>
     <!-- Second line of that row, listing what is inside. -->

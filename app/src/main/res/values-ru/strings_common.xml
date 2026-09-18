@@ -873,4 +873,5 @@
 
     <string name="home_grid_local_video_row_title">Выбрать видео на этом устройстве</string>
     <string name="home_grid_local_video_row_subtitle">Воспроизводится прямо из хранилища</string>
+    <string name="ui_quick_settings_swap_displays">Поменять экраны</string>
 </resources>

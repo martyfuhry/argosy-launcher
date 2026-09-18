@@ -168,4 +168,13 @@
     <string name="home_media_season_local_all">Alle %1$d auf diesem Gerät</string>
     <string name="home_media_season_local_partial">%1$d von %2$d auf diesem Gerät</string>
     <string name="home_media_download_size_gigabytes">%1$.1f GB</string>
+
+    <string name="home_companion_fact_developer">Entwickler</string>
+    <string name="home_companion_fact_genre">Genre</string>
+    <string name="home_companion_fact_released">Erschienen</string>
+    <string name="home_companion_hint_details">Details</string>
+    <string name="home_companion_hint_download">Herunterladen</string>
+    <string name="home_companion_hint_favorite">Favorisieren</string>
+    <string name="home_companion_hint_play">Spielen</string>
+    <string name="home_companion_hint_unfavorite">Favorit entfernen</string>
 </resources>

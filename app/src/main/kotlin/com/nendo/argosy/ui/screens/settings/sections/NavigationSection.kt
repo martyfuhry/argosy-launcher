@@ -69,7 +69,6 @@ internal sealed class NavigationItem(
             Header("feedbackHeader", "feedback", R.string.settings_navigation_section_feedback)
         private val MenusSpacer = SectionSpacer("menusSpacer", "menus")
         private val MenusHeader = Header("menusHeader", "menus", R.string.settings_navigation_section_menus)
-
         val ALL: List<NavigationItem>
             get() = listOf(
                 ControllerHeader,
@@ -263,6 +262,7 @@ fun NavigationSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 onSelect = { viewModel.setSelectRCombo(ControlsSettingsDelegate.COMBO_CYCLE[it]) },
                 pickerRequestToken = pickerToken(item)
             )
+
         }
     }
 }

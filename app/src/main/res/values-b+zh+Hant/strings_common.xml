@@ -813,4 +813,5 @@
 
     <string name="home_grid_local_video_row_title">選擇此裝置上的影片</string>
     <string name="home_grid_local_video_row_subtitle">直接從您的儲存空間播放</string>
+    <string name="ui_quick_settings_swap_displays">交換顯示器</string>
 </resources>

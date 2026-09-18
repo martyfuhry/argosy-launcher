@@ -426,6 +426,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setGameDetailThemeEnabled(enabled: Boolean) = controlsPrefs.setGameDetailThemeEnabled(enabled)
     suspend fun setMenuWrapMode(mode: MenuWrapMode) = controlsPrefs.setMenuWrapMode(mode)
 
+
     // --- Storage delegates ---
 
     suspend fun setRomStoragePath(path: String) = storagePrefs.setRomStoragePath(path)

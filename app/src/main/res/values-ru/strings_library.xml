@@ -180,4 +180,16 @@
         <item quantity="many">%d результатов</item>
         <item quantity="other">%d результата</item>
     </plurals>
+
+    <string name="library_showcase_all_games">Все игры</string>
+    <string name="library_showcase_fact_achievements">Достижения</string>
+    <string name="library_showcase_fact_downloaded">Загружено</string>
+    <string name="library_showcase_fact_games">Игры</string>
+    <string name="library_showcase_fact_installed">Установлено</string>
+    <string name="library_showcase_fact_movies">Фильмы</string>
+    <string name="library_showcase_fact_play_time">Время игры</string>
+    <string name="library_showcase_fact_shows">Сериалы</string>
+    <string name="library_showcase_fact_watched">Просмотрено</string>
+    <string name="library_showcase_play_time_hours">%1$d ч</string>
+    <string name="library_showcase_play_time_minutes">%1$d мин</string>
 </resources>

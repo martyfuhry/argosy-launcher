@@ -321,6 +321,11 @@ object DatabaseModule {
         database.mediaCreditDao()
 
     @Provides
+    fun provideManagedInstallerDao(
+        database: ALauncherDatabase
+    ): com.nendo.argosy.data.local.dao.ManagedInstallerDao = database.managedInstallerDao()
+
+    @Provides
     fun provideMediaStreamDao(database: ALauncherDatabase): MediaStreamDao =
         database.mediaStreamDao()
 

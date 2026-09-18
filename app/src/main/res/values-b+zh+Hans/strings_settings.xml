@@ -15,6 +15,8 @@
     <string name="settings_main_interface_subtitle">网格密度、缩放、主屏幕</string>
     <string name="settings_main_navigation_title">导航</string>
     <string name="settings_main_navigation_subtitle">按钮布局、震动反馈</string>
+    <string name="settings_main_installers_title">托管安装器</string>
+    <string name="settings_main_installers_subtitle">从 GitHub 版本安装和更新应用</string>
     <string name="settings_main_audio_title">音频</string>
     <string name="settings_main_audio_subtitle">音效与音乐</string>
     <string name="settings_main_displays_title">显示屏</string>
@@ -113,6 +115,28 @@
     <string name="settings_navigation_section_controller">手柄</string>
     <string name="settings_navigation_section_feedback">反馈</string>
     <string name="settings_navigation_section_menus">菜单</string>
+    <string name="settings_shell_header_installers">托管安装器</string>
+    <string name="settings_installers_add_title">添加仓库</string>
+    <string name="settings_installers_add_subtitle">粘贴 GitHub 仓库链接</string>
+    <string name="settings_installers_add_modal_title">添加仓库</string>
+    <string name="settings_installers_add_modal_label">GitHub 链接</string>
+    <string name="settings_installers_add_error_invalid">这不是 GitHub 仓库链接</string>
+    <string name="settings_installers_add_error_duplicate">该仓库已在列表中</string>
+    <string name="settings_installers_subtitle_installed">已安装：%1$s</string>
+    <string name="settings_installers_subtitle_update">有可用更新：%1$s</string>
+    <string name="settings_installers_badge_update">更新</string>
+    <string name="settings_installers_status_checking">正在查找版本</string>
+    <string name="settings_installers_status_downloading">正在下载 %1$d%%</string>
+    <string name="settings_installers_status_installing">等待安装程序</string>
+    <string name="settings_installers_error_no_release">未找到版本</string>
+    <string name="settings_installers_error_no_apk">该版本不含 Android 安装包</string>
+    <string name="settings_installers_error_download">下载失败</string>
+    <string name="settings_installers_error_rate_limited">GitHub 正在限制请求，请稍后重试</string>
+    <string name="settings_installers_error_not_found">无法访问该仓库</string>
+    <string name="settings_installers_ime_enable_title">在系统设置中启用</string>
+    <string name="settings_installers_ime_enable_subtitle">Android 要求在系统设置中启用键盘</string>
+    <string name="settings_installers_ime_select_title">选择当前键盘</string>
+    <string name="settings_installers_ime_select_subtitle">将其设为输入键盘</string>
 
     <string name="settings_navigation_controller_layout_title">手柄布局</string>
     <string name="settings_navigation_controller_layout_auto">自动</string>

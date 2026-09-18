@@ -841,4 +841,5 @@
 
     <string name="home_grid_local_video_row_title">Ein Video auf diesem Gerät auswählen</string>
     <string name="home_grid_local_video_row_subtitle">Spielt direkt von Ihrem Speicher ab</string>
+    <string name="ui_quick_settings_swap_displays">Displays tauschen</string>
 </resources>

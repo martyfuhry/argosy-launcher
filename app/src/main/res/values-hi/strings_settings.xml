@@ -15,6 +15,8 @@
     <string name="settings_main_interface_subtitle">ग्रिड डेंसिटी, स्केल, होम स्क्रीन</string>
     <string name="settings_main_navigation_title">नेविगेशन</string>
     <string name="settings_main_navigation_subtitle">बटन लेआउट, हैप्टिक फ़ीडबैक</string>
+    <string name="settings_main_installers_title">प्रबंधित इंस्टॉलर</string>
+    <string name="settings_main_installers_subtitle">GitHub रिलीज़ से ऐप इंस्टॉल और अपडेट करें</string>
     <string name="settings_main_audio_title">ऑडियो</string>
     <string name="settings_main_audio_subtitle">साउंड और संगीत</string>
     <string name="settings_main_displays_title">डिस्प्ले</string>
@@ -115,6 +117,28 @@
     <string name="settings_navigation_section_controller">कंट्रोलर</string>
     <string name="settings_navigation_section_feedback">फ़ीडबैक</string>
     <string name="settings_navigation_section_menus">मेनू</string>
+    <string name="settings_shell_header_installers">प्रबंधित इंस्टॉलर</string>
+    <string name="settings_installers_add_title">रिपॉज़िटरी जोड़ें</string>
+    <string name="settings_installers_add_subtitle">GitHub रिपॉज़िटरी लिंक पेस्ट करें</string>
+    <string name="settings_installers_add_modal_title">रिपॉज़िटरी जोड़ें</string>
+    <string name="settings_installers_add_modal_label">GitHub लिंक</string>
+    <string name="settings_installers_add_error_invalid">यह GitHub रिपॉज़िटरी लिंक नहीं है</string>
+    <string name="settings_installers_add_error_duplicate">यह रिपॉज़िटरी पहले से सूची में है</string>
+    <string name="settings_installers_subtitle_installed">इंस्टॉल है: %1$s</string>
+    <string name="settings_installers_subtitle_update">अपडेट उपलब्ध: %1$s</string>
+    <string name="settings_installers_badge_update">अपडेट</string>
+    <string name="settings_installers_status_checking">रिलीज़ खोजी जा रही है</string>
+    <string name="settings_installers_status_downloading">डाउनलोड हो रहा है %1$d%%</string>
+    <string name="settings_installers_status_installing">इंस्टॉलर की प्रतीक्षा है</string>
+    <string name="settings_installers_error_no_release">कोई रिलीज़ नहीं मिली</string>
+    <string name="settings_installers_error_no_apk">इस रिलीज़ में Android पैकेज नहीं है</string>
+    <string name="settings_installers_error_download">डाउनलोड विफल</string>
+    <string name="settings_installers_error_rate_limited">GitHub अनुरोध सीमित कर रहा है। बाद में फिर कोशिश करें</string>
+    <string name="settings_installers_error_not_found">इस रिपॉज़िटरी तक नहीं पहुँचा जा सका</string>
+    <string name="settings_installers_ime_enable_title">सिस्टम सेटिंग में चालू करें</string>
+    <string name="settings_installers_ime_enable_subtitle">Android कीबोर्ड को सिस्टम सेटिंग से ही चालू करने देता है</string>
+    <string name="settings_installers_ime_select_title">सक्रिय कीबोर्ड चुनें</string>
+    <string name="settings_installers_ime_select_subtitle">इसे टाइप करने वाला कीबोर्ड बनाएँ</string>
 
     <string name="settings_navigation_controller_layout_title">कंट्रोलर लेआउट</string>
     <string name="settings_navigation_controller_layout_auto">ऑटो</string>

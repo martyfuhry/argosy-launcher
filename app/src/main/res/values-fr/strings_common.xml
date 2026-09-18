@@ -880,4 +880,5 @@
 
     <string name="home_grid_local_video_row_title">Choisir une vidéo sur cet appareil</string>
     <string name="home_grid_local_video_row_subtitle">Lit directement depuis votre stockage</string>
+    <string name="ui_quick_settings_swap_displays">Permuter les écrans</string>
 </resources>

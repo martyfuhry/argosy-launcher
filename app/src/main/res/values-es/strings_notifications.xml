@@ -213,4 +213,7 @@
         <item quantity="one">+%1$d más</item>
         <item quantity="other">+%1$d más</item>
     </plurals>
+
+    <string name="notif_new_display_title">Nueva pantalla detectada</string>
+    <string name="notif_new_display_action">Configurar pantallas</string>
 </resources>

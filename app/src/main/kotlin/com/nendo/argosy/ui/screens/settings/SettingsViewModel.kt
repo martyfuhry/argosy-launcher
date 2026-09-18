@@ -118,6 +118,7 @@ class SettingsViewModel @Inject constructor(
     internal val savePathAuthority: com.nendo.argosy.data.emulator.savepath.SavePathAuthority,
     val displayDelegate: DisplaySettingsDelegate,
     val controlsDelegate: ControlsSettingsDelegate,
+    val installerDelegate: com.nendo.argosy.ui.screens.settings.delegates.ManagedInstallerSettingsDelegate,
     val soundsDelegate: SoundSettingsDelegate,
     val ambientAudioDelegate: AmbientAudioSettingsDelegate,
     val emulatorDelegate: EmulatorSettingsDelegate,
@@ -262,6 +263,7 @@ class SettingsViewModel @Inject constructor(
         displayDelegate.loadPreviewGame(viewModelScope)
         displayDelegate.observeScreenCapturePermission(viewModelScope)
         routeStartControllerDetectionPolling(this)
+        installerDelegate.observeJobs(viewModelScope)
 
         // TODO: Remove after testing manage=true Android/data access
         storageDelegate.testManagedStorageAccess(viewModelScope)
@@ -856,7 +858,13 @@ class SettingsViewModel @Inject constructor(
             info?.platformId?.let { routeSetPlatformSavePath(this, it, path) }
             return
         }
-        emulatorDelegate.setEmulatorSavePath(viewModelScope, emulatorId, path) { loadSettings() }
+        emulatorDelegate.setEmulatorSavePath(
+            scope = viewModelScope,
+            emulatorId = emulatorId,
+            path = path,
+            platformSlug = info?.platformSlug,
+            emulatorPackage = info?.emulatorPackage
+        ) { loadSettings() }
     }
     fun resetEmulatorSavePath(emulatorId: String) {
         val info = emulatorDelegate.state.value.savePathModalInfo?.takeIf { it.emulatorId == emulatorId }
@@ -1393,6 +1401,20 @@ class SettingsViewModel @Inject constructor(
     fun setMenuWrapMode(mode: com.nendo.argosy.data.preferences.MenuWrapMode) = controlsDelegate.setMenuWrapMode(viewModelScope, mode)
     fun refreshUsageStatsPermission() = controlsDelegate.refreshUsageStatsPermission()
     fun openUsageStatsSettings() = controlsDelegate.openUsageStatsSettings()
+    fun openManagedInstallers() = installerDelegate.openScreen(viewModelScope)
+    fun installManagedInstaller(rowId: Long) = installerDelegate.install(viewModelScope, rowId)
+    fun openInstallerAddModal() = installerDelegate.openAddModal()
+    fun dismissInstallerAddModal() = installerDelegate.dismissAddModal()
+    fun updateInstallerAddText(text: String) = installerDelegate.updateAddText(text)
+    fun submitInstallerAdd() = installerDelegate.submitAdd(viewModelScope)
+    fun requestInstallerRemove(rowId: Long) = installerDelegate.requestRemove(rowId)
+    fun dismissInstallerRemove() = installerDelegate.dismissRemove()
+    fun confirmInstallerRemove() = installerDelegate.confirmRemove(viewModelScope)
+    fun moveInstallerVariantFocus(delta: Int) = installerDelegate.moveVariantFocus(delta)
+    fun dismissInstallerVariantPicker() = installerDelegate.dismissVariantPicker()
+    fun confirmInstallerVariant() = installerDelegate.confirmVariant(viewModelScope)
+    fun openInstallerImeSettings() = installerDelegate.openImeSettings()
+    fun showInstallerImePicker() = installerDelegate.showImePicker()
     fun openStorageSettings() = permissionsDelegate.openStorageSettings()
     fun openNotificationSettings() = permissionsDelegate.openNotificationSettings()
     fun openWriteSettings() = permissionsDelegate.openWriteSettings()

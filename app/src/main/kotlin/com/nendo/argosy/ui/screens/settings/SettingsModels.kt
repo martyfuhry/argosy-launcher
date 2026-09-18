@@ -126,6 +126,7 @@ enum class SettingsSection {
     SOCIAL,
     PERMISSIONS,
     DRIVERS,
+    MANAGED_INSTALLERS,
     ABOUT
 }
 
@@ -338,6 +339,35 @@ data class ControlsState(
     val hasUsageStatsPermission: Boolean = false,
     val hasSecondaryDisplay: Boolean = false,
     val menuWrapMode: com.nendo.argosy.data.preferences.MenuWrapMode = com.nendo.argosy.data.preferences.MenuWrapMode.HARD_STOP
+)
+
+data class ManagedInstallerRow(
+    val id: Long,
+    val displayName: String,
+    val repoLabel: String,
+    val packageName: String?,
+    val installed: Boolean,
+    val locked: Boolean,
+    val updateAvailable: Boolean,
+    val tagAtInstall: String?,
+    val latestSeenTag: String?,
+    val imeEnabled: Boolean = false,
+    val imeActive: Boolean = false
+)
+
+data class ManagedInstallersState(
+    val rows: List<ManagedInstallerRow> = emptyList(),
+    val busyId: Long? = null,
+    val busyProgress: Float = 0f,
+    @androidx.annotation.StringRes val statusRes: Int? = null,
+    val checking: Boolean = false,
+    val showAddModal: Boolean = false,
+    val addText: String = "",
+    @androidx.annotation.StringRes val addErrorRes: Int? = null,
+    val showVariantPicker: Boolean = false,
+    val variantNames: List<String> = emptyList(),
+    val variantFocusIndex: Int = 0,
+    val confirmRemoveId: Long? = null
 )
 
 data class SoundValueLabel(
@@ -1664,6 +1694,7 @@ data class SettingsUiState(
     val colorFocusIndex: Int = 0,
     val display: DisplayState = DisplayState(),
     val controls: ControlsState = ControlsState(),
+    val managedInstallers: ManagedInstallersState = ManagedInstallersState(),
     val sounds: SoundState = SoundState(),
     val ambientAudio: AmbientAudioState = AmbientAudioState(),
     val emulators: EmulatorState = EmulatorState(),

@@ -149,6 +149,7 @@ private fun routeApplySectionEntry(vm: SettingsViewModel, section: SettingsSecti
         )
         SettingsSection.DRIVERS -> vm.driversDelegate.loadDrivers(vm.viewModelScope)
         SettingsSection.SCREENS -> routeRefreshScreens(vm)
+        SettingsSection.MANAGED_INSTALLERS -> vm.openManagedInstallers()
         else -> {}
     }
 }

@@ -150,4 +150,16 @@
     <plurals name="library_search_result_count">
         <item quantity="other">%d个结果</item>
     </plurals>
+
+    <string name="library_showcase_all_games">全部游戏</string>
+    <string name="library_showcase_fact_achievements">成就</string>
+    <string name="library_showcase_fact_downloaded">已下载</string>
+    <string name="library_showcase_fact_games">游戏</string>
+    <string name="library_showcase_fact_installed">已安装</string>
+    <string name="library_showcase_fact_movies">电影</string>
+    <string name="library_showcase_fact_play_time">游戏时长</string>
+    <string name="library_showcase_fact_shows">剧集</string>
+    <string name="library_showcase_fact_watched">已观看</string>
+    <string name="library_showcase_play_time_hours">%1$d小时</string>
+    <string name="library_showcase_play_time_minutes">%1$d分钟</string>
 </resources>

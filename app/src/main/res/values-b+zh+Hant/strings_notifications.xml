@@ -198,4 +198,7 @@
     <plurals name="notification_persistent_also_running">
         <item quantity="other">+%1$d 項</item>
     </plurals>
+
+    <string name="notif_new_display_title">偵測到新顯示器</string>
+    <string name="notif_new_display_action">設定顯示器</string>
 </resources>

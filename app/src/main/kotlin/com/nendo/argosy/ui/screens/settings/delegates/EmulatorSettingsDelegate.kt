@@ -293,10 +293,26 @@ class EmulatorSettingsDelegate @Inject constructor(
      * `sdmc`, a title folder below it) settles on one stored path. [onLoadSettings] receives
      * that resolved path; callers displaying it elsewhere must show this, not their input.
      */
+    private fun savePathStorageId(
+        emulatorId: String,
+        platformSlug: String?,
+        emulatorPackage: String?
+    ): String {
+        val slug = platformSlug?.takeIf { it.isNotBlank() } ?: return emulatorId
+        val request = SavePathRequest(
+            platformSlug = slug,
+            emulatorId = emulatorId,
+            emulatorPackage = emulatorPackage
+        )
+        return savePathAuthority.configIdFor(request) ?: emulatorId
+    }
+
     fun setEmulatorSavePath(
         scope: CoroutineScope,
         emulatorId: String,
         path: String,
+        platformSlug: String? = null,
+        emulatorPackage: String? = null,
         onLoadSettings: suspend (resolvedPath: String) -> Unit
     ) {
         scope.launch {
@@ -304,7 +320,8 @@ class EmulatorSettingsDelegate @Inject constructor(
                 val target = saveHandlerRegistry.normalizeUserChosenSavePath(emulatorId, path)
                 target to saveHandlerRegistry.pathIsPresent(target)
             }
-            emulatorSaveConfigRepository.setSavePath(emulatorId, resolved)
+            val storageId = savePathStorageId(emulatorId, platformSlug, emulatorPackage)
+            emulatorSaveConfigRepository.setSavePath(storageId, resolved)
             _state.update { state ->
                 val info = state.savePathModalInfo ?: return@update state
                 if (info.emulatorId != emulatorId) return@update state
@@ -336,7 +353,9 @@ class EmulatorSettingsDelegate @Inject constructor(
         onLoadSettings: suspend () -> Unit
     ) {
         scope.launch {
-            emulatorSaveConfigRepository.resetSavePath(emulatorId)
+            emulatorSaveConfigRepository.resetSavePath(
+                savePathStorageId(emulatorId, platformSlug, emulatorPackage)
+            )
             val request = platformSlug?.let {
                 SavePathRequest(platformSlug = it, emulatorId = emulatorId, emulatorPackage = emulatorPackage)
             }
@@ -476,7 +495,10 @@ class EmulatorSettingsDelegate @Inject constructor(
         if (!info.besideRomSupported) return
         scope.launch {
             val enabled = !info.savesBesideRom
-            emulatorSaveConfigRepository.setSavesBesideRom(info.emulatorId, enabled)
+            emulatorSaveConfigRepository.setSavesBesideRom(
+                savePathStorageId(info.emulatorId, info.platformSlug, info.emulatorPackage),
+                enabled
+            )
             _state.update { it.copy(savePathModalInfo = it.savePathModalInfo?.copy(savesBesideRom = enabled)) }
         }
     }
