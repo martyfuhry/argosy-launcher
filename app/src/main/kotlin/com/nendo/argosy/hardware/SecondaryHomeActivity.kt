@@ -88,7 +88,6 @@ class SecondaryHomeActivity :
     private var isHardcore by mutableStateOf(false)
     var homeApps by mutableStateOf<List<String>>(emptyList())
         private set
-    private var companionInGameState by mutableStateOf(CompanionInGameState())
     private var companionAchievements by mutableStateOf<List<AchievementUi>>(emptyList())
     private var companionSessionTimer: CompanionSessionTimer? = null
     private var homeRestoreSettled = false
@@ -451,22 +450,6 @@ class SecondaryHomeActivity :
         isWizardActive = isActive
     }
 
-    override fun onSaveDirtyChanged(isDirty: Boolean) {
-        companionInGameState = companionInGameState.copy(isDirty = isDirty)
-    }
-
-    override fun onSessionActionsChanged(available: Boolean) {
-        runOnUiThread {
-            companionInGameState = companionInGameState.copy(quickActionsAvailable = available)
-        }
-    }
-
-    override fun onHasQuickSaveChanged(hasQuickSave: Boolean) {
-        runOnUiThread {
-            companionInGameState = companionInGameState.copy(hasQuickSave = hasQuickSave)
-        }
-    }
-
     override fun onSessionStarted(
         gameId: Long, isHardcore: Boolean, channelName: String?
     ) {
@@ -484,7 +467,6 @@ class SecondaryHomeActivity :
         runOnUiThread {
             this.isHardcore = isHardcore
             currentChannelName = channelName
-            companionInGameState = companionInGameState.copy(isHardcore = isHardcore, channelName = channelName)
         }
     }
 
@@ -492,7 +474,6 @@ class SecondaryHomeActivity :
         isGameActive = false
         isHardcore = false
         currentChannelName = null
-        companionInGameState = CompanionInGameState()
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = null
         isInitialized = true

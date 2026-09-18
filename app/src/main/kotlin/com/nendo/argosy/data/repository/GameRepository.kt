@@ -309,10 +309,10 @@ class GameRepository @Inject constructor(
         return discovered
     }
 
-    suspend fun discoverLocalFiles(): Int = withContext(Dispatchers.IO) {
+    suspend fun discoverLocalFiles(): Int? = withContext(Dispatchers.IO) {
         if (!isStorageReady()) {
             Log.w(TAG, "discoverLocalFiles: storage not ready, skipping")
-            return@withContext 0
+            return@withContext null
         }
 
         val startTime = System.currentTimeMillis()
@@ -333,23 +333,15 @@ class GameRepository @Inject constructor(
     }
 
     /**
-     * Walks every downloaded game and drops the pointers whose file is gone.
-     *
-     * Startup asks several times over, from the launcher resuming and from the startup pass, so a
-     * request that arrives while a pass runs, or within [VALIDATION_COALESCE_MS] of one finishing,
-     * is answered by that pass. [force] is for the caller that reports the count back to the user,
-     * which must see its own numbers.
-     *
-     * The count is the pointers left cleared. A row whose file is found again elsewhere is
-     * repointed and not counted. A pass that never walked the rows leaves the coalescing window
-     * unstamped, and the next request gets its own pass.
+     * Clears the pointers of downloaded games whose file is gone. Returns the number cleared, or
+     * null when no pass walked the rows. [force] requests a pass of the caller's own.
      */
-    suspend fun validateLocalFiles(force: Boolean = false): Int {
+    suspend fun validateLocalFiles(force: Boolean = false): Int? {
         val requestedAt = validationPass.get()
         return validationMutex.withLock {
             if (!withContext(Dispatchers.IO) { isStorageReady() }) {
                 Log.w(TAG, "validateLocalFiles: storage not ready, skipping")
-                return@withLock 0
+                return@withLock null
             }
             if (!force) {
                 if (validationPass.get() != requestedAt) return@withLock 0

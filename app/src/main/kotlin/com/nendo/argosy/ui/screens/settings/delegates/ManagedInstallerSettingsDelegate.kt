@@ -190,7 +190,7 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
 
     fun moveVariantFocus(delta: Int) {
         _state.update { state ->
-            val size = state.variantNames.size
+            val size = state.variants.size
             if (size == 0) return@update state
             state.copy(variantFocusIndex = (state.variantFocusIndex + delta).mod(size))
         }
@@ -200,14 +200,14 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
         pendingVariantAssets = emptyList()
         pendingVariantRowId = null
         manager.clearJob()
-        _state.update { it.copy(showVariantPicker = false, variantNames = emptyList()) }
+        _state.update { it.copy(showVariantPicker = false, variants = emptyList()) }
     }
 
     fun confirmVariant(scope: CoroutineScope) {
         val index = _state.value.variantFocusIndex
         val asset = pendingVariantAssets.getOrNull(index) ?: return
         val rowId = pendingVariantRowId ?: return
-        _state.update { it.copy(showVariantPicker = false, variantNames = emptyList()) }
+        _state.update { it.copy(showVariantPicker = false, variants = emptyList()) }
         scope.launch {
             val entity = withContext(Dispatchers.IO) { repository.getById(rowId) } ?: return@launch
             manager.install(entity, asset)
@@ -267,10 +267,8 @@ class ManagedInstallerSettingsDelegate @Inject constructor(
                         statusRes = null,
                         showVariantPicker = true,
                         variantFocusIndex = 0,
-                        variantNames = jobState.assets.map { asset ->
-                            ApkAssetMatcher.formatVariantDisplay(
-                                ApkAssetMatcher.extractVariantFromAssetName(asset.name)
-                            ) + " - " + asset.name
+                        variants = jobState.assets.map {
+                            com.nendo.argosy.ui.common.installerVariantUi(it.name)
                         }
                     )
                 }

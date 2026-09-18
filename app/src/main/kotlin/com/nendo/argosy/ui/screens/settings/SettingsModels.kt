@@ -368,7 +368,7 @@ data class ManagedInstallersState(
     val addFocus: TextEntryFocus = TextEntryFocus(),
     @androidx.annotation.StringRes val addErrorRes: Int? = null,
     val showVariantPicker: Boolean = false,
-    val variantNames: List<String> = emptyList(),
+    val variants: List<com.nendo.argosy.ui.common.InstallerVariantUi> = emptyList(),
     val variantFocusIndex: Int = 0,
     val confirmRemoveId: Long? = null,
     val confirmRemoveName: String = ""

@@ -83,6 +83,12 @@
     <string name="settings_installers_variant_title">Choose A Package</string>
     <!-- Subtitle of that modal. -->
     <string name="settings_installers_variant_subtitle">This release carries more than one Android package</string>
+    <!-- One row in that modal. %1$s is the package kind (ARM64, Universal), %2$s the file name. -->
+    <string name="settings_installers_variant_entry">%1$s - %2$s</string>
+    <!-- Package kind for a release asset that names no processor architecture. -->
+    <string name="settings_installers_variant_default">Default</string>
+    <!-- Package kind for a release asset that carries every processor architecture. -->
+    <string name="settings_installers_variant_universal">Universal</string>
     <!-- Subtitle on a row whose repository has published a newer release. %1$s is that release tag. -->
     <string name="settings_installers_subtitle_update">Update available: %1$s</string>
     <!-- Short badge on a row with a newer release. Keep it to one word. -->

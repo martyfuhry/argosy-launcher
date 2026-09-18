@@ -194,12 +194,7 @@ def load_git_command():
 
 
 def includes_unstaged(invocations):
-    """Whether the commit will also carry changes not yet in the index.
-
-    True for a `git add` chained ahead of the commit, or a commit run with -a/--all. The hook
-    runs before the command does, so the index is still empty at that point and the staged
-    diff shows nothing.
-    """
+    """Whether the commit will also carry changes not yet in the index."""
     for subcommand, args in invocations:
         if subcommand == "add":
             return True

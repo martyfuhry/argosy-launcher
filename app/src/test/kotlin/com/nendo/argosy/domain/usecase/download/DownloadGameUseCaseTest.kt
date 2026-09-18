@@ -10,6 +10,7 @@ import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.remote.romm.RomMResult
 import com.nendo.argosy.data.remote.romm.RomMRom
+import com.nendo.argosy.data.remote.romm.RomMRomFile
 import com.nendo.argosy.data.repository.GameRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -171,6 +172,74 @@ class DownloadGameUseCaseTest {
             assertTrue("Expected Queued for .$ext but got $result", result is DownloadResult.Queued)
         }
     }
+
+    @Test
+    fun `a folder rom holding one file is downloaded raw`() = runTest {
+        val game = createGameEntity(rommId = 456L, title = "Baten Kaitos", platformSlug = "gc")
+        val rom = createRom(fileName = "Baten Kaitos", platformSlug = "gc").copy(
+            hasNestedSingleFile = true,
+            files = listOf(createRomFile(fileName = "Baten Kaitos.iso", filePath = "roms/gc/Baten Kaitos"))
+        )
+        coEvery { gameDao.getById(123L) } returns game
+        coEvery { romMRepository.getRom(456L) } returns RomMResult.Success(rom)
+
+        assertTrue(useCase(123L) is DownloadResult.Queued)
+        coVerify {
+            downloadManager.enqueueDownload(
+                gameId = 123L,
+                rommId = 456L,
+                fileName = "Baten Kaitos.iso",
+                gameTitle = any(),
+                platformSlug = any(),
+                coverPath = any(),
+                expectedSizeBytes = any(),
+                isMultiFileRom = false,
+                selectedFileIds = null
+            )
+        }
+    }
+
+    @Test
+    fun `a folder rom holding several files is downloaded as a server built zip`() = runTest {
+        val game = createGameEntity(rommId = 456L, title = "Skies of Arcadia", platformSlug = "gc")
+        val rom = createRom(fileName = "Skies of Arcadia", platformSlug = "gc").copy(
+            hasMultipleFiles = true,
+            files = listOf(
+                createRomFile(id = 1L, fileName = "disc1.iso", filePath = "roms/gc/Skies of Arcadia"),
+                createRomFile(id = 2L, fileName = "disc2.iso", filePath = "roms/gc/Skies of Arcadia")
+            )
+        )
+        coEvery { gameDao.getById(123L) } returns game
+        coEvery { romMRepository.getRom(456L) } returns RomMResult.Success(rom)
+
+        assertTrue(useCase(123L) is DownloadResult.Queued)
+        coVerify {
+            downloadManager.enqueueDownload(
+                gameId = 123L,
+                rommId = 456L,
+                fileName = "Skies of Arcadia.zip",
+                gameTitle = any(),
+                platformSlug = any(),
+                coverPath = any(),
+                expectedSizeBytes = any(),
+                isMultiFileRom = true,
+                selectedFileIds = null
+            )
+        }
+    }
+
+    private fun createRomFile(
+        id: Long = 1L,
+        fileName: String,
+        filePath: String
+    ) = RomMRomFile(
+        id = id,
+        romId = 456L,
+        fileName = fileName,
+        filePath = filePath,
+        fileSizeBytes = 2048L,
+        fullPath = "$filePath/$fileName"
+    )
 
     private fun createGameEntity(
         id: Long = 123L,

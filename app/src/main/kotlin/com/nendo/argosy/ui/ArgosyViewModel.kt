@@ -390,9 +390,11 @@ class ArgosyViewModel @Inject constructor(
         if (isWeeklyIntegrityCheckDue()) {
             add(
                 StartupStep(R.string.ui_startup_status_scanning_roms) {
-                    gameRepository.validateLocalFiles()
-                    gameRepository.discoverLocalFiles()
-                    preferencesRepository.setLastIntegrityCheckTime(System.currentTimeMillis())
+                    val validated = gameRepository.validateLocalFiles()
+                    val discovered = gameRepository.discoverLocalFiles()
+                    if (validated != null && discovered != null) {
+                        preferencesRepository.setLastIntegrityCheckTime(System.currentTimeMillis())
+                    }
                 }
             )
         }

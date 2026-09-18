@@ -208,18 +208,35 @@ class DualScreenManager(
         _unconfiguredScreenSet.value = null
     }
 
+    private class ResolvedScreenLayout(
+        val attached: List<com.nendo.argosy.util.AttachedScreen>,
+        val setKey: String,
+        val stored: com.nendo.argosy.domain.model.ScreenLayouts,
+        val known: com.nendo.argosy.domain.model.ScreenLayout?,
+        val layout: com.nendo.argosy.domain.model.ScreenLayout
+    )
+
+    private suspend fun resolveScreenLayout(): ResolvedScreenLayout? {
+        val attached = com.nendo.argosy.util.ScreenCatalog(appContext).attachedScreens()
+        if (attached.isEmpty()) return null
+        val keys = attached.map { it.key }
+        val setKey = com.nendo.argosy.domain.model.ScreenLayouts.setKeyOf(keys)
+        val stored = preferencesRepository.userPreferences.first().screenLayouts
+        val known = stored.layoutFor(setKey)
+        val layout = known ?: com.nendo.argosy.domain.model.ScreenLayout.defaultFor(
+            keys,
+            attached.filter { it.builtIn }.map { it.key }
+        )
+        return ResolvedScreenLayout(attached, setKey, stored, known, layout)
+    }
+
     fun applyStoredScreenLayout(promptWhenUnknown: Boolean = false) {
         scope.launch {
-            val attached = com.nendo.argosy.util.ScreenCatalog(appContext).attachedScreens()
-            if (attached.isEmpty()) return@launch
-            val keys = attached.map { it.key }
-            val setKey = com.nendo.argosy.domain.model.ScreenLayouts.setKeyOf(keys)
-            val stored = preferencesRepository.userPreferences.first().screenLayouts
-            val known = stored.layoutFor(setKey)
-            val layout = known ?: com.nendo.argosy.domain.model.ScreenLayout.defaultFor(
-                keys,
-                attached.filter { it.builtIn }.map { it.key }
-            )
+            val resolved = resolveScreenLayout() ?: return@launch
+            val attached = resolved.attached
+            val setKey = resolved.setKey
+            val known = resolved.known
+            val layout = resolved.layout
             val primary = attached.find { it.key == layout.primaryKey } ?: return@launch
             applyScreenLayout(
                 primaryDisplayId = primary.displayId,
@@ -590,7 +607,6 @@ class DualScreenManager(
     interface CompanionHost {
         fun onForegroundChanged(isForeground: Boolean)
         fun onWizardStateChanged(isActive: Boolean)
-        fun onSaveDirtyChanged(isDirty: Boolean)
         fun onSessionStarted(gameId: Long, isHardcore: Boolean, channelName: String?)
         fun onSessionHardcoreChanged(isHardcore: Boolean, channelName: String?)
         fun onSessionEnded()
@@ -616,8 +632,6 @@ class DualScreenManager(
         )
         fun refocusSelf()
         fun onDownloadCompleted(gameId: Long)
-        fun onSessionActionsChanged(available: Boolean)
-        fun onHasQuickSaveChanged(hasQuickSave: Boolean)
         fun finishCompanion()
     }
 
@@ -631,17 +645,14 @@ class DualScreenManager(
         set(value) {
             field = value
             _swappedCompanionState.update { it.copy(quickActionsAvailable = value != null) }
-            companionHost?.onSessionActionsChanged(value != null)
         }
 
     fun updateCompanionHasQuickSave(hasQuickSave: Boolean) {
         _swappedCompanionState.update { it.copy(hasQuickSave = hasQuickSave) }
-        companionHost?.onHasQuickSaveChanged(hasQuickSave)
     }
 
     fun updateCompanionSaveDirty(isDirty: Boolean) {
         _swappedCompanionState.update { it.copy(isDirty = isDirty) }
-        companionHost?.onSaveDirtyChanged(isDirty)
     }
 
     var sessionRefocus: (() -> Unit)? = null
@@ -1821,19 +1832,14 @@ class DualScreenManager(
     private fun persistPrimaryRole(swapped: Boolean) {
         val primaryDisplayId = displayAffinityHelper.getRoleDisplayIds(swapped)?.first ?: return
         activityIndependentScope.launch {
-            val attached = com.nendo.argosy.util.ScreenCatalog(appContext).attachedScreens()
-            val primary = attached.find { it.displayId == primaryDisplayId } ?: return@launch
-            val keys = attached.map { it.key }
-            val setKey = com.nendo.argosy.domain.model.ScreenLayouts.setKeyOf(keys)
-            val stored = preferencesRepository.userPreferences.first().screenLayouts
-            val layout = stored.layoutFor(setKey)
-                ?: com.nendo.argosy.domain.model.ScreenLayout.defaultFor(
-                    keys,
-                    attached.filter { it.builtIn }.map { it.key }
-                )
-            val next = layout.withRole(primary.key, com.nendo.argosy.domain.model.ScreenRole.PRIMARY)
-            if (next.roles == layout.roles) return@launch
-            preferencesRepository.setScreenLayouts(stored.with(setKey, next))
+            val resolved = resolveScreenLayout() ?: return@launch
+            val primary = resolved.attached.find { it.displayId == primaryDisplayId } ?: return@launch
+            val next = resolved.layout.withRole(
+                primary.key,
+                com.nendo.argosy.domain.model.ScreenRole.PRIMARY
+            )
+            if (next.roles == resolved.layout.roles) return@launch
+            preferencesRepository.setScreenLayouts(resolved.stored.with(resolved.setKey, next))
         }
     }
 

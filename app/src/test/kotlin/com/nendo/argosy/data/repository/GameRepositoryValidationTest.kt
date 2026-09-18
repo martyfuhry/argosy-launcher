@@ -20,6 +20,7 @@ import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -109,7 +110,7 @@ class GameRepositoryValidationTest {
         coEvery { gameDao.getById(any()) } returns null
 
         storageState = "unmounted"
-        assertEquals(0, repository.validateLocalFiles())
+        assertNull(repository.validateLocalFiles())
         coVerify(exactly = 0) { gameDao.getGamesWithLocalPathInfo() }
 
         storageState = Environment.MEDIA_MOUNTED

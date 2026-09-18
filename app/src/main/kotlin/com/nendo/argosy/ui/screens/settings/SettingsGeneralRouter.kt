@@ -990,7 +990,7 @@ internal fun routeValidateDownloads(vm: SettingsViewModel) {
                 progress = NotificationProgress(0, 100)
             )
 
-            val invalidated = vm.gameRepository.validateLocalFiles(force = true)
+            val invalidated = vm.gameRepository.validateLocalFiles(force = true) ?: 0
 
             vm.notificationManager.updatePersistent(
                 key = key,
@@ -998,7 +998,7 @@ internal fun routeValidateDownloads(vm: SettingsViewModel) {
                 progress = NotificationProgress(50, 100)
             )
 
-            val discovered = vm.gameRepository.discoverLocalFiles()
+            val discovered = vm.gameRepository.discoverLocalFiles() ?: 0
 
             val message = NotificationText.Res(
                 R.string.notif_settings_downloads_validate_result,
