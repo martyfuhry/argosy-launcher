@@ -387,16 +387,15 @@ class ArgosyViewModel @Inject constructor(
     }
 
     private suspend fun buildStartupSteps(): List<StartupStep> = buildList {
-        val integrityCheckDue = isWeeklyIntegrityCheckDue()
-        add(
-            StartupStep(R.string.ui_startup_status_scanning_roms) {
-                gameRepository.validateLocalFiles()
-                gameRepository.discoverLocalFiles()
-                if (integrityCheckDue) {
+        if (isWeeklyIntegrityCheckDue()) {
+            add(
+                StartupStep(R.string.ui_startup_status_scanning_roms) {
+                    gameRepository.validateLocalFiles()
+                    gameRepository.discoverLocalFiles()
                     preferencesRepository.setLastIntegrityCheckTime(System.currentTimeMillis())
                 }
-            }
-        )
+            )
+        }
         if (romMRepository.isConnected()) {
             add(
                 StartupStep(R.string.ui_startup_status_syncing_collections) {
