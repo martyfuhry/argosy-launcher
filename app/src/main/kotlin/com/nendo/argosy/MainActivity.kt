@@ -9,6 +9,8 @@ import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
@@ -16,6 +18,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -402,10 +406,23 @@ class MainActivity : ComponentActivity() {
                         dualScreenManager.emulatorDisplayId != display?.displayId
                     if (companionHoldsPrimary.value || gameElsewhere) {
                         val slot by dualScreenManager.presentationSlot.collectAsState()
-                        com.nendo.argosy.ui.input.ProvideButtonGlyphs(
-                            dualScreenManager.preferencesRepository.userPreferences
+                        val presentationSink = androidx.compose.runtime.remember {
+                            FocusRequester()
+                        }
+                        androidx.compose.runtime.LaunchedEffect(Unit) {
+                            runCatching { presentationSink.requestFocus() }
+                        }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .focusRequester(presentationSink)
+                                .focusable()
                         ) {
-                            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+                            com.nendo.argosy.ui.input.ProvideButtonGlyphs(
+                                dualScreenManager.preferencesRepository.userPreferences
+                            ) {
+                                com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+                            }
                         }
                     } else {
                         ArgosyApp(

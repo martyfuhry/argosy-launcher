@@ -137,8 +137,12 @@ folder resolution); "tidying" them breaks resolution.
   a changed archive shape invalidates every save already on a server.
 - Input: InputDispatcher + per-screen InputHandler; index wrap via .mod().
   No Compose focus for navigation or selection - focusable() appears nowhere
-  except the root key sink in ArgosyApp. The legitimate exceptions are that
-  sink and FocusRequester for soft-keyboard text entry; either becomes a
+  except the two root key sinks, one per rendered surface: ArgosyApp for the
+  control surface and MainActivity for the presentation surface. Every surface
+  needs one. A surface rendered without a sink leaves its window with nothing
+  focusable, and Android ANRs the activity with "does not have a focused
+  window" the moment input is dispatched there. The legitimate exceptions are
+  those sinks and FocusRequester for soft-keyboard text entry; either becomes a
   violation the
   moment focus decides what is selected rather than what is typed into.
 - Tokens: design-system-docs/tokens.json -> scripts/gen-tokens.mjs ->
