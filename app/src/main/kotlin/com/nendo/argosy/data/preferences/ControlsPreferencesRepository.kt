@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nendo.argosy.core.input.SoundConfig
 import com.nendo.argosy.core.input.SoundType
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -74,7 +76,7 @@ class ControlsPreferencesRepository @Inject constructor(
             selectRCombo = prefs[Keys.SELECT_R_COMBO] ?: "quick_settings",
             menuWrapMode = MenuWrapMode.fromString(prefs[Keys.MENU_WRAP_MODE])
         )
-    }
+    }.flowOn(Dispatchers.Default)
 
     suspend fun setHapticEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.HAPTIC_ENABLED] = enabled }

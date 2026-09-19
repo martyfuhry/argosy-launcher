@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
@@ -313,7 +315,7 @@ class SyncPreferencesRepository @Inject constructor(
             quayPassGreeting = prefs[Keys.QUAYPASS_GREETING],
             quayPassTicketBalance = prefs[Keys.QUAYPASS_TICKET_BALANCE] ?: 0
         )
-    }
+    }.flowOn(Dispatchers.Default)
 
     fun saveWatcherEnabled(): Flow<Boolean> = dataStore.data.map {
         it[Keys.SAVE_WATCHER_ENABLED] ?: false
