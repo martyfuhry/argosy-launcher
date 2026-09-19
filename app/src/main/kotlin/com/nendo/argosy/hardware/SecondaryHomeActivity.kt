@@ -518,6 +518,7 @@ class SecondaryHomeActivity :
      * as a duplicate and drop it. With no player dispatch registered the key falls through to the
      * companion's own routing instead of vanishing.
      */
+    @android.annotation.SuppressLint("RestrictedApi")
     override fun onForwardKey(
         keyCode: Int,
         action: Int,

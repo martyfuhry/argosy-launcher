@@ -84,7 +84,7 @@
     <!-- Subtitle of that modal. -->
     <string name="settings_installers_variant_subtitle">This release carries more than one Android package</string>
     <!-- One row in that modal. %1$s is the package kind (ARM64, Universal), %2$s the file name. -->
-    <string name="settings_installers_variant_entry">%1$s - %2$s</string>
+    <string name="settings_installers_variant_entry" translatable="false">%1$s - %2$s</string>
     <!-- Package kind for a release asset that names no processor architecture. -->
     <string name="settings_installers_variant_default">Default</string>
     <!-- Package kind for a release asset that carries every processor architecture. -->
