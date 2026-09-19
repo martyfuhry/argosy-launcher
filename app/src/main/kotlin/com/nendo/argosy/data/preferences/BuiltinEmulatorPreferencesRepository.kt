@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nendo.argosy.data.local.entity.FastForwardMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -147,7 +149,7 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
             hudShowFps = prefs[Keys.HUD_SHOW_FPS] ?: false,
             hudShowLastSave = prefs[Keys.HUD_SHOW_LAST_SAVE] ?: false
         )
-    }
+    }.flowOn(Dispatchers.Default)
 
     fun getBuiltinCoreSelections(): Flow<Map<String, String>> = dataStore.data.map { prefs ->
         prefs[Keys.BUILTIN_CORE_SELECTIONS]
