@@ -1,0 +1,171 @@
+package com.nendo.argosy
+
+import com.nendo.argosy.data.preferences.DisplayRoleOverride
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class DualScreenManagerRoleSwapTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
+
+    private lateinit var sessionStateStore: com.nendo.argosy.data.preferences.SessionStateStore
+    private lateinit var preferencesRepository:
+        com.nendo.argosy.data.preferences.UserPreferencesRepository
+    private lateinit var manager: DualScreenManager
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        sessionStateStore = mockk(relaxed = true)
+        preferencesRepository = mockk(relaxed = true)
+        every { sessionStateStore.hasActiveSession() } returns false
+        manager = newManager()
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `a swap flips the live arrangement even when the stored override disagrees`() {
+        manager.setRolesSwapped(false)
+        every { sessionStateStore.getDisplayRoleOverride() } returns "SWAPPED"
+
+        manager.swapRoles()
+
+        assertTrue(
+            "swapRoles must derive the next arrangement from the live value, not the override",
+            manager.isRolesSwapped.value
+        )
+    }
+
+    @Test
+    fun `a swap records the override that matches the arrangement it produced`() {
+        manager.setRolesSwapped(false)
+        every { sessionStateStore.getDisplayRoleOverride() } returns "AUTO"
+
+        manager.swapRoles()
+
+        val stored = slot<String>()
+        verify { sessionStateStore.setDisplayRoleOverride(capture(stored)) }
+        assertEquals(DisplayRoleOverride.SWAPPED.name, stored.captured)
+        assertTrue(manager.isRolesSwapped.value)
+    }
+
+    @Test
+    fun `a swap is refused while a session is running`() {
+        manager.setRolesSwapped(false)
+        every { sessionStateStore.hasActiveSession() } returns true
+
+        manager.swapRoles()
+
+        assertEquals(false, manager.isRolesSwapped.value)
+    }
+
+    @Test
+    fun `clearing the override restores auto without touching the arrangement`() {
+        manager.setRolesSwapped(true)
+        every { sessionStateStore.getDisplayRoleOverride() } returns "SWAPPED"
+
+        manager.clearDisplayRoleOverride()
+
+        verify { sessionStateStore.setDisplayRoleOverride(DisplayRoleOverride.AUTO.name) }
+        assertTrue(manager.isRolesSwapped.value)
+    }
+
+    private fun newManager(): DualScreenManager = DualScreenManager(
+        context = mockk(relaxed = true),
+        scope = testScope,
+        gameDao = mockk(relaxed = true),
+        gameRepository = mockk(relaxed = true),
+        activeSaveRepository = mockk(relaxed = true),
+        prefetchGameSaveDataUseCase = mockk(relaxed = true),
+        platformRepository = mockk(relaxed = true),
+        collectionRepository = mockk(relaxed = true),
+        socialRepository = mockk(relaxed = true),
+        downloadQueueDao = mockk(relaxed = true),
+        downloadQueueRepository = mockk(relaxed = true),
+        gameFileDao = mockk(relaxed = true),
+        downloadManager = mockk(relaxed = true),
+        gameActionsDelegate = mockk(relaxed = true),
+        platformSyncQueue = mockk(relaxed = true),
+        gameLaunchDelegate = mockk(relaxed = true),
+        saveCacheManager = mockk(relaxed = true),
+        getUnifiedSavesUseCase = mockk(relaxed = true),
+        getUnifiedStatesUseCase = mockk(relaxed = true),
+        stateCacheManager = mockk(relaxed = true),
+        restoreCachedSaveUseCase = mockk(relaxed = true),
+        activateSaveChannelUseCase = mockk(relaxed = true),
+        restoreSaveChannelPointUseCase = mockk(relaxed = true),
+        createSaveChannelUseCase = mockk(relaxed = true),
+        copySaveChannelUseCase = mockk(relaxed = true),
+        renameSaveChannelUseCase = mockk(relaxed = true),
+        deleteSaveChannelUseCase = mockk(relaxed = true),
+        restoreStateUseCase = mockk(relaxed = true),
+        emulatorResolver = mockk(relaxed = true),
+        coreVersionExtractor = mockk(relaxed = true),
+        fetchAchievementsUseCase = mockk(relaxed = true),
+        raRepository = mockk(relaxed = true),
+        raTileContentRepository = mockk(relaxed = true),
+        achievementUpdateBus = mockk(relaxed = true),
+        displayAffinityHelper = mockk(relaxed = true),
+        sessionStateStore = sessionStateStore,
+        preferencesRepository = preferencesRepository,
+        imageCacheManager = mockk(relaxed = true),
+        romMRepository = mockk(relaxed = true),
+        resolveGameEmulatorContext = mockk(relaxed = true),
+        hapticManager = mockk(relaxed = true),
+        soundManager = mockk(relaxed = true),
+        syncPreferencesRepository = mockk(relaxed = true),
+        homeTileRepository = mockk(relaxed = true),
+        homeTilePromptQueue = mockk(relaxed = true),
+        appsRepository = mockk(relaxed = true),
+        notificationManager = mockk(relaxed = true),
+        titleIdDownloadObserver = mockk(relaxed = true),
+        homeGridPageRepository = mockk(relaxed = true),
+        pageChooserEntrySource = mockk(relaxed = true),
+        ambientAudioManager = mockk(relaxed = true),
+        emulatorConfigDao = mockk(relaxed = true),
+        configureEmulatorUseCase = mockk(relaxed = true),
+        builtinCoreResolver = mockk(relaxed = true),
+        saveHandlerRegistry = mockk(relaxed = true),
+        steamDownloadQueueDao = mockk(relaxed = true),
+        steamRepository = mockk(relaxed = true),
+        playSessionTracker = mockk(relaxed = true),
+        permissionHelper = mockk(relaxed = true),
+        steamContentManager = mockk(relaxed = true),
+        repairImageCacheUseCase = mockk(relaxed = true),
+        downloadFileStatusRepository = mockk(relaxed = true),
+        gradientExtractionDelegate = mockk(relaxed = true),
+        filePickerFlow = mockk(relaxed = true),
+        gameThemeAudioCoordinator = mockk(relaxed = true),
+        getPinnedCollectionsUseCase = mockk(relaxed = true),
+        getGamesForPinnedCollectionUseCase = mockk(relaxed = true),
+        advanceCollectionFocusUseCase = mockk(relaxed = true),
+        prepareCollectionQueueUseCase = mockk(relaxed = true),
+        mediaRepository = mockk(relaxed = true),
+        getRelatedMediaUseCase = mockk(relaxed = true),
+        resolveMediaPlayTargetUseCase = mockk(relaxed = true),
+        mediaPlaybackTracker = mockk(relaxed = true),
+        mediaAvailabilityVerifier = mockk(relaxed = true),
+        mediaDownloadDelegate = mockk(relaxed = true),
+        mediaSeriesDelegate = mockk(relaxed = true),
+        mediaSiblingsDelegate = mockk(relaxed = true)
+    )
+}
