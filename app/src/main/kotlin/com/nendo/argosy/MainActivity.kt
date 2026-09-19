@@ -410,7 +410,7 @@ class MainActivity : ComponentActivity() {
                             FocusRequester()
                         }
                         androidx.compose.runtime.LaunchedEffect(Unit) {
-                            runCatching { presentationSink.requestFocus() }
+                            presentationSink.requestFocus()
                         }
                         Box(
                             modifier = Modifier

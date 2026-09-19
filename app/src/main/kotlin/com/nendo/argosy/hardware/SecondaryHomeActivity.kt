@@ -8,7 +8,9 @@ import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.getValue
@@ -203,7 +205,18 @@ class SecondaryHomeActivity :
         }
 
         val slot by dsm.presentationSlot.collectAsState()
-        com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+        val presentationSink = androidx.compose.runtime.remember {
+            androidx.compose.ui.focus.FocusRequester()
+        }
+        androidx.compose.runtime.LaunchedEffect(Unit) { presentationSink.requestFocus() }
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxSize()
+                .focusRequester(presentationSink)
+                .focusable()
+        ) {
+            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+        }
     }
 
     override fun onResume() {

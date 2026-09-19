@@ -57,11 +57,13 @@ All interactive UI components MUST have:
 - Visual focus state via `isFocused: Boolean` prop
 
 **Focus Management:**
-- NO Compose focus for navigation or selection. `focusable()` appears exactly twice,
-  once per rendered surface: the control-surface key sink in `ArgosyApp` and the
-  presentation-surface key sink in `MainActivity`. Every surface needs one, because a
-  surface rendered without a sink leaves its window with nothing focusable and Android
-  ANRs the activity with "does not have a focused window". The other legitimate
+- NO Compose focus for navigation or selection. `focusable()` appears once per
+  rendered surface, as that surface's root key sink: `ArgosyApp` for the control
+  surface, and the presentation branch of both `MainActivity` and
+  `SecondaryHomeActivity`. Each activity renders either `ArgosyApp` or
+  `PresentationSlotContent`, so each needs a sink on the presentation side. A surface
+  rendered without one leaves its window with nothing focusable and Android ANRs the
+  activity with "does not have a focused window". The other legitimate
   exception is `FocusRequester` for soft-keyboard text entry (~20 `ui/` files); any of
   these becomes a violation the moment focus decides what is SELECTED rather than what
   is TYPED INTO.
@@ -333,8 +335,8 @@ The `clickableNoFocus` extension (defined in `ui/util/Modifiers.kt`) disables Co
 - Use `isFocused: Boolean` prop for visual focus state
 - Manage focus index in ViewModel, not Compose focus system
 - `Modifier.focusable()` belongs only to a surface's root key sink, one per rendered
-  surface (`ArgosyApp` for control, `MainActivity` for presentation). Never add one
-  to a row, tile or control
+  surface (`ArgosyApp` for control; the presentation branch of `MainActivity` and
+  `SecondaryHomeActivity`). Never add one to a row, tile or control
 - `FocusRequester` is allowed ONLY for soft-keyboard text entry and those root key
   sinks. Using it to move selection between rows is the violation
 

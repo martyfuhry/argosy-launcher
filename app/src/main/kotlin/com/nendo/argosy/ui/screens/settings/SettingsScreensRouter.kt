@@ -1,6 +1,7 @@
 package com.nendo.argosy.ui.screens.settings
 
 import androidx.lifecycle.viewModelScope
+import com.nendo.argosy.data.preferences.DisplayRoleOverride
 import com.nendo.argosy.domain.model.ScreenLayout
 import com.nendo.argosy.domain.model.ScreenLayouts
 import com.nendo.argosy.domain.model.ScreenRole
@@ -65,7 +66,11 @@ internal fun routeAssignScreenRole(vm: SettingsViewModel, role: ScreenRole) {
 
     val updated = screens.map { it.copy(role = next.roleFor(it.key) ?: it.role) }
     vm.displayDelegate.updateState(
-        state.display.copy(screens = updated, screenRoleModalOpen = false)
+        state.display.copy(
+            screens = updated,
+            screenRoleModalOpen = false,
+            displayRoleOverride = DisplayRoleOverride.AUTO
+        )
     )
 
     vm.viewModelScope.launch {
