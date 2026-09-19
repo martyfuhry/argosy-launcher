@@ -15,11 +15,16 @@ import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.R
 import com.nendo.argosy.data.emulator.VariantOption
 import com.nendo.argosy.data.model.VariantCategory
+import androidx.compose.runtime.remember
 import com.nendo.argosy.ui.common.labelRes
+import com.nendo.argosy.ui.common.parseRomFileName
 import com.nendo.argosy.ui.components.FocusedScroll
+import com.nendo.argosy.ui.components.parseGameTitle
 import com.nendo.argosy.ui.components.Modal
 import com.nendo.argosy.ui.screens.gamedetail.components.OptionItem
 import com.nendo.argosy.ui.theme.Dimens
+
+private const val VARIANT_TAG_SEPARATOR = " • "
 
 @Composable
 fun VariantPickerModal(
@@ -63,15 +68,23 @@ fun VariantPickerModal(
                     }
                 }
                 item(key = "variant_${variant.fileId ?: "primary"}") {
-                    val label = if (variant.fileId == null) {
-                        stringResource(R.string.gamedetail_variant_picker_original)
-                    } else {
-                        variant.fileName
+                    val original = stringResource(R.string.gamedetail_variant_picker_original)
+                    val parts = remember(variant.fileName) {
+                        parseRomFileName(variant.fileName)
                     }
+                    val parsedTitle = remember(parts.title) { parseGameTitle(parts.title) }
+                    val isOriginal = variant.fileId == null
+                    val label = if (isOriginal) original else parsedTitle.gameName
+                    val series = if (isOriginal) null else parsedTitle.seriesName
+                    val subtext = parts.tags
+                        .takeIf { !isOriginal && it.isNotEmpty() }
+                        ?.joinToString(VARIANT_TAG_SEPARATOR)
                     val downloaded = variant.isDownloaded
                     val canDownload = !downloaded && variant.fileId != null && onDownloadVariant != null
                     OptionItem(
                         label = label,
+                        series = series,
+                        subtext = subtext,
                         trailingIcon = when {
                             !downloaded && canDownload -> Icons.Default.Download
                             !downloaded -> Icons.Default.CloudOff

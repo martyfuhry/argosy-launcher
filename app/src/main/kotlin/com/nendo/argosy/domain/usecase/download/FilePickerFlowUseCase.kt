@@ -99,8 +99,7 @@ class FilePickerFlowUseCase @Inject constructor(
             val defaultLaunch = game.activeVariantFileId
             versionGroups.forEach { (key, files) ->
                 val memberRommId = key.removePrefix("romm:").toLongOrNull() ?: return@forEach
-                val label = files.firstOrNull { it.regions != null }?.regions
-                    ?: files.first().fileName
+                val label = files.first().fileName
                 val isDefault = defaultLaunch != null && files.any { it.id == defaultLaunch } ||
                     (defaultLaunch == null && memberRommId == rommId)
                 rows += FilePickerRow(
@@ -226,7 +225,7 @@ class FilePickerFlowUseCase @Inject constructor(
                     rows += FilePickerRow(
                         isHeader = false,
                         groupKey = key,
-                        label = f.regions?.let { "${f.fileName} ($it)" } ?: f.fileName,
+                        label = f.fileName,
                         rommFileId = rommFileId,
                         sizeBytes = f.fileSize,
                         isDownloaded = onDisk,

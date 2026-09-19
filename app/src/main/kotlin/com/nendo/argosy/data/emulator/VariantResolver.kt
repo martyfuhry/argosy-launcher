@@ -55,8 +55,7 @@ class VariantResolver @Inject constructor(
             val launch = VersionGroups.launchFile(groupFiles) ?: return@mapNotNull null
             VariantOption(
                 fileId = launch.id,
-                fileName = groupFiles.firstOrNull { it.regions != null }?.regions
-                    ?: launch.fileName,
+                fileName = launch.fileName,
                 category = VariantCategory.GAME.key,
                 isDownloaded = launch.isOnDisk,
                 isMultiDisc = groupFiles.any { it.isMultiDisc },

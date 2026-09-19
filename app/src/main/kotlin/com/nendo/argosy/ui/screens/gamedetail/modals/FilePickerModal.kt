@@ -39,7 +39,12 @@ import com.nendo.argosy.R
 import com.nendo.argosy.data.model.FilePickerRow
 import com.nendo.argosy.data.model.VariantCategory
 import com.nendo.argosy.data.model.allSelectableSelected
+import androidx.compose.runtime.remember
 import com.nendo.argosy.ui.common.labelRes
+import com.nendo.argosy.ui.common.RomFileNameParts
+import com.nendo.argosy.ui.common.parseRomFileName
+import com.nendo.argosy.ui.components.ParsedTitle
+import com.nendo.argosy.ui.components.parseGameTitle
 import com.nendo.argosy.ui.components.ArgosyCheckState
 import com.nendo.argosy.ui.components.ArgosyCheckbox
 import com.nendo.argosy.ui.components.FocusedScroll
@@ -54,6 +59,7 @@ import com.nendo.argosy.util.formatBytes
 enum class GroupCheckState { ALL, NONE, PARTIAL }
 
 private const val FOLDER_GROUP_KEY_PREFIX = "folder:"
+private const val TAG_SEPARATOR = " • "
 
 /**
  * Cherry-pick file selection for a download. Focus indices rows.size, rows.size + 1 and
@@ -325,12 +331,29 @@ private fun FilePickerFileRow(
         )
         Spacer(modifier = Modifier.width(Dimens.spacingSm))
         Column(modifier = Modifier.weight(1f)) {
+            val isGameVariant = !row.groupKey.startsWith(FOLDER_GROUP_KEY_PREFIX) &&
+                VariantCategory.fromKey(row.groupKey).isLaunchTarget
+            val parts = remember(row.label, isGameVariant) {
+                if (isGameVariant) parseRomFileName(row.label) else RomFileNameParts(row.label, emptyList())
+            }
+            val parsedTitle = remember(parts.title, isGameVariant) {
+                if (isGameVariant) parseGameTitle(parts.title) else ParsedTitle(null, parts.title)
+            }
+            parsedTitle.seriesName?.let { series ->
+                Text(
+                    text = series,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = row.label,
+                    text = parsedTitle.gameName,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
@@ -342,6 +365,15 @@ private fun FilePickerFileRow(
                         color = theme.focusAccent
                     )
                 }
+            }
+            if (parts.tags.isNotEmpty()) {
+                Text(
+                    text = parts.tags.joinToString(TAG_SEPARATOR),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = theme.focusAccent,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
             when {
                 pendingRemove -> Text(

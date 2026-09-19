@@ -30,6 +30,8 @@ import com.nendo.argosy.ui.theme.generated.ColorTokens
 @Composable
 fun OptionItem(
     label: String,
+    series: String? = null,
+    subtext: String? = null,
     icon: ImageVector? = null,
     iconTint: Color? = null,
     value: String? = null,
@@ -74,12 +76,27 @@ fun OptionItem(
                 modifier = Modifier.width(Dimens.iconSm)
             )
         }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = contentColor,
-            modifier = Modifier.weight(1f)
-        )
+        androidx.compose.foundation.layout.Column(modifier = Modifier.weight(1f)) {
+            series?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = contentColor
+            )
+            subtext?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = LocalArgosyTheme.current.focusAccent
+                )
+            }
+        }
         if (isSelected) {
             Icon(
                 imageVector = Icons.Default.Check,
