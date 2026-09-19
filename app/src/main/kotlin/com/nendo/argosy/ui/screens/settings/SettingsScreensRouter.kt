@@ -72,7 +72,10 @@ internal fun routeAssignScreenRole(vm: SettingsViewModel, role: ScreenRole) {
         val stored = vm.preferencesRepository.userPreferences.first().screenLayouts
         val setKey = ScreenLayouts.setKeyOf(screens.map { it.key })
         vm.preferencesRepository.setScreenLayouts(stored.with(setKey, next))
-        com.nendo.argosy.DualScreenManagerHolder.instance?.applyStoredScreenLayout()
+        com.nendo.argosy.DualScreenManagerHolder.instance?.let {
+            it.clearDisplayRoleOverride()
+            it.applyStoredScreenLayout()
+        }
     }
 }
 

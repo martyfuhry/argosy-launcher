@@ -21,6 +21,18 @@ class ScreenLayoutTest {
     }
 
     @Test
+    fun `a swap after a role assignment moves the roles rather than restoring the assignment`() {
+        val assigned = ScreenLayout.defaultFor(listOf(BUILT_IN, SECOND), listOf(BUILT_IN))
+            .withRole(SECOND, ScreenRole.PRIMARY)
+        assertEquals(SECOND, assigned.primaryKey)
+
+        val swapped = assigned.withRole(BUILT_IN, ScreenRole.PRIMARY)
+
+        assertEquals(BUILT_IN, swapped.primaryKey)
+        assertEquals(SECOND, swapped.presentationKey)
+    }
+
+    @Test
     fun `promoting the presentation screen demotes the old primary to presentation`() {
         val layout = layoutOf(BUILT_IN to ScreenRole.PRIMARY, SECOND to ScreenRole.PRESENTATION)
         val next = layout.withRole(SECOND, ScreenRole.PRIMARY)

@@ -243,7 +243,6 @@ class DualScreenManager(
                 appTargetDisplayId = attached.find { it.key == layout.appTargetKey }?.displayId,
                 hasPresentation = !layout.isSingleDisplay
             )
-            mirrorOverrideTo(primary.displayId == android.view.Display.DEFAULT_DISPLAY)
             _unconfiguredScreenSet.value = setKey.takeIf {
                 promptWhenUnknown && known == null && attached.size > 1
             }
@@ -1810,6 +1809,12 @@ class DualScreenManager(
         scope.launch {
             preferencesRepository.setDisplayRoleOverride(DisplayRoleOverride.fromString(value))
         }
+    }
+
+    fun clearDisplayRoleOverride() {
+        if (sessionStateStore.getDisplayRoleOverride() == DisplayRoleOverride.AUTO.name) return
+        sessionStateStore.setDisplayRoleOverride(DisplayRoleOverride.AUTO.name)
+        scope.launch { preferencesRepository.setDisplayRoleOverride(DisplayRoleOverride.AUTO) }
     }
 
     /**
