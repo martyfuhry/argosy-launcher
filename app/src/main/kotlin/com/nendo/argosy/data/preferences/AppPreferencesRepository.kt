@@ -6,8 +6,10 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.nendo.argosy.util.LogLevel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import java.time.Instant
 import javax.inject.Inject
@@ -100,7 +102,7 @@ class AppPreferencesRepository @Inject constructor(
             appAffinityEnabled = true,
             appLanguage = AppLanguage.fromString(prefs[Keys.APP_LANGUAGE])
         )
-    }
+    }.flowOn(Dispatchers.Default)
 
     suspend fun setFirstRunComplete() {
         dataStore.edit { it[Keys.FIRST_RUN_COMPLETE] = true }
