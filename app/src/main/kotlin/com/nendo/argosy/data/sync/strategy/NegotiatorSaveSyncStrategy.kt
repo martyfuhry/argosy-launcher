@@ -57,10 +57,18 @@ class NegotiatorSaveSyncStrategy @Inject constructor(
             "planReconcile: sessionId=${body.sessionId} upload=${body.totalUpload} download=${body.totalDownload} conflict=${body.totalConflict} no_op=${body.totalNoOp}"
         )
 
-        return ReconcilePlan(
+        val plan = ReconcilePlan(
             sessionId = body.sessionId,
             operations = body.operations.map { it.toReconcileOperation() }
         )
+        plan.operations.forEach {
+            Logger.debug(
+                TAG,
+                "planReconcile: sessionId=${body.sessionId} romId=${it.romId} " +
+                    "slot=${it.slot} action=${it.action} reason=${it.reason}"
+            )
+        }
+        return plan
     }
 
     override suspend fun completeSession(
