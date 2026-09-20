@@ -797,7 +797,7 @@ class RomMLibrarySyncService @Inject constructor(
         val platformDef = PlatformDefinitions.getBySlug(effectiveSlug)
         val isSubPlatform = !effectiveSlug.equals(remote.slug, ignoreCase = true)
 
-        val logoUrl = remote.logoUrl?.let { apiClient.buildMediaUrl(it) }
+        val logoUrl = apiClient.buildMediaUrl(remote.logoUrl)
         val derivedNames = if (isSubPlatform) {
             PlatformDefinitions.getAliasDisplayName(effectiveSlug)
                 ?: PlatformDefinitions.deriveDisplayName(effectiveSlug)
@@ -861,7 +861,7 @@ class RomMLibrarySyncService @Inject constructor(
         }
 
         val local = platformDao.getById(LocalPlatformIds.ANDROID) ?: return
-        val logoUrl = remote.logoUrl?.let { apiClient.buildMediaUrl(it) }
+        val logoUrl = apiClient.buildMediaUrl(remote.logoUrl)
         if (local.logoPath == null && logoUrl != null) {
             platformDao.updateLogoPath(LocalPlatformIds.ANDROID, logoUrl)
             if (logoUrl.startsWith("http")) {
@@ -926,7 +926,7 @@ class RomMLibrarySyncService @Inject constructor(
         }
 
         val screenshotUrls = rom.screenshotUrls.ifEmpty {
-            rom.screenshotPaths?.map { apiClient.buildMediaUrl(it) } ?: emptyList()
+            rom.screenshotPaths?.mapNotNull { apiClient.buildMediaUrl(it) } ?: emptyList()
         }
 
         val contentChanged = existing != null && existing.title != rom.name
@@ -935,25 +935,25 @@ class RomMLibrarySyncService @Inject constructor(
             decodedImageCacheDirty = true
         }
 
-        val backgroundUrl = rom.backgroundUrls.firstOrNull()
-            ?: screenshotUrls.getOrNull(1)
-            ?: screenshotUrls.getOrNull(0)
+        val backgroundUrls = (
+            rom.backgroundUrls + listOfNotNull(screenshotUrls.getOrNull(1)) + screenshotUrls
+        ).distinct()
         val cachedBackground = when {
             !contentChanged && existing?.backgroundPath?.startsWith("/") == true -> existing.backgroundPath
-            backgroundUrl != null -> {
-                imageCacheManager.queueBackgroundCache(backgroundUrl, rom.id, rom.name)
-                backgroundUrl
+            backgroundUrls.isNotEmpty() -> {
+                imageCacheManager.queueBackgroundCache(backgroundUrls, rom.id, rom.name)
+                backgroundUrls.first()
             }
             else -> null
         }
 
-        val coverUrl = rom.coverLarge?.let { apiClient.buildMediaUrl(it) }
+        val coverUrls = apiClient.buildCoverUrls(rom)
         val cachedCover = when {
             existing?.coverSetManually == true -> existing.coverPath
             !contentChanged && existing?.coverPath?.startsWith("/") == true -> existing.coverPath
-            coverUrl != null -> {
-                imageCacheManager.queueCoverCache(coverUrl, rom.id, rom.name)
-                coverUrl
+            coverUrls.isNotEmpty() -> {
+                imageCacheManager.queueCoverCache(coverUrls, rom.id, rom.name)
+                coverUrls.first()
             }
             else -> null
         }
@@ -963,7 +963,7 @@ class RomMLibrarySyncService @Inject constructor(
         }
 
         val boxBackUrl = if (boxArtCacheEnabledForSync) {
-            rom.ssMetadata?.box2dBackPath?.let { apiClient.buildResourceUrl(it) }
+            apiClient.buildResourceUrl(rom.ssMetadata?.box2dBackPath)
         } else null
         val cachedBoxBack = when {
             !contentChanged && existing?.boxBackPath?.startsWith("/") == true -> existing.boxBackPath
@@ -974,7 +974,7 @@ class RomMLibrarySyncService @Inject constructor(
             else -> null
         }
         val boxSpineUrl = if (boxArtCacheEnabledForSync) {
-            rom.ssMetadata?.box2dSidePath?.let { apiClient.buildResourceUrl(it) }
+            apiClient.buildResourceUrl(rom.ssMetadata?.box2dSidePath)
         } else null
         val cachedBoxSpine = when {
             !contentChanged && existing?.boxSpinePath?.startsWith("/") == true -> existing.boxSpinePath

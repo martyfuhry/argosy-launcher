@@ -17,15 +17,39 @@ class RomMApiClient @Inject constructor(
     internal val api: RomMApi? get() = connectionManager.getApi()
     internal val baseUrl: String get() = connectionManager.getBaseUrl()
 
-    fun buildMediaUrl(path: String): String {
-        return if (path.startsWith("http")) path else "$baseUrl$path"
+    /**
+     * Absolute URL for a media path RomM already prefixed. Null for an absent path, which
+     * RomM reports as an empty string.
+     */
+    fun buildMediaUrl(path: String?): String? {
+        val trimmed = path?.trim().orEmpty()
+        if (trimmed.isEmpty()) return null
+        return if (trimmed.startsWith("http")) trimmed else "$baseUrl$trimmed"
     }
 
-    /** For paths relative to RomM's resources mount (ss_metadata media); cover paths arrive pre-prefixed. */
-    fun buildResourceUrl(path: String): String {
-        if (path.startsWith("http")) return path
-        return "$baseUrl/assets/romm/resources/${path.trimStart('/')}"
+    /**
+     * Absolute URL for a path relative to RomM's resources mount, the form ss_metadata
+     * reports. Pre-prefixed cover paths belong in [buildMediaUrl].
+     */
+    fun buildResourceUrl(path: String?): String? {
+        val trimmed = path?.trim().orEmpty()
+        if (trimmed.isEmpty()) return null
+        if (trimmed.startsWith("http")) return trimmed
+        return "$baseUrl/assets/romm/resources/${trimmed.trimStart('/')}"
     }
+
+    /**
+     * Every cover url RomM can offer for a rom, best first. Order: the covers RomM stores
+     * itself, the provider url it recorded, then the ScreenScraper box scans. Empty when
+     * the rom has no art at all.
+     */
+    fun buildCoverUrls(rom: RomMRom): List<String> = listOfNotNull(
+        buildMediaUrl(rom.coverLarge),
+        buildMediaUrl(rom.coverSmall),
+        buildMediaUrl(rom.coverUrl),
+        buildResourceUrl(rom.ssMetadata?.box2dPath),
+        buildResourceUrl(rom.ssMetadata?.box2dBackPath)
+    ).distinct()
 
     fun isVersionAtLeast(minVersion: String): Boolean =
         connectionManager.isVersionAtLeast(minVersion)
@@ -314,7 +338,7 @@ class RomMApiClient @Inject constructor(
                         ?: platformDao.getBySlugAndFsSlug(remote.slug, remote.fsSlug)
                         ?: platformDao.getBySlug(remote.slug)
                     val platformDef = PlatformDefinitions.getBySlug(effectiveSlug)
-                    val logoUrl = remote.logoUrl?.let { buildMediaUrl(it) }
+                    val logoUrl = buildMediaUrl(remote.logoUrl)
                     val derivedNames = if (isSubPlatform) {
                         PlatformDefinitions.getAliasDisplayName(effectiveSlug)
                             ?: PlatformDefinitions.deriveDisplayName(effectiveSlug)

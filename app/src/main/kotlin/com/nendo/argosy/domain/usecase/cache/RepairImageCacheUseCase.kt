@@ -23,11 +23,11 @@ class RepairImageCacheUseCase @Inject constructor(
 
         return when (val result = romMRepository.getRom(rommId)) {
             is RomMResult.Success -> {
-                val coverUrl = result.data.coverLarge?.let { romMRepository.buildMediaUrlPublic(it) }
-                if (coverUrl != null) {
-                    imageCacheManager.queueCoverCache(coverUrl, rommId, game.title)
+                val coverUrls = romMRepository.buildCoverUrls(result.data)
+                if (coverUrls.isNotEmpty()) {
+                    imageCacheManager.queueCoverCache(coverUrls, rommId, game.title)
                 }
-                coverUrl
+                coverUrls.firstOrNull()
             }
             is RomMResult.Error -> null
         }
@@ -44,11 +44,14 @@ class RepairImageCacheUseCase @Inject constructor(
 
         return when (val result = romMRepository.getRom(rommId)) {
             is RomMResult.Success -> {
-                val backgroundUrl = result.data.backgroundUrls.firstOrNull()
-                if (backgroundUrl != null) {
-                    imageCacheManager.queueBackgroundCache(backgroundUrl, rommId, game.title)
+                val backgroundUrls = (
+                    result.data.backgroundUrls +
+                        result.data.screenshotPaths?.mapNotNull { romMRepository.buildMediaUrlPublic(it) }.orEmpty()
+                ).distinct()
+                if (backgroundUrls.isNotEmpty()) {
+                    imageCacheManager.queueBackgroundCache(backgroundUrls, rommId, game.title)
                 }
-                backgroundUrl
+                backgroundUrls.firstOrNull()
             }
             is RomMResult.Error -> null
         }

@@ -480,6 +480,12 @@ class MusicBrowserViewModel @Inject constructor(
                     val authToken = preferencesRepository.userPreferences.first().rommToken
                     val headers = authToken?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
                     val url = romMRepository.buildMediaUrlPublic(track.streamUrl)
+                    if (url == null) {
+                        runCatching { player.release() }
+                        onPreviewEnded(track.romFileId)
+                        postNotice(context.getString(R.string.media_music_notice_preview_failed))
+                        return@launch
+                    }
                     player.setDataSource(context, Uri.parse(url), headers)
                 }
                 player.setOnPreparedListener { prepared ->

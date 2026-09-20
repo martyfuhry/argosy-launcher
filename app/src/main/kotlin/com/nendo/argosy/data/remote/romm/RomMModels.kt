@@ -276,6 +276,7 @@ data class RomMLaunchboxMetadata(
 
 @JsonClass(generateAdapter = true)
 data class RomMSsMetadata(
+    @Json(name = "box2d_path") val box2dPath: String? = null,
     @Json(name = "box2d_back_path") val box2dBackPath: String? = null,
     @Json(name = "box2d_side_path") val box2dSidePath: String? = null
 )
@@ -581,10 +582,6 @@ object RomMUtils {
             lower.startsWith("an ") -> title.drop(3)
             else -> title
         }.lowercase()
-    }
-
-    fun buildMediaUrl(baseUrl: String, path: String): String {
-        return if (path.startsWith("http")) path else "$baseUrl$path"
     }
 
     fun getDedupKey(rom: RomMRom): String? {

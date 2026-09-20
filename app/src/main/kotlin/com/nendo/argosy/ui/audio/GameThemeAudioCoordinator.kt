@@ -106,7 +106,7 @@ class GameThemeAudioCoordinator @Inject constructor(
         if (romMRepository.connectionState.value !is ConnectionState.Connected) return null
         val url = romMRepository.buildMediaUrlPublic(
             "/api/roms/${theme.rommFileId}/files/content/${Uri.encode(theme.fileName)}"
-        )
+        ) ?: return null
         val headers = token?.let { mapOf("Authorization" to "Bearer $it") } ?: emptyMap()
         return AmbientOverrideSource.Remote(url, headers, theme.title)
     }

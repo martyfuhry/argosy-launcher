@@ -177,34 +177,34 @@ class RomMUserPropertyService @Inject constructor(
             imageCacheManager.deleteGameImages(rommId)
 
             val screenshotUrls = rom.screenshotUrls.ifEmpty {
-                rom.screenshotPaths?.map { apiClient.buildMediaUrl(it) } ?: emptyList()
+                rom.screenshotPaths?.mapNotNull { apiClient.buildMediaUrl(it) } ?: emptyList()
             }
 
-            val backgroundUrl = rom.backgroundUrls.firstOrNull()
-                ?: screenshotUrls.getOrNull(1)
-                ?: screenshotUrls.getOrNull(0)
-            val coverUrl = rom.coverLarge?.let { apiClient.buildMediaUrl(it) }
+            val backgroundUrls = (
+                rom.backgroundUrls + listOfNotNull(screenshotUrls.getOrNull(1)) + screenshotUrls
+            ).distinct()
+            val coverUrls = apiClient.buildCoverUrls(rom)
 
             val boxArtEnabled = userPreferencesRepository.userPreferences.first().boxArtCacheEnabled
             val boxBackUrl = if (boxArtEnabled) {
-                rom.ssMetadata?.box2dBackPath?.let { apiClient.buildResourceUrl(it) }
+                apiClient.buildResourceUrl(rom.ssMetadata?.box2dBackPath)
             } else null
             val boxSpineUrl = if (boxArtEnabled) {
-                rom.ssMetadata?.box2dSidePath?.let { apiClient.buildResourceUrl(it) }
+                apiClient.buildResourceUrl(rom.ssMetadata?.box2dSidePath)
             } else null
 
             val cached = imageCacheManager.cacheGameImagesNow(
                 rommId = rom.id,
                 gameTitle = rom.name,
-                coverUrl = coverUrl,
-                backgroundUrl = backgroundUrl,
+                coverUrls = coverUrls,
+                backgroundUrls = backgroundUrls,
                 boxBackUrl = boxBackUrl,
                 boxSpineUrl = boxSpineUrl
             )
 
             val updatedGame = game.withRomMetadata(rom).copy(
-                coverPath = cached.coverPath ?: coverUrl,
-                backgroundPath = cached.backgroundPath ?: backgroundUrl,
+                coverPath = cached.coverPath ?: coverUrls.firstOrNull(),
+                backgroundPath = cached.backgroundPath ?: backgroundUrls.firstOrNull(),
                 screenshotPaths = screenshotUrls.joinToString(","),
                 boxBackPath = cached.boxBackPath ?: boxBackUrl ?: game.boxBackPath,
                 boxSpinePath = cached.boxSpinePath ?: boxSpineUrl ?: game.boxSpinePath,

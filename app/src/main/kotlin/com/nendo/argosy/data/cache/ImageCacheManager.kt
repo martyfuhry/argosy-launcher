@@ -17,6 +17,7 @@ import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.model.GameSource
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -37,13 +38,22 @@ import javax.inject.Singleton
 private const val TAG = "ImageCacheManager"
 
 data class ImageCacheRequest(
-    val url: String,
+    val urls: List<String>,
     val id: Long,
     val type: ImageType,
     val gameTitle: String = "",
     val isSteam: Boolean = false,
     val gameId: Long? = null
-)
+) {
+    constructor(
+        url: String,
+        id: Long,
+        type: ImageType,
+        gameTitle: String = "",
+        isSteam: Boolean = false,
+        gameId: Long? = null
+    ) : this(listOf(url), id, type, gameTitle, isSteam, gameId)
+}
 
 enum class ImageType { BACKGROUND, SCREENSHOT, COVER, BOX_BACK, BOX_SPINE }
 
@@ -152,6 +162,7 @@ class ImageCacheManager @Inject constructor(
         private const val MAX_IN_MEMORY_IMAGE_BYTES = 8 * 1024 * 1024
         private const val DEFAULT_IMAGE_BUFFER_BYTES = 64 * 1024
         private const val CACHE_SUBFOLDER = "argosy_images"
+        private val DOCUMENT_CONTENT_TYPES = listOf("text/", "html", "json")
         private const val FALLBACK_PLATFORM = "_misc"
         private const val LOGOS_DIR = "_logos"
         private const val VALIDATION_MARKER = ".validated"
@@ -227,9 +238,13 @@ class ImageCacheManager @Inject constructor(
         Log.d(TAG, "Background caching resumed")
     }
 
-    fun queueBackgroundCache(url: String, rommId: Long, gameTitle: String = "") {
+    fun queueBackgroundCache(url: String, rommId: Long, gameTitle: String = "") =
+        queueBackgroundCache(listOf(url), rommId, gameTitle)
+
+    fun queueBackgroundCache(urls: List<String>, rommId: Long, gameTitle: String = "") {
+        if (urls.isEmpty()) return
         scope.launch {
-            queue.send(ImageCacheRequest(url, rommId, ImageType.BACKGROUND, gameTitle, isSteam = false))
+            queue.send(ImageCacheRequest(urls, rommId, ImageType.BACKGROUND, gameTitle, isSteam = false))
             startProcessingIfNeeded()
         }
     }
@@ -298,44 +313,76 @@ class ImageCacheManager @Inject constructor(
             request.isSteam -> "steam_bg_${request.id}"
             else -> "bg_${request.id}"
         }
-        val fileName = "${prefix}_${request.url.md5Hash()}.jpg"
         val slug = when {
             isGameIdRequest -> resolveGamePlatformSlug(request.gameId!!)
             request.isSteam -> resolveSteamPlatformSlug(request.id)
             else -> resolveRommPlatformSlug(request.id)
         }
-        val cachedFile = File(platformDir(slug, "backgrounds"), fileName)
-
-        if (cachedFile.exists()) {
-            if (isValidImageFile(cachedFile)) {
-                updateGameBackgroundForRequest(request, cachedFile.absolutePath)
-                return
-            } else {
-                cachedFile.delete()
-                Log.w(TAG, "Deleted invalid cached background: ${cachedFile.name}")
-            }
-        }
-
-        val bitmap = downloadAndResize(request.url, 1280) ?: return
-
-        FileOutputStream(cachedFile).use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 87, out)
-        }
-        bitmap.recycle()
-
-        if (!isValidImageFile(cachedFile)) {
-            cachedFile.delete()
-            Log.w(TAG, "Deleted newly cached invalid background: ${cachedFile.name}")
-            return
-        }
-
         val idLabel = when {
             isGameIdRequest -> "gameId ${request.gameId}"
             request.isSteam -> "steamAppId ${request.id}"
             else -> "rommId ${request.id}"
         }
-        Log.d(TAG, "Cached background for $idLabel: ${cachedFile.length() / 1024}KB")
-        updateGameBackgroundForRequest(request, cachedFile.absolutePath)
+        val backgroundDir = platformDir(slug, "backgrounds")
+
+        for ((index, url) in request.urls.withIndex()) {
+            val cachedFile = File(backgroundDir, "${prefix}_${url.md5Hash()}.jpg")
+
+            if (cachedFile.exists()) {
+                if (isValidImageFile(cachedFile)) {
+                    updateGameBackgroundForRequest(request, cachedFile.absolutePath)
+                    return
+                }
+                cachedFile.delete()
+                Log.w(TAG, "Deleted invalid cached background: ${cachedFile.name}")
+            }
+
+            val bitmap = downloadAndResize(url, 1280)
+            if (bitmap == null) {
+                logCandidateRejected("background", idLabel, index, request.urls.size, url, "no decodable image")
+                continue
+            }
+
+            FileOutputStream(cachedFile).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 87, out)
+            }
+            bitmap.recycle()
+
+            if (!isValidImageFile(cachedFile)) {
+                cachedFile.delete()
+                logCandidateRejected("background", idLabel, index, request.urls.size, url, "cached file did not decode")
+                continue
+            }
+
+            Log.d(TAG, "Cached background for $idLabel: ${cachedFile.length() / 1024}KB")
+            updateGameBackgroundForRequest(request, cachedFile.absolutePath)
+            return
+        }
+
+        logAllCandidatesRejected("background", idLabel, request)
+    }
+
+    private fun logCandidateRejected(
+        kind: String,
+        idLabel: String,
+        index: Int,
+        total: Int,
+        url: String,
+        reason: String
+    ) {
+        Logger.warn(TAG, "$kind candidate ${index + 1}/$total rejected for $idLabel ($reason): $url")
+    }
+
+    private fun logAllCandidatesRejected(kind: String, idLabel: String, request: ImageCacheRequest) {
+        if (request.urls.isEmpty()) {
+            Logger.warn(TAG, "No $kind url offered for $idLabel (${request.gameTitle})")
+        } else {
+            Logger.warn(
+                TAG,
+                "No $kind candidate loaded for $idLabel (${request.gameTitle}), " +
+                    "${request.urls.size} tried: ${request.urls.joinToString(", ")}"
+            )
+        }
     }
 
     private suspend fun updateGameBackgroundForRequest(request: ImageCacheRequest, localPath: String) {
@@ -376,6 +423,12 @@ class ImageCacheManager @Inject constructor(
             connection.connectTimeout = 10_000
             connection.readTimeout = 30_000
 
+            val contentType = connection.contentType?.lowercase()
+            if (contentType != null && DOCUMENT_CONTENT_TYPES.any { contentType.contains(it) }) {
+                Logger.warn(TAG, "Served a document, not an image ($contentType): $url")
+                return null
+            }
+
             connection.getInputStream().use { inputStream ->
                 val buffered = java.io.ByteArrayOutputStream(DEFAULT_IMAGE_BUFFER_BYTES)
                 val chunk = ByteArray(DEFAULT_IMAGE_BUFFER_BYTES)
@@ -389,6 +442,9 @@ class ImageCacheManager @Inject constructor(
                     val bytes = buffered.toByteArray()
                     decodeSampled(maxWidth) { options ->
                         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                    } ?: run {
+                        Logger.warn(TAG, "Response did not decode as an image: $url")
+                        null
                     }
                 } else {
                     val head = buffered.toByteArray()
@@ -408,10 +464,10 @@ class ImageCacheManager @Inject constructor(
                 }
             }
         } catch (e: java.io.FileNotFoundException) {
-            Log.w(TAG, "Image not found: $url")
+            Logger.warn(TAG, "Image not found: $url")
             null
         } catch (e: Throwable) {
-            Log.e(TAG, "Failed to download image from $url: ${e.javaClass.simpleName}: ${e.message}")
+            Logger.warn(TAG, "Failed to download image from $url: ${e.javaClass.simpleName}: ${e.message}")
             null
         }
     }
@@ -1041,9 +1097,13 @@ class ImageCacheManager @Inject constructor(
 
     enum class BoxFace { BACK, SPINE }
 
-    fun queueCoverCache(url: String, rommId: Long, gameTitle: String = "") {
+    fun queueCoverCache(url: String, rommId: Long, gameTitle: String = "") =
+        queueCoverCache(listOf(url), rommId, gameTitle)
+
+    fun queueCoverCache(urls: List<String>, rommId: Long, gameTitle: String = "") {
+        if (urls.isEmpty()) return
         scope.launch {
-            coverQueue.send(ImageCacheRequest(url, rommId, ImageType.COVER, gameTitle, isSteam = false))
+            coverQueue.send(ImageCacheRequest(urls, rommId, ImageType.COVER, gameTitle, isSteam = false))
             startCoverProcessingIfNeeded()
         }
     }
@@ -1056,9 +1116,13 @@ class ImageCacheManager @Inject constructor(
         }
     }
 
-    fun queueCoverCacheByGameId(url: String, gameId: Long) {
+    fun queueCoverCacheByGameId(url: String, gameId: Long) =
+        queueCoverCacheByGameId(listOf(url), gameId)
+
+    fun queueCoverCacheByGameId(urls: List<String>, gameId: Long) {
+        if (urls.isEmpty()) return
         scope.launch {
-            coverQueue.send(ImageCacheRequest(url, gameId, ImageType.COVER, gameId = gameId))
+            coverQueue.send(ImageCacheRequest(urls, gameId, ImageType.COVER, gameId = gameId))
             startCoverProcessingIfNeeded()
         }
     }
@@ -1106,33 +1170,60 @@ class ImageCacheManager @Inject constructor(
             return
         }
         val prefix = if (isGameIdRequest) "cover_g${request.gameId}" else "cover_${request.id}"
-        val baseName = "${prefix}_${request.url.md5Hash()}"
         val slug = if (isGameIdRequest) resolveGamePlatformSlug(request.gameId!!)
                    else resolveRommPlatformSlug(request.id)
         val coverDir = platformDir(slug, "covers")
-        val existingFile = listOf("jpg", "png")
-            .map { File(coverDir, "$baseName.$it") }
-            .firstOrNull { it.exists() }
+        val idLabel = if (isGameIdRequest) "gameId ${request.gameId}" else "rommId ${request.id}"
 
-        if (existingFile != null) {
-            if (isValidImageFile(existingFile)) {
-                if (isGameIdRequest) {
-                    gameDao.updateCoverPath(request.gameId!!, existingFile.absolutePath)
-                    _localCoverWritten.tryEmit(request.gameId to existingFile.absolutePath)
-                } else {
-                    updateGameCover(request.id, existingFile.absolutePath)
+        for ((index, url) in request.urls.withIndex()) {
+            val baseName = "${prefix}_${url.md5Hash()}"
+            val existingFile = listOf("jpg", "png")
+                .map { File(coverDir, "$baseName.$it") }
+                .firstOrNull { it.exists() }
+
+            if (existingFile != null) {
+                if (isValidImageFile(existingFile)) {
+                    applyCachedCover(request, existingFile.absolutePath)
+                    return
                 }
-                return
-            } else {
                 existingFile.delete()
                 Log.w(TAG, "Deleted invalid cached cover: ${existingFile.name}")
             }
+
+            val bitmap = downloadAndResize(url, 400)
+            if (bitmap == null) {
+                logCandidateRejected("cover", idLabel, index, request.urls.size, url, "no decodable image")
+                continue
+            }
+
+            val cachedFile = writeCoverBitmap(bitmap, coverDir, baseName)
+            if (cachedFile == null) {
+                logCandidateRejected("cover", idLabel, index, request.urls.size, url, "cached file did not decode")
+                continue
+            }
+
+            Log.d(TAG, "Cached cover for $idLabel: ${cachedFile.length() / 1024}KB")
+            applyCachedCover(request, cachedFile.absolutePath)
+            return
         }
 
-        val bitmap = downloadAndResize(request.url, 400)
-            ?: game?.steamAppId?.let { downloadSteamCoverFallback(it) }
-            ?: return
+        val steamAppId = game?.steamAppId
+        if (steamAppId != null) {
+            val steamBitmap = downloadSteamCoverFallback(steamAppId)
+            val cachedFile = steamBitmap?.let {
+                writeCoverBitmap(it, coverDir, "${prefix}_steam_$steamAppId")
+            }
+            if (cachedFile != null) {
+                Log.d(TAG, "Cached steam fallback cover for $idLabel: ${cachedFile.length() / 1024}KB")
+                applyCachedCover(request, cachedFile.absolutePath)
+                return
+            }
+        }
 
+        logAllCandidatesRejected("cover", idLabel, request)
+    }
+
+    private fun writeCoverBitmap(bitmap: Bitmap, coverDir: File, baseName: String): File? {
         val hasTransparency = hasTransparentPixels(bitmap)
         val cachedFile = File(coverDir, "$baseName.${if (hasTransparency) "png" else "jpg"}")
         FileOutputStream(cachedFile).use { out ->
@@ -1146,17 +1237,17 @@ class ImageCacheManager @Inject constructor(
 
         if (!isValidImageFile(cachedFile)) {
             cachedFile.delete()
-            Log.w(TAG, "Deleted newly cached invalid cover: ${cachedFile.name}")
-            return
+            return null
         }
+        return cachedFile
+    }
 
-        val idLabel = if (isGameIdRequest) "gameId ${request.gameId}" else "rommId ${request.id}"
-        Log.d(TAG, "Cached cover for $idLabel: ${cachedFile.length() / 1024}KB")
-        if (isGameIdRequest) {
-            gameDao.updateCoverPath(request.gameId!!, cachedFile.absolutePath)
-            _localCoverWritten.tryEmit(request.gameId to cachedFile.absolutePath)
+    private suspend fun applyCachedCover(request: ImageCacheRequest, localPath: String) {
+        if (request.gameId != null) {
+            gameDao.updateCoverPath(request.gameId, localPath)
+            _localCoverWritten.tryEmit(request.gameId to localPath)
         } else {
-            updateGameCover(request.id, cachedFile.absolutePath)
+            updateGameCover(request.id, localPath)
         }
     }
 
@@ -1168,46 +1259,43 @@ class ImageCacheManager @Inject constructor(
             return
         }
         val prefix = if (isBack) "box_back_${request.id}" else "box_spine_${request.id}"
-        val baseName = "${prefix}_${request.url.md5Hash()}"
         val slug = resolveRommPlatformSlug(request.id)
         val coverDir = platformDir(slug, "covers")
-        val existingFile = listOf("jpg", "png")
-            .map { File(coverDir, "$baseName.$it") }
-            .firstOrNull { it.exists() }
+        val kind = if (isBack) "box back" else "box spine"
+        val idLabel = "rommId ${request.id}"
 
-        if (existingFile != null) {
-            if (isValidImageFile(existingFile)) {
-                updateGameBoxFace(request.id, isBack, existingFile.absolutePath)
-                return
-            } else {
+        for ((index, url) in request.urls.withIndex()) {
+            val baseName = "${prefix}_${url.md5Hash()}"
+            val existingFile = listOf("jpg", "png")
+                .map { File(coverDir, "$baseName.$it") }
+                .firstOrNull { it.exists() }
+
+            if (existingFile != null) {
+                if (isValidImageFile(existingFile)) {
+                    updateGameBoxFace(request.id, isBack, existingFile.absolutePath)
+                    return
+                }
                 existingFile.delete()
             }
-        }
 
-        val bitmap = downloadAndResize(request.url, 400)
-        if (bitmap == null) {
-            Log.w(TAG, "Box face download failed: ${request.url}")
-            return
-        }
-
-        val hasTransparency = hasTransparentPixels(bitmap)
-        val cachedFile = File(coverDir, "$baseName.${if (hasTransparency) "png" else "jpg"}")
-        FileOutputStream(cachedFile).use { out ->
-            if (hasTransparency) {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-            } else {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            val bitmap = downloadAndResize(url, 400)
+            if (bitmap == null) {
+                logCandidateRejected(kind, idLabel, index, request.urls.size, url, "no decodable image")
+                continue
             }
-        }
-        bitmap.recycle()
 
-        if (!isValidImageFile(cachedFile)) {
-            cachedFile.delete()
-            Log.w(TAG, "Box face cached file invalid: ${cachedFile.name}")
+            val cachedFile = writeCoverBitmap(bitmap, coverDir, baseName)
+            if (cachedFile == null) {
+                logCandidateRejected(kind, idLabel, index, request.urls.size, url, "cached file did not decode")
+                continue
+            }
+
+            Log.d(TAG, "Cached box face ${cachedFile.name} for $idLabel")
+            updateGameBoxFace(request.id, isBack, cachedFile.absolutePath)
             return
         }
-        Log.d(TAG, "Cached box face ${cachedFile.name} for rommId ${request.id}")
-        updateGameBoxFace(request.id, isBack, cachedFile.absolutePath)
+
+        logAllCandidatesRejected(kind, idLabel, request)
     }
 
     private suspend fun updateGameBoxFace(rommId: Long, isBack: Boolean, localPath: String) {
@@ -1227,13 +1315,17 @@ class ImageCacheManager @Inject constructor(
     suspend fun cacheGameImagesNow(
         rommId: Long,
         gameTitle: String,
-        coverUrl: String?,
-        backgroundUrl: String?,
+        coverUrls: List<String>,
+        backgroundUrls: List<String>,
         boxBackUrl: String?,
         boxSpineUrl: String?
     ): CachedGameImages = withContext(Dispatchers.IO) {
-        coverUrl?.let { processCoverRequest(ImageCacheRequest(it, rommId, ImageType.COVER, gameTitle, isSteam = false)) }
-        backgroundUrl?.let { processRequest(ImageCacheRequest(it, rommId, ImageType.BACKGROUND, gameTitle, isSteam = false)) }
+        if (coverUrls.isNotEmpty()) {
+            processCoverRequest(ImageCacheRequest(coverUrls, rommId, ImageType.COVER, gameTitle, isSteam = false))
+        }
+        if (backgroundUrls.isNotEmpty()) {
+            processRequest(ImageCacheRequest(backgroundUrls, rommId, ImageType.BACKGROUND, gameTitle, isSteam = false))
+        }
         boxBackUrl?.let { processBoxFaceRequest(ImageCacheRequest(it, rommId, ImageType.BOX_BACK, gameTitle, isSteam = false)) }
         boxSpineUrl?.let { processBoxFaceRequest(ImageCacheRequest(it, rommId, ImageType.BOX_SPINE, gameTitle, isSteam = false)) }
 
