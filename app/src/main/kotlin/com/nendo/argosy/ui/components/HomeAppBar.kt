@@ -30,6 +30,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupPositionProvider
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -44,6 +51,7 @@ import com.nendo.argosy.ui.util.touchOnly
 private val COMPANION_APP_BAR_SLOT_WIDTH =
     com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionAppBarSlotWidth.dp
 private const val APP_BAR_SCRIM_ALPHA = 0.8f
+private const val FOCUS_PICKER_SCRIM_ALPHA = 0.7f
 
 /**
  * Focus index meaning no slot is focused. The drawer slot owns -1, so a caller that has not placed
@@ -172,6 +180,18 @@ fun CompanionAppBar(
 
 data class DisplayFocusTarget(val displayId: Int, val number: Int)
 
+private object AboveAnchorPositionProvider : PopupPositionProvider {
+    override fun calculatePosition(
+        anchorBounds: IntRect,
+        windowSize: IntSize,
+        layoutDirection: LayoutDirection,
+        popupContentSize: IntSize
+    ): IntOffset = IntOffset(
+        x = anchorBounds.left + (anchorBounds.width - popupContentSize.width) / 2,
+        y = anchorBounds.top - popupContentSize.height
+    )
+}
+
 @Composable
 private fun DisplayFocusButton(
     displays: List<DisplayFocusTarget>,
@@ -180,29 +200,67 @@ private fun DisplayFocusButton(
     onToggle: () -> Unit,
     onSelect: (Int) -> Unit
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Box(contentAlignment = Alignment.TopCenter) {
         if (isOpen) {
-            displays.forEach { target ->
-                Box(
+            Popup(
+                popupPositionProvider = AboveAnchorPositionProvider,
+                properties = PopupProperties(focusable = false)
+            ) {
+                Column(
                     modifier = Modifier
-                        .padding(horizontal = Dimens.spacingXs)
-                        .size(Dimens.iconLg)
-                        .clip(RoundedCornerShape(Dimens.radiusControl))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .touchOnly { onSelect(target.displayId) },
-                    contentAlignment = Alignment.Center
+                        .width(COMPANION_APP_BAR_SLOT_WIDTH)
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = Dimens.radiusLg,
+                                topEnd = Dimens.radiusLg
+                            )
+                        )
+                        .background(
+                            MaterialTheme.colorScheme.scrim.copy(alpha = FOCUS_PICKER_SCRIM_ALPHA)
+                        )
+                        .padding(Dimens.spacingXs),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
                 ) {
-                    androidx.compose.material3.Text(
-                        text = target.number.toString(),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Color.White.copy(alpha = 0.85f)
-                    )
+                    displays.forEach { target ->
+                        Box(
+                            modifier = Modifier
+                                .size(Dimens.iconLg)
+                                .clip(RoundedCornerShape(Dimens.radiusControl))
+                                .background(Color.White.copy(alpha = 0.15f))
+                                .touchOnly { onSelect(target.displayId) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            androidx.compose.material3.Text(
+                                text = target.number.toString(),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color.White.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
                 }
             }
         }
         Column(
             modifier = Modifier
                 .width(COMPANION_APP_BAR_SLOT_WIDTH)
+                .then(
+                    if (isOpen) {
+                        Modifier
+                            .clip(
+                                RoundedCornerShape(
+                                    bottomStart = Dimens.radiusLg,
+                                    bottomEnd = Dimens.radiusLg
+                                )
+                            )
+                            .background(
+                                MaterialTheme.colorScheme.scrim
+                                    .copy(alpha = FOCUS_PICKER_SCRIM_ALPHA)
+                            )
+                    } else {
+                        Modifier
+                    }
+                )
                 .touchOnly(onToggle)
                 .padding(Dimens.spacingXs),
             horizontalAlignment = Alignment.CenterHorizontally
