@@ -72,7 +72,8 @@ fun WideGameCard(
     playTimeMinutes: Int,
     isFocused: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLongClick: () -> Unit = {}
 ) {
     val boxArtStyle = LocalBoxArtStyle.current
     val cornerRadius = boxArtStyle.cornerRadiusDp
@@ -81,7 +82,7 @@ fun WideGameCard(
         modifier = modifier
             .fillMaxWidth()
             .focusBorder(isFocused, MaterialTheme.colorScheme.primary, 3.dp, shape)
-            .clickableNoFocus(onClick = onClick),
+            .clickableNoFocus(onClick = onClick, onLongClick = onLongClick),
         shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant

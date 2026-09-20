@@ -161,7 +161,8 @@ fun CollectionDetailScreen(
                                     achievementCount = game.achievementCount,
                                     playTimeMinutes = game.playTimeMinutes,
                                     isFocused = !hasDialogOpen && uiState.focusedIndex == index,
-                                    onClick = { onGameClick(game.id) }
+                                    onClick = { onGameClick(game.id) },
+                                    onLongClick = { viewModel.handleGameLongPress(index) }
                                 )
                             }
                         }

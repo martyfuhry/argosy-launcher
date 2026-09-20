@@ -251,11 +251,22 @@ class CollectionsViewModel @Inject constructor(
         _showCreateDialog.value = false
     }
 
+    fun handleCollectionLongPress(index: Int) {
+        val state = uiState.value
+        if (state.showCreateDialog || state.showDeleteDialog || state.showOptionsModal) return
+        if (index !in state.collections.indices) return
+        _focusedSection.value = CollectionSection.MY_COLLECTIONS
+        _focusedIndex.value = index
+        openOptionsModal()
+    }
+
     fun showOptionsModal() {
-        if (uiState.value.focusedCollection != null) {
-            _optionsFocusedIndex.value = 0
-            _showOptionsModal.value = true
-        }
+        if (uiState.value.focusedCollection != null) openOptionsModal()
+    }
+
+    private fun openOptionsModal() {
+        _optionsFocusedIndex.value = 0
+        _showOptionsModal.value = true
     }
 
     fun hideOptionsModal() {
@@ -444,11 +455,21 @@ class CollectionsViewModel @Inject constructor(
         override fun onSelect(): InputResult {
             val state = uiState.value
             if (state.showOptionsModal) return InputResult.HANDLED
-            if (state.focusedSection == CollectionSection.MY_COLLECTIONS && state.focusedCollection != null) {
-                showOptionsModal()
-                return InputResult.HANDLED
-            }
-            return InputResult.UNHANDLED
+            if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
+            return openOptionsForFocused(state)
+        }
+
+        override fun onLongConfirm(): InputResult {
+            val state = uiState.value
+            if (state.showOptionsModal) return InputResult.HANDLED
+            return openOptionsForFocused(state)
+        }
+
+        private fun openOptionsForFocused(state: CollectionsUiState): InputResult {
+            if (state.focusedSection != CollectionSection.MY_COLLECTIONS) return InputResult.UNHANDLED
+            if (state.focusedCollection == null) return InputResult.UNHANDLED
+            showOptionsModal()
+            return InputResult.HANDLED
         }
     }
 }

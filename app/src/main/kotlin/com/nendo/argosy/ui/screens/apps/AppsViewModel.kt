@@ -644,9 +644,17 @@ class AppsViewModel @Inject constructor(
         }
 
         override fun onSelect(): InputResult {
-            if (!_uiState.value.isReorderMode && !_uiState.value.showContextMenu) {
-                showContextMenu()
-            }
+            val state = _uiState.value
+            if (state.isReorderMode || state.showContextMenu) return InputResult.HANDLED
+            if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
+            showContextMenu()
+            return InputResult.HANDLED
+        }
+
+        override fun onLongConfirm(): InputResult {
+            val state = _uiState.value
+            if (state.isReorderMode || state.showContextMenu) return InputResult.HANDLED
+            showContextMenu()
             return InputResult.HANDLED
         }
 

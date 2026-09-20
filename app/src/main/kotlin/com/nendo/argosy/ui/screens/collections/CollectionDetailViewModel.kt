@@ -213,6 +213,9 @@ class CollectionDetailViewModel @Inject constructor(
         return if (first in 'A'..'Z') first.toString() else "#"
     }
 
+    private fun hasDialogOpen(state: CollectionDetailUiState): Boolean =
+        state.showEditDialog || state.showDeleteDialog || state.showRemoveGameDialog
+
     private fun setFocus(index: Int) {
         _modalState.value = _modalState.value.copy(focusedIndex = index)
         if (!_modalState.value.searchActive) positions.set(stickyKey, index)
@@ -226,6 +229,14 @@ class CollectionDetailViewModel @Inject constructor(
     fun moveDown() {
         val current = uiState.value.focusedIndex
         if (current < uiState.value.games.size - 1) setFocus(current + 1)
+    }
+
+    fun handleGameLongPress(index: Int) {
+        val state = uiState.value
+        if (hasDialogOpen(state) || state.showOptionsModal) return
+        if (index !in state.games.indices) return
+        setFocus(index)
+        showOptionsModal()
     }
 
     fun jumpToSection(label: String) {
@@ -453,9 +464,6 @@ class CollectionDetailViewModel @Inject constructor(
         onBack: () -> Unit,
         onGameClick: (Long) -> Unit
     ): InputHandler = object : InputHandler {
-        private fun hasDialogOpen(state: CollectionDetailUiState): Boolean =
-            state.showEditDialog || state.showDeleteDialog || state.showRemoveGameDialog
-
         override fun onUp(): InputResult {
             val state = uiState.value
             if (hasDialogOpen(state)) return InputResult.UNHANDLED
@@ -564,6 +572,15 @@ class CollectionDetailViewModel @Inject constructor(
         override fun onSelect(): InputResult {
             val state = uiState.value
             if (hasDialogOpen(state)) return InputResult.UNHANDLED
+            if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
+            showOptionsModal()
+            return InputResult.HANDLED
+        }
+
+        override fun onLongConfirm(): InputResult {
+            val state = uiState.value
+            if (hasDialogOpen(state)) return InputResult.UNHANDLED
+            if (state.showOptionsModal) return InputResult.HANDLED
             showOptionsModal()
             return InputResult.HANDLED
         }

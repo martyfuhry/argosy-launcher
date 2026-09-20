@@ -157,7 +157,8 @@ fun CollectionsScreen(
                         collection = collection,
                         isFocused = !hasDialogOpen && uiState.focusedSection == CollectionSection.MY_COLLECTIONS && uiState.focusedIndex == index,
                         isPinned = collection.id in uiState.pinnedCollectionIds,
-                        onClick = { onCollectionClick(collection.id) }
+                        onClick = { onCollectionClick(collection.id) },
+                        onLongClick = { viewModel.handleCollectionLongPress(index) }
                     )
                 }
                 item(key = "new_collection") {
@@ -285,6 +286,7 @@ private fun CollectionRow(
     isFocused: Boolean,
     isPinned: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(Dimens.radiusControl)
@@ -296,7 +298,7 @@ private fun CollectionRow(
         modifier = modifier
             .fillMaxWidth()
             .then(borderModifier)
-            .clickableNoFocus(onClick = onClick),
+            .clickableNoFocus(onClick = onClick, onLongClick = onLongClick),
         shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = if (isFocused) {
