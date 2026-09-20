@@ -200,6 +200,7 @@ fun HomeCustomGridPage(
     modifier: Modifier = Modifier,
     onTileLongPress: ((GridCell) -> Unit)? = null,
     showEmptyCells: Boolean = true,
+    showCursor: Boolean = true,
     editModeLabel: String? = null,
     downloadIndicatorFor: (Long) -> com.nendo.argosy.ui.screens.home.GameDownloadIndicator = {
         com.nendo.argosy.ui.screens.home.GameDownloadIndicator.NONE
@@ -262,7 +263,7 @@ fun HomeCustomGridPage(
                         gap = gap,
                         originX = originX,
                         originY = originY,
-                        isFocused = isCursor,
+                        isFocused = isCursor && showCursor,
                         onClick = { onCellTap(GridCell(column, row)) },
                         onLongClick = null,
                         content = null,
@@ -287,7 +288,7 @@ fun HomeCustomGridPage(
                 isFocused = if (editingTileId != null) {
                     tile.id == editingTileId
                 } else {
-                    tile.rect.covers(focusedCell.columnIndex, focusedCell.rowIndex)
+                    showCursor && tile.rect.covers(focusedCell.columnIndex, focusedCell.rowIndex)
                 },
                 onClick = { onCellTap(GridCell(tile.rect.columnIndex, tile.rect.rowIndex)) },
                 onLongClick = onTileLongPress?.let { handler ->

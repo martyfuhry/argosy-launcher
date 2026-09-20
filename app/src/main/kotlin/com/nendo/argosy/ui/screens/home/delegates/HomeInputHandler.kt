@@ -26,7 +26,7 @@ interface HomeInputActions {
     fun confirmGameMenuSelection(onGameSelect: (Long) -> Unit)
     fun previousRow()
     fun nextRow()
-    fun focusAppBar()
+    fun focusAppBar(): Boolean
     fun releaseAppBar()
     fun moveAppBarFocus(delta: Int)
     fun activateAppBarSlot(onOpenDrawer: () -> Unit)
@@ -134,7 +134,15 @@ class HomeInputHandler(
     private val onDrawerToggle: () -> Unit
 ) : InputHandler {
 
+    private val focusPicker: com.nendo.argosy.DualScreenManager?
+        get() = com.nendo.argosy.DualScreenManagerHolder.instance
+            ?.takeIf { it.focusPickerOpen.value }
+
     override fun onUp(): InputResult {
+        focusPicker?.let {
+            it.moveFocusPicker(-1)
+            return InputResult.HANDLED
+        }
         val state = actions.uiState.value
         if (state.appBarFocused) {
             actions.releaseAppBar()
@@ -181,6 +189,10 @@ class HomeInputHandler(
     }
 
     override fun onDown(): InputResult {
+        focusPicker?.let {
+            it.moveFocusPicker(1)
+            return InputResult.HANDLED
+        }
         val state = actions.uiState.value
         if (state.customGrid.engagedTileId != null) return InputResult.handled(SoundType.BOUNDARY)
         if (state.customGrid.mediaTileNotice != null) return InputResult.HANDLED
@@ -224,6 +236,7 @@ class HomeInputHandler(
     }
 
     override fun onLeft(): InputResult {
+        if (focusPicker != null) return InputResult.handled(SoundType.BOUNDARY)
         if (actions.uiState.value.appBarFocused) {
             actions.moveAppBarFocus(-1)
             return InputResult.HANDLED
@@ -254,6 +267,7 @@ class HomeInputHandler(
     }
 
     override fun onRight(): InputResult {
+        if (focusPicker != null) return InputResult.handled(SoundType.BOUNDARY)
         if (actions.uiState.value.appBarFocused) {
             actions.moveAppBarFocus(1)
             return InputResult.HANDLED
@@ -411,6 +425,10 @@ class HomeInputHandler(
         }
 
     override fun onConfirm(): InputResult {
+        focusPicker?.let {
+            it.confirmFocusPicker()
+            return InputResult.handled(SoundType.SELECT)
+        }
         val state = actions.uiState.value
         if (state.appBarFocused) {
             actions.activateAppBarSlot(onDrawerToggle)
@@ -469,6 +487,10 @@ class HomeInputHandler(
     }
 
     override fun onBack(): InputResult {
+        focusPicker?.let {
+            it.closeFocusPicker()
+            return InputResult.handled(SoundType.CLOSE_MODAL)
+        }
         val state = actions.uiState.value
         if (state.appBarFocused) {
             actions.releaseAppBar()
@@ -519,6 +541,9 @@ class HomeInputHandler(
         if (state.showGameMenu) {
             actions.toggleGameMenu()
             return InputResult.HANDLED
+        }
+        if (actions.focusAppBar()) {
+            return InputResult.handled(SoundType.SECTION_CHANGE)
         }
         if (actions.scrollToFirst()) {
             return InputResult.HANDLED

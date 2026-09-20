@@ -53,6 +53,8 @@ private val COMPANION_APP_BAR_SLOT_WIDTH =
 private const val APP_BAR_SCRIM_ALPHA = 0.8f
 private const val FOCUS_PICKER_SCRIM_ALPHA = 0.7f
 
+private val APP_BAR_FOCUS = FocusIndicators(ring = true, fill = true)
+
 /**
  * Focus index meaning no slot is focused. The drawer slot owns -1, so a caller that has not placed
  * focus in the bar has to say so with a value the drawer will not match.
@@ -78,6 +80,7 @@ fun CompanionAppBar(
     onKeyboardToggle: (() -> Unit)? = null,
     focusDisplays: List<DisplayFocusTarget> = emptyList(),
     focusPickerOpen: Boolean = false,
+    focusPickerIndex: Int = 0,
     onFocusPickerToggle: (() -> Unit)? = null,
     onFocusDisplay: (Int) -> Unit = {}
 ) {
@@ -115,7 +118,7 @@ fun CompanionAppBar(
                     .size(Dimens.iconXl)
                     .argosyFocusIndicators(
                         focused = focusedIndex == -1,
-                        indicators = FocusIndicators.Tile,
+                        indicators = APP_BAR_FOCUS,
                         shape = RoundedCornerShape(Dimens.radiusLg)
                     )
                     .clip(RoundedCornerShape(Dimens.radiusLg))
@@ -169,6 +172,7 @@ fun CompanionAppBar(
                 displays = focusDisplays,
                 isOpen = focusPickerOpen,
                 isFocused = focusedIndex == pickerSlot,
+                selectedIndex = focusPickerIndex,
                 onToggle = onFocusPickerToggle,
                 onSelect = onFocusDisplay
             )
@@ -195,6 +199,7 @@ private fun DisplayFocusButton(
     displays: List<DisplayFocusTarget>,
     isOpen: Boolean,
     isFocused: Boolean,
+    selectedIndex: Int,
     onToggle: () -> Unit,
     onSelect: (Int) -> Unit
 ) {
@@ -220,19 +225,25 @@ private fun DisplayFocusButton(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
                 ) {
-                    displays.forEach { target ->
+                    displays.forEachIndexed { index, target ->
+                        val selected = index == selectedIndex
                         Box(
                             modifier = Modifier
                                 .size(Dimens.iconXl)
+                                .argosyFocusIndicators(
+                                    focused = selected,
+                                    indicators = APP_BAR_FOCUS,
+                                    shape = RoundedCornerShape(Dimens.radiusLg)
+                                )
                                 .clip(RoundedCornerShape(Dimens.radiusLg))
-                                .background(Color.White.copy(alpha = 0.15f))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .touchOnly { onSelect(target.displayId) },
                             contentAlignment = Alignment.Center
                         ) {
                             androidx.compose.material3.Text(
                                 text = target.number.toString(),
                                 style = MaterialTheme.typography.titleLarge,
-                                color = Color.White.copy(alpha = 0.85f)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -268,7 +279,7 @@ private fun DisplayFocusButton(
                     .size(Dimens.iconXl)
                     .argosyFocusIndicators(
                         focused = isFocused,
-                        indicators = FocusIndicators.Tile,
+                        indicators = APP_BAR_FOCUS,
                         shape = RoundedCornerShape(Dimens.radiusLg)
                     )
                     .clip(RoundedCornerShape(Dimens.radiusLg))
@@ -303,7 +314,7 @@ private fun CompanionKeyboardButton(
                 .size(Dimens.iconXl)
                 .argosyFocusIndicators(
                     focused = isFocused,
-                    indicators = FocusIndicators.Tile,
+                    indicators = APP_BAR_FOCUS,
                     shape = RoundedCornerShape(Dimens.radiusLg)
                 )
                 .clip(RoundedCornerShape(Dimens.radiusLg))
@@ -340,7 +351,7 @@ private fun CompanionMediaButton(
                 .size(Dimens.iconXl)
                 .argosyFocusIndicators(
                     focused = isFocused,
-                    indicators = FocusIndicators.Tile,
+                    indicators = APP_BAR_FOCUS,
                     shape = RoundedCornerShape(Dimens.radiusLg)
                 )
                 .clip(RoundedCornerShape(Dimens.radiusLg))
@@ -382,7 +393,7 @@ internal fun CompanionAppItem(
                 .size(Dimens.iconXl)
                 .argosyFocusIndicators(
                     focused = isFocused,
-                    indicators = FocusIndicators.Tile,
+                    indicators = APP_BAR_FOCUS,
                     shape = RoundedCornerShape(Dimens.radiusLg)
                 )
                 .clip(RoundedCornerShape(Dimens.radiusLg)),

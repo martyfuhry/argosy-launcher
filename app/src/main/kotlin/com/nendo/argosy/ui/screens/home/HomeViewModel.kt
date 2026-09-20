@@ -836,9 +836,10 @@ class HomeViewModel @Inject constructor(
         _uiState.value.homeApps.isNotEmpty() &&
             DualScreenManagerHolder.instance?.hasPresentationScreen?.value == true
 
-    override fun focusAppBar() {
-        if (!appBarIsDrawn()) return
+    override fun focusAppBar(): Boolean {
+        if (!appBarIsDrawn()) return false
         _uiState.update { it.copy(appBarFocused = true, appBarIndex = 0) }
+        return true
     }
 
     override fun releaseAppBar() {
@@ -847,7 +848,7 @@ class HomeViewModel @Inject constructor(
 
     override fun moveAppBarFocus(delta: Int) {
         val slots = appBarSlotCount()
-        _uiState.update { it.copy(appBarIndex = (it.appBarIndex + delta).mod(slots + 1) - 1) }
+        _uiState.update { it.copy(appBarIndex = appBarFocusMove(it.appBarIndex, delta, slots)) }
     }
 
     override fun activateAppBarSlot(onOpenDrawer: () -> Unit) {
@@ -2015,6 +2016,13 @@ private fun HomeGameUi.applyGradient(gradients: Map<Long, Pair<androidx.compose.
 
 private fun List<HomeGameUi>.applyGradients(gradients: Map<Long, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): List<HomeGameUi> =
     map { it.applyGradient(gradients) }
+
+/**
+ * The app bar slot [delta] steps from [current], over the drawer at -1 through `slots - 1`,
+ * wrapping at both ends.
+ */
+internal fun appBarFocusMove(current: Int, delta: Int, slots: Int): Int =
+    (current + 1 + delta).mod(slots + 1) - 1
 
 private fun HomeMediaUi.applyMediaGradient(gradients: Map<String, Pair<androidx.compose.ui.graphics.Color, androidx.compose.ui.graphics.Color>>): HomeMediaUi =
     gradients[itemId]?.takeIf { it != gradientColors }?.let { copy(gradientColors = it) } ?: this

@@ -245,8 +245,12 @@ class DualScreenManager(
     private val _focusPickerOpen = MutableStateFlow(false)
     val focusPickerOpen: StateFlow<Boolean> = _focusPickerOpen
 
+    private val _focusPickerIndex = MutableStateFlow(0)
+    val focusPickerIndex: StateFlow<Int> = _focusPickerIndex
+
     fun openFocusPicker() {
         if (_focusPickerOpen.value) return
+        _focusPickerIndex.value = 0
         _focusPickerOpen.value = true
         showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
     }
@@ -255,6 +259,19 @@ class DualScreenManager(
         if (!_focusPickerOpen.value) return
         _focusPickerOpen.value = false
         hideScreenNumbers()
+    }
+
+    fun moveFocusPicker(delta: Int) {
+        val count = focusableDisplays().size
+        if (count == 0) return
+        _focusPickerIndex.value = (_focusPickerIndex.value + delta).mod(count)
+    }
+
+    fun confirmFocusPicker() {
+        val displays = focusableDisplays()
+        val target = displays.getOrNull(_focusPickerIndex.value) ?: return
+        focusDisplay(target.first)
+        closeFocusPicker()
     }
 
     class ResolvedScreenLayout(

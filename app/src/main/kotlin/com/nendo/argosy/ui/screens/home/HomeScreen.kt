@@ -787,6 +787,7 @@ fun HomeScreen(
                                 state = uiState.customGrid,
                                 contentFor = { tile -> uiState.tileContentFor(tile, context) },
                                 laneCount = uiState.customGridConfig.laneCount,
+                                showCursor = !uiState.appBarFocused,
                                 onCellTap = { cell ->
                                     val grid = uiState.customGrid
                                     val onFocused = grid.tileAt(cell)
@@ -1494,6 +1495,10 @@ fun HomeScreen(
             dsmForFocus?.focusPickerOpen
                 ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
             ).collectAsState()
+        val focusPickerIndex by (
+            dsmForFocus?.focusPickerIndex
+                ?: remember { kotlinx.coroutines.flow.MutableStateFlow(0) }
+            ).collectAsState()
         val focusDisplays = remember(hasPresentationScreen, focusPickerOpen) {
             dsmForFocus?.focusableDisplays()?.map { (displayId, number) ->
                 com.nendo.argosy.ui.components.DisplayFocusTarget(displayId, number)
@@ -1514,6 +1519,7 @@ fun HomeScreen(
                 },
                 focusDisplays = focusDisplays,
                 focusPickerOpen = focusPickerOpen,
+                focusPickerIndex = focusPickerIndex,
                 onFocusPickerToggle = dsmForFocus?.let {
                     { if (focusPickerOpen) it.closeFocusPicker() else it.openFocusPicker() }
                 },
