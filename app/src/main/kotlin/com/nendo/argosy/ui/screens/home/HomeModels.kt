@@ -564,6 +564,8 @@ data class HomeUiState(
     val focusedTileGame: HomeGameUi?
         get() = when (val target = focusedTile?.target) {
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Game -> tileGames[target.gameId]
+            is com.nendo.argosy.domain.model.HomeTileTargetRef.Collection ->
+                target.focusGameId?.let { tileGames[it] }
             is com.nendo.argosy.domain.model.HomeTileTargetRef.Feature -> when (target.kind) {
                 com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME ->
                     target.pickedGameId?.let { tileGames[it] }
