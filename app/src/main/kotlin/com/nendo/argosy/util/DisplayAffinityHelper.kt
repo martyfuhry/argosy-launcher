@@ -58,8 +58,21 @@ class DisplayAffinityHelper @Inject constructor(
             }
         }
 
+    /**
+     * The displays the stored layout gives the two surface-bearing roles, pushed in whenever the
+     * layout is applied. Empty until then, and positions are used instead.
+     */
+    var roleDisplayIds: Pair<Int, Int>? = null
+
+    private val attachedIds: Set<Int>
+        get() = physicalDisplays.map { it.displayId }.toSet()
+
     private val secondaryDisplayId: Int?
-        get() = physicalDisplays.getOrNull(1)?.displayId
+        get() = resolveSecondaryDisplayId(
+            roleDisplayIds,
+            attachedIds,
+            physicalDisplays.getOrNull(1)?.displayId
+        )
 
     /**
      * The roomiest physical display, by pixel area.
@@ -70,10 +83,8 @@ class DisplayAffinityHelper @Inject constructor(
      */
     fun largestDisplayId(): Int? = physicalDisplays
         .maxByOrNull { display ->
-            val metrics = android.graphics.Point()
-            @Suppress("DEPRECATION")
-            display.getRealSize(metrics)
-            metrics.x.toLong() * metrics.y.toLong()
+            val size = ScreenCatalog.panelSizeOf(context, display)
+            size.x.toLong() * size.y.toLong()
         }
         ?.displayId
 
@@ -110,14 +121,8 @@ class DisplayAffinityHelper @Inject constructor(
      * moves them, so a caller asks which display holds its role instead of naming a display id,
      * and keeps landing correctly after a swap.
      */
-    fun getRoleDisplayIds(rolesSwapped: Boolean): Pair<Int, Int>? {
-        val secondary = secondaryDisplayId ?: return null
-        return if (rolesSwapped) {
-            Display.DEFAULT_DISPLAY to secondary
-        } else {
-            secondary to Display.DEFAULT_DISPLAY
-        }
-    }
+    fun getRoleDisplayIds(rolesSwapped: Boolean): Pair<Int, Int>? =
+        resolveRoleDisplayIds(roleDisplayIds, attachedIds, secondaryDisplayId, rolesSwapped)
 
     /**
      * Where the video player belongs once a game has claimed [emulatorDisplayId]: the other physical
@@ -174,8 +179,18 @@ class DisplayAffinityHelper @Inject constructor(
 
         private val KNOWN_DUAL_SCREEN_DEVICES = listOf("thor")
 
+        private val INVERTED_INTERNAL_ORDER_DEVICES = emptyList<String>()
+
         fun isKnownDualScreenDevice(): Boolean =
             KNOWN_DUAL_SCREEN_DEVICES.any { Build.MODEL.contains(it, ignoreCase = true) }
+
+        /**
+         * Whether this model seats its smaller internal panel above the larger one, against the
+         * arrangement every verified device uses. Add a model here when a report shows the default
+         * layout hands it the wrong screen.
+         */
+        fun hasInvertedInternalOrder(): Boolean =
+            INVERTED_INTERNAL_ORDER_DEVICES.any { Build.MODEL.contains(it, ignoreCase = true) }
 
         private fun Display.displayType(): Int? = try {
             Display::class.java.getMethod("getType").invoke(this) as? Int
@@ -186,6 +201,44 @@ class DisplayAffinityHelper @Inject constructor(
             val type = displayType()
             if (type != null) return type == DISPLAY_TYPE_BUILT_IN || type == DISPLAY_TYPE_EXTERNAL
             return flags and Display.FLAG_PRIVATE == 0
+        }
+
+        /**
+         * The display carrying the companion surface: the role holder that is not the default
+         * display, or [positionalFallback] while no layout has been applied.
+         */
+        internal fun resolveSecondaryDisplayId(
+            roleDisplayIds: Pair<Int, Int>?,
+            attachedIds: Set<Int>,
+            positionalFallback: Int?
+        ): Int? {
+            roleDisplayIds
+                ?.toList()
+                ?.firstOrNull { it != Display.DEFAULT_DISPLAY && it in attachedIds }
+                ?.let { return it }
+            return positionalFallback
+        }
+
+        /**
+         * The display driving input, then the one describing it. [rolesSwapped] exchanges them.
+         */
+        internal fun resolveRoleDisplayIds(
+            roleDisplayIds: Pair<Int, Int>?,
+            attachedIds: Set<Int>,
+            secondaryDisplayId: Int?,
+            rolesSwapped: Boolean
+        ): Pair<Int, Int>? {
+            roleDisplayIds
+                ?.takeIf { it.first in attachedIds && it.second in attachedIds }
+                ?.let { (primary, presentation) ->
+                    return if (rolesSwapped) presentation to primary else primary to presentation
+                }
+            val secondary = secondaryDisplayId ?: return null
+            return if (rolesSwapped) {
+                Display.DEFAULT_DISPLAY to secondary
+            } else {
+                secondary to Display.DEFAULT_DISPLAY
+            }
         }
     }
 }

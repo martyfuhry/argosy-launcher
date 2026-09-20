@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.view.Display
-import android.view.Surface
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,7 +27,7 @@ class ScreenCatalog @Inject constructor(
         .filter { it.isUsablePhysicalDisplay() }
         .sortedBy { it.displayId }
         .mapIndexed { index, display ->
-            val size = display.panelSize()
+            val size = panelSizeOf(context, display)
             AttachedScreen(
                 key = display.stableKey(size),
                 displayId = display.displayId,
@@ -56,18 +55,27 @@ class ScreenCatalog @Inject constructor(
             }
         } catch (_: Exception) { null }
 
-        private fun Display.panelSize(): Point {
-            val w = mode.physicalWidth
-            val h = mode.physicalHeight
-            if (w <= 0 || h <= 0) {
-                return Point().also {
-                    @Suppress("DEPRECATION")
-                    getRealSize(it)
+        fun panelSizeOf(context: Context, display: Display): Point {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                val bounds = runCatching {
+                    context.createDisplayContext(display)
+                        .createWindowContext(WINDOW_CONTEXT_TYPE, null)
+                        .getSystemService(android.view.WindowManager::class.java)
+                        ?.maximumWindowMetrics
+                        ?.bounds
+                }.getOrNull()
+                if (bounds != null && bounds.width() > 0 && bounds.height() > 0) {
+                    return Point(bounds.width(), bounds.height())
                 }
             }
-            val sideways = rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270
-            return if (sideways) Point(h, w) else Point(w, h)
+            return Point().also {
+                @Suppress("DEPRECATION")
+                display.getRealSize(it)
+            }
         }
+
+        private const val WINDOW_CONTEXT_TYPE =
+            android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
 
         private fun Display.stableKey(size: Point): String {
             uniqueIdOrNull()?.let { return it }

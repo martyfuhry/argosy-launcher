@@ -50,8 +50,6 @@ sealed interface PresentationSlot {
         val hints: List<CompanionHint>
     ) : PresentationSlot
 
-    data class ScreenIdentity(val number: Int) : PresentationSlot
-
     data class Detail(val detail: CompanionDetail) : PresentationSlot
 
     data class Breakdown(

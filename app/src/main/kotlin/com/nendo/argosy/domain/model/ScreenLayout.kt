@@ -13,6 +13,15 @@ enum class ScreenRole {
     }
 }
 
+data class ScreenSpec(
+    val key: String,
+    val widthPx: Int,
+    val heightPx: Int,
+    val builtIn: Boolean
+) {
+    val areaPx: Long get() = widthPx.toLong() * heightPx.toLong()
+}
+
 data class ScreenLayout(val roles: Map<String, ScreenRole> = emptyMap()) {
 
     fun roleFor(screenKey: String): ScreenRole? = roles[screenKey]
@@ -57,14 +66,31 @@ data class ScreenLayout(val roles: Map<String, ScreenRole> = emptyMap()) {
             }
         }
 
-        fun defaultFor(screenKeys: List<String>, builtInKeys: List<String>): ScreenLayout {
-            val primary = builtInKeys.lastOrNull() ?: screenKeys.firstOrNull() ?: return ScreenLayout()
-            return ScreenLayout(
-                screenKeys.associateWith { key ->
-                    if (key == primary) ScreenRole.PRIMARY else ScreenRole.PRESENTATION
-                }
-            )
+        /**
+         * The layout a screen set holds before anyone assigns a role. The smallest internal panel
+         * takes PRIMARY, remaining internals then externals take [FILL_ORDER] in turn, and
+         * [invertInternalOrder] reverses the internal ordering for a model that needs it.
+         * Externals keep the order they arrive in.
+         */
+        fun defaultFor(
+            screens: List<ScreenSpec>,
+            invertInternalOrder: Boolean = false
+        ): ScreenLayout {
+            if (screens.isEmpty()) return ScreenLayout()
+            val internals = screens.filter { it.builtIn }
+                .sortedWith(compareByDescending<ScreenSpec> { it.areaPx }.thenBy { screens.indexOf(it) })
+                .let { if (invertInternalOrder) it.asReversed() else it }
+            val externals = screens.filterNot { it.builtIn }
+            val primary = internals.lastOrNull() ?: externals.firstOrNull() ?: return ScreenLayout()
+            val rest = (internals + externals).filterNot { it.key == primary.key }
+            val roles = mutableMapOf(primary.key to ScreenRole.PRIMARY)
+            rest.forEachIndexed { index, screen ->
+                roles[screen.key] = FILL_ORDER.getOrNull(index) ?: ScreenRole.OFF
+            }
+            return ScreenLayout(roles)
         }
+
+        private val FILL_ORDER = listOf(ScreenRole.PRESENTATION, ScreenRole.APP_TARGET)
     }
 }
 

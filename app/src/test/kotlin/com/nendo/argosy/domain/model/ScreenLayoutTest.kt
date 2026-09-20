@@ -13,17 +13,88 @@ class ScreenLayoutTest {
 
     private fun layoutOf(vararg pairs: Pair<String, ScreenRole>) = ScreenLayout(pairs.toMap())
 
+    private fun internal(key: String, width: Int, height: Int) =
+        ScreenSpec(key = key, widthPx = width, heightPx = height, builtIn = true)
+
+    private fun external(key: String, width: Int = 2560, height: Int = 1440) =
+        ScreenSpec(key = key, widthPx = width, heightPx = height, builtIn = false)
+
     @Test
-    fun `built-in screen takes primary by default`() {
-        val layout = ScreenLayout.defaultFor(listOf(BUILT_IN, SECOND), listOf(BUILT_IN))
+    fun `the smaller internal panel takes primary`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(internal(BUILT_IN, 1920, 1080), internal(SECOND, 1240, 1080))
+        )
+        assertEquals(SECOND, layout.primaryKey)
+        assertEquals(BUILT_IN, layout.presentationKey)
+    }
+
+    @Test
+    fun `an inverted model takes the larger internal panel as primary`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(internal(BUILT_IN, 1920, 1080), internal(SECOND, 1240, 1080)),
+            invertInternalOrder = true
+        )
         assertEquals(BUILT_IN, layout.primaryKey)
         assertEquals(SECOND, layout.presentationKey)
     }
 
     @Test
+    fun `equal internal panels keep the order they were given`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(internal(BUILT_IN, 1080, 1080), internal(SECOND, 1080, 1080))
+        )
+        assertEquals(SECOND, layout.primaryKey)
+        assertEquals(BUILT_IN, layout.presentationKey)
+    }
+
+    @Test
+    fun `an external screen takes the role left after the internals`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(internal(BUILT_IN, 1920, 1080), internal(SECOND, 1240, 1080), external(THIRD))
+        )
+        assertEquals(SECOND, layout.primaryKey)
+        assertEquals(BUILT_IN, layout.presentationKey)
+        assertEquals(THIRD, layout.appTargetKey)
+    }
+
+    @Test
+    fun `a single internal panel hands presentation to the first external`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(internal(BUILT_IN, 1080, 2400), external(SECOND), external(THIRD))
+        )
+        assertEquals(BUILT_IN, layout.primaryKey)
+        assertEquals(SECOND, layout.presentationKey)
+        assertEquals(THIRD, layout.appTargetKey)
+    }
+
+    @Test
+    fun `a larger external never outranks an internal panel for primary`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(external(THIRD, 3840, 2160), internal(BUILT_IN, 1280, 720))
+        )
+        assertEquals(BUILT_IN, layout.primaryKey)
+        assertEquals(THIRD, layout.presentationKey)
+    }
+
+    @Test
+    fun `a fourth screen is left off rather than given a role already held`() {
+        val layout = ScreenLayout.defaultFor(
+            listOf(
+                internal(BUILT_IN, 1920, 1080),
+                internal(SECOND, 1240, 1080),
+                external(THIRD),
+                external("local:fourth")
+            )
+        )
+        assertEquals(ScreenRole.OFF, layout.roleFor("local:fourth"))
+        assertEquals(THIRD, layout.appTargetKey)
+    }
+
+    @Test
     fun `a swap after a role assignment moves the roles rather than restoring the assignment`() {
-        val assigned = ScreenLayout.defaultFor(listOf(BUILT_IN, SECOND), listOf(BUILT_IN))
-            .withRole(SECOND, ScreenRole.PRIMARY)
+        val assigned = ScreenLayout.defaultFor(
+            listOf(internal(BUILT_IN, 1240, 1080), internal(SECOND, 1920, 1080))
+        ).withRole(SECOND, ScreenRole.PRIMARY)
         assertEquals(SECOND, assigned.primaryKey)
 
         val swapped = assigned.withRole(BUILT_IN, ScreenRole.PRIMARY)

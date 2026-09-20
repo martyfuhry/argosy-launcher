@@ -345,7 +345,7 @@ fun ArgosyApp(
             inputDispatcher.clearPendingViewSubscription()
             if (dsm.isOverlayFocused) {
                 dsm.isOverlayFocused = false
-                dsm.companionHost?.onOverlayClosed()
+                dsm.controlCompanion?.onOverlayClosed()
             }
             viewModel.setDrawerOpen(false)
             viewModel.setQuickSettingsOpen(false)
@@ -724,8 +724,8 @@ fun ArgosyApp(
         {
             if (dsm != null && dsm.isOverlayFocused) {
                 dsm.isOverlayFocused = false
-                dsm.companionHost?.onOverlayClosed()
-                dsm.companionHost?.refocusSelf()
+                dsm.controlCompanion?.onOverlayClosed()
+                dsm.controlCompanion?.refocusSelf()
             }
         }
     }
@@ -739,7 +739,7 @@ fun ArgosyApp(
                 if (onHome) {
                     notifyOverlayClosed()
                 } else {
-                    dsm?.companionHost?.onBackgroundForward()
+                    dsm?.controlCompanion?.onBackgroundForward()
                 }
             }
             wasOpen = open
@@ -768,7 +768,7 @@ fun ArgosyApp(
                 if (onHome) {
                     notifyOverlayClosed()
                 } else {
-                    dsm?.companionHost?.onBackgroundForward()
+                    dsm?.controlCompanion?.onBackgroundForward()
                 }
             }
             wasOpen = open
@@ -784,7 +784,7 @@ fun ArgosyApp(
                 if (onHome) {
                     notifyOverlayClosed()
                 } else {
-                    dsm?.companionHost?.onBackgroundForward()
+                    dsm?.controlCompanion?.onBackgroundForward()
                 }
             }
             wasVisible = state.isVisible

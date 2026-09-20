@@ -22,6 +22,6 @@ class LibrarySyncBus @Inject constructor() {
     }
 
     private fun broadcastLibraryRefresh() {
-        DualScreenManagerHolder.instance?.companionHost?.onLibraryRefresh()
+        DualScreenManagerHolder.instance?.notifyLibraryRefresh()
     }
 }

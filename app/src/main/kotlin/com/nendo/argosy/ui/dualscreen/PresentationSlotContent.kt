@@ -27,9 +27,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -95,16 +98,8 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     onScreenshot = { manager?.sessionQuickActions?.screenshot() }
                 )
             }
-            is PresentationSlot.ScreenIdentity -> Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                ScreenNumberBadge(
-                    number = slot.number,
-                    modifier = Modifier.padding(Dimens.spacingLg)
-                )
-            }
         }
+        ScreenNumberOverlay(modifier = Modifier.align(Alignment.BottomEnd))
         if (slot !is PresentationSlot.InGame) {
             com.nendo.argosy.ui.components.SystemStatusBar(
                 modifier = Modifier
@@ -113,6 +108,17 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             )
         }
     }
+}
+
+@Composable
+private fun ScreenNumberOverlay(modifier: Modifier = Modifier) {
+    val manager = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
+    val numbers by manager.screenNumbers.collectAsState()
+    if (numbers.isEmpty()) return
+    val context = LocalContext.current
+    val displayId = remember(context) { ContextCompat.getDisplayOrDefault(context).displayId }
+    val number = numbers[displayId] ?: return
+    ScreenNumberBadge(number = number, modifier = modifier.padding(Dimens.spacingLg))
 }
 
 @Composable

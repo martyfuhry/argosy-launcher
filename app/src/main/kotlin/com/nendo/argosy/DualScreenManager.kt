@@ -193,10 +193,14 @@ class DualScreenManager(
 
     private fun applyScreenLayout(
         primaryDisplayId: Int,
+        presentationDisplayId: Int?,
         appTargetDisplayId: Int?,
         hasPresentation: Boolean
     ) {
         displayAffinityHelper.appTargetDisplayId = appTargetDisplayId
+        displayAffinityHelper.roleDisplayIds = presentationDisplayId?.let {
+            primaryDisplayId to it
+        }
         _hasPresentationScreen.value = hasPresentation
         setPrimaryDisplayId(primaryDisplayId)
     }
@@ -206,6 +210,26 @@ class DualScreenManager(
 
     fun clearUnconfiguredScreenSet() {
         _unconfiguredScreenSet.value = null
+    }
+
+    private val _screenNumbers = MutableStateFlow<Map<Int, Int>>(emptyMap())
+
+    /**
+     * Display id to the number the screen map draws for it, while the map is open. Every rendered
+     * surface reads its own display's entry and labels itself, so a number never travels through
+     * the presentation slot and never competes with the content a screen is already showing.
+     * Empty means the map is closed.
+     */
+    val screenNumbers: StateFlow<Map<Int, Int>> = _screenNumbers
+
+    fun showScreenNumbers() {
+        _screenNumbers.value = com.nendo.argosy.util.ScreenCatalog(appContext)
+            .attachedScreens()
+            .associate { it.displayId to it.number }
+    }
+
+    fun hideScreenNumbers() {
+        _screenNumbers.value = emptyMap()
     }
 
     class ResolvedScreenLayout(
@@ -224,8 +248,15 @@ class DualScreenManager(
         val stored = preferencesRepository.userPreferences.first().screenLayouts
         val known = stored.layoutFor(setKey)
         val layout = known ?: com.nendo.argosy.domain.model.ScreenLayout.defaultFor(
-            keys,
-            attached.filter { it.builtIn }.map { it.key }
+            attached.map {
+                com.nendo.argosy.domain.model.ScreenSpec(
+                    key = it.key,
+                    widthPx = it.widthPx,
+                    heightPx = it.heightPx,
+                    builtIn = it.builtIn
+                )
+            },
+            invertInternalOrder = com.nendo.argosy.util.DisplayAffinityHelper.hasInvertedInternalOrder()
         )
         return ResolvedScreenLayout(attached, setKey, stored, known, layout)
     }
@@ -240,6 +271,7 @@ class DualScreenManager(
             val primary = attached.find { it.key == layout.primaryKey } ?: return@launch
             applyScreenLayout(
                 primaryDisplayId = primary.displayId,
+                presentationDisplayId = attached.find { it.key == layout.presentationKey }?.displayId,
                 appTargetDisplayId = attached.find { it.key == layout.appTargetKey }?.displayId,
                 hasPresentation = !layout.isSingleDisplay
             )
@@ -355,7 +387,7 @@ class DualScreenManager(
         companionWatchdogJob?.cancel()
         _isCompanionActive.value = false
         CompanionGuardService.stop(appContext)
-        companionHost?.finishCompanion()
+        eachCompanion { it.finishCompanion() }
     }
 
     /**
@@ -657,7 +689,38 @@ class DualScreenManager(
 
     var sessionRefocus: (() -> Unit)? = null
 
-    var companionHost: CompanionHost? = null
+    private val companionHosts =
+        com.nendo.argosy.ui.dualscreen.DisplayHostRegistry<CompanionHost>()
+
+    fun registerCompanionHost(displayId: Int, host: CompanionHost) {
+        companionHosts.register(displayId, host)
+    }
+
+    fun unregisterCompanionHost(displayId: Int, host: CompanionHost) {
+        companionHosts.unregister(displayId, host)
+    }
+
+    /**
+     * The companion surface that takes input: the one on the display holding the interactive role,
+     * or the only companion there is.
+     */
+    val controlCompanion: CompanionHost?
+        get() {
+            val interactive = displayAffinityHelper
+                .getRoleDisplayIds(_isRolesSwapped.value)
+                ?.first
+            companionHosts.hostFor(interactive)?.let { return it }
+            return companionHosts.all().singleOrNull()
+        }
+
+    private fun eachCompanion(action: (CompanionHost) -> Unit) {
+        companionHosts.all().forEach(action)
+    }
+
+    fun notifyLibraryRefresh() {
+        eachCompanion { it.onLibraryRefresh() }
+    }
+
     var onEmulatorDispatcherChanged: (() -> Unit)? = null
     var emulatorKeyDispatcher: ((android.view.KeyEvent) -> Boolean)? = null
         set(value) {
@@ -866,7 +929,7 @@ class DualScreenManager(
     fun setMediaPlayerControlsLocked(locked: Boolean) {
         if (_mediaPlayerControlsLocked.value == locked) return
         _mediaPlayerControlsLocked.value = locked
-        if (locked) companionHost?.refocusSelf()
+        if (locked) controlCompanion?.refocusSelf()
     }
 
     fun toggleCompanionMediaView() {
@@ -1104,7 +1167,7 @@ class DualScreenManager(
         clearCompanionAchievements()
         _dualSyncOverlay.value = null
         _dualSaveConflict.value = null
-        companionHost?.onAccountSwitched()
+        eachCompanion { it.onAccountSwitched() }
     }
 
     @Volatile private var menuWrapMode: com.nendo.argosy.data.preferences.MenuWrapMode =
@@ -1321,7 +1384,7 @@ class DualScreenManager(
                 _isRolesSwapped.value = newSwapped
                 sessionStateStore.setRolesSwapped(newSwapped)
                 onRoleSwapped?.invoke(newSwapped)
-                companionHost?.onRoleSwapped(newSwapped)
+                eachCompanion { it.onRoleSwapped(newSwapped) }
             }
             _isDualScreenDevice.value = true
             CompanionGuardService.start(appContext)
@@ -1368,7 +1431,7 @@ class DualScreenManager(
         swappedSessionTimer?.stop(appContext)
         swappedSessionTimer = null
 
-        companionHost?.onRoleSwapped(false)
+        eachCompanion { it.onRoleSwapped(false) }
 
         if (hadEmulatorOnSecondary && sessionStateStore.hasActiveSession()) {
             Log.d(TAG, "HDMI disconnected with active session on secondary display - ending session")
@@ -1476,7 +1539,7 @@ class DualScreenManager(
                     )
                 }
             }
-            companionHost?.onSessionStarted(gameId, isHardcore, channelName)
+            eachCompanion { it.onSessionStarted(gameId, isHardcore, channelName) }
         } else {
             if (!_swappedIsGameActive.value) return
             emulatorDisplayId = null
@@ -1493,8 +1556,10 @@ class DualScreenManager(
             }
             Handler(Looper.getMainLooper()).post {
                 if (savedSwapped != null) onRoleSwapped?.invoke(savedSwapped)
-                companionHost?.onSessionEnded()
-                companionHost?.onRoleSwapped(_isRolesSwapped.value)
+                eachCompanion {
+                    it.onSessionEnded()
+                    it.onRoleSwapped(_isRolesSwapped.value)
+                }
             }
         }
     }
@@ -1507,11 +1572,11 @@ class DualScreenManager(
     fun onSessionHardcoreChanged(isHardcore: Boolean, channelName: String?) {
         if (!_swappedIsGameActive.value) return
         _swappedCompanionState.update { it.copy(isHardcore = isHardcore, channelName = channelName) }
-        companionHost?.onSessionHardcoreChanged(isHardcore, channelName)
+        eachCompanion { it.onSessionHardcoreChanged(isHardcore, channelName) }
     }
 
     fun onDownloadCompleted(gameId: Long) {
-        companionHost?.onDownloadCompleted(gameId)
+        eachCompanion { it.onDownloadCompleted(gameId) }
     }
 
     fun onRoleSwapReceived() {
@@ -1763,18 +1828,18 @@ class DualScreenManager(
 
     fun resyncCompanionState() {
         broadcastForegroundState(true)
-        companionHost?.onOverlayClosed()
+        controlCompanion?.onOverlayClosed()
     }
 
     fun broadcastForegroundState(isForeground: Boolean) {
         sessionStateStore.setArgosyForeground(isForeground)
-        companionHost?.onForegroundChanged(isForeground)
+        eachCompanion { it.onForegroundChanged(isForeground) }
         if (isForeground) {
             if (!_isCompanionActive.value && displayAffinityHelper.hasSecondaryDisplay) {
                 ensureCompanionLaunched()
             }
             val isWizard = sessionStateStore.isWizardActive()
-            if (isWizard) companionHost?.onWizardStateChanged(true)
+            if (isWizard) eachCompanion { it.onWizardStateChanged(true) }
             scope.launch {
                 val prefs = preferencesRepository.preferences.first()
                 updateHomeApps(prefs.secondaryHomeApps)
@@ -1785,7 +1850,7 @@ class DualScreenManager(
     fun broadcastWizardState(isActive: Boolean) {
         sessionStateStore.setWizardActive(isActive)
         if (!isActive) sessionStateStore.setFirstRunComplete(true)
-        companionHost?.onWizardStateChanged(isActive)
+        eachCompanion { it.onWizardStateChanged(isActive) }
     }
 
     private var lastSwapTimeMs = 0L
@@ -1855,12 +1920,12 @@ class DualScreenManager(
         mediaPlayerDisplayId = null
         _mediaInfoRequest.value = null
         onRoleSwapped?.invoke(newSwapped)
-        companionHost?.onRoleSwapped(newSwapped)
-        if (!newSwapped) companionHost?.refocusSelf()
+        eachCompanion { it.onRoleSwapped(newSwapped) }
+        if (!newSwapped) controlCompanion?.refocusSelf()
     }
 
     fun broadcastOpenOverlay(eventName: String) {
-        companionHost?.onOverlayRequested(eventName)
+        controlCompanion?.onOverlayRequested(eventName)
     }
 
     // WIP: Focus Recovery for External Displays
@@ -2060,11 +2125,11 @@ class DualScreenManager(
 
     fun updateHomeApps(homeApps: Set<String>) {
         sessionStateStore.setHomeApps(homeApps)
-        companionHost?.onHomeAppsChanged(homeApps.toList())
+        eachCompanion { it.onHomeAppsChanged(homeApps.toList()) }
     }
 
     fun broadcastSessionCleared() {
-        companionHost?.onSessionEnded()
+        eachCompanion { it.onSessionEnded() }
     }
 
     // --- Registration ---

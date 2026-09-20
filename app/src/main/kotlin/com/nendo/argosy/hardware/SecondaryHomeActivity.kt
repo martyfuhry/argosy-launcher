@@ -271,7 +271,7 @@ class SecondaryHomeActivity :
     }
 
     override fun onDestroy() {
-        if (::dsm.isInitialized) dsm.companionHost = null
+        if (::dsm.isInitialized) dsm.unregisterCompanionHost(hostDisplayId(), this)
         displayListener?.let {
             getSystemService(DisplayManager::class.java)
                 .unregisterDisplayListener(it)
@@ -708,11 +708,14 @@ class SecondaryHomeActivity :
         return family
     }
 
+    private fun hostDisplayId(): Int =
+        androidx.core.content.ContextCompat.getDisplayOrDefault(this).displayId
+
     private fun initializeCompanion() {
         registerDisplayListener()
         loadInitialState()
         if (!isShowcaseRole) dsm.clearMediaInfoRequest()
-        dsm.companionHost = this
+        dsm.registerCompanionHost(hostDisplayId(), this)
         lifecycleScope.launch { dsm.companionAchievements.collect { companionAchievements = it } }
         lifecycleScope.launch {
             dsm.companionMediaVisible.collect { visible -> isMediaPanelVisible = visible }

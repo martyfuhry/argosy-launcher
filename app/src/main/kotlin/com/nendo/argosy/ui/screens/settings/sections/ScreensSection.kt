@@ -3,6 +3,7 @@ package com.nendo.argosy.ui.screens.settings.sections
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,12 +25,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.core.content.ContextCompat
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.domain.model.ScreenRole
 import com.nendo.argosy.ui.components.ScreenNumberBadge
-import com.nendo.argosy.ui.dualscreen.PresentOnCompanion
-import com.nendo.argosy.ui.dualscreen.PresentationSlot
-import com.nendo.argosy.ui.dualscreen.SlotOwner
 import com.nendo.argosy.ui.primitives.FocusIndicators
 import com.nendo.argosy.ui.primitives.argosyFocusIndicators
 import com.nendo.argosy.ui.screens.settings.ScreenAssignment
@@ -51,31 +51,55 @@ internal fun screenRoleSubtitleRes(role: ScreenRole): Int = when (role) {
     ScreenRole.OFF -> R.string.settings_screens_role_off_detail
 }
 
+private const val INTERNAL_WIDTH_SHARE = 0.4f
+
 internal fun screensMaxFocusIndex(screens: List<ScreenAssignment>): Int =
     (screens.size - 1).coerceAtLeast(0)
+
+/**
+ * The index a move lands on in the two columns the map draws, internal screens stacked on the
+ * left and attached ones on the right, or null when the move leaves the map.
+ */
+internal fun screensFocusMove(
+    screens: List<ScreenAssignment>,
+    current: Int,
+    dx: Int,
+    dy: Int
+): Int? {
+    if (screens.isEmpty()) return null
+    val internals = screens.indices.filter { screens[it].builtIn }
+    val externals = screens.indices.filter { !screens[it].builtIn }
+    val column = if (current in internals) internals else externals
+    val row = column.indexOf(current)
+    if (row < 0) return null
+    if (dy != 0) return column.getOrNull(row + dy)
+    if (dx == 0) return null
+    val target = if (dx > 0) externals else internals
+    if (target.isEmpty() || current in target) return null
+    return target[row.coerceAtMost(target.lastIndex)]
+}
 
 @Composable
 fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val screens = uiState.display.screens
     val builtIn = remember(screens) { screens.filter { it.builtIn } }
     val attached = remember(screens) { screens.filterNot { it.builtIn } }
-    val widestPx = remember(screens) { screens.maxOfOrNull { it.widthPx }?.coerceAtLeast(1) ?: 1 }
-    val perPixel = Dimens.screenMapCardWidth / widestPx.toFloat()
+    val widestInternalPx = remember(builtIn) {
+        builtIn.maxOfOrNull { it.widthPx }?.coerceAtLeast(1) ?: 1
+    }
+    val widestExternalPx = remember(attached) {
+        attached.maxOfOrNull { it.widthPx }?.coerceAtLeast(1) ?: 1
+    }
 
     val context = LocalContext.current
     val hereDisplayId = remember(context) { ContextCompat.getDisplayOrDefault(context).displayId }
     val hereNumber = remember(screens, hereDisplayId) {
         screens.find { it.displayId == hereDisplayId }?.number
     }
-    val thereNumber = remember(screens, hereDisplayId) {
-        screens.firstOrNull { it.displayId != hereDisplayId }?.number
-    }
-
-    if (thereNumber != null) {
-        PresentOnCompanion(
-            owner = SlotOwner("settings.screens"),
-            slot = PresentationSlot.ScreenIdentity(thereNumber)
-        )
+    DisposableEffect(Unit) {
+        val manager = DualScreenManagerHolder.instance
+        manager?.showScreenNumbers()
+        onDispose { manager?.hideScreenNumbers() }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -89,43 +113,51 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingLg),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                builtIn.forEach { screen ->
-                    ScreenCard(
-                        screen = screen,
-                        perPixel = perPixel,
-                        isFocused = uiState.focusedIndex == screens.indexOf(screen),
-                        onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
-                    )
-                }
-            }
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            val internalSpan =
+                if (attached.isEmpty()) maxWidth else maxWidth * INTERNAL_WIDTH_SHARE
+            val externalSpan = maxWidth * (1f - INTERNAL_WIDTH_SHARE) - Dimens.spacingLg
+            val internalPerPixel = internalSpan / widestInternalPx.toFloat()
+            val externalPerPixel = externalSpan / widestExternalPx.toFloat()
 
-            if (attached.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+                    modifier = Modifier.width(internalSpan),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    attached.forEach { screen ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .width(Dimens.spacingLg)
-                                    .height(Dimens.borderMedium)
-                                    .background(MaterialTheme.colorScheme.onSurfaceVariant)
-                            )
-                            ScreenCard(
-                                screen = screen,
-                                perPixel = perPixel,
-                                isFocused = uiState.focusedIndex == screens.indexOf(screen),
-                                onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
-                            )
+                    builtIn.forEach { screen ->
+                        ScreenCard(
+                            screen = screen,
+                            perPixel = internalPerPixel,
+                            isFocused = uiState.focusedIndex == screens.indexOf(screen),
+                            onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
+                        )
+                    }
+                }
+
+                if (attached.isNotEmpty()) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+                    ) {
+                        attached.forEach { screen ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(Dimens.spacingLg)
+                                        .height(Dimens.borderMedium)
+                                        .background(MaterialTheme.colorScheme.onSurfaceVariant)
+                                )
+                                ScreenCard(
+                                    screen = screen,
+                                    perPixel = externalPerPixel,
+                                    isFocused = uiState.focusedIndex == screens.indexOf(screen),
+                                    onClick = { viewModel.focusScreen(screens.indexOf(screen)) }
+                                )
+                            }
                         }
                     }
                 }

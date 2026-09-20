@@ -468,7 +468,7 @@ class MainActivity : ComponentActivity() {
         } else {
             if (displayAffinityHelper.hasSecondaryDisplay && !dualScreenManager.isRolesSwapped.value) {
                 window.decorView.postDelayed({
-                    dualScreenManager.companionHost?.refocusSelf()
+                    dualScreenManager.controlCompanion?.refocusSelf()
                 }, 500)
             }
         }
@@ -523,7 +523,7 @@ class MainActivity : ComponentActivity() {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
                     Logger.verbose(TAG) { "dispatchKeyEvent: FORWARDING key=${event.keyCode} to companion" }
                 }
-                dualScreenManager.companionHost?.onForwardKey(
+                dualScreenManager.controlCompanion?.onForwardKey(
                     event.keyCode,
                     event.action,
                     event.repeatCount,
@@ -625,7 +625,7 @@ class MainActivity : ComponentActivity() {
             if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused) {
                 val keyCode = gamepadEventToKeyCode(stickEvent)
                 if (keyCode != null) {
-                    dualScreenManager.companionHost?.onForwardKey(
+                    dualScreenManager.controlCompanion?.onForwardKey(
                         keyCode,
                         KeyEvent.ACTION_DOWN,
                         0,
@@ -720,7 +720,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (isOnHomeScreen) {
-            dualScreenManager.companionHost?.refocusSelf()
+            dualScreenManager.controlCompanion?.refocusSelf()
         } else {
             dualScreenManager.onRefocusUpper()
         }
