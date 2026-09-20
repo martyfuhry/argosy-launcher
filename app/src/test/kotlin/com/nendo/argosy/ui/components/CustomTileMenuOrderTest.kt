@@ -102,6 +102,32 @@ class CustomTileMenuOrderTest {
     }
 
     @Test
+    fun `a library link can be refiltered after it is placed`() {
+        val target = HomeTileTargetRef.Feature(FeatureTileKind.LIBRARY_LINK)
+
+        assertTrue(CustomTileMenuAction.EDIT_FILTERS in stateWith(target).menuActions)
+    }
+
+    /**
+     * A press on a library link opens the library. Reading the play wording off "not the
+     * RetroAchievements tile" promised a launch the press does not perform.
+     */
+    @Test
+    fun `a library link offers to open, not to play`() {
+        val link = HomeTileTargetRef.Feature(FeatureTileKind.LIBRARY_LINK)
+        val random = HomeTileTargetRef.Feature(FeatureTileKind.RANDOM_GAME)
+
+        assertEquals(
+            com.nendo.argosy.R.string.ui_custom_grid_confirm_open,
+            stateWith(link).confirmLabelRes
+        )
+        assertEquals(
+            com.nendo.argosy.R.string.ui_custom_grid_confirm_play,
+            stateWith(random).confirmLabelRes
+        )
+    }
+
+    @Test
     fun `a collection playing through offers finishing before choosing what is next`() {
         val target = HomeTileTargetRef.Collection(collectionId = 3L, focusGameId = 11L)
         val actions = stateWith(target).menuActions

@@ -61,4 +61,55 @@ class HomeTileRepositoryTest {
         assertEquals(null, (read as HomeTileTargetRef.Feature).pickedGameId)
         assertEquals(target, read)
     }
+
+    /**
+     * A stored link carries every category the library can apply. One dropped in the round trip
+     * is a filter the user set and the opened library never sees.
+     */
+    @Test
+    fun `a library link keeps every filter across a write and a read`() = runTest {
+        val target = HomeTileTargetRef.Feature(
+            kind = FeatureTileKind.LIBRARY_LINK,
+            libraryLink = com.nendo.argosy.domain.model.LibraryLinkFilters(
+                source = com.nendo.argosy.data.model.SourceFilter.FAVORITES,
+                platformIds = setOf(3L, 9L),
+                genres = setOf("Role-playing (RPG)"),
+                series = setOf("Mega Man"),
+                players = com.nendo.argosy.domain.model.PlayerCountBucket.FOUR_PLUS,
+                sort = com.nendo.argosy.data.model.ActiveSort(
+                    com.nendo.argosy.data.model.SortOption.RELEASE_YEAR,
+                    descending = false
+                )
+            )
+        )
+
+        val (row, read) = roundTrip(target)
+
+        assertEquals(FeatureTileKind.LIBRARY_LINK.name, row.featureKind)
+        assertEquals(target, read)
+    }
+
+    @Test
+    fun `a link with no stored config reads back unfiltered`() = runTest {
+        every { dao.observeAllEpisodes() } returns flowOf(emptyList())
+        every { dao.observeTiles(OWNER) } returns flowOf(
+            listOf(
+                HomeTileEntity(
+                    id = TILE_ID,
+                    ownerUserId = OWNER,
+                    pageIndex = 0,
+                    columnIndex = 0,
+                    rowIndex = 0,
+                    targetType = "FEATURE",
+                    featureKind = FeatureTileKind.LIBRARY_LINK.name
+                )
+            )
+        )
+
+        val read = repository.observeTiles(OWNER).first().single().target
+
+        assertTrue(
+            (read as HomeTileTargetRef.Feature).libraryLink?.isUnfiltered == true
+        )
+    }
 }

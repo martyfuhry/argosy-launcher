@@ -8,6 +8,8 @@ import com.nendo.argosy.data.local.entity.MediaUserDataEntity
 import com.nendo.argosy.data.media.MediaAvailability
 import com.nendo.argosy.data.media.mediaAvailabilityOf
 import com.nendo.argosy.data.repository.MediaRepository
+import com.nendo.argosy.ui.screens.media.heroImageUrl
+import com.nendo.argosy.ui.screens.media.plainText
 
 private const val FINISHED_FRACTION = 0.95f
 
@@ -43,6 +45,10 @@ fun MediaItemEntity.toHomeMediaUi(
         title = if (isEpisode) seriesName ?: series?.name ?: name else name,
         subtitle = if (isEpisode) episodeSubtitle(context) else productionYear?.toString(),
         posterUrl = repository.posterUrl(posterId, posterTag),
+        overview = (overview ?: series?.overview)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { plainText(it) },
+        backdropUrl = heroImageUrl(repository).takeIf { it.isNotEmpty() },
         seriesId = seriesId,
         isEpisode = isEpisode,
         isSeries = kind == MediaItemType.SERIES,

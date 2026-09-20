@@ -1,11 +1,17 @@
 package com.nendo.argosy.ui.home.grid
 
+import com.nendo.argosy.data.model.ActiveSort
+import com.nendo.argosy.data.model.SortOption
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.domain.model.FeatureTileKind
 import com.nendo.argosy.domain.model.HomeTile
 import com.nendo.argosy.domain.model.HomeTileTargetRef
+import com.nendo.argosy.domain.model.LibraryLinkFilters
+import com.nendo.argosy.domain.model.PlayerCountBucket
 import com.nendo.argosy.domain.model.RandomTileFilters
 import com.nendo.argosy.ui.components.CustomGridState
 import com.nendo.argosy.ui.components.FeatureFilterOptions
+import com.nendo.argosy.ui.components.FeatureSetupRow
 import com.nendo.argosy.ui.components.FeatureSetupStep
 import com.nendo.argosy.ui.components.FeatureTileSetup
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +41,7 @@ class FeatureTileSetupController(
         val target = existing?.target as? HomeTileTargetRef.Feature
         val effectiveKind = target?.kind ?: kind
         val current = target?.filters ?: RandomTileFilters()
+        val currentLink = target?.libraryLink ?: LibraryLinkFilters()
         if (effectiveKind == FeatureTileKind.RA_SUMMARY) {
             write {
                 it.copy(
@@ -65,6 +72,8 @@ class FeatureTileSetupController(
                         filters = current,
                         platforms = options.platforms,
                         genres = options.genres,
+                        series = options.series,
+                        libraryLink = currentLink,
                         pickedGameId = target?.pickedGameId
                     )
                 )
@@ -88,12 +97,35 @@ class FeatureTileSetupController(
             FeatureSetupStep.MODE -> confirmModeRow(row)
             FeatureSetupStep.FILTERS -> confirmFilterRow(row)
             FeatureSetupStep.PLATFORMS -> current.platforms.getOrNull(row)?.let { option ->
-                updateFilters { filters ->
-                    filters.copy(platformIds = filters.platformIds.toggled(option.id))
+                if (current.kind == FeatureTileKind.LIBRARY_LINK) {
+                    updateLink { it.copy(platformIds = it.platformIds.toggled(option.id)) }
+                } else {
+                    updateFilters { it.copy(platformIds = it.platformIds.toggled(option.id)) }
                 }
             }
             FeatureSetupStep.GENRES -> current.genres.getOrNull(row)?.let { genre ->
-                updateFilters { filters -> filters.copy(genres = filters.genres.toggled(genre)) }
+                if (current.kind == FeatureTileKind.LIBRARY_LINK) {
+                    updateLink { it.copy(genres = it.genres.toggled(genre)) }
+                } else {
+                    updateFilters { it.copy(genres = it.genres.toggled(genre)) }
+                }
+            }
+            FeatureSetupStep.SERIES -> current.series.getOrNull(row)?.let { name ->
+                updateLink { it.copy(series = it.series.toggled(name)) }
+            }
+            FeatureSetupStep.PLAYERS -> updateLink {
+                it.copy(players = PlayerCountBucket.entries.getOrNull(row - 1))
+            }
+            FeatureSetupStep.SORT -> SortOption.entries.getOrNull(row)?.let { option ->
+                updateLink {
+                    val flip = it.sort.option == option
+                    it.copy(
+                        sort = ActiveSort(
+                            option = option,
+                            descending = if (flip) !it.sort.descending else option.defaultDescending
+                        )
+                    )
+                }
             }
         }
         if (index != null && setup != null) update { it.copy(focusIndex = index) }
@@ -107,8 +139,11 @@ class FeatureTileSetupController(
         val current = setup ?: return false
         val returnRow = when (current.step) {
             FeatureSetupStep.MODE, FeatureSetupStep.FILTERS -> return false
-            FeatureSetupStep.PLATFORMS -> FeatureTileSetup.ROW_PLATFORMS
-            FeatureSetupStep.GENRES -> FeatureTileSetup.ROW_GENRES
+            FeatureSetupStep.PLATFORMS -> current.indexOf(FeatureSetupRow.PLATFORMS)
+            FeatureSetupStep.GENRES -> current.indexOf(FeatureSetupRow.GENRES)
+            FeatureSetupStep.SERIES -> current.indexOf(FeatureSetupRow.SERIES)
+            FeatureSetupStep.PLAYERS -> current.indexOf(FeatureSetupRow.PLAYERS)
+            FeatureSetupStep.SORT -> current.indexOf(FeatureSetupRow.SORT)
         }
         update { it.copy(step = FeatureSetupStep.FILTERS, focusIndex = returnRow) }
         return true
@@ -133,24 +168,36 @@ class FeatureTileSetupController(
     }
 
     private fun confirmFilterRow(row: Int) {
-        when (row) {
-            FeatureTileSetup.ROW_DOWNLOADED_ONLY ->
+        when (setup?.rowAt(row)) {
+            FeatureSetupRow.DOWNLOADED_ONLY ->
                 updateFilters { it.copy(downloadedOnly = !it.downloadedOnly) }
-            FeatureTileSetup.ROW_NEVER_PLAYED ->
+            FeatureSetupRow.NEVER_PLAYED ->
                 updateFilters { it.copy(neverPlayed = !it.neverPlayed) }
-            FeatureTileSetup.ROW_PLATFORMS ->
+            FeatureSetupRow.SOURCE -> updateLink {
+                it.copy(source = SourceFilter.entries.next(it.source))
+            }
+            FeatureSetupRow.PLATFORMS ->
                 update { it.copy(step = FeatureSetupStep.PLATFORMS, focusIndex = 0) }
-            FeatureTileSetup.ROW_GENRES ->
+            FeatureSetupRow.GENRES ->
                 update { it.copy(step = FeatureSetupStep.GENRES, focusIndex = 0) }
-            FeatureTileSetup.ROW_DONE -> setup?.let { current ->
+            FeatureSetupRow.SERIES ->
+                update { it.copy(step = FeatureSetupStep.SERIES, focusIndex = 0) }
+            FeatureSetupRow.PLAYERS ->
+                update { it.copy(step = FeatureSetupStep.PLAYERS, focusIndex = 0) }
+            FeatureSetupRow.SORT ->
+                update { it.copy(step = FeatureSetupStep.SORT, focusIndex = 0) }
+            FeatureSetupRow.DONE -> setup?.let { current ->
                 settle(
                     HomeTileTargetRef.Feature(
                         kind = current.kind,
                         filters = current.filters,
-                        pickedGameId = current.pickedGameId
+                        pickedGameId = current.pickedGameId,
+                        libraryLink = current.libraryLink
+                            .takeIf { current.kind == FeatureTileKind.LIBRARY_LINK }
                     )
                 )
             }
+            null -> Unit
         }
     }
 
@@ -167,6 +214,12 @@ class FeatureTileSetupController(
     private fun updateFilters(transform: (RandomTileFilters) -> RandomTileFilters) =
         update { it.copy(filters = transform(it.filters)) }
 
+    private fun updateLink(transform: (LibraryLinkFilters) -> LibraryLinkFilters) =
+        update { it.copy(libraryLink = transform(it.libraryLink)) }
+
     private fun <T> Set<T>.toggled(value: T): Set<T> =
         if (value in this) this - value else this + value
+
+    private fun <T> List<T>.next(current: T): T =
+        getOrNull((indexOf(current) + 1).mod(size)) ?: current
 }

@@ -169,7 +169,11 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     isDefaultView: Boolean,
     onGameSelect: (Long) -> Unit,
-    onNavigateToLibrary: (platformId: Long?, sourceFilter: String?) -> Unit = { _, _ -> },
+    onNavigateToLibrary: (
+        platformId: Long?,
+        sourceFilter: String?,
+        filters: String?
+    ) -> Unit = { _, _, _ -> },
     onNavigateToCollections: (collectionId: Long) -> Unit = {},
     onNavigateToDefault: () -> Unit,
     onDrawerToggle: () -> Unit,
@@ -260,7 +264,13 @@ fun HomeScreen(
                     } catch (_: Exception) { }
                 }
                 is HomeEvent.NavigateToLibrary -> {
-                    onNavigateToLibrary(event.platformId, event.sourceFilter)
+                    onNavigateToLibrary(
+                        event.platformId,
+                        event.sourceFilter,
+                        event.tileFilters?.let {
+                            com.nendo.argosy.ui.screens.library.LibraryFilterArgs.encode(it)
+                        }
+                    )
                 }
                 is HomeEvent.NavigateToCollections -> onNavigateToCollections(event.collectionId)
                 is HomeEvent.NavigateToSettings -> onNavigateToSettings(event.section)
@@ -1117,7 +1127,7 @@ fun HomeScreen(
                         variant = FooterVariant.SUBTLE,
                         onHintClick = { button ->
                             if (button == InputButton.A) {
-                                onNavigateToLibrary(viewAll?.platformId, viewAll?.sourceFilter)
+                                onNavigateToLibrary(viewAll?.platformId, viewAll?.sourceFilter, null)
                             }
                         }
                     )

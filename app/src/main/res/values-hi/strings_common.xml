@@ -343,6 +343,7 @@
     <string name="ui_tile_picker_empty_features">कोई विजेट उपलब्ध नहीं</string>
     <string name="ui_tile_picker_empty_ra_games">RetroAchievements द्वारा पहचाना गया कोई गेम नहीं</string>
     <string name="ui_feature_setup_title">यादृच्छिक गेम</string>
+    <string name="ui_feature_setup_title_library_link">लाइब्रेरी लिंक</string>
     <string name="ui_feature_setup_step_mode">यह टाइल क्या दिखाती है</string>
     <string name="ui_feature_setup_mode_account">खाता अवलोकन</string>
     <string name="ui_feature_setup_mode_track">एक गेम ट्रैक करें</string>
@@ -353,6 +354,16 @@
     <string name="ui_feature_setup_never_played">कभी नहीं खेले गए</string>
     <string name="ui_feature_setup_platforms">प्लेटफ़ॉर्म</string>
     <string name="ui_feature_setup_genres">शैलियाँ</string>
+    <string name="ui_feature_setup_step_library_link">लाइब्रेरी किस पर खुलेगी</string>
+    <string name="ui_feature_setup_step_series">शृंखला</string>
+    <string name="ui_feature_setup_step_players">खिलाड़ी</string>
+    <string name="ui_feature_setup_step_sort">क्रम</string>
+    <string name="ui_feature_setup_source">दिखाएँ</string>
+    <string name="ui_feature_setup_series">शृंखला</string>
+    <string name="ui_feature_setup_players">खिलाड़ी</string>
+    <string name="ui_feature_setup_sort">क्रम</string>
+    <string name="ui_feature_setup_sort_ascending">आरोही</string>
+    <string name="ui_feature_setup_sort_descending">अवरोही</string>
     <string name="ui_feature_setup_done">हो गया</string>
     <string name="ui_feature_setup_any">कोई भी</string>
     <string name="ui_feature_setup_selected_count">%1$d चयनित</string>

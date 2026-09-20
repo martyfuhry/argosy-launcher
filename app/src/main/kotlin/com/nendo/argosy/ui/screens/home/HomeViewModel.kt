@@ -77,13 +77,17 @@ import javax.inject.Inject
  * The widgets tab's rows in this surface's words. The list itself is written once in
  * [com.nendo.argosy.ui.common.featureTilePickerEntries].
  */
+private const val SHOWCASE_COVERS = 24
+
 private val HOME_FEATURE_TILE_PICKER_STRINGS = com.nendo.argosy.ui.common.FeatureTilePickerStrings(
     randomTitle = R.string.tile_picker_feature_random_title,
     randomSubtitle = R.string.tile_picker_feature_random_subtitle,
     continueTitle = R.string.tile_picker_feature_continue_title,
     continueSubtitle = R.string.tile_picker_feature_continue_subtitle,
     raTitle = R.string.tile_picker_feature_ra_title,
-    raSubtitle = R.string.tile_picker_feature_ra_subtitle
+    raSubtitle = R.string.tile_picker_feature_ra_subtitle,
+    libraryLinkTitle = R.string.tile_picker_feature_library_link_title,
+    libraryLinkSubtitle = R.string.tile_picker_feature_library_link_subtitle
 )
 
 @HiltViewModel
@@ -129,6 +133,8 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel(), HomeInputActions {
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home", this)
+    private val tileShowcaseOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home.tile", this)
+    private var previousTileSlot: com.nendo.argosy.ui.dualscreen.PresentationSlot? = null
     private var isDescribing = false
 
     private val _uiState = MutableStateFlow(restoreInitialState())
@@ -400,6 +406,7 @@ class HomeViewModel @Inject constructor(
             var previousGameId: Long? = null
             _uiState.collect { state ->
                 val focusedGame = state.focusedGame
+                publishTileShowcase(state)
                 if (focusedGame?.id == previousGameId) return@collect
                 previousGameId = focusedGame?.id
                 publishCompanionDetail(focusedGame)
@@ -420,6 +427,95 @@ class HomeViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun publishTileShowcase(state: HomeUiState) {
+        if (!isDescribing) return
+        val dsm = DualScreenManagerHolder.instance ?: return
+        val tile = state.focusedTile
+            ?.takeIf { state.layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CUSTOM_GRID }
+        val slot = tile?.let { tileShowcaseFor(it, state) }
+        if (slot == previousTileSlot) return
+        previousTileSlot = slot
+        if (slot == null) dsm.releaseSlot(tileShowcaseOwner) else dsm.presentSlot(tileShowcaseOwner, slot)
+    }
+
+    private fun tileShowcaseFor(
+        tile: com.nendo.argosy.domain.model.HomeTile,
+        state: HomeUiState
+    ): com.nendo.argosy.ui.dualscreen.PresentationSlot? = when (val target = tile.target) {
+        is HomeTileTargetRef.Game -> null
+        is HomeTileTargetRef.Collection -> if (target.focusGameId != null) {
+            null
+        } else {
+            state.tileShowcases[tile.id]
+        }
+        is HomeTileTargetRef.VirtualCollection -> state.tileShowcases[tile.id]
+        is HomeTileTargetRef.App -> state.tileApps[target.packageName]?.let { name ->
+            detail(
+                title = name,
+                subtitle = context.getString(R.string.home_grid_tile_app_subtitle)
+            )
+        }
+        is HomeTileTargetRef.Media -> state.tileMedia[target.itemId]?.let { media ->
+            detail(
+                title = media.title,
+                subtitle = media.subtitle,
+                overview = media.overview,
+                artUrl = media.posterUrl,
+                backdropUrl = media.backdropUrl
+            )
+        }
+        is HomeTileTargetRef.LocalMedia -> detail(
+            title = target.filePath.substringAfterLast('/').substringBeforeLast('.'),
+            subtitle = context.getString(R.string.home_grid_tile_local_media_subtitle),
+            artUrl = state.customGrid.tilePlayback[tile.id]
+        )
+        is HomeTileTargetRef.Feature -> when (target.kind) {
+            FeatureTileKind.RANDOM_GAME, FeatureTileKind.CONTINUE -> null
+            FeatureTileKind.RA_SUMMARY -> raTileDetail(state)
+            FeatureTileKind.LIBRARY_LINK -> state.tileShowcases[tile.id]
+        }
+        HomeTileTargetRef.Unresolvable -> null
+    }
+
+    private fun detail(
+        title: String,
+        subtitle: String? = null,
+        overview: String? = null,
+        artUrl: String? = null,
+        backdropUrl: String? = null,
+        facts: List<com.nendo.argosy.ui.dualscreen.CompanionFact> = emptyList()
+    ) = com.nendo.argosy.ui.dualscreen.PresentationSlot.Detail(
+        com.nendo.argosy.ui.dualscreen.CompanionDetail(
+            title = title,
+            subtitle = subtitle,
+            overview = overview,
+            artUrl = artUrl,
+            backdropUrl = backdropUrl,
+            facts = facts
+        )
+    )
+
+    private fun raTileDetail(state: HomeUiState): com.nendo.argosy.ui.dualscreen.PresentationSlot? {
+        val summary = state.raTileSummary ?: return detail(
+            title = context.getString(R.string.home_grid_tile_feature_ra_label),
+            subtitle = context.getString(R.string.home_grid_tile_feature_ra_signed_out)
+        )
+        return detail(
+            title = summary.username,
+            subtitle = context.getString(R.string.home_grid_tile_feature_ra_label),
+            facts = listOf(
+                com.nendo.argosy.ui.dualscreen.CompanionFact(
+                    context.getString(R.string.home_grid_tile_ra_points_label),
+                    summary.points.toString()
+                ),
+                com.nendo.argosy.ui.dualscreen.CompanionFact(
+                    context.getString(R.string.home_grid_tile_ra_unlocks_label),
+                    summary.unlocks.toString()
+                )
+            )
+        )
     }
 
     private fun publishCompanionDetail(game: HomeGameUi?) {
@@ -952,6 +1048,7 @@ class HomeViewModel @Inject constructor(
     private suspend fun publishHomeTiles(tiles: List<com.nendo.argosy.domain.model.HomeTile>) {
         val shown = shownTiles(tiles)
         val feature = featureTileContent(shown)
+        val libraryLinks = resolveLibraryLinks(shown)
         val games = libraryDelegate.resolveTileGames(
             (
                 shown.mapNotNull {
@@ -961,7 +1058,8 @@ class HomeViewModel @Inject constructor(
                         is HomeTileTargetRef.Feature -> target.pickedGameId
                         else -> null
                     }
-                } + listOfNotNull(feature.continueGameId, feature.raSummary?.groundGameId)
+                } + listOfNotNull(feature.continueGameId, feature.raSummary?.groundGameId) +
+                    libraryLinks.values.mapNotNull { it.coverGameId }
             ).distinct()
         )
         val collections = libraryDelegate.resolveTileCollections(
@@ -970,6 +1068,7 @@ class HomeViewModel @Inject constructor(
         val apps = libraryDelegate.resolveTileApps(
             shown.mapNotNull { (it.target as? HomeTileTargetRef.App)?.packageName }.distinct()
         )
+        val showcases = resolveTileShowcases(shown, libraryLinks, collections)
         mediaDelegate.selectTileItems(
             shown.mapNotNull { (it.target as? HomeTileTargetRef.Media)?.itemId }.distinct()
         )
@@ -981,6 +1080,8 @@ class HomeViewModel @Inject constructor(
                 tileGames = games.mapValues { (_, game) -> game.applyGradient(gradients) },
                 tileCollections = collections,
                 tileApps = apps,
+                tileLibraryLinks = libraryLinks,
+                tileShowcases = showcases,
                 continueGameId = feature.continueGameId,
                 raTileSummary = feature.raSummary
             )
@@ -1057,6 +1158,76 @@ class HomeViewModel @Inject constructor(
             homeTileRepository.updateFeaturePick(tile.id, pick.id)
         }
     }
+
+    private suspend fun resolveLibraryLinks(
+        tiles: List<com.nendo.argosy.domain.model.HomeTile>
+    ): Map<Long, LibraryLinkTileUi> {
+        val links = tiles.mapNotNull { tile ->
+            val target = tile.target as? HomeTileTargetRef.Feature ?: return@mapNotNull null
+            if (target.kind != FeatureTileKind.LIBRARY_LINK) return@mapNotNull null
+            tile.id to (target.libraryLink ?: com.nendo.argosy.domain.model.LibraryLinkFilters())
+        }
+        if (links.isEmpty()) return emptyMap()
+        val platformNames = libraryDelegate.platformOptionsForTiles()
+            .associate { it.id to it.shortLabel }
+        return links.associate { (tileId, filters) ->
+            val summary = gameRepository.summarizeLibraryLink(filters)
+            tileId to LibraryLinkTileUi(
+                gameCount = summary.gameCount,
+                coverGameId = summary.coverGameId,
+                gameIds = summary.gameIds,
+                platformNames = filters.platformIds.mapNotNull { platformNames[it] }.sorted(),
+                genres = filters.genres.sorted(),
+                series = filters.series.sorted(),
+                source = filters.source,
+                players = filters.players
+            )
+        }
+    }
+
+    private suspend fun resolveTileShowcases(
+        tiles: List<com.nendo.argosy.domain.model.HomeTile>,
+        links: Map<Long, LibraryLinkTileUi>,
+        collections: Map<Long, com.nendo.argosy.ui.components.TileCollectionUi>
+    ): Map<Long, com.nendo.argosy.ui.dualscreen.PresentationSlot.PlatformShowcase> =
+        tiles.mapNotNull { tile ->
+            val named = when (val target = tile.target) {
+                is HomeTileTargetRef.Collection -> if (target.focusGameId != null) {
+                    null
+                } else {
+                    collections[target.collectionId]?.name?.let { name ->
+                        name to collectionRepository.getGameIdsInCollection(target.collectionId)
+                    }
+                }
+                is HomeTileTargetRef.VirtualCollection -> {
+                    val type = runCatching {
+                        com.nendo.argosy.data.local.entity.CollectionType.valueOf(target.type)
+                    }.getOrNull()
+                    type?.let { target.name to collectionRepository.virtualGameIds(it, target.name) }
+                }
+                is HomeTileTargetRef.Feature ->
+                    if (target.kind != FeatureTileKind.LIBRARY_LINK) {
+                        null
+                    } else {
+                        links[tile.id]?.let { link ->
+                            com.nendo.argosy.ui.common.libraryLinkLabel(
+                                link,
+                                context,
+                                HOME_FEATURE_TILE_STRINGS
+                            ) to link.gameIds
+                        }
+                    }
+                else -> null
+            } ?: return@mapNotNull null
+            val (name, gameIds) = named
+            tile.id to com.nendo.argosy.ui.common.gameShowcase(
+                context = context,
+                name = name,
+                coverPaths = gameRepository.coverPathsForGames(gameIds, SHOWCASE_COVERS),
+                stats = gameRepository.statsForGames(gameIds),
+                fallbackCount = gameIds.size
+            )
+        }.toMap()
 
     private fun featureTileEntries(): List<com.nendo.argosy.ui.components.TilePickerEntry> =
         com.nendo.argosy.ui.common.featureTilePickerEntries(
@@ -1275,6 +1446,12 @@ class HomeViewModel @Inject constructor(
 
     override fun openTileCollection(collectionId: Long) {
         viewModelScope.launch { _events.emit(HomeEvent.NavigateToCollections(collectionId)) }
+    }
+
+    override fun openTileLibraryLink(filters: com.nendo.argosy.domain.model.LibraryLinkFilters) {
+        viewModelScope.launch {
+            _events.emit(HomeEvent.NavigateToLibrary(tileFilters = filters))
+        }
     }
 
     /**

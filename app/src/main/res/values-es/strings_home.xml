@@ -107,11 +107,16 @@
     <string name="tile_picker_feature_continue_subtitle">Vuelve a tu último juego</string>
     <string name="tile_picker_feature_ra_title">RetroAchievements</string>
     <string name="tile_picker_feature_ra_subtitle">Tus puntos y últimos logros</string>
+    <string name="tile_picker_feature_library_link_title">Enlace a la biblioteca</string>
+    <string name="tile_picker_feature_library_link_subtitle">Una vista guardada de tu biblioteca</string>
     <string name="home_grid_tile_feature_random_label">Juego aleatorio</string>
     <string name="home_grid_tile_feature_random_empty">Ningún juego coincide con los filtros</string>
     <string name="home_grid_tile_feature_continue_label">Seguir jugando</string>
     <string name="home_grid_tile_feature_continue_empty">Aún no has jugado nada</string>
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
+    <string name="home_grid_tile_feature_library_link_label">Biblioteca</string>
+    <string name="home_grid_tile_feature_library_link_all">Todos los juegos</string>
+    <string name="home_grid_tile_feature_library_link_count">Juegos</string>
     <string name="home_grid_tile_feature_ra_signed_out">Inicia sesión para ver tus logros</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">Aún sin logros</string>
     <string name="home_grid_tile_ra_latest_heading">Último</string>
@@ -181,4 +186,6 @@
     <string name="home_companion_hint_favorite">Añadir a favoritos</string>
     <string name="home_companion_hint_play">Jugar</string>
     <string name="home_companion_hint_unfavorite">Quitar de favoritos</string>
+    <string name="home_grid_tile_ra_points_label">Puntos</string>
+    <string name="home_grid_tile_ra_unlocks_label">Logros</string>
 </resources>

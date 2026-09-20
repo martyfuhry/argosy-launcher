@@ -332,6 +332,7 @@
     <string name="ui_tile_picker_empty_features">沒有可用的小工具</string>
     <string name="ui_tile_picker_empty_ra_games">RetroAchievements 未識別任何遊戲</string>
     <string name="ui_feature_setup_title">隨機遊戲</string>
+    <string name="ui_feature_setup_title_library_link">遊戲庫連結</string>
     <string name="ui_feature_setup_step_mode">這個圖塊顯示什麼</string>
     <string name="ui_feature_setup_mode_account">帳號總覽</string>
     <string name="ui_feature_setup_mode_track">追蹤一款遊戲</string>
@@ -342,6 +343,16 @@
     <string name="ui_feature_setup_never_played">從未玩過</string>
     <string name="ui_feature_setup_platforms">平台</string>
     <string name="ui_feature_setup_genres">類型</string>
+    <string name="ui_feature_setup_step_library_link">開啟遊戲庫時的篩選</string>
+    <string name="ui_feature_setup_step_series">系列</string>
+    <string name="ui_feature_setup_step_players">人數</string>
+    <string name="ui_feature_setup_step_sort">排序</string>
+    <string name="ui_feature_setup_source">顯示</string>
+    <string name="ui_feature_setup_series">系列</string>
+    <string name="ui_feature_setup_players">人數</string>
+    <string name="ui_feature_setup_sort">排序</string>
+    <string name="ui_feature_setup_sort_ascending">遞增</string>
+    <string name="ui_feature_setup_sort_descending">遞減</string>
     <string name="ui_feature_setup_done">完成</string>
     <string name="ui_feature_setup_any">不限</string>
     <string name="ui_feature_setup_selected_count">已選 %1$d 項</string>

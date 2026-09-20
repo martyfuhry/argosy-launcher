@@ -354,6 +354,7 @@
     <string name="ui_tile_picker_empty_features">No hay widgets disponibles</string>
     <string name="ui_tile_picker_empty_ra_games">Ningún juego reconocido por RetroAchievements</string>
     <string name="ui_feature_setup_title">Juego aleatorio</string>
+    <string name="ui_feature_setup_title_library_link">Enlace a la biblioteca</string>
     <string name="ui_feature_setup_step_mode">Lo que muestra este mosaico</string>
     <string name="ui_feature_setup_mode_account">Resumen de la cuenta</string>
     <string name="ui_feature_setup_mode_track">Seguir un juego</string>
@@ -364,6 +365,16 @@
     <string name="ui_feature_setup_never_played">Nunca jugados</string>
     <string name="ui_feature_setup_platforms">Plataformas</string>
     <string name="ui_feature_setup_genres">Géneros</string>
+    <string name="ui_feature_setup_step_library_link">Con qué se abre la biblioteca</string>
+    <string name="ui_feature_setup_step_series">Serie</string>
+    <string name="ui_feature_setup_step_players">Jugadores</string>
+    <string name="ui_feature_setup_step_sort">Orden</string>
+    <string name="ui_feature_setup_source">Mostrar</string>
+    <string name="ui_feature_setup_series">Serie</string>
+    <string name="ui_feature_setup_players">Jugadores</string>
+    <string name="ui_feature_setup_sort">Orden</string>
+    <string name="ui_feature_setup_sort_ascending">Ascendente</string>
+    <string name="ui_feature_setup_sort_descending">Descendente</string>
     <string name="ui_feature_setup_done">Listo</string>
     <string name="ui_feature_setup_any">Cualquiera</string>
     <string name="ui_feature_setup_selected_count">%1$d seleccionados</string>

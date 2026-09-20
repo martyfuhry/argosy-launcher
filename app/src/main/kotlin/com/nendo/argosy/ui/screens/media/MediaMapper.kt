@@ -166,7 +166,7 @@ fun MediaItemUi.runtimeLabel(context: Context): String? =
  * one item, so a parent's tag against a child's id is a request the server answers 404. A series is
  * therefore asked for untagged rather than asked for with a tag that is not its own.
  */
-private fun MediaItemEntity.heroImageUrl(repository: MediaRepository): String {
+internal fun MediaItemEntity.heroImageUrl(repository: MediaRepository): String {
     if (MediaItemType.fromWire(itemType) == MediaItemType.EPISODE) {
         seriesId?.let { return repository.imageUrl(it, MediaImageType.BACKDROP, null) }
     }
@@ -182,7 +182,7 @@ private fun MediaItemEntity.heroImageUrl(repository: MediaRepository): String {
  * handful of entities a synopsis actually carries are decoded, so a description reads as prose
  * rather than as markup.
  */
-private fun plainText(html: String): String = html
+internal fun plainText(html: String): String = html
     .replace(Regex("(?i)<br\\s*/?>"), "\n")
     .replace(Regex("(?i)</p>"), "\n")
     .replace(Regex("<[^>]*>"), "")

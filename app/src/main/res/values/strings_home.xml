@@ -262,6 +262,8 @@
     <string name="tile_picker_feature_continue_subtitle">Jump back into your last game</string>
     <string name="tile_picker_feature_ra_title">RetroAchievements</string>
     <string name="tile_picker_feature_ra_subtitle">Your points and latest unlocks</string>
+    <string name="tile_picker_feature_library_link_title">Library link</string>
+    <string name="tile_picker_feature_library_link_subtitle">A saved view of your library</string>
     <!-- Feature tiles on the custom grid. The label names the feature under the game it shows. -->
     <string name="home_grid_tile_feature_random_label">Random game</string>
     <string name="home_grid_tile_feature_random_empty">No game matches the filters</string>
@@ -270,6 +272,15 @@
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
     <string name="home_grid_tile_feature_ra_signed_out">Sign in to see your unlocks</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">No unlocks yet</string>
+    <!-- Second line of a library link tile, naming what kind of tile it is. -->
+    <string name="home_grid_tile_feature_library_link_label">Library</string>
+    <!-- First line of a library link tile whose filters narrow nothing. -->
+    <string name="home_grid_tile_feature_library_link_all">All games</string>
+    <!-- Stat label on a library link tile, beside how many games its filters match. Noun. -->
+    <string name="home_grid_tile_feature_library_link_count">Games</string>
+    <!-- Stands for the filters a library link tile has no room to name. %1$d is how many are
+         left unnamed; the whole value renders after the last name that did fit. -->
+    <string name="home_grid_tile_feature_library_link_more" translatable="false">+%1$d</string>
     <!-- Heading of the row showing the most recently earned achievement on the
          RetroAchievements tile. Adjective, short for "latest achievement". -->
     <string name="home_grid_tile_ra_latest_heading">Latest</string>
@@ -408,4 +419,8 @@
     <!-- Control hint on the second screen. Verb, imperative: stop the focused game being a
          favourite. -->
     <string name="home_companion_hint_unfavorite">Unfavorite</string>
+    <!-- Stat label beside a RetroAchievements point total on the second screen. Noun. -->
+    <string name="home_grid_tile_ra_points_label">Points</string>
+    <!-- Stat label beside how many achievements have been earned. Noun. -->
+    <string name="home_grid_tile_ra_unlocks_label">Unlocks</string>
 </resources>

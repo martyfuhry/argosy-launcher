@@ -5,9 +5,14 @@ import com.nendo.argosy.data.local.entity.HomeTileEntity
 import com.nendo.argosy.data.local.entity.HomeTileEpisodeEntity
 import com.nendo.argosy.data.local.entity.HomeTileTarget
 import com.nendo.argosy.data.local.entity.MediaTilePlayMode
+import com.nendo.argosy.data.model.ActiveSort
+import com.nendo.argosy.data.model.SortOption
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.domain.model.FeatureTileKind
 import com.nendo.argosy.domain.model.HomeTile
 import com.nendo.argosy.domain.model.HomeTileTargetRef
+import com.nendo.argosy.domain.model.LibraryLinkFilters
+import com.nendo.argosy.domain.model.PlayerCountBucket
 import com.nendo.argosy.domain.model.RandomTileFilters
 import com.nendo.argosy.domain.model.TileCoverScale
 import com.nendo.argosy.domain.model.TileRect
@@ -232,19 +237,71 @@ private const val KEY_NEVER_PLAYED = "neverPlayed"
 private const val KEY_PLATFORM_IDS = "platformIds"
 private const val KEY_GENRES = "genres"
 private const val KEY_PICKED_GAME_ID = "pickedGameId"
+private const val KEY_SERIES = "series"
+private const val KEY_SOURCE = "source"
+private const val KEY_PLAYERS = "players"
+private const val KEY_SORT = "sort"
+private const val KEY_SORT_DESCENDING = "sortDescending"
 
 private fun encodeFeatureConfig(target: HomeTileTargetRef.Feature): String =
+    if (target.kind == FeatureTileKind.LIBRARY_LINK) {
+        encodeLibraryLink(target.libraryLink ?: LibraryLinkFilters())
+    } else {
+        JSONObject().apply {
+            put(KEY_DOWNLOADED_ONLY, target.filters.downloadedOnly)
+            put(KEY_NEVER_PLAYED, target.filters.neverPlayed)
+            put(KEY_PLATFORM_IDS, JSONArray(target.filters.platformIds.toList()))
+            put(KEY_GENRES, JSONArray(target.filters.genres.toList()))
+            target.pickedGameId?.let { put(KEY_PICKED_GAME_ID, it) }
+        }.toString()
+    }
+
+private fun encodeLibraryLink(filters: LibraryLinkFilters): String =
     JSONObject().apply {
-        put(KEY_DOWNLOADED_ONLY, target.filters.downloadedOnly)
-        put(KEY_NEVER_PLAYED, target.filters.neverPlayed)
-        put(KEY_PLATFORM_IDS, JSONArray(target.filters.platformIds.toList()))
-        put(KEY_GENRES, JSONArray(target.filters.genres.toList()))
-        target.pickedGameId?.let { put(KEY_PICKED_GAME_ID, it) }
+        put(KEY_SOURCE, filters.source.name)
+        put(KEY_PLATFORM_IDS, JSONArray(filters.platformIds.toList()))
+        put(KEY_GENRES, JSONArray(filters.genres.toList()))
+        put(KEY_SERIES, JSONArray(filters.series.toList()))
+        filters.players?.let { put(KEY_PLAYERS, it.name) }
+        put(KEY_SORT, filters.sort.option.name)
+        put(KEY_SORT_DESCENDING, filters.sort.descending)
     }.toString()
+
+private fun decodeLibraryLink(json: JSONObject): LibraryLinkFilters {
+    val sortOption = SortOption.entries.find { it.name == json.optString(KEY_SORT) }
+        ?: SortOption.TITLE
+    return LibraryLinkFilters(
+        source = SourceFilter.fromString(json.optString(KEY_SOURCE)) ?: SourceFilter.ALL,
+        platformIds = json.longSet(KEY_PLATFORM_IDS),
+        genres = json.stringSet(KEY_GENRES),
+        series = json.stringSet(KEY_SERIES),
+        players = PlayerCountBucket.entries.find { it.name == json.optString(KEY_PLAYERS) },
+        sort = ActiveSort(
+            option = sortOption,
+            descending = json.optBoolean(KEY_SORT_DESCENDING, sortOption.defaultDescending)
+        )
+    )
+}
+
+private fun JSONObject.longSet(key: String): Set<Long> =
+    optJSONArray(key)?.let { array -> (0 until array.length()).map { array.getLong(it) } }
+        .orEmpty()
+        .toSet()
+
+private fun JSONObject.stringSet(key: String): Set<String> =
+    optJSONArray(key)?.let { array -> (0 until array.length()).map { array.getString(it) } }
+        .orEmpty()
+        .toSet()
 
 private fun decodeFeature(kind: FeatureTileKind, config: String?): HomeTileTargetRef.Feature {
     val json = config?.let { runCatching { JSONObject(it) }.getOrNull() }
-        ?: return HomeTileTargetRef.Feature(kind)
+        ?: return HomeTileTargetRef.Feature(
+            kind,
+            libraryLink = LibraryLinkFilters().takeIf { kind == FeatureTileKind.LIBRARY_LINK }
+        )
+    if (kind == FeatureTileKind.LIBRARY_LINK) {
+        return HomeTileTargetRef.Feature(kind, libraryLink = decodeLibraryLink(json))
+    }
     val platformIds = json.optJSONArray(KEY_PLATFORM_IDS)
         ?.let { array -> (0 until array.length()).map { array.getLong(it) } }
         .orEmpty()

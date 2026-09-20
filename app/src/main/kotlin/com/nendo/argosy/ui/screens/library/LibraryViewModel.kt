@@ -40,8 +40,11 @@ import com.nendo.argosy.data.preferences.GridDensity
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.remote.romm.RomMResult
+import com.nendo.argosy.data.model.SourceFilter
+import com.nendo.argosy.domain.model.LibraryLinkFilters
 import com.nendo.argosy.domain.model.PlayerCount
 import com.nendo.argosy.domain.model.PlayerCountBucket
+import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.domain.usecase.cache.RepairImageCacheUseCase
 import com.nendo.argosy.domain.usecase.download.DownloadResult
 import android.content.Context
@@ -115,17 +118,6 @@ enum class FilterCategory(@StringRes val labelRes: Int) {
 }
 
 /**
- * Which slice of the library is shown. The name is the stored and compared value, including
- * across the dual-screen home; [labelRes] is the half that renders.
- */
-enum class SourceFilter(@StringRes val labelRes: Int) {
-    ALL(R.string.source_filter_all),
-    PLAYABLE(R.string.source_filter_playable),
-    FAVORITES(R.string.source_filter_favorites),
-    HIDDEN(R.string.source_filter_hidden)
-}
-
-/**
  * One filter category that is on: the tab it belongs to, the label or text that names its value,
  * and how many selections it holds. Every "which filters are active" question reads
  * [ActiveFilters.entries]; nothing else re-derives it from the fields.
@@ -137,10 +129,16 @@ data class ActiveFilterEntry(
     val count: Int = 1
 )
 
+/**
+ * A platform a filter is limited to. [id] is what a game is matched against; [label] is carried
+ * alongside only so a chip can name it without a lookup, and is never compared.
+ */
+data class PlatformRef(val id: Long, val label: String)
+
 data class ActiveFilters(
     val searchQuery: String = "",
     val source: SourceFilter = SourceFilter.ALL,
-    val platforms: Set<String> = emptySet(),
+    val platforms: Set<PlatformRef> = emptySet(),
     val genres: Set<String> = emptySet(),
     val players: PlayerCountBucket? = null,
     val series: Set<String> = emptySet(),
@@ -154,7 +152,9 @@ data class ActiveFilters(
                 ?.let { ActiveFilterEntry(FilterCategory.SEARCH, text = it) },
             source.takeIf { it != SourceFilter.ALL }
                 ?.let { ActiveFilterEntry(FilterCategory.SOURCE, labelRes = it.labelRes) },
-            multiSelectEntry(FilterCategory.PLATFORM, platforms),
+            platforms.firstOrNull()?.let {
+                ActiveFilterEntry(FilterCategory.PLATFORM, text = it.label, count = platforms.size)
+            },
             multiSelectEntry(FilterCategory.GENRE, genres),
             players?.let { ActiveFilterEntry(FilterCategory.PLAYERS, labelRes = it.labelRes) },
             multiSelectEntry(FilterCategory.SERIES, series)
@@ -174,7 +174,7 @@ data class ActiveFilters(
 }
 
 data class FilterOptions(
-    val platforms: List<String> = emptyList(),
+    val platforms: List<PlatformRef> = emptyList(),
     val genres: List<String> = emptyList(),
     val series: List<String> = emptyList()
 )
@@ -350,7 +350,7 @@ data class LibraryUiState(
                     "$label ($hiddenGameCount)"
                 else label
             }
-            FilterCategory.PLATFORM -> filterOptions.platforms
+            FilterCategory.PLATFORM -> filterOptions.platforms.map { it.label }
             FilterCategory.GENRE -> filterOptions.genres
             FilterCategory.PLAYERS -> PlayerCountBucket.entries.map { context.getString(it.labelRes) }
             FilterCategory.SERIES -> filterOptions.series
@@ -382,7 +382,7 @@ data class LibraryUiState(
             }
             FilterCategory.SEARCH -> emptySet()
             FilterCategory.SOURCE -> emptySet()
-            FilterCategory.PLATFORM -> activeFilters.platforms
+            FilterCategory.PLATFORM -> activeFilters.platforms.map { it.label }.toSet()
             FilterCategory.GENRE -> activeFilters.genres
             FilterCategory.PLAYERS -> emptySet()
             FilterCategory.SERIES -> activeFilters.series
@@ -403,7 +403,6 @@ data class LibraryUiState(
 }
 
 private const val TAG = "LibraryVM"
-private const val MINUTES_PER_HOUR = 60
 
 sealed class LibraryEvent {
     data class LaunchIntent(val intent: Intent, val options: android.os.Bundle? = null) : LibraryEvent()
@@ -459,7 +458,9 @@ class LibraryViewModel @Inject constructor(
     private var gamesJob: Job? = null
     private var pendingInitialPlatformId: Long? = null
     private var pendingInitialSourceFilter: SourceFilter? = null
+    private var pendingInitialTileFilters: LibraryLinkFilters? = null
     private var explicitSourceRequested = false
+    private var explicitTileFiltersRequested = false
     private var explicitDestinationRequested = false
     private var cachedPlatformDisplayNames: Map<Long, String> = emptyMap()
     private var cachedPlatformEntities: List<PlatformEntity> = emptyList()
@@ -522,7 +523,11 @@ class LibraryViewModel @Inject constructor(
                 ?: SourceFilter.ALL
             val platforms = prefs.libraryDefaultPlatform
                 .takeIf { it.isNotBlank() }
-                ?.let { setOf(it) }
+                ?.let { name ->
+                    cachedPlatformDisplayNames.entries
+                        .firstOrNull { it.value == name }
+                        ?.let { setOf(PlatformRef(it.key, it.value)) }
+                }
                 ?: emptySet()
             val landsOnGames = explicitDestinationRequested ||
                 source != SourceFilter.ALL ||
@@ -530,14 +535,23 @@ class LibraryViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     view = if (landsOnGames) LibraryView.GAMES else it.view,
-                    activeFilters = it.activeFilters.copy(
-                        sort = ActiveSort(
-                            option = option,
-                            descending = prefs.libraryDefaultSortDescending ?: option.defaultDescending
-                        ),
-                        source = if (explicitSourceRequested) it.activeFilters.source else source,
-                        platforms = platforms
-                    )
+                    activeFilters = if (explicitTileFiltersRequested) {
+                        it.activeFilters
+                    } else {
+                        it.activeFilters.copy(
+                            sort = ActiveSort(
+                                option = option,
+                                descending = prefs.libraryDefaultSortDescending
+                                    ?: option.defaultDescending
+                            ),
+                            source = if (explicitSourceRequested) {
+                                it.activeFilters.source
+                            } else {
+                                source
+                            },
+                            platforms = platforms
+                        )
+                    }
                 )
             }
             loadGames()
@@ -811,26 +825,16 @@ class LibraryViewModel @Inject constructor(
         cell: LibraryCellUi,
         stats: PlatformShowcaseStats?,
         covers: List<String>
-    ) = PresentationSlot.PlatformShowcase(
-        name = if (cell.isAllGames) context.getString(R.string.library_showcase_all_games) else cell.name,
-        yearSpan = yearSpan(stats?.earliestYear, stats?.latestYear),
+    ) = com.nendo.argosy.ui.common.gameShowcase(
+        context = context,
+        name = if (cell.isAllGames) {
+            context.getString(R.string.library_showcase_all_games)
+        } else {
+            cell.name
+        },
         coverPaths = covers,
-        facts = buildList {
-            add(fact(R.string.library_showcase_fact_games, (stats?.gameCount ?: cell.itemCount).toString()))
-            stats ?: return@buildList
-            add(fact(R.string.library_showcase_fact_installed, stats.installedCount.toString()))
-            if (stats.achievementsTotal > 0) {
-                add(
-                    fact(
-                        R.string.library_showcase_fact_achievements,
-                        "${stats.achievementsEarned} / ${stats.achievementsTotal}"
-                    )
-                )
-            }
-            if (stats.playTimeMinutes > 0) {
-                add(fact(R.string.library_showcase_fact_play_time, formatPlayTime(stats.playTimeMinutes)))
-            }
-        }
+        stats = stats,
+        fallbackCount = cell.itemCount
     )
 
     private fun mediaShowcaseFor(
@@ -839,7 +843,7 @@ class LibraryViewModel @Inject constructor(
         posters: List<String>
     ) = PresentationSlot.PlatformShowcase(
         name = cell.name,
-        yearSpan = yearSpan(stats?.earliestYear, stats?.latestYear),
+        yearSpan = com.nendo.argosy.ui.common.showcaseYearSpan(stats?.earliestYear, stats?.latestYear),
         coverPaths = posters,
         facts = buildList {
             val countLabel = when (cell.mediaKind) {
@@ -857,21 +861,6 @@ class LibraryViewModel @Inject constructor(
 
     private fun fact(@StringRes label: Int, value: String) =
         CompanionFact(context.getString(label), value)
-
-    private fun yearSpan(from: Int?, to: Int?): String? = when {
-        from == null || to == null -> null
-        from == to -> from.toString()
-        else -> "$from-$to"
-    }
-
-    private fun formatPlayTime(minutes: Int): String = when {
-        minutes < MINUTES_PER_HOUR -> context.getString(
-            R.string.library_showcase_play_time_minutes, minutes
-        )
-        else -> context.getString(
-            R.string.library_showcase_play_time_hours, minutes / MINUTES_PER_HOUR
-        )
-    }
 
     /**
      * Re-states the focused game to the showcase, for a return from somewhere that replaced it.
@@ -983,7 +972,9 @@ class LibraryViewModel @Inject constructor(
                         focusedIndex = newGameIndex,
                         isLoading = false,
                         filterOptions = state.filterOptions.copy(
-                            platforms = platforms.map { it.getDisplayName() }.sorted()
+                            platforms = platforms
+                                .map { PlatformRef(it.id, it.getDisplayName()) }
+                                .sortedBy { it.label }
                         )
                     )
                 }
@@ -997,6 +988,13 @@ class LibraryViewModel @Inject constructor(
                     Log.d(TAG, "loadPlatforms: applying pending source filter $sourceFilter")
                     _uiState.update { it.copy(activeFilters = it.activeFilters.copy(source = sourceFilter)) }
                     pendingInitialSourceFilter = null
+                }
+
+                pendingInitialTileFilters?.let { tileFilters ->
+                    if (applyTileFilters(tileFilters)) {
+                        Log.d(TAG, "loadPlatforms: applied pending tile filters $tileFilters")
+                        pendingInitialTileFilters = null
+                    }
                 }
 
                 refreshPlatformCells()
@@ -1087,11 +1085,12 @@ class LibraryViewModel @Inject constructor(
                 }
                 .collectLatest { (games, seriesIds) ->
                     val normalizedQuery = com.nendo.argosy.util.SearchNormalizer.normalize(filters.searchQuery)
+                    val platformIds = filters.platforms.map { it.id }.toSet()
                     val filteredGames = games.filter { game ->
                         val matchesSearch = filters.searchQuery.isEmpty() ||
                             com.nendo.argosy.util.SearchNormalizer.normalize(game.title).contains(normalizedQuery)
-                        val matchesPlatform = filters.platforms.isEmpty() ||
-                            cachedPlatformDisplayNames[game.platformId] in filters.platforms
+                        val matchesPlatform = platformIds.isEmpty() ||
+                            game.platformId in platformIds
                         val matchesGenre = filters.genres.isEmpty() ||
                             filters.genres.contains(game.genre)
                         val matchesPlayers = filters.players?.admits(PlayerCount.parse(game.players)) ?: true
@@ -1309,6 +1308,47 @@ class LibraryViewModel @Inject constructor(
             _uiState.update { it.copy(currentPlatformIndex = index) }
             loadGames()
         }
+    }
+
+    /**
+     * Opens the library on a home tile's stored filters.
+     *
+     * Platforms arrive as ids and are held as display names, so this waits for the platform list
+     * when it has not loaded yet. The cursor is left off any single platform: the filter carries
+     * the narrowing whether it names one platform or several, and pinning the header as well would
+     * put the same restriction in two places.
+     */
+    fun setInitialTileFilters(filters: LibraryLinkFilters) {
+        explicitDestinationRequested = true
+        explicitTileFiltersRequested = true
+        explicitSourceRequested = true
+        _uiState.update { it.copy(view = LibraryView.GAMES, canReturnToPlatformGrid = false) }
+        if (!applyTileFilters(filters)) {
+            Log.d(TAG, "setInitialTileFilters: platforms not loaded yet, storing pending $filters")
+            pendingInitialTileFilters = filters
+            return
+        }
+        loadGames()
+    }
+
+    private fun applyTileFilters(filters: LibraryLinkFilters): Boolean {
+        if (filters.platformIds.isNotEmpty() && cachedPlatformDisplayNames.isEmpty()) return false
+        val platforms = filters.platformIds
+            .mapNotNull { id -> cachedPlatformDisplayNames[id]?.let { PlatformRef(id, it) } }
+            .toSet()
+        _uiState.update {
+            it.copy(
+                activeFilters = it.activeFilters.copy(
+                    source = filters.source,
+                    platforms = platforms,
+                    genres = filters.genres,
+                    series = filters.series,
+                    players = filters.players,
+                    sort = filters.sort
+                )
+            )
+        }
+        return true
     }
 
     fun setInitialSourceFilter(source: SourceFilter) {
@@ -1582,7 +1622,7 @@ class LibraryViewModel @Inject constructor(
                 state.activeFilters.copy(source = source)
             }
             FilterCategory.PLATFORM -> {
-                val platform = options.getOrNull(optionIndex) ?: return
+                val platform = state.filterOptions.platforms.getOrNull(optionIndex) ?: return
                 val current = state.activeFilters.platforms
                 val updated = if (platform in current) current - platform else current + platform
                 state.activeFilters.copy(platforms = updated)

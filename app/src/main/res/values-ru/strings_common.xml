@@ -361,6 +361,7 @@
     <string name="ui_tile_picker_empty_features">Нет доступных виджетов</string>
     <string name="ui_tile_picker_empty_ra_games">Нет игр, распознанных RetroAchievements</string>
     <string name="ui_feature_setup_title">Случайная игра</string>
+    <string name="ui_feature_setup_title_library_link">Ссылка на библиотеку</string>
     <string name="ui_feature_setup_step_mode">Что показывает эта плитка</string>
     <string name="ui_feature_setup_mode_account">Обзор аккаунта</string>
     <string name="ui_feature_setup_mode_track">Отслеживать игру</string>
@@ -371,6 +372,16 @@
     <string name="ui_feature_setup_never_played">Ни разу не сыгранные</string>
     <string name="ui_feature_setup_platforms">Платформы</string>
     <string name="ui_feature_setup_genres">Жанры</string>
+    <string name="ui_feature_setup_step_library_link">На чём открывается библиотека</string>
+    <string name="ui_feature_setup_step_series">Серия</string>
+    <string name="ui_feature_setup_step_players">Игроки</string>
+    <string name="ui_feature_setup_step_sort">Сортировка</string>
+    <string name="ui_feature_setup_source">Показывать</string>
+    <string name="ui_feature_setup_series">Серия</string>
+    <string name="ui_feature_setup_players">Игроки</string>
+    <string name="ui_feature_setup_sort">Сортировка</string>
+    <string name="ui_feature_setup_sort_ascending">По возрастанию</string>
+    <string name="ui_feature_setup_sort_descending">По убыванию</string>
     <string name="ui_feature_setup_done">Готово</string>
     <string name="ui_feature_setup_any">Любые</string>
     <string name="ui_feature_setup_selected_count">Выбрано: %1$d</string>

@@ -85,8 +85,10 @@ fun NavGraph(
                 onGameSelect = { gameId ->
                     navController.navigate(Screen.GameDetail.createRoute(gameId))
                 },
-                onNavigateToLibrary = { platformId, sourceFilter ->
-                    navController.navigate(Screen.Library.createRoute(platformId, sourceFilter))
+                onNavigateToLibrary = { platformId, sourceFilter, filters ->
+                    navController.navigate(
+                        Screen.Library.createRoute(platformId, sourceFilter, filters)
+                    )
                 },
                 onNavigateToDefault = navigateToDefault,
                 onDrawerToggle = onDrawerToggle,
@@ -116,15 +118,22 @@ fun NavGraph(
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                navArgument("filters") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
                 }
             )
         ) { backStackEntry ->
             val platformId = backStackEntry.arguments?.getString("platformId")?.toLongOrNull()
             val source = backStackEntry.arguments?.getString("source")
+            val filters = backStackEntry.arguments?.getString("filters")
             LibraryScreen(
                 isDefaultView = false,
                 initialPlatformId = platformId,
                 initialSource = source,
+                initialTileFilters = filters,
                 onGameSelect = { gameId ->
                     navController.navigate(Screen.GameDetail.createRoute(gameId))
                 },

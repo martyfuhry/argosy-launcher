@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Casino
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material3.Icon
@@ -155,6 +156,7 @@ data class CustomGridTileContent(
      * Marks the continue tile, which likewise looks exactly like the game it last showed.
      */
     val isContinue: Boolean = false,
+    val isLibraryLink: Boolean = false,
     /**
      * What a RetroAchievements tile draws, in place of every other field here. Present only on
      * that tile, which owns its own layout in each cell shape rather than borrowing one.
@@ -173,7 +175,13 @@ data class TileStat(val label: String, val value: String)
  * A collection a tile points at, resolved for drawing: the name it shows and one cover from inside
  * it, since a collection has no art of its own.
  */
-data class TileCollectionUi(val name: String, val coverPath: String?, val gameCount: Int = 0)
+data class TileCollectionUi(
+    val name: String,
+    val coverPaths: List<String> = emptyList(),
+    val gameCount: Int = 0
+) {
+    val coverPath: String? get() = coverPaths.firstOrNull()
+}
 
 /**
  * One page of the custom grid. Tiles are placed absolutely from their anchor and span, because a
@@ -559,6 +567,12 @@ private fun CustomGridCellBox(
                         modifier = Modifier.align(Alignment.TopStart)
                     )
                 }
+                if (content.isLibraryLink) {
+                    TileKindBadge(
+                        icon = Icons.Filled.FilterAlt,
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                }
             }
             if (editModeLabel != null && isFocused) {
                 TileModeTab(
@@ -639,6 +653,12 @@ private fun CustomGridCellBox(
                     )
                     content.isContinue -> Icon(
                         imageVector = Icons.Filled.History,
+                        contentDescription = null,
+                        tint = theme.textDim,
+                        modifier = Modifier.size(Dimens.iconXl)
+                    )
+                    content.isLibraryLink -> Icon(
+                        imageVector = Icons.Filled.FilterAlt,
                         contentDescription = null,
                         tint = theme.textDim,
                         modifier = Modifier.size(Dimens.iconXl)
@@ -1022,6 +1042,12 @@ private fun WideTileBox(
                 if (content.isContinue) {
                     TileKindBadge(
                         icon = Icons.Filled.History,
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                }
+                if (content.isLibraryLink) {
+                    TileKindBadge(
+                        icon = Icons.Filled.FilterAlt,
                         modifier = Modifier.align(Alignment.TopStart)
                     )
                 }

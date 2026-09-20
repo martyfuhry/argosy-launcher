@@ -78,16 +78,15 @@ sealed interface HomeTileTargetRef {
     data class LocalMedia(val filePath: String) : HomeTileTargetRef
 
     /**
-     * A tile that does something rather than pointing at one thing in the library. [filters] only
-     * mean anything to [FeatureTileKind.RANDOM_GAME]. [pickedGameId] is that tile's stored pick,
-     * kept so the page looks the same when the reader comes back and changed only by a deliberate
-     * re-roll; for [FeatureTileKind.RA_SUMMARY] it is the game whose progress the tile tracks, and
-     * null there means the account overview.
+     * A tile that performs an action. Each kind reads the one field it owns: [filters] on
+     * [FeatureTileKind.RANDOM_GAME], [libraryLink] on [FeatureTileKind.LIBRARY_LINK], and
+     * [pickedGameId] on [FeatureTileKind.RA_SUMMARY], null there meaning the account overview.
      */
     data class Feature(
         val kind: FeatureTileKind,
         val filters: RandomTileFilters = RandomTileFilters(),
-        val pickedGameId: Long? = null
+        val pickedGameId: Long? = null,
+        val libraryLink: LibraryLinkFilters? = null
     ) : HomeTileTargetRef
 
     data object Unresolvable : HomeTileTargetRef
@@ -96,7 +95,8 @@ sealed interface HomeTileTargetRef {
 enum class FeatureTileKind {
     RANDOM_GAME,
     CONTINUE,
-    RA_SUMMARY;
+    RA_SUMMARY,
+    LIBRARY_LINK;
 
     companion object {
         fun fromStored(value: String?): FeatureTileKind? = entries.find { it.name == value }

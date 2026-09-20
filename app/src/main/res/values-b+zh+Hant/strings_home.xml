@@ -107,11 +107,16 @@
     <string name="tile_picker_feature_continue_subtitle">回到上次玩的遊戲</string>
     <string name="tile_picker_feature_ra_title">RetroAchievements</string>
     <string name="tile_picker_feature_ra_subtitle">你的分數和最新解鎖</string>
+    <string name="tile_picker_feature_library_link_title">遊戲庫連結</string>
+    <string name="tile_picker_feature_library_link_subtitle">已儲存的遊戲庫檢視</string>
     <string name="home_grid_tile_feature_random_label">隨機遊戲</string>
     <string name="home_grid_tile_feature_random_empty">沒有符合篩選的遊戲</string>
     <string name="home_grid_tile_feature_continue_label">繼續遊玩</string>
     <string name="home_grid_tile_feature_continue_empty">還沒有玩過任何遊戲</string>
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
+    <string name="home_grid_tile_feature_library_link_label">遊戲庫</string>
+    <string name="home_grid_tile_feature_library_link_all">全部遊戲</string>
+    <string name="home_grid_tile_feature_library_link_count">遊戲</string>
     <string name="home_grid_tile_feature_ra_signed_out">登入以查看你的解鎖</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">還沒有解鎖</string>
     <string name="home_grid_tile_ra_latest_heading">最新</string>
@@ -173,4 +178,6 @@
     <string name="home_companion_hint_favorite">收藏</string>
     <string name="home_companion_hint_play">開始遊戲</string>
     <string name="home_companion_hint_unfavorite">取消收藏</string>
+    <string name="home_grid_tile_ra_points_label">點數</string>
+    <string name="home_grid_tile_ra_unlocks_label">成就</string>
 </resources>

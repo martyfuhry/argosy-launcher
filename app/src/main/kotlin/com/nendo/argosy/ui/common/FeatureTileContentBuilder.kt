@@ -28,8 +28,37 @@ data class FeatureTileStrings(
     @StringRes val continueLabel: Int,
     @StringRes val continueEmpty: Int,
     @StringRes val raLabel: Int,
+    @StringRes val libraryLinkLabel: Int,
+    @StringRes val libraryLinkAll: Int,
+    @StringRes val libraryLinkCount: Int,
+    @StringRes val libraryLinkMore: Int,
     val ra: RaTileLabels
 )
+
+fun libraryLinkLabel(
+    link: com.nendo.argosy.ui.screens.home.LibraryLinkTileUi?,
+    context: Context,
+    strings: FeatureTileStrings
+): String {
+    if (link == null) return context.getString(strings.libraryLinkAll)
+    val parts = buildList {
+        if (link.source != com.nendo.argosy.data.model.SourceFilter.ALL) {
+            add(context.getString(link.source.labelRes))
+        }
+        addAll(link.platformNames)
+        addAll(link.genres)
+        addAll(link.series)
+        link.players?.let { add(context.getString(it.labelRes)) }
+    }
+    if (parts.isEmpty()) return context.getString(strings.libraryLinkAll)
+    val shown = parts.take(LIBRARY_LINK_MAX_PARTS).joinToString(LIBRARY_LINK_SEPARATOR)
+    val hidden = parts.size - LIBRARY_LINK_MAX_PARTS
+    if (hidden <= 0) return shown
+    return shown + LIBRARY_LINK_SEPARATOR + context.getString(strings.libraryLinkMore, hidden)
+}
+
+private const val LIBRARY_LINK_SEPARATOR = " • "
+private const val LIBRARY_LINK_MAX_PARTS = 3
 
 /**
  * What a feature tile draws, from what the surface has resolved: the games the page points at,
@@ -42,6 +71,7 @@ fun featureTileContentFor(
     raSummary: RaTileContent?,
     context: Context,
     strings: FeatureTileStrings,
+    libraryLink: com.nendo.argosy.ui.screens.home.LibraryLinkTileUi? = null,
     now: Long = System.currentTimeMillis()
 ): CustomGridTileContent = when (target.kind) {
     FeatureTileKind.RANDOM_GAME -> {
@@ -64,6 +94,18 @@ fun featureTileContentFor(
             isContinue = true
         )
     }
+    FeatureTileKind.LIBRARY_LINK -> CustomGridTileContent(
+        game = libraryLink?.coverGameId?.let { tileGames[it] },
+        label = libraryLinkLabel(libraryLink, context, strings),
+        subtitle = context.getString(strings.libraryLinkLabel),
+        stats = listOf(
+            com.nendo.argosy.ui.components.TileStat(
+                context.getString(strings.libraryLinkCount),
+                (libraryLink?.gameCount ?: 0).toString()
+            )
+        ),
+        isLibraryLink = true
+    )
     FeatureTileKind.RA_SUMMARY -> CustomGridTileContent(
         game = null,
         label = raSummary?.username ?: context.getString(strings.raLabel),
@@ -83,7 +125,9 @@ data class FeatureTilePickerStrings(
     @StringRes val continueTitle: Int,
     @StringRes val continueSubtitle: Int,
     @StringRes val raTitle: Int,
-    @StringRes val raSubtitle: Int
+    @StringRes val raSubtitle: Int,
+    @StringRes val libraryLinkTitle: Int,
+    @StringRes val libraryLinkSubtitle: Int
 )
 
 /**
@@ -108,5 +152,13 @@ fun featureTilePickerEntries(
         target = HomeTileTargetRef.Feature(FeatureTileKind.RA_SUMMARY),
         title = context.getString(strings.raTitle),
         subtitle = context.getString(strings.raSubtitle)
+    ),
+    TilePickerEntry(
+        target = HomeTileTargetRef.Feature(
+            kind = FeatureTileKind.LIBRARY_LINK,
+            libraryLink = com.nendo.argosy.domain.model.LibraryLinkFilters()
+        ),
+        title = context.getString(strings.libraryLinkTitle),
+        subtitle = context.getString(strings.libraryLinkSubtitle)
     )
 )

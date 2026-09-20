@@ -65,6 +65,22 @@ fun Map<String, com.nendo.argosy.data.repository.MediaTransferProgress>.indicato
  */
 private const val CAROUSEL_RECENT_LIMIT = 10
 
+/**
+ * What a library link tile shows: how many games its filters match, one of them to draw a cover
+ * from, and the platform and genre names naming the filter.
+ */
+data class LibraryLinkTileUi(
+    val gameCount: Int = 0,
+    val coverGameId: Long? = null,
+    val gameIds: List<Long> = emptyList(),
+    val platformNames: List<String> = emptyList(),
+    val genres: List<String> = emptyList(),
+    val series: List<String> = emptyList(),
+    val source: com.nendo.argosy.data.model.SourceFilter =
+        com.nendo.argosy.data.model.SourceFilter.ALL,
+    val players: com.nendo.argosy.domain.model.PlayerCountBucket? = null
+)
+
 data class HomeGameUi(
     val id: Long,
     val title: String,
@@ -148,6 +164,8 @@ data class HomeMediaUi(
     val title: String,
     val subtitle: String?,
     val posterUrl: String,
+    val overview: String? = null,
+    val backdropUrl: String? = null,
     val seriesId: String? = null,
     val isEpisode: Boolean = false,
     val isSeries: Boolean = false,
@@ -282,6 +300,9 @@ data class HomeUiState(
     val tileGames: Map<Long, HomeGameUi> = emptyMap(),
     val tileCollections: Map<Long, com.nendo.argosy.ui.components.TileCollectionUi> = emptyMap(),
     val tileApps: Map<String, String> = emptyMap(),
+    val tileLibraryLinks: Map<Long, LibraryLinkTileUi> = emptyMap(),
+    val tileShowcases: Map<Long, com.nendo.argosy.ui.dualscreen.PresentationSlot.PlatformShowcase> =
+        emptyMap(),
     val tileMedia: Map<String, HomeMediaUi> = emptyMap(),
     val continueGameId: Long? = null,
     val raTileSummary: com.nendo.argosy.domain.model.RaTileContent? = null,
@@ -549,6 +570,7 @@ data class HomeUiState(
                 com.nendo.argosy.domain.model.FeatureTileKind.CONTINUE ->
                     continueGameId?.let { tileGames[it] }
                 com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> null
+                com.nendo.argosy.domain.model.FeatureTileKind.LIBRARY_LINK -> null
             }
             else -> null
         }
@@ -720,7 +742,8 @@ data class HomeUiState(
                     continueGameId = continueGameId,
                     raSummary = raTileSummary,
                     context = context,
-                    strings = HOME_FEATURE_TILE_STRINGS
+                    strings = HOME_FEATURE_TILE_STRINGS,
+                    libraryLink = tileLibraryLinks[tile.id]
                 )
             com.nendo.argosy.domain.model.HomeTileTargetRef.Unresolvable ->
                 com.nendo.argosy.ui.components.CustomGridTileContent(
@@ -735,12 +758,16 @@ data class HomeUiState(
  * The words this surface lends the shared feature tiles. The mapping is written once in
  * [com.nendo.argosy.ui.common.featureTileContentFor]; the keys stay the home screen's own.
  */
-private val HOME_FEATURE_TILE_STRINGS = com.nendo.argosy.ui.common.FeatureTileStrings(
+internal val HOME_FEATURE_TILE_STRINGS = com.nendo.argosy.ui.common.FeatureTileStrings(
     randomLabel = R.string.home_grid_tile_feature_random_label,
     randomEmpty = R.string.home_grid_tile_feature_random_empty,
     continueLabel = R.string.home_grid_tile_feature_continue_label,
     continueEmpty = R.string.home_grid_tile_feature_continue_empty,
     raLabel = R.string.home_grid_tile_feature_ra_label,
+    libraryLinkLabel = R.string.home_grid_tile_feature_library_link_label,
+    libraryLinkAll = R.string.home_grid_tile_feature_library_link_all,
+    libraryLinkCount = R.string.home_grid_tile_feature_library_link_count,
+    libraryLinkMore = R.string.home_grid_tile_feature_library_link_more,
     ra = com.nendo.argosy.ui.components.RaTileLabels(
         signedOut = R.string.home_grid_tile_feature_ra_signed_out,
         empty = R.string.home_grid_tile_feature_ra_no_unlocks,
@@ -764,7 +791,8 @@ sealed class HomeEvent {
     data class NavigateToCollections(val collectionId: Long) : HomeEvent()
     data class NavigateToLibrary(
         val platformId: Long? = null,
-        val sourceFilter: String? = null
+        val sourceFilter: String? = null,
+        val tileFilters: com.nendo.argosy.domain.model.LibraryLinkFilters? = null
     ) : HomeEvent()
 
     /**

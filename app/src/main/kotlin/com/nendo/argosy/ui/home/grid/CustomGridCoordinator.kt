@@ -870,8 +870,11 @@ class CustomGridCoordinator(
             return
         }
         val feature = entry.target as? HomeTileTargetRef.Feature
-        if (feature?.kind == FeatureTileKind.RANDOM_GAME && featureFilterOptions != null) {
-            featureSetupController.begin(kind = FeatureTileKind.RANDOM_GAME)
+        val filterKind = feature?.kind?.takeIf {
+            it == FeatureTileKind.RANDOM_GAME || it == FeatureTileKind.LIBRARY_LINK
+        }
+        if (filterKind != null && featureFilterOptions != null) {
+            featureSetupController.begin(kind = filterKind)
             return
         }
         if (feature?.kind == FeatureTileKind.RA_SUMMARY && raGamePickerEntries != null) {

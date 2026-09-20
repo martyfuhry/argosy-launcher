@@ -753,8 +753,7 @@ class HomeLibraryDelegate @Inject constructor(
             .associate { collection ->
                 collection.id to com.nendo.argosy.ui.components.TileCollectionUi(
                     name = collection.name,
-                    coverPath = collectionRepository.getCollectionCoverPaths(collection.id)
-                        .firstOrNull(),
+                    coverPaths = collectionRepository.getCollectionCoverPaths(collection.id),
                     gameCount = collectionRepository.getGameCountInCollection(collection.id)
                 )
             }
@@ -827,7 +826,13 @@ class HomeLibraryDelegate @Inject constructor(
     suspend fun platformOptionsForTiles(): List<com.nendo.argosy.ui.components.FeatureSetupOption> =
         platformRepository.getPlatformsWithGames()
             .filter { it.id != LocalPlatformIds.STEAM && it.id != LocalPlatformIds.ANDROID }
-            .map { com.nendo.argosy.ui.components.FeatureSetupOption(it.id, it.getDisplayName()) }
+            .map {
+                com.nendo.argosy.ui.components.FeatureSetupOption(
+                    id = it.id,
+                    label = it.getDisplayName(),
+                    shortLabel = it.shortName
+                )
+            }
             .sortedBy { it.label }
 
     private suspend fun GameEntity.toUi(): HomeGameUi = toHomeGameUi(

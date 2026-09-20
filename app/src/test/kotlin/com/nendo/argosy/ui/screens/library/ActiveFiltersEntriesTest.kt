@@ -4,6 +4,7 @@ import android.content.Context
 import com.nendo.argosy.R
 import com.nendo.argosy.data.model.ActiveSort
 import com.nendo.argosy.data.model.SortOption
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.domain.model.PlayerCountBucket
 import io.mockk.every
 import io.mockk.mockk
@@ -99,10 +100,24 @@ class ActiveFiltersEntriesTest {
 
     @Test
     fun `a lone platform is summarised by its name`() {
-        val filters = ActiveFilters(platforms = setOf("SNES"))
+        val filters = ActiveFilters(platforms = setOf(PlatformRef(4L, "SNES")))
 
         assertEquals(listOf(ActiveFilterEntry(FilterCategory.PLATFORM, text = "SNES", count = 1)), filters.entries)
         assertEquals("SNES", filters.summary(context))
+    }
+
+    /**
+     * Two platforms can carry one display name, and a chip reads the name while a match reads the
+     * id. Counting by name would report one filter where two are set.
+     */
+    @Test
+    fun `two platforms sharing a name are still two filters`() {
+        val filters = ActiveFilters(
+            platforms = setOf(PlatformRef(4L, "Arcade"), PlatformRef(9L, "Arcade"))
+        )
+
+        assertEquals(2, filters.activeCount)
+        assertEquals(2, filters.entries.single().count)
     }
 
     @Test

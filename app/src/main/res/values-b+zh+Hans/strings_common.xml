@@ -328,6 +328,7 @@
     <string name="ui_tile_picker_empty_features">没有可用的小组件</string>
     <string name="ui_tile_picker_empty_ra_games">RetroAchievements 未识别任何游戏</string>
     <string name="ui_feature_setup_title">随机游戏</string>
+    <string name="ui_feature_setup_title_library_link">游戏库链接</string>
     <string name="ui_feature_setup_step_mode">这个磁贴显示什么</string>
     <string name="ui_feature_setup_mode_account">账号总览</string>
     <string name="ui_feature_setup_mode_track">追踪一款游戏</string>
@@ -338,6 +339,16 @@
     <string name="ui_feature_setup_never_played">从未玩过</string>
     <string name="ui_feature_setup_platforms">平台</string>
     <string name="ui_feature_setup_genres">类型</string>
+    <string name="ui_feature_setup_step_library_link">打开游戏库时的筛选</string>
+    <string name="ui_feature_setup_step_series">系列</string>
+    <string name="ui_feature_setup_step_players">人数</string>
+    <string name="ui_feature_setup_step_sort">排序</string>
+    <string name="ui_feature_setup_source">显示</string>
+    <string name="ui_feature_setup_series">系列</string>
+    <string name="ui_feature_setup_players">人数</string>
+    <string name="ui_feature_setup_sort">排序</string>
+    <string name="ui_feature_setup_sort_ascending">升序</string>
+    <string name="ui_feature_setup_sort_descending">降序</string>
     <string name="ui_feature_setup_done">完成</string>
     <string name="ui_feature_setup_any">不限</string>
     <string name="ui_feature_setup_selected_count">已选 %1$d 项</string>

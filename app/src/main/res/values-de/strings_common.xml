@@ -343,6 +343,7 @@
     <string name="ui_tile_picker_empty_features">Keine Widgets verfügbar</string>
     <string name="ui_tile_picker_empty_ra_games">Kein von RetroAchievements erkanntes Spiel</string>
     <string name="ui_feature_setup_title">Zufälliges Spiel</string>
+    <string name="ui_feature_setup_title_library_link">Bibliotheks-Link</string>
     <string name="ui_feature_setup_step_mode">Was diese Kachel zeigt</string>
     <string name="ui_feature_setup_mode_account">Kontoübersicht</string>
     <string name="ui_feature_setup_mode_track">Ein Spiel verfolgen</string>
@@ -353,6 +354,16 @@
     <string name="ui_feature_setup_never_played">Noch nie gespielt</string>
     <string name="ui_feature_setup_platforms">Plattformen</string>
     <string name="ui_feature_setup_genres">Genres</string>
+    <string name="ui_feature_setup_step_library_link">Womit die Bibliothek geöffnet wird</string>
+    <string name="ui_feature_setup_step_series">Reihe</string>
+    <string name="ui_feature_setup_step_players">Spieler</string>
+    <string name="ui_feature_setup_step_sort">Sortierung</string>
+    <string name="ui_feature_setup_source">Anzeigen</string>
+    <string name="ui_feature_setup_series">Reihe</string>
+    <string name="ui_feature_setup_players">Spieler</string>
+    <string name="ui_feature_setup_sort">Sortierung</string>
+    <string name="ui_feature_setup_sort_ascending">Aufsteigend</string>
+    <string name="ui_feature_setup_sort_descending">Absteigend</string>
     <string name="ui_feature_setup_done">Fertig</string>
     <string name="ui_feature_setup_any">Alle</string>
     <string name="ui_feature_setup_selected_count">%1$d ausgewählt</string>

@@ -442,6 +442,7 @@ data class CustomGridState(
             }
             is HomeTileTargetRef.VirtualCollection -> R.string.ui_custom_grid_confirm_open
             is HomeTileTargetRef.Feature -> when {
+                target.kind == FeatureTileKind.LIBRARY_LINK -> R.string.ui_custom_grid_confirm_open
                 target.kind != FeatureTileKind.RA_SUMMARY -> R.string.ui_custom_grid_confirm_play
                 !raTile.signedIn -> R.string.ui_custom_grid_confirm_sign_in
                 raTile.tracksGame -> R.string.ui_custom_grid_confirm_play
@@ -491,7 +492,9 @@ data class CustomGridState(
                     }
                 }
                 if (isFocusedTileCurated) add(CustomTileMenuAction.RECURATE)
-                if (feature?.kind == FeatureTileKind.RANDOM_GAME) {
+                if (feature?.kind == FeatureTileKind.RANDOM_GAME ||
+                    feature?.kind == FeatureTileKind.LIBRARY_LINK
+                ) {
                     add(CustomTileMenuAction.EDIT_FILTERS)
                 }
                 if (feature?.kind == FeatureTileKind.RA_SUMMARY && supportsRaTileSetup) {

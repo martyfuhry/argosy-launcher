@@ -93,6 +93,7 @@ import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.theme.Motion
 import com.nendo.argosy.data.model.GameSource
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.data.preferences.GridDensity
 import com.nendo.argosy.ui.components.FocusedScroll
 import com.nendo.argosy.ui.components.fastAnimateScrollToItem
@@ -158,6 +159,7 @@ fun LibraryScreen(
     onDrawerToggle: () -> Unit,
     initialPlatformId: Long? = null,
     initialSource: String? = null,
+    initialTileFilters: String? = null,
     viewModel: LibraryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -171,6 +173,10 @@ fun LibraryScreen(
         if (initialPlatformId != null) {
             viewModel.setInitialPlatform(initialPlatformId)
         }
+    }
+
+    LaunchedEffect(initialTileFilters) {
+        LibraryFilterArgs.decode(initialTileFilters)?.let { viewModel.setInitialTileFilters(it) }
     }
 
     LaunchedEffect(initialSource) {

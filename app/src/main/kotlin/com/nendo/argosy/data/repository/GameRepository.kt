@@ -853,6 +853,36 @@ class GameRepository @Inject constructor(
         return gameDao.getById(pick.id)
     }
 
+    /**
+     * How many games a library link's [filters] match, and the first of them carrying a cover.
+     * Series is excluded; it resolves through the collection tables and is counted by the library
+     * itself, not by the tile.
+     */
+    suspend fun summarizeLibraryLink(
+        filters: com.nendo.argosy.domain.model.LibraryLinkFilters
+    ): LibraryLinkSummary {
+        val candidates = gameDao.getLibraryLinkCandidates(
+            ownerUserId = hiddenOwnerId(),
+            platformCount = filters.platformIds.size,
+            platformIds = filters.platformIds.toList(),
+            source = filters.source.name
+        )
+        val matching = candidates.filter { candidate ->
+            (filters.genres.isEmpty() || candidate.genre in filters.genres) &&
+                (
+                    filters.players == null ||
+                        filters.players.admits(
+                            com.nendo.argosy.domain.model.PlayerCount.parse(candidate.players)
+                        )
+                    )
+        }
+        return LibraryLinkSummary(
+            gameCount = matching.size,
+            coverGameId = matching.firstOrNull { !it.coverPath.isNullOrBlank() }?.id,
+            gameIds = matching.map { it.id }
+        )
+    }
+
     suspend fun getSearchCandidates(): List<SearchCandidate> =
         gameDao.getSearchCandidates(hiddenOwnerId())
 
@@ -976,6 +1006,14 @@ class GameRepository @Inject constructor(
 
     suspend fun showcaseCovers(platformId: Long?): List<String> =
         gameDao.showcaseCovers(platformId, hiddenOwnerId())
+
+    suspend fun statsForGames(gameIds: List<Long>): PlatformShowcaseStats? =
+        if (gameIds.isEmpty()) null else gameDao.statsForGames(gameIds, hiddenOwnerId())
+
+    suspend fun coverPathsForGames(gameIds: List<Long>, limit: Int): List<String> =
+        if (gameIds.isEmpty()) emptyList() else {
+            gameDao.coverPathsForGames(gameIds, hiddenOwnerId(), limit)
+        }
 
     /**
      * The same counts as a flow, re-keyed whenever the signed-in account changes so a switch does
@@ -1127,3 +1165,9 @@ class GameRepository @Inject constructor(
     suspend fun getInstalledSteamGames(): List<GameEntity> =
         gameDao.getInstalledSteamGames()
 }
+
+data class LibraryLinkSummary(
+    val gameCount: Int,
+    val coverGameId: Long?,
+    val gameIds: List<Long> = emptyList()
+)

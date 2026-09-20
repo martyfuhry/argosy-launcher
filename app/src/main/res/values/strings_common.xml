@@ -699,6 +699,8 @@
     <!-- Heading of the setup panel for the RetroAchievements tile, whether placing it fresh or
          editing one already on the grid. Proper name of an outside service, never translated. -->
     <string name="ui_feature_setup_title_ra" translatable="false">RetroAchievements</string>
+    <!-- Heading of the setup panel for the tile that opens the library on saved filters. -->
+    <string name="ui_feature_setup_title_library_link">Library link</string>
     <!-- Second line of the setup modal while asking whether the RetroAchievements tile follows
          the whole account or one game. -->
     <string name="ui_feature_setup_step_mode">What this tile shows</string>
@@ -713,6 +715,20 @@
     <string name="ui_feature_setup_never_played">Never played</string>
     <string name="ui_feature_setup_platforms">Platforms</string>
     <string name="ui_feature_setup_genres">Genres</string>
+    <!-- Second line of the setup panel while a library link is being filtered. -->
+    <string name="ui_feature_setup_step_library_link">What it opens the library on</string>
+    <string name="ui_feature_setup_step_series">Series</string>
+    <string name="ui_feature_setup_step_players">Players</string>
+    <string name="ui_feature_setup_step_sort">Sort</string>
+    <!-- Row opening the slice-of-library choice: all games, playable, favorites or hidden. -->
+    <string name="ui_feature_setup_source">Show</string>
+    <string name="ui_feature_setup_series">Series</string>
+    <string name="ui_feature_setup_players">Players</string>
+    <!-- Row naming how the opened library is ordered. Noun. -->
+    <string name="ui_feature_setup_sort">Sort</string>
+    <!-- Shown beside the chosen sort, naming its direction. Adjectives. -->
+    <string name="ui_feature_setup_sort_ascending">Ascending</string>
+    <string name="ui_feature_setup_sort_descending">Descending</string>
     <string name="ui_feature_setup_done">Done</string>
     <!-- Shown under Platforms or Genres when nothing is ticked, meaning no restriction. -->
     <string name="ui_feature_setup_any">Any</string>

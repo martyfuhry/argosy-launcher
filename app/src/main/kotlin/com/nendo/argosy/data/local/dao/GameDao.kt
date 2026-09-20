@@ -570,6 +570,35 @@ interface GameDao {
     suspend fun statsByPlatform(ownerUserId: Long?): List<PlatformShowcaseStats>
 
     @Query("""
+        SELECT 0 AS platformId,
+               COUNT(*) AS gameCount,
+               COALESCE(SUM(CASE WHEN localPath IS NOT NULL THEN 1 ELSE 0 END), 0) AS installedCount,
+               COALESCE(SUM(earnedAchievementCount), 0) AS achievementsEarned,
+               COALESCE(SUM(achievementCount), 0) AS achievementsTotal,
+               COALESCE(SUM(playTimeMinutes), 0) AS playTimeMinutes,
+               MIN(releaseYear) AS earliestYear,
+               MAX(releaseYear) AS latestYear
+        FROM games
+        WHERE id IN (:gameIds)
+          AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+    """)
+    suspend fun statsForGames(gameIds: List<Long>, ownerUserId: Long?): PlatformShowcaseStats?
+
+    @Query("""
+        SELECT coverPath FROM games
+        WHERE id IN (:gameIds)
+          AND coverPath IS NOT NULL AND coverPath != ''
+          AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        ORDER BY (localPath IS NOT NULL) DESC, isFavorite DESC, rating DESC, sortTitle ASC
+        LIMIT :limit
+    """)
+    suspend fun coverPathsForGames(
+        gameIds: List<Long>,
+        ownerUserId: Long?,
+        limit: Int
+    ): List<String>
+
+    @Query("""
         SELECT coverPath FROM games
         WHERE (:platformId IS NULL OR platformId = :platformId)
           AND coverPath IS NOT NULL AND coverPath != ''
@@ -1102,6 +1131,28 @@ interface GameDao {
     ): List<RandomCandidate>
 
     @Query("""
+        SELECT id, genre, players, coverPath FROM games
+        WHERE (
+            (:source = 'HIDDEN') = EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
+        )
+        AND (:platformCount = 0 OR platformId IN (:platformIds))
+        AND (:source != 'FAVORITES' OR isFavorite = 1)
+        AND (
+            :source != 'PLAYABLE' OR (
+                source IN ('LOCAL_ONLY', 'ROMM_SYNCED', 'STEAM', 'ANDROID_APP')
+                AND (source != 'STEAM' OR localPath IS NOT NULL OR (steamLauncher IS NOT NULL AND steamLauncher != 'native'))
+            )
+        )
+        ORDER BY sortTitle ASC
+    """)
+    suspend fun getLibraryLinkCandidates(
+        ownerUserId: Long?,
+        platformCount: Int,
+        platformIds: List<Long>,
+        source: String
+    ): List<LibraryLinkCandidate>
+
+    @Query("""
         SELECT * FROM games
         WHERE searchTitle LIKE '%' || :query || '%'
         AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
@@ -1348,6 +1399,13 @@ data class GameLocalPathInfo(
 data class RandomCandidate(
     val id: Long,
     val genres: String?
+)
+
+data class LibraryLinkCandidate(
+    val id: Long,
+    val genre: String?,
+    val players: String?,
+    val coverPath: String?
 )
 
 data class GameStorageInfo(

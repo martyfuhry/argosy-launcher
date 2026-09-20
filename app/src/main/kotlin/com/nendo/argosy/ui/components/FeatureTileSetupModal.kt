@@ -25,6 +25,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import com.nendo.argosy.R
+import com.nendo.argosy.data.model.SortOption
+import com.nendo.argosy.domain.model.PlayerCountBucket
+import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.ui.primitives.ArgosyToggle
 import com.nendo.argosy.ui.primitives.FocusIndicators
 import com.nendo.argosy.ui.primitives.argosyFocusIndicators
@@ -67,7 +70,7 @@ fun FeatureTileSetupModal(
                     CheckRow(
                         label = option.label,
                         isFocused = setup.focusIndex == index,
-                        isSelected = option.id in setup.filters.platformIds,
+                        isSelected = option.id in setup.selectedPlatformIds,
                         onClick = { onSelect(index) }
                     )
                 }
@@ -78,7 +81,42 @@ fun FeatureTileSetupModal(
                     CheckRow(
                         label = genre,
                         isFocused = setup.focusIndex == index,
-                        isSelected = genre in setup.filters.genres,
+                        isSelected = genre in setup.selectedGenres,
+                        onClick = { onSelect(index) }
+                    )
+                }
+                FeatureSetupStep.SERIES -> itemsIndexed(
+                    setup.series,
+                    key = { _, name -> name }
+                ) { index, name ->
+                    CheckRow(
+                        label = name,
+                        isFocused = setup.focusIndex == index,
+                        isSelected = name in setup.libraryLink.series,
+                        onClick = { onSelect(index) }
+                    )
+                }
+                FeatureSetupStep.PLAYERS -> itemsIndexed(
+                    PLAYER_ROWS,
+                    key = { _, bucket -> bucket?.name ?: "any" }
+                ) { index, bucket ->
+                    CheckRow(
+                        label = bucket?.let { stringResource(it.labelRes) }
+                            ?: stringResource(R.string.ui_feature_setup_any),
+                        isFocused = setup.focusIndex == index,
+                        isSelected = setup.libraryLink.players == bucket,
+                        onClick = { onSelect(index) }
+                    )
+                }
+                FeatureSetupStep.SORT -> itemsIndexed(
+                    SortOption.entries,
+                    key = { _, option -> option.name }
+                ) { index, option ->
+                    CheckRow(
+                        label = stringResource(option.labelRes),
+                        supporting = sortDirectionLabel(setup, option),
+                        isFocused = setup.focusIndex == index,
+                        isSelected = setup.libraryLink.sort.option == option,
                         onClick = { onSelect(index) }
                     )
                 }
@@ -113,45 +151,68 @@ private fun androidx.compose.foundation.lazy.LazyListScope.filterRows(
     setup: FeatureTileSetup,
     onSelect: (Int) -> Unit
 ) {
-    item(key = "downloaded") {
-        ToggleRow(
-            label = stringResource(R.string.ui_feature_setup_downloaded_only),
-            checked = setup.filters.downloadedOnly,
-            isFocused = setup.focusIndex == FeatureTileSetup.ROW_DOWNLOADED_ONLY,
-            onClick = { onSelect(FeatureTileSetup.ROW_DOWNLOADED_ONLY) }
-        )
-    }
-    item(key = "neverPlayed") {
-        ToggleRow(
-            label = stringResource(R.string.ui_feature_setup_never_played),
-            checked = setup.filters.neverPlayed,
-            isFocused = setup.focusIndex == FeatureTileSetup.ROW_NEVER_PLAYED,
-            onClick = { onSelect(FeatureTileSetup.ROW_NEVER_PLAYED) }
-        )
-    }
-    item(key = "platforms") {
-        LinkRow(
-            label = stringResource(R.string.ui_feature_setup_platforms),
-            supporting = selectionSummary(setup.filters.platformIds.size),
-            isFocused = setup.focusIndex == FeatureTileSetup.ROW_PLATFORMS,
-            onClick = { onSelect(FeatureTileSetup.ROW_PLATFORMS) }
-        )
-    }
-    item(key = "genres") {
-        LinkRow(
-            label = stringResource(R.string.ui_feature_setup_genres),
-            supporting = selectionSummary(setup.filters.genres.size),
-            isFocused = setup.focusIndex == FeatureTileSetup.ROW_GENRES,
-            onClick = { onSelect(FeatureTileSetup.ROW_GENRES) }
-        )
-    }
-    item(key = "done") {
-        LinkRow(
-            label = stringResource(R.string.ui_feature_setup_done),
-            supporting = null,
-            isFocused = setup.focusIndex == FeatureTileSetup.ROW_DONE,
-            onClick = { onSelect(FeatureTileSetup.ROW_DONE) }
-        )
+    setup.filterRows.forEachIndexed { index, row ->
+        item(key = row.name) {
+            val focused = setup.focusIndex == index
+            when (row) {
+                FeatureSetupRow.DOWNLOADED_ONLY -> ToggleRow(
+                    label = stringResource(R.string.ui_feature_setup_downloaded_only),
+                    checked = setup.filters.downloadedOnly,
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.NEVER_PLAYED -> ToggleRow(
+                    label = stringResource(R.string.ui_feature_setup_never_played),
+                    checked = setup.filters.neverPlayed,
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.SOURCE -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_source),
+                    supporting = stringResource(setup.libraryLink.source.labelRes),
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.PLATFORMS -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_platforms),
+                    supporting = selectionSummary(setup.selectedPlatformIds.size),
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.GENRES -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_genres),
+                    supporting = selectionSummary(setup.selectedGenres.size),
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.SERIES -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_series),
+                    supporting = selectionSummary(setup.libraryLink.series.size),
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.PLAYERS -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_players),
+                    supporting = setup.libraryLink.players
+                        ?.let { stringResource(it.labelRes) }
+                        ?: stringResource(R.string.ui_feature_setup_any),
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.SORT -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_sort),
+                    supporting = stringResource(setup.libraryLink.sort.option.labelRes),
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+                FeatureSetupRow.DONE -> LinkRow(
+                    label = stringResource(R.string.ui_feature_setup_done),
+                    supporting = null,
+                    isFocused = focused,
+                    onClick = { onSelect(index) }
+                )
+            }
+        }
     }
 }
 
@@ -218,7 +279,8 @@ private fun CheckRow(
     label: String,
     isFocused: Boolean,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    supporting: String? = null
 ) {
     val theme = LocalArgosyTheme.current
     SetupRowFrame(isFocused = isFocused, onClick = onClick) {
@@ -246,7 +308,30 @@ private fun CheckRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f)
         )
+        supporting?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelMedium,
+                color = theme.textDim,
+                maxLines = 1
+            )
+        }
     }
+}
+
+private val PLAYER_ROWS: List<PlayerCountBucket?> =
+    listOf<PlayerCountBucket?>(null) + PlayerCountBucket.entries
+
+@Composable
+private fun sortDirectionLabel(setup: FeatureTileSetup, option: SortOption): String? {
+    if (setup.libraryLink.sort.option != option) return null
+    return stringResource(
+        if (setup.libraryLink.sort.descending) {
+            R.string.ui_feature_setup_sort_descending
+        } else {
+            R.string.ui_feature_setup_sort_ascending
+        }
+    )
 }
 
 @Composable

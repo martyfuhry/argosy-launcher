@@ -14,6 +14,7 @@ import com.nendo.argosy.ui.screens.home.HomeGameUi
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -48,6 +49,10 @@ class FeatureTileContentBuilderTest {
         continueLabel = R.string.home_grid_tile_feature_continue_label,
         continueEmpty = R.string.home_grid_tile_feature_continue_empty,
         raLabel = R.string.home_grid_tile_feature_ra_label,
+        libraryLinkLabel = R.string.home_grid_tile_feature_library_link_label,
+        libraryLinkAll = R.string.home_grid_tile_feature_library_link_all,
+        libraryLinkCount = R.string.home_grid_tile_feature_library_link_count,
+        libraryLinkMore = R.string.home_grid_tile_feature_library_link_more,
         ra = labels
     )
 
@@ -153,6 +158,90 @@ class FeatureTileContentBuilderTest {
         points = 5,
         badgeLockPath = "/badges/${raId}_lock.png"
     )
+
+    @Test
+    fun `a library link is named by its platforms and draws one of their covers`() {
+        val content = com.nendo.argosy.ui.common.featureTileContentFor(
+            target = HomeTileTargetRef.Feature(FeatureTileKind.LIBRARY_LINK),
+            tileGames = tileGames,
+            continueGameId = null,
+            raSummary = null,
+            context = context,
+            strings = strings,
+            libraryLink = com.nendo.argosy.ui.screens.home.LibraryLinkTileUi(
+                gameCount = 34,
+                coverGameId = LATEST_GAME_ID,
+                platformNames = listOf("Game Boy", "Super Nintendo")
+            ),
+            now = NOW
+        )
+
+        assertEquals("Game Boy • Super Nintendo", content.label)
+        assertEquals(LATEST_GAME_ID, content.game?.id)
+        assertEquals(LATEST_GAME_ID, content.game?.id)
+        assertEquals("34", content.stats.single().value)
+        assertTrue(content.isLibraryLink)
+    }
+
+    /**
+     * A cell holds two lines. Past three names the later ones were not merely clipped but absent,
+     * so the tile could not say it carried more filters than the one it had room to show.
+     */
+    @Test
+    fun `a library link names three filters and counts the rest`() {
+        val content = com.nendo.argosy.ui.common.featureTileContentFor(
+            target = HomeTileTargetRef.Feature(FeatureTileKind.LIBRARY_LINK),
+            tileGames = tileGames,
+            continueGameId = null,
+            raSummary = null,
+            context = context,
+            strings = strings,
+            libraryLink = com.nendo.argosy.ui.screens.home.LibraryLinkTileUi(
+                gameCount = 12,
+                platformNames = listOf("NES", "SNES", "N64", "GBA", "GBC")
+            ),
+            now = NOW
+        )
+
+        assertTrue(content.label.startsWith("NES • SNES • N64 • "))
+        assertFalse(content.label.contains("GBA"))
+    }
+
+    @Test
+    fun `a library link narrowed only by genre is named by the genres`() {
+        val content = com.nendo.argosy.ui.common.featureTileContentFor(
+            target = HomeTileTargetRef.Feature(FeatureTileKind.LIBRARY_LINK),
+            tileGames = tileGames,
+            continueGameId = null,
+            raSummary = null,
+            context = context,
+            strings = strings,
+            libraryLink = com.nendo.argosy.ui.screens.home.LibraryLinkTileUi(
+                gameCount = 4,
+                genres = listOf("Platform")
+            ),
+            now = NOW
+        )
+
+        assertEquals("Platform", content.label)
+    }
+
+    @Test
+    fun `a library link narrowing nothing says so instead of reading empty`() {
+        val content = com.nendo.argosy.ui.common.featureTileContentFor(
+            target = HomeTileTargetRef.Feature(FeatureTileKind.LIBRARY_LINK),
+            tileGames = tileGames,
+            continueGameId = null,
+            raSummary = null,
+            context = context,
+            strings = strings,
+            libraryLink = com.nendo.argosy.ui.screens.home.LibraryLinkTileUi(gameCount = 900),
+            now = NOW
+        )
+
+        assertEquals("res:${R.string.home_grid_tile_feature_library_link_all}", content.label)
+        assertNull(content.game)
+    }
 
     private fun game(id: Long, title: String) = HomeGameUi(
         id = id,

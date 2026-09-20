@@ -82,6 +82,7 @@ interface HomeInputActions {
     fun openEngagedFullscreen()
     fun launchTileApp(packageName: String)
     fun openTileCollection(collectionId: Long)
+    fun openTileLibraryLink(filters: com.nendo.argosy.domain.model.LibraryLinkFilters)
     fun playTileMedia(itemId: String)
     fun confirmPendingTileAdd()
     fun dismissPendingTileAdd()
@@ -337,6 +338,11 @@ class HomeInputHandler(
                 state.continueGameId?.let { activateTileGame(it, state) }
             }
             com.nendo.argosy.domain.model.FeatureTileKind.RA_SUMMARY -> confirmRaTile(state)
+            com.nendo.argosy.domain.model.FeatureTileKind.LIBRARY_LINK ->
+                actions.openTileLibraryLink(
+                    target.libraryLink
+                        ?: com.nendo.argosy.domain.model.LibraryLinkFilters()
+                )
         }
     }
 

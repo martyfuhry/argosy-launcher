@@ -3,11 +3,18 @@ package com.nendo.argosy.ui.navigation
 sealed class Screen(val route: String) {
     data object FirstRun : Screen("first_run")
     data object Home : Screen("home")
-    data object Library : Screen("library?platformId={platformId}&source={source}") {
-        fun createRoute(platformId: Long? = null, source: String? = null): String {
+    data object Library : Screen("library?platformId={platformId}&source={source}&filters={filters}") {
+        fun createRoute(
+            platformId: Long? = null,
+            source: String? = null,
+            filters: String? = null
+        ): String {
             val params = mutableListOf<String>()
             if (platformId != null) params.add("platformId=$platformId")
             if (source != null) params.add("source=$source")
+            if (filters != null) {
+                params.add("filters=${java.net.URLEncoder.encode(filters, "UTF-8")}")
+            }
             return if (params.isEmpty()) "library" else "library?${params.joinToString("&")}"
         }
     }

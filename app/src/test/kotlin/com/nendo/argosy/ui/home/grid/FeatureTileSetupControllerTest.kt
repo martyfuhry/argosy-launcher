@@ -1,11 +1,13 @@
 package com.nendo.argosy.ui.home.grid
 
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.domain.model.FeatureTileKind
 import com.nendo.argosy.domain.model.HomeTile
 import com.nendo.argosy.domain.model.HomeTileTargetRef
 import com.nendo.argosy.domain.model.TileRect
 import com.nendo.argosy.ui.components.CustomGridState
 import com.nendo.argosy.ui.components.FeatureFilterOptions
+import com.nendo.argosy.ui.components.FeatureSetupRow
 import com.nendo.argosy.ui.components.FeatureTileSetup
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -75,9 +77,9 @@ class FeatureTileSetupControllerTest {
 
         controller.begin(kind = FeatureTileKind.RANDOM_GAME)
         advanceUntilIdle()
-        controller.confirm(FeatureTileSetup.ROW_DOWNLOADED_ONLY)
-        controller.confirm(FeatureTileSetup.ROW_NEVER_PLAYED)
-        controller.confirm(FeatureTileSetup.ROW_DONE)
+        controller.confirm(rowIndex(FeatureSetupRow.DOWNLOADED_ONLY))
+        controller.confirm(rowIndex(FeatureSetupRow.NEVER_PLAYED))
+        controller.confirm(rowIndex(FeatureSetupRow.DONE))
 
         val target = placed.single()
         assertEquals(FeatureTileKind.RANDOM_GAME, target.kind)
@@ -86,6 +88,79 @@ class FeatureTileSetupControllerTest {
         assertFalse(target.filters.downloadedOnly)
         assertNull(state.featureSetup)
     }
+
+    /**
+     * A link offers the library's own filter categories and nothing the library cannot apply.
+     * A row missing here is a filter the user can never set; a row that should not be here is a
+     * control the opened library ignores.
+     */
+    @Test
+    fun `a library link asks the library's filter categories`() = runTest {
+        val controller = controller(this)
+
+        controller.begin(kind = FeatureTileKind.LIBRARY_LINK)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(
+                FeatureSetupRow.SOURCE,
+                FeatureSetupRow.PLATFORMS,
+                FeatureSetupRow.GENRES,
+                FeatureSetupRow.SERIES,
+                FeatureSetupRow.PLAYERS,
+                FeatureSetupRow.SORT,
+                FeatureSetupRow.DONE
+            ),
+            state.featureSetup!!.filterRows
+        )
+    }
+
+    @Test
+    fun `a random tile is never asked what the library alone can apply`() = runTest {
+        val controller = controller(this)
+
+        controller.begin(kind = FeatureTileKind.RANDOM_GAME)
+        advanceUntilIdle()
+
+        val rows = state.featureSetup!!.filterRows
+        assertFalse(FeatureSetupRow.SOURCE in rows)
+        assertFalse(FeatureSetupRow.SERIES in rows)
+        assertFalse(FeatureSetupRow.PLAYERS in rows)
+        assertFalse(FeatureSetupRow.SORT in rows)
+    }
+
+    @Test
+    fun `a library link settles carrying what it was answered with`() = runTest {
+        val controller = controller(this)
+
+        controller.begin(kind = FeatureTileKind.LIBRARY_LINK)
+        advanceUntilIdle()
+        controller.confirm(rowIndex(FeatureSetupRow.SOURCE))
+        controller.confirm(rowIndex(FeatureSetupRow.DONE))
+
+        val target = placed.single()
+        assertEquals(FeatureTileKind.LIBRARY_LINK, target.kind)
+        assertEquals(SourceFilter.PLAYABLE, target.libraryLink?.source)
+    }
+
+    /**
+     * Done sits at a different index on each kind. A confirm that reached it by a fixed position
+     * would settle a library link while the cursor was on another row.
+     */
+    @Test
+    fun `the done row is the last row whatever the kind asks`() = runTest {
+        val controller = controller(this)
+
+        controller.begin(kind = FeatureTileKind.LIBRARY_LINK)
+        advanceUntilIdle()
+        val setup = state.featureSetup!!
+
+        assertEquals(setup.filterRows.lastIndex, setup.indexOf(FeatureSetupRow.DONE))
+        assertEquals(FeatureSetupRow.PLATFORMS, setup.rowAt(1))
+        assertNull(setup.rowAt(setup.filterRows.size))
+    }
+
+    private fun rowIndex(row: FeatureSetupRow): Int = state.featureSetup!!.indexOf(row)
 
     @Test
     fun `editing an RA tile changes that tile rather than placing another`() = runTest {

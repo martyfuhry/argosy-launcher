@@ -107,11 +107,16 @@
     <string name="tile_picker_feature_continue_subtitle">अपने पिछले गेम पर वापस जाएँ</string>
     <string name="tile_picker_feature_ra_title">RetroAchievements</string>
     <string name="tile_picker_feature_ra_subtitle">आपके अंक और नवीनतम अनलॉक</string>
+    <string name="tile_picker_feature_library_link_title">लाइब्रेरी लिंक</string>
+    <string name="tile_picker_feature_library_link_subtitle">आपकी लाइब्रेरी का सहेजा गया दृश्य</string>
     <string name="home_grid_tile_feature_random_label">यादृच्छिक गेम</string>
     <string name="home_grid_tile_feature_random_empty">फ़िल्टर से कोई गेम मेल नहीं खाता</string>
     <string name="home_grid_tile_feature_continue_label">खेलना जारी रखें</string>
     <string name="home_grid_tile_feature_continue_empty">अभी तक कुछ नहीं खेला</string>
     <string name="home_grid_tile_feature_ra_label">RetroAchievements</string>
+    <string name="home_grid_tile_feature_library_link_label">लाइब्रेरी</string>
+    <string name="home_grid_tile_feature_library_link_all">सभी गेम</string>
+    <string name="home_grid_tile_feature_library_link_count">गेम</string>
     <string name="home_grid_tile_feature_ra_signed_out">अपने अनलॉक देखने के लिए साइन इन करें</string>
     <string name="home_grid_tile_feature_ra_no_unlocks">अभी तक कोई अनलॉक नहीं</string>
     <string name="home_grid_tile_ra_latest_heading">नवीनतम</string>
@@ -177,4 +182,6 @@
     <string name="home_companion_hint_favorite">पसंदीदा में जोड़ें</string>
     <string name="home_companion_hint_play">खेलें</string>
     <string name="home_companion_hint_unfavorite">पसंदीदा से हटाएँ</string>
+    <string name="home_grid_tile_ra_points_label">अंक</string>
+    <string name="home_grid_tile_ra_unlocks_label">उपलब्धियाँ</string>
 </resources>

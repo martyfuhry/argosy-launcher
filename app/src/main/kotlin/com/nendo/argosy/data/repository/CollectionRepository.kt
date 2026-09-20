@@ -35,6 +35,12 @@ class CollectionRepository @Inject constructor(
     fun observeGameIdsByTypeAndNames(type: CollectionType, names: List<String>): Flow<List<Long>> =
         collectionDao.observeGameIdsByTypeAndNames(type, names)
 
+    suspend fun virtualGameIds(type: CollectionType, name: String): List<Long> =
+        collectionDao.virtualGameIds(type, name)
+
+    suspend fun getGameIdsInCollection(collectionId: Long): List<Long> =
+        collectionDao.getGameIdsInCollection(collectionId)
+
     suspend fun getNamesWithGamesByType(type: CollectionType): List<String> =
         collectionDao.getNamesWithGamesByType(type)
 

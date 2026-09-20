@@ -185,6 +185,15 @@ interface CollectionDao {
     fun observeGameIdsByTypeAndNames(type: CollectionType, names: List<String>): Flow<List<Long>>
 
     @Query("""
+        SELECT DISTINCT g.id FROM games g
+        INNER JOIN collection_games cg ON g.id = cg.gameId
+        INNER JOIN collections c ON cg.collectionId = c.id
+        INNER JOIN platforms p ON g.platformId = p.id
+        WHERE c.type = :type AND c.name = :name AND p.syncEnabled = 1
+    """)
+    suspend fun virtualGameIds(type: CollectionType, name: String): List<Long>
+
+    @Query("""
         SELECT DISTINCT c.name FROM collections c
         INNER JOIN collection_games cg ON c.id = cg.collectionId
         INNER JOIN games g ON cg.gameId = g.id
