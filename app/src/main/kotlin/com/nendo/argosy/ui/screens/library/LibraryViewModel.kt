@@ -414,7 +414,7 @@ class LibraryViewModel @Inject constructor(
     private val platformRepository: PlatformRepository,
     private val gameRepository: GameRepository,
     private val mediaRepository: MediaRepository,
-    private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
+    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
     private val collectionRepository: CollectionRepository,
     private val gameNavigationContext: GameNavigationContext,
     private val notificationManager: NotificationManager,
@@ -1879,9 +1879,7 @@ class LibraryViewModel @Inject constructor(
             channelName = channelName,
             onLaunch = { intent ->
                 viewModelScope.launch {
-                    val options = displayAffinityHelper.getActivityOptions(
-                        forEmulator = true, rolesSwapped = sessionStateStore.isRolesSwapped()
-                    )
+                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId)
                     _events.emit(LibraryEvent.LaunchIntent(intent, options))
                 }
             }

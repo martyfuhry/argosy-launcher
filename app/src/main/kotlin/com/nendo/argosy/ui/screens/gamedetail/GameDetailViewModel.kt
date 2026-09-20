@@ -110,7 +110,7 @@ class GameDetailViewModel @Inject constructor(
     private val repairImageCacheUseCase: RepairImageCacheUseCase,
     private val modalResetSignal: ModalResetSignal,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
-    private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
+    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
     val pickerModalDelegate: PickerModalDelegate,
     private val achievementDelegate: AchievementDelegate,
     private val downloadDelegate: DownloadDelegate,
@@ -359,7 +359,8 @@ class GameDetailViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         showMoreOptions = moState.showMoreOptions,
-                        moreOptionsFocusIndex = moState.moreOptionsFocusIndex
+                        moreOptionsFocusIndex = moState.moreOptionsFocusIndex,
+                        launchDisplayIndex = moState.launchDisplayIndex
                     )
                 }
             }
@@ -1151,12 +1152,15 @@ class GameDetailViewModel @Inject constructor(
         }
     }
 
-    private fun makeLaunchCallbacks(): com.nendo.argosy.ui.screens.common.LaunchResultCallbacks =
+    private fun makeLaunchCallbacks(
+        overrideDisplayId: Int? = null
+    ): com.nendo.argosy.ui.screens.common.LaunchResultCallbacks =
         com.nendo.argosy.ui.screens.common.LaunchResultCallbacks(
             onLaunch = { intent ->
                 viewModelScope.launch {
-                    val options = displayAffinityHelper.getActivityOptions(
-                        forEmulator = true, rolesSwapped = sessionStateStore.isRolesSwapped()
+                    val options = emulatorLaunchTargetResolver.launchOptionsFor(
+                        gameId = currentGameId,
+                        overrideDisplayId = overrideDisplayId
                     )
                     _launchEvents.emit(LaunchEvent.LaunchIntent(intent, options))
                 }
@@ -1170,7 +1174,18 @@ class GameDetailViewModel @Inject constructor(
 
     // --- More Options delegate forwarding ---
 
-    fun toggleMoreOptions() = moreOptionsDelegate.toggleMoreOptions()
+    fun toggleMoreOptions() {
+        val opening = !_uiState.value.showMoreOptions
+        val targets = if (opening) launchDisplayTargets() else emptyList()
+        _uiState.update { it.copy(launchDisplayNumbers = targets.map { target -> target.second }) }
+        moreOptionsDelegate.toggleMoreOptions()
+        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance
+        if (opening && targets.size > 1) {
+            dsm?.showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
+        } else {
+            dsm?.hideScreenNumbers()
+        }
+    }
 
     private fun moreOptionsContext(): MoreOptionsContext {
         val state = _uiState.value
@@ -1187,7 +1202,33 @@ class GameDetailViewModel @Inject constructor(
             hasManageableFiles = state.hasManageableFiles,
             platformSlug = state.game?.platformSlug,
             canSearchCovers = state.canSearchCovers,
-            coverSetManually = state.game?.coverSetManually == true
+            coverSetManually = state.game?.coverSetManually == true,
+            launchDisplayCount = state.launchDisplayNumbers.size
+        )
+    }
+
+    private fun launchDisplayTargets(): List<Pair<Int, Int>> =
+        com.nendo.argosy.DualScreenManagerHolder.instance?.focusableDisplays().orEmpty()
+
+    private fun isLaunchDisplayRowFocused(): Boolean =
+        moreOptionsDelegate.resolveOptionAction(moreOptionsContext()) == MoreOptionAction.LaunchOnDisplay
+
+    fun cycleLaunchDisplay(delta: Int) {
+        moreOptionsDelegate.cycleLaunchDisplay(delta, _uiState.value.launchDisplayNumbers.size)
+    }
+
+    private fun launchOnSelectedDisplay() {
+        val displayId = launchDisplayTargets()
+            .getOrNull(_uiState.value.launchDisplayIndex)
+            ?.first ?: return
+        toggleMoreOptions()
+        val callbacks = makeLaunchCallbacks(overrideDisplayId = displayId)
+        gameLaunchDelegate.launchGame(
+            scope = viewModelScope,
+            gameId = currentGameId,
+            origin = pendingLaunchOrigin,
+            onLaunch = callbacks.onLaunch,
+            onLaunchFailed = { callbacks.onLaunchFailed() }
         )
     }
 
@@ -1202,6 +1243,7 @@ class GameDetailViewModel @Inject constructor(
     ) {
         val isAndroidApp = _uiState.value.game?.isAndroidApp == true
         when (action) {
+            MoreOptionAction.LaunchOnDisplay -> launchOnSelectedDisplay()
             MoreOptionAction.ManageSaves -> showSaveCacheDialog()
             MoreOptionAction.PlatformSettings -> {
                 toggleMoreOptions()
@@ -2324,7 +2366,11 @@ class GameDetailViewModel @Inject constructor(
                     }
                     return InputResult.HANDLED
                 }
-                state.showAddToCollectionModal || state.showRatingsStatusMenu || state.showPlayOptions || state.showMoreOptions || pickerState.hasAnyPickerOpen || state.showMissingDiscPrompt -> return InputResult.HANDLED
+                state.showMoreOptions -> {
+                    if (isLaunchDisplayRowFocused()) cycleLaunchDisplay(-1)
+                    return InputResult.HANDLED
+                }
+                state.showAddToCollectionModal || state.showRatingsStatusMenu || state.showPlayOptions || pickerState.hasAnyPickerOpen || state.showMissingDiscPrompt -> return InputResult.HANDLED
                 else -> { onSectionLeft(); return InputResult.HANDLED }
             }
         }
@@ -2356,7 +2402,11 @@ class GameDetailViewModel @Inject constructor(
                     }
                     return InputResult.HANDLED
                 }
-                state.showAddToCollectionModal || state.showRatingsStatusMenu || state.showPlayOptions || state.showMoreOptions || pickerState.hasAnyPickerOpen || state.showMissingDiscPrompt -> return InputResult.HANDLED
+                state.showMoreOptions -> {
+                    if (isLaunchDisplayRowFocused()) cycleLaunchDisplay(1)
+                    return InputResult.HANDLED
+                }
+                state.showAddToCollectionModal || state.showRatingsStatusMenu || state.showPlayOptions || pickerState.hasAnyPickerOpen || state.showMissingDiscPrompt -> return InputResult.HANDLED
                 else -> { onSectionRight(); return InputResult.HANDLED }
             }
         }

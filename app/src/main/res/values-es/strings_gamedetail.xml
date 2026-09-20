@@ -179,6 +179,8 @@
 
     <!-- ============================== More options menu ================================ -->
 
+    <string name="gamedetail_more_options_launch_on_display">Iniciar en la pantalla</string>
+    <string name="gamedetail_more_options_launch_on_display_value">Pantalla %1$d</string>
     <string name="gamedetail_more_options_manage_saves">Administrar partidas guardadas en caché</string>
     <string name="gamedetail_more_options_ratings_status">Calificaciones y estado</string>
     <string name="gamedetail_more_options_change_launcher">Cambiar launcher</string>

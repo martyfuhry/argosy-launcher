@@ -158,6 +158,8 @@
     <string name="gamedetail_rename_channel_description">Введите имя для этого канала сохранения</string>
     <string name="gamedetail_rename_channel_placeholder">Имя канала</string>
 
+    <string name="gamedetail_more_options_launch_on_display">Запустить на экране</string>
+    <string name="gamedetail_more_options_launch_on_display_value">Экран %1$d</string>
     <string name="gamedetail_more_options_manage_saves">Управление кэшем сохранений</string>
     <string name="gamedetail_more_options_ratings_status">Оценки и статус</string>
     <string name="gamedetail_more_options_change_launcher">Сменить лаунчер</string>

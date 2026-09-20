@@ -480,6 +480,10 @@
 
     <!-- ============================== More options menu ================================ -->
 
+    <!-- Row in the game's options menu. Verb phrase: starts the game on a chosen screen. -->
+    <string name="gamedetail_more_options_launch_on_display">Launch On Display</string>
+    <!-- Value of that row. %1$d is the number shown on the screen itself. -->
+    <string name="gamedetail_more_options_launch_on_display_value">Screen %1$d</string>
     <!-- Row in the game's options menu. Verb phrase: opens the saves and save states kept on this
          device. "Saves" is a noun, plural. -->
     <string name="gamedetail_more_options_manage_saves">Manage Cached Saves</string>

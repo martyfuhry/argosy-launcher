@@ -962,6 +962,8 @@ private fun GameDetailModals(
             updateCount = uiState.updateFiles.size + uiState.dlcFiles.size,
             hasManageableFiles = uiState.hasManageableFiles,
             canSearchCovers = uiState.canSearchCovers,
+            launchDisplayNumbers = uiState.launchDisplayNumbers,
+            launchDisplayIndex = uiState.launchDisplayIndex,
             onAction = { action -> viewModel.handleMoreOptionAction(action, onBack, onNavigateToPlatformSettings) },
             onDismiss = viewModel::toggleMoreOptions
         )

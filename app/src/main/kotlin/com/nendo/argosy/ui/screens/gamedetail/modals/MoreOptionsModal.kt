@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -53,8 +54,17 @@ private sealed interface MoreMenuEntry {
 
 private fun MoreOptionAction.toMenuEntry(
     game: GameDetailUi,
-    context: Context
+    context: Context,
+    launchDisplayNumber: Int?
 ): MoreMenuEntry.Option = when (this) {
+    MoreOptionAction.LaunchOnDisplay -> MoreMenuEntry.Option(
+        Icons.Default.Tv,
+        context.getString(R.string.gamedetail_more_options_launch_on_display),
+        value = launchDisplayNumber?.let {
+            context.getString(R.string.gamedetail_more_options_launch_on_display_value, it)
+        },
+        action = this
+    )
     MoreOptionAction.ManageSaves -> MoreMenuEntry.Option(
         Icons.Default.Save,
         context.getString(R.string.gamedetail_more_options_manage_saves),
@@ -160,6 +170,8 @@ fun MoreOptionsModal(
     updateCount: Int = 0,
     hasManageableFiles: Boolean = false,
     canSearchCovers: Boolean = false,
+    launchDisplayNumbers: List<Int> = emptyList(),
+    launchDisplayIndex: Int = 0,
     onAction: (MoreOptionAction) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -177,7 +189,8 @@ fun MoreOptionsModal(
             hasManageableFiles = hasManageableFiles,
             platformSlug = game.platformSlug,
             canSearchCovers = canSearchCovers,
-            coverSetManually = game.coverSetManually
+            coverSetManually = game.coverSetManually,
+            launchDisplayCount = launchDisplayNumbers.size
         )
     )
 
@@ -192,7 +205,7 @@ fun MoreOptionsModal(
                 add(MoreMenuEntry.Divider)
                 dividerAdded = true
             }
-            add(action.toMenuEntry(game, context))
+            add(action.toMenuEntry(game, context, launchDisplayNumbers.getOrNull(launchDisplayIndex)))
         }
     }
 

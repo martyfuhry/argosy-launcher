@@ -148,6 +148,8 @@
     <string name="gamedetail_rename_channel_description">請輸入此存檔槽的名稱</string>
     <string name="gamedetail_rename_channel_placeholder">存檔槽名稱</string>
 
+    <string name="gamedetail_more_options_launch_on_display">在螢幕上啟動</string>
+    <string name="gamedetail_more_options_launch_on_display_value">螢幕 %1$d</string>
     <string name="gamedetail_more_options_manage_saves">管理已快取的存檔</string>
     <string name="gamedetail_more_options_ratings_status">評分與狀態</string>
     <string name="gamedetail_more_options_change_launcher">變更啟動程式</string>

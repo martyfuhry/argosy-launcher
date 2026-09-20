@@ -179,6 +179,8 @@
 
     <!-- ============================== More options menu ================================ -->
 
+    <string name="gamedetail_more_options_launch_on_display">Lancer sur l\'écran</string>
+    <string name="gamedetail_more_options_launch_on_display_value">Écran %1$d</string>
     <string name="gamedetail_more_options_manage_saves">Gérer les sauvegardes en cache</string>
     <string name="gamedetail_more_options_ratings_status">Notes et statut</string>
     <string name="gamedetail_more_options_change_launcher">Changer de lanceur</string>

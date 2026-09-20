@@ -16,7 +16,8 @@ import javax.inject.Inject
 
 data class MoreOptionsState(
     val showMoreOptions: Boolean = false,
-    val moreOptionsFocusIndex: Int = 0
+    val moreOptionsFocusIndex: Int = 0,
+    val launchDisplayIndex: Int = 0
 )
 
 class MoreOptionsDelegate @Inject constructor(
@@ -57,4 +58,9 @@ class MoreOptionsDelegate @Inject constructor(
     fun resolveOptionAction(context: MoreOptionsContext): MoreOptionAction? =
         buildMoreOptions(context).getOrNull(_state.value.moreOptionsFocusIndex)
 
+    fun cycleLaunchDisplay(delta: Int, displayCount: Int) {
+        if (displayCount <= 1) return
+        _state.update { it.copy(launchDisplayIndex = (it.launchDisplayIndex + delta).mod(displayCount)) }
+        soundManager.play(SoundType.NAVIGATE)
+    }
 }

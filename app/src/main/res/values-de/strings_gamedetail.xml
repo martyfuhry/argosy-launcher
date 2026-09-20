@@ -176,6 +176,8 @@
 
     <!-- ============================== More options menu ================================ -->
 
+    <string name="gamedetail_more_options_launch_on_display">Auf Bildschirm starten</string>
+    <string name="gamedetail_more_options_launch_on_display_value">Bildschirm %1$d</string>
     <string name="gamedetail_more_options_manage_saves">Zwischengespeicherte Spielstände verwalten</string>
     <string name="gamedetail_more_options_ratings_status">Bewertung &amp; Status</string>
     <string name="gamedetail_more_options_change_launcher">Launcher ändern</string>

@@ -148,6 +148,8 @@
     <string name="gamedetail_rename_channel_description">输入此存档通道的名称</string>
     <string name="gamedetail_rename_channel_placeholder">通道名称</string>
 
+    <string name="gamedetail_more_options_launch_on_display">在屏幕上启动</string>
+    <string name="gamedetail_more_options_launch_on_display_value">屏幕 %1$d</string>
     <string name="gamedetail_more_options_manage_saves">管理已缓存的存档</string>
     <string name="gamedetail_more_options_ratings_status">评分与状态</string>
     <string name="gamedetail_more_options_change_launcher">更改启动器</string>

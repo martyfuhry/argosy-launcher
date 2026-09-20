@@ -175,6 +175,8 @@
 
     <!-- ============================== More options menu ================================ -->
 
+    <string name="gamedetail_more_options_launch_on_display">स्क्रीन पर शुरू करें</string>
+    <string name="gamedetail_more_options_launch_on_display_value">स्क्रीन %1$d</string>
     <string name="gamedetail_more_options_manage_saves">कैश्ड सेव प्रबंधित करें</string>
     <string name="gamedetail_more_options_ratings_status">रेटिंग और स्थिति</string>
     <string name="gamedetail_more_options_change_launcher">लॉन्चर बदलें</string>

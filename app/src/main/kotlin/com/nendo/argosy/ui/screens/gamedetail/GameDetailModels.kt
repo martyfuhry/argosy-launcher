@@ -159,7 +159,8 @@ data class MoreOptionsContext(
     val hasManageableFiles: Boolean = false,
     val platformSlug: String? = null,
     val canSearchCovers: Boolean = false,
-    val coverSetManually: Boolean = false
+    val coverSetManually: Boolean = false,
+    val launchDisplayCount: Int = 0
 )
 
 /**
@@ -171,6 +172,7 @@ fun buildMoreOptions(ctx: MoreOptionsContext): List<MoreOptionAction> = buildLis
     val isEmulatedGame = !ctx.isSteamGame && !ctx.isAndroidApp
     val usesTitleId = ctx.platformSlug in com.nendo.argosy.data.platform.PlatformDefinitions.TITLE_ID_PLATFORMS
 
+    if (ctx.isDownloaded && ctx.launchDisplayCount > 1) add(MoreOptionAction.LaunchOnDisplay)
     if (ctx.canManageSaves || ctx.canManageStates) add(MoreOptionAction.ManageSaves)
     if (canTrackProgress) add(MoreOptionAction.RatingsStatus)
     if (ctx.isSteamGame) add(MoreOptionAction.ChangeSteamLauncher)
@@ -189,6 +191,7 @@ fun buildMoreOptions(ctx: MoreOptionsContext): List<MoreOptionAction> = buildLis
 }
 
 sealed class MoreOptionAction {
+    data object LaunchOnDisplay : MoreOptionAction()
     data object ManageSaves : MoreOptionAction()
     data object RatingsStatus : MoreOptionAction()
     data object RateGame : MoreOptionAction()
@@ -223,6 +226,8 @@ data class GameDetailUiState(
     val menuFocusIndex: Int = 0,
     val showMoreOptions: Boolean = false,
     val moreOptionsFocusIndex: Int = 0,
+    val launchDisplayNumbers: List<Int> = emptyList(),
+    val launchDisplayIndex: Int = 0,
     val showPlayOptions: Boolean = false,
     val playOptionsFocusIndex: Int = 0,
     val hasCasualSaves: Boolean = false,
