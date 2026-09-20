@@ -2190,11 +2190,19 @@ class LibraryViewModel @Inject constructor(
         }
 
         override fun onSelect(): InputResult {
-            if (_uiState.value.isPlatformGrid) return InputResult.HANDLED
             if (_uiState.value.showAddToCollectionModal) return InputResult.HANDLED
+            if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
+            if (_uiState.value.isPlatformGrid) return InputResult.HANDLED
             if (_uiState.value.focusedGame != null) {
                 toggleQuickMenu()
             }
+            return InputResult.HANDLED
+        }
+
+        override fun onLongConfirm(): InputResult {
+            if (_uiState.value.isPlatformGrid) return InputResult.handled(SoundType.BOUNDARY)
+            if (_uiState.value.focusedGame == null) return InputResult.handled(SoundType.BOUNDARY)
+            toggleQuickMenu()
             return InputResult.HANDLED
         }
 

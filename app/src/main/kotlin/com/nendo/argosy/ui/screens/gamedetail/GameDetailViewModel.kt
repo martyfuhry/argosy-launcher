@@ -2549,7 +2549,20 @@ class GameDetailViewModel @Inject constructor(
             if (state.reviewEditor != null) { submitReview(); return InputResult.HANDLED }
             val anyModalOpen = state.showMoreOptions || state.showPlayOptions || pickerState.hasAnyPickerOpen || state.showRatingPicker || state.showStatusPicker || state.showMissingDiscPrompt || state.showScreenshotViewer || saveState.isVisible
             if (anyModalOpen) { dismissAllModals(); return InputResult.HANDLED }
+            if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
             toggleMoreOptions(); return InputResult.HANDLED
+        }
+
+        override fun onLongConfirm(): InputResult {
+            val state = _uiState.value
+            val pickerState = pickerModalDelegate.state.value
+            val anyModalOpen = state.showMoreOptions || state.showPlayOptions ||
+                pickerState.hasAnyPickerOpen || state.showRatingPicker || state.showStatusPicker ||
+                state.showMissingDiscPrompt || state.showScreenshotViewer ||
+                state.saveChannel.isVisible || state.reviewEditor != null
+            if (anyModalOpen) return InputResult.handled(SoundType.BOUNDARY)
+            toggleMoreOptions()
+            return InputResult.HANDLED
         }
     }
 }

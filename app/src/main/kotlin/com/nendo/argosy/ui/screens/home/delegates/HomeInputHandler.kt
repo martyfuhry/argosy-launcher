@@ -560,11 +560,7 @@ class HomeInputHandler(
         if (state.showAddToCollectionModal) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (state.customGrid.engagedTileId != null) return InputResult.HANDLED
-        if (com.nendo.argosy.DualScreenManagerHolder.instance
-                ?.let { it.isDualScreenDevice.value && it.hasPresentationScreen.value } == true
-        ) {
-            return InputResult.UNHANDLED
-        }
+        if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
         if (isCustomGrid(state)) return InputResult.UNHANDLED
         if (state.isMediaRow) return InputResult.HANDLED
         if (state.focusedGame != null) {
