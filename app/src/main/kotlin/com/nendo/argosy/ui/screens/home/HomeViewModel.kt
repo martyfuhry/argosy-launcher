@@ -824,7 +824,13 @@ class HomeViewModel @Inject constructor(
 
     // --- Public API: Navigation ---
 
-    private fun appBarSlotCount(): Int = _uiState.value.homeApps.size + 1
+    private fun appBarSlotCount(): Int =
+        _uiState.value.homeApps.size + 1 + if (hasFocusPickerSlot()) 1 else 0
+
+    private fun hasFocusPickerSlot(): Boolean =
+        (DualScreenManagerHolder.instance?.focusableDisplays()?.size ?: 0) > 1
+
+    private fun focusPickerSlotIndex(): Int = _uiState.value.homeApps.size + 1
 
     private fun appBarIsDrawn(): Boolean =
         _uiState.value.homeApps.isNotEmpty() &&
@@ -850,10 +856,16 @@ class HomeViewModel @Inject constructor(
             return
         }
         val state = _uiState.value
+        val dsm = DualScreenManagerHolder.instance
         when (val index = state.appBarIndex) {
             APP_BAR_DRAWER_INDEX -> onOpenDrawer()
             in state.homeApps.indices -> launchTileApp(state.homeApps[index])
-            else -> DualScreenManagerHolder.instance?.toggleUpperKeyboard()
+            focusPickerSlotIndex() -> if (hasFocusPickerSlot()) {
+                if (dsm?.focusPickerOpen?.value == true) dsm.closeFocusPicker() else dsm?.openFocusPicker()
+            } else {
+                dsm?.toggleUpperKeyboard()
+            }
+            else -> dsm?.toggleUpperKeyboard()
         }
     }
 

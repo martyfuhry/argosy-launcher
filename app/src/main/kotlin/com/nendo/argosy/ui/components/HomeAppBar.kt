@@ -164,9 +164,7 @@ fun CompanionAppBar(
             )
         }
         if (onFocusPickerToggle != null && focusDisplays.size > 1) {
-            val pickerSlot = apps.size +
-                (if (mediaToggle != null) 1 else 0) +
-                (if (onKeyboardToggle != null) 1 else 0)
+            val pickerSlot = apps.size + 1
             DisplayFocusButton(
                 displays = focusDisplays,
                 isOpen = focusPickerOpen,
@@ -225,15 +223,15 @@ private fun DisplayFocusButton(
                     displays.forEach { target ->
                         Box(
                             modifier = Modifier
-                                .size(Dimens.iconLg)
-                                .clip(RoundedCornerShape(Dimens.radiusControl))
+                                .size(Dimens.iconXl)
+                                .clip(RoundedCornerShape(Dimens.radiusLg))
                                 .background(Color.White.copy(alpha = 0.15f))
                                 .touchOnly { onSelect(target.displayId) },
                             contentAlignment = Alignment.Center
                         ) {
                             androidx.compose.material3.Text(
                                 text = target.number.toString(),
-                                style = MaterialTheme.typography.labelLarge,
+                                style = MaterialTheme.typography.titleLarge,
                                 color = Color.White.copy(alpha = 0.85f)
                             )
                         }
