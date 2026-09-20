@@ -96,12 +96,8 @@ class DisplayBadgeOverlay(private val context: Context) {
                 DisplayBadgeSize.LARGE -> Gravity.BOTTOM or Gravity.END
                 DisplayBadgeSize.SMALL -> Gravity.TOP or Gravity.END
             }
-            val margin = when (size) {
-                DisplayBadgeSize.LARGE -> LARGE_MARGIN_PX
-                DisplayBadgeSize.SMALL -> SMALL_MARGIN_PX
-            }
-            x = margin
-            y = margin
+            x = ((if (size == DisplayBadgeSize.LARGE) LARGE_MARGIN_DP else SMALL_MARGIN_DP) * density).toInt()
+            y = ((if (size == DisplayBadgeSize.LARGE) LARGE_MARGIN_DP else SMALL_TOP_MARGIN_DP) * density).toInt()
         }
         return runCatching {
             windowManager.addView(view, params)
@@ -122,8 +118,9 @@ class DisplayBadgeOverlay(private val context: Context) {
     }
 
     private companion object {
-        const val LARGE_MARGIN_PX = 48
-        const val SMALL_MARGIN_PX = 24
+        const val LARGE_MARGIN_DP = 16
+        const val SMALL_MARGIN_DP = 12
+        const val SMALL_TOP_MARGIN_DP = 64
         const val LARGE_WIDTH_DP = 96
         const val LARGE_HEIGHT_DP = 88
         const val SMALL_WIDTH_DP = 56

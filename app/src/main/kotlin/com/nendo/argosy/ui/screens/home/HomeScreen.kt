@@ -1489,6 +1489,16 @@ fun HomeScreen(
             com.nendo.argosy.DualScreenManagerHolder.instance?.hasPresentationScreen
                 ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
             ).collectAsState()
+        val dsmForFocus = com.nendo.argosy.DualScreenManagerHolder.instance
+        val focusPickerOpen by (
+            dsmForFocus?.focusPickerOpen
+                ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
+            ).collectAsState()
+        val focusDisplays = remember(hasPresentationScreen, focusPickerOpen) {
+            dsmForFocus?.focusableDisplays()?.map { (displayId, number) ->
+                com.nendo.argosy.ui.components.DisplayFocusTarget(displayId, number)
+            }.orEmpty()
+        }
         if (hasPresentationScreen && uiState.homeApps.isNotEmpty()) {
             com.nendo.argosy.ui.components.CompanionAppBar(
                 apps = uiState.homeApps,
@@ -1501,6 +1511,15 @@ fun HomeScreen(
                 onOpenDrawer = onDrawerToggle,
                 onKeyboardToggle = {
                     com.nendo.argosy.DualScreenManagerHolder.instance?.toggleUpperKeyboard()
+                },
+                focusDisplays = focusDisplays,
+                focusPickerOpen = focusPickerOpen,
+                onFocusPickerToggle = dsmForFocus?.let {
+                    { if (focusPickerOpen) it.closeFocusPicker() else it.openFocusPicker() }
+                },
+                onFocusDisplay = { displayId ->
+                    dsmForFocus?.focusDisplay(displayId)
+                    dsmForFocus?.closeFocusPicker()
                 },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -66,7 +67,11 @@ fun CompanionAppBar(
     onOpenDrawer: () -> Unit = {},
     mediaToggle: CompanionMediaToggle? = null,
     onMediaToggle: () -> Unit = {},
-    onKeyboardToggle: (() -> Unit)? = null
+    onKeyboardToggle: (() -> Unit)? = null,
+    focusDisplays: List<DisplayFocusTarget> = emptyList(),
+    focusPickerOpen: Boolean = false,
+    onFocusPickerToggle: (() -> Unit)? = null,
+    onFocusDisplay: (Int) -> Unit = {}
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
@@ -149,6 +154,78 @@ fun CompanionAppBar(
                 isFocused = focusedIndex == keyboardSlot,
                 onClick = onKeyboardToggle
             )
+        }
+        if (onFocusPickerToggle != null && focusDisplays.size > 1) {
+            val pickerSlot = apps.size +
+                (if (mediaToggle != null) 1 else 0) +
+                (if (onKeyboardToggle != null) 1 else 0)
+            DisplayFocusButton(
+                displays = focusDisplays,
+                isOpen = focusPickerOpen,
+                isFocused = focusedIndex == pickerSlot,
+                onToggle = onFocusPickerToggle,
+                onSelect = onFocusDisplay
+            )
+        }
+    }
+}
+
+data class DisplayFocusTarget(val displayId: Int, val number: Int)
+
+@Composable
+private fun DisplayFocusButton(
+    displays: List<DisplayFocusTarget>,
+    isOpen: Boolean,
+    isFocused: Boolean,
+    onToggle: () -> Unit,
+    onSelect: (Int) -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (isOpen) {
+            displays.forEach { target ->
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = Dimens.spacingXs)
+                        .size(Dimens.iconLg)
+                        .clip(RoundedCornerShape(Dimens.radiusControl))
+                        .background(Color.White.copy(alpha = 0.15f))
+                        .touchOnly { onSelect(target.displayId) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.material3.Text(
+                        text = target.number.toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+                }
+            }
+        }
+        Column(
+            modifier = Modifier
+                .width(COMPANION_APP_BAR_SLOT_WIDTH)
+                .touchOnly(onToggle)
+                .padding(Dimens.spacingXs),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(Dimens.iconXl)
+                    .argosyFocusIndicators(
+                        focused = isFocused,
+                        indicators = FocusIndicators.Tile,
+                        shape = RoundedCornerShape(Dimens.radiusLg)
+                    )
+                    .clip(RoundedCornerShape(Dimens.radiusLg))
+                    .background(Color.White.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Tv,
+                    contentDescription = stringResource(R.string.dual_companion_app_bar_focus_description),
+                    tint = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(Dimens.iconMd)
+                )
+            }
         }
     }
 }

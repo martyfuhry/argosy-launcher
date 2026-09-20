@@ -242,6 +242,21 @@ class DualScreenManager(
         displayBadges.hide()
     }
 
+    private val _focusPickerOpen = MutableStateFlow(false)
+    val focusPickerOpen: StateFlow<Boolean> = _focusPickerOpen
+
+    fun openFocusPicker() {
+        if (_focusPickerOpen.value) return
+        _focusPickerOpen.value = true
+        showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
+    }
+
+    fun closeFocusPicker() {
+        if (!_focusPickerOpen.value) return
+        _focusPickerOpen.value = false
+        hideScreenNumbers()
+    }
+
     class ResolvedScreenLayout(
         val attached: List<com.nendo.argosy.util.AttachedScreen>,
         val setKey: String,
@@ -730,6 +745,7 @@ class DualScreenManager(
 
     interface AppScreenHost {
         fun releaseAppScreen()
+        fun focusAppScreen()
     }
 
     private val appScreenHosts =
@@ -745,6 +761,30 @@ class DualScreenManager(
 
     fun holdsAppScreen(displayId: Int): Boolean =
         displayAffinityHelper.appScreenDisplayId(_isRolesSwapped.value) == displayId
+
+    /**
+     * The displays a viewer can hand input to, in screen-number order, each with the number the
+     * badge draws for it.
+     */
+    fun focusableDisplays(): List<Pair<Int, Int>> =
+        com.nendo.argosy.util.ScreenCatalog(appContext)
+            .attachedScreens()
+            .map { it.displayId to it.number }
+
+    /**
+     * Moves input focus to [displayId], through whichever surface of ours is rendered there.
+     */
+    fun focusDisplay(displayId: Int) {
+        appScreenHosts.hostFor(displayId)?.let {
+            it.focusAppScreen()
+            return
+        }
+        companionHosts.hostFor(displayId)?.let {
+            it.refocusSelf()
+            return
+        }
+        if (displayId == android.view.Display.DEFAULT_DISPLAY) refocusMain()
+    }
 
     fun releaseStaleAppScreens() {
         appScreenHosts.displayIds()

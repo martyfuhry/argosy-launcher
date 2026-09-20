@@ -104,6 +104,8 @@
     <!-- Spoken description of the app bar's keyboard button, which raises or lowers the system
          keyboard for the other screen. Noun. -->
     <string name="dual_companion_app_bar_keyboard_description">Keyboard</string>
+    <!-- Icon button that expands to list the screens input can be sent to -->
+    <string name="dual_companion_app_bar_focus_description">Send input to a screen</string>
 
     <!-- Heading of the sheet listing every installed app on the companion screen. Noun phrase. -->
     <string name="dual_companion_drawer_title">All Apps</string>
