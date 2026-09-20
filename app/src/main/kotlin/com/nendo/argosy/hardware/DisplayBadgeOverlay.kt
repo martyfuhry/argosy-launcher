@@ -60,9 +60,7 @@ class DisplayBadgeOverlay(private val context: Context) {
         size: DisplayBadgeSize,
         lifecycleOwner: BadgeWindowOwner
     ): View? {
-        val display = displayManager.getDisplay(displayId) ?: return null
-        val displayContext = context.createDisplayContext(display)
-            .createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null)
+        val displayContext = badgeWindowContext(displayId) ?: return null
         val windowManager = displayContext.getSystemService(WindowManager::class.java) ?: return null
         val view = ComposeView(displayContext).apply {
             setViewTreeLifecycleOwner(lifecycleOwner)
@@ -110,11 +108,20 @@ class DisplayBadgeOverlay(private val context: Context) {
     private val displayManager
         get() = context.getSystemService(Context.DISPLAY_SERVICE) as android.hardware.display.DisplayManager
 
-    private fun windowManagerFor(displayId: Int): WindowManager? {
+    private fun windowManagerFor(displayId: Int): WindowManager? =
+        badgeWindowContext(displayId)?.getSystemService(WindowManager::class.java)
+
+    private fun badgeWindowContext(displayId: Int): Context? {
         val display = displayManager.getDisplay(displayId) ?: return null
-        return context.createDisplayContext(display)
-            .createWindowContext(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null)
-            .getSystemService(WindowManager::class.java)
+        val displayContext = context.createDisplayContext(display)
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            displayContext.createWindowContext(
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                null
+            )
+        } else {
+            displayContext
+        }
     }
 
     private companion object {
