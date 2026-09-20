@@ -217,7 +217,7 @@
     <string name="settings_screens_role_presentation">展示</string>
     <string name="settings_screens_role_presentation_detail">显示你正在查看的内容，不含控件</string>
     <string name="settings_screens_role_app_target">应用屏幕</string>
-    <string name="settings_screens_role_app_target_detail">启动的应用和游戏在此打开</string>
+    <string name="settings_screens_role_app_target_detail">启动的应用在此打开</string>
     <string name="settings_screens_role_off">关闭</string>
     <string name="settings_screens_role_off_detail">Argosy 不在此屏幕显示任何内容</string>
     <string name="settings_displays_ambient_led_title">LED控制</string>
@@ -1468,6 +1468,10 @@
     <string name="settings_platform_extension_title">文件扩展名</string>
     <string name="settings_platform_extension_default">默认</string>
     <string name="settings_platform_display_target_title">目标显示屏</string>
+    <string name="settings_platform_display_target_default">默认</string>
+    <string name="settings_platform_display_target_presentation">展示屏幕</string>
+    <string name="settings_platform_display_target_primary">主控屏幕</string>
+    <string name="settings_platform_display_target_app_screen">应用屏幕</string>
     <string name="settings_platform_legacy_mode_title">旧版模式</string>
     <string name="settings_platform_legacy_mode_subtitle">为Drastic使用file://格式的URI</string>
     <string name="settings_platform_launch_args_title">启动参数</string>

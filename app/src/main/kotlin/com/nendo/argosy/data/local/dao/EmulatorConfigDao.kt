@@ -64,6 +64,18 @@ interface EmulatorConfigDao {
     @Query("SELECT displayTarget FROM emulator_configs WHERE gameId = :gameId LIMIT 1")
     suspend fun getDisplayTargetForGame(gameId: Long): String?
 
+    @Query(
+        """
+        SELECT COALESCE(
+            (SELECT displayTarget FROM emulator_configs WHERE gameId = :gameId LIMIT 1),
+            (SELECT displayTarget FROM emulator_configs
+             WHERE platformId = (SELECT platformId FROM games WHERE id = :gameId)
+               AND gameId IS NULL AND isDefault = 1 LIMIT 1)
+        )
+        """
+    )
+    suspend fun getEffectiveDisplayTarget(gameId: Long): String?
+
     @Query("SELECT savePath FROM emulator_configs WHERE gameId = :gameId LIMIT 1")
     suspend fun getSavePathForGame(gameId: Long): String?
 

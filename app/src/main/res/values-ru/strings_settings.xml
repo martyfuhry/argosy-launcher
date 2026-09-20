@@ -225,7 +225,7 @@
     <string name="settings_screens_role_presentation">Показ</string>
     <string name="settings_screens_role_presentation_detail">Показывает то, что вы смотрите, без элементов управления</string>
     <string name="settings_screens_role_app_target">Экран приложений</string>
-    <string name="settings_screens_role_app_target_detail">Запущенные приложения и игры открываются здесь</string>
+    <string name="settings_screens_role_app_target_detail">Запущенные приложения открываются здесь</string>
     <string name="settings_screens_role_off">Выключен</string>
     <string name="settings_screens_role_off_detail">Argosy ничего не выводит на этот экран</string>
     <string name="settings_displays_ambient_led_title">Управление LED</string>
@@ -1589,6 +1589,10 @@
     <string name="settings_platform_extension_title">Расширение файла</string>
     <string name="settings_platform_extension_default">По умолчанию</string>
     <string name="settings_platform_display_target_title">Целевой экран</string>
+    <string name="settings_platform_display_target_default">По умолчанию</string>
+    <string name="settings_platform_display_target_presentation">Экран показа</string>
+    <string name="settings_platform_display_target_primary">Основной экран</string>
+    <string name="settings_platform_display_target_app_screen">Экран приложений</string>
     <string name="settings_platform_legacy_mode_title">Устаревший режим</string>
     <string name="settings_platform_legacy_mode_subtitle">Использовать URI file:// для Drastic</string>
     <string name="settings_platform_launch_args_title">Параметры запуска</string>

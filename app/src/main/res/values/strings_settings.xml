@@ -458,10 +458,10 @@
     <string name="settings_screens_role_presentation">Presentation</string>
     <!-- Its one-line explanation. -->
     <string name="settings_screens_role_presentation_detail">Shows what you are looking at, with no controls</string>
-    <!-- Role name: the screen that other apps and games are sent to. -->
+    <!-- Role name: the screen that other apps are sent to. -->
     <string name="settings_screens_role_app_target">App Screen</string>
     <!-- Its one-line explanation. -->
-    <string name="settings_screens_role_app_target_detail">Apps and games you launch open here</string>
+    <string name="settings_screens_role_app_target_detail">Apps you launch open here</string>
     <!-- Role name: the screen Argosy leaves alone. -->
     <string name="settings_screens_role_off">Off</string>
     <!-- Its one-line explanation. -->
@@ -2856,6 +2856,14 @@
     <string name="settings_platform_extension_default">Default</string>
     <!-- Row title. Noun phrase: which screen the emulator opens on. -->
     <string name="settings_platform_display_target_title">Display Target</string>
+    <!-- Value of that row: send the game wherever games normally go. -->
+    <string name="settings_platform_display_target_default">Default</string>
+    <!-- Value of that row: the screen holding the Presentation role. -->
+    <string name="settings_platform_display_target_presentation">Presentation Screen</string>
+    <!-- Value of that row: the screen holding the Primary role. -->
+    <string name="settings_platform_display_target_primary">Primary Screen</string>
+    <!-- Value of that row: the screen holding the App Screen role. -->
+    <string name="settings_platform_display_target_app_screen">App Screen</string>
     <!-- Row title. Noun phrase: an older way of handing the game file over. -->
     <string name="settings_platform_legacy_mode_title">Legacy Mode</string>
     <!-- Second line of that row. "file://" is an address form and "Drastic" an emulator's name;

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Sync
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.local.entity.getDisplayName
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
+import com.nendo.argosy.ui.common.labelRes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -387,11 +388,11 @@ fun PlatformDetailSection(
                 )
                 PlatformDetailItem.DisplayTarget -> CyclePreference(
                     title = stringResource(R.string.settings_platform_display_target_title),
-                    value = config.displayTarget.displayName,
+                    value = stringResource(config.displayTarget.labelRes),
                     isFocused = isFocused(item),
                     onClick = { viewModel.cycleDisplayTarget(config, 1) },
                     onPrev = { viewModel.cycleDisplayTarget(config, -1) },
-                    options = remember { EmulatorDisplayTarget.entries.map { it.displayName } },
+                    options = EmulatorDisplayTarget.entries.map { stringResource(it.labelRes) },
                     onSelect = { viewModel.cycleDisplayTarget(config, it - config.displayTarget.ordinal) },
                     pickerRequestToken = pickerToken(item)
                 )

@@ -57,7 +57,7 @@ data class PerGameSettingsState(
     val isSavePathOverride: Boolean = false,
     val showDisplayTargetRow: Boolean = false,
     val displayTarget: EmulatorDisplayTarget? = null,
-    val inheritedDisplayTarget: EmulatorDisplayTarget = EmulatorDisplayTarget.TOP,
+    val inheritedDisplayTarget: EmulatorDisplayTarget = EmulatorDisplayTarget.DEFAULT,
     val extensionOptions: List<ExtensionOption> = emptyList(),
     val preferredExtension: String? = null,
     val inheritedExtension: String? = null,
@@ -313,7 +313,7 @@ class PerGameSettingsDelegate @Inject constructor(
             userSaveConfig?.takeIf { it.isUserOverride }?.savePathPattern.isNullOrBlank()
 
         val displayTarget = emulatorConfigDao.getDisplayTargetForGame(gameId)
-            ?.let { raw -> EmulatorDisplayTarget.entries.find { it.name == raw } }
+            ?.let { raw -> EmulatorDisplayTarget.fromString(raw) }
         val inheritedDisplayTarget = EmulatorDisplayTarget.fromString(
             emulatorConfigDao.getDisplayTargetForPlatform(game.platformId)
         )

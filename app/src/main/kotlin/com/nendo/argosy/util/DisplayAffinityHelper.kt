@@ -6,6 +6,7 @@ import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
 import android.view.Display
+import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,9 +35,10 @@ class DisplayAffinityHelper @Inject constructor(
     var secondaryDisplayUsable: Boolean = true
 
     /**
-     * The display apps and games are sent to, when the player has named one. Independent of
+     * The display external apps are sent to, when the player has named one. Independent of
      * [hasSecondaryDisplay]: a layout with no presentation screen runs the launcher single-screen
-     * and still places launches here.
+     * and still places app launches here. Games ignore it unless one names it explicitly, so a
+     * third screen taking the app-target role does not move gameplay off the built-in panel.
      */
     var appTargetDisplayId: Int? = null
 
@@ -124,11 +126,20 @@ class DisplayAffinityHelper @Inject constructor(
             .toBundle()
     }
 
-    fun getEmulatorDisplayId(rolesSwapped: Boolean): Int {
-        resolvedAppTarget?.let { return it }
-        return if (rolesSwapped) secondaryDisplayId ?: Display.DEFAULT_DISPLAY
+    fun getEmulatorDisplayId(rolesSwapped: Boolean): Int =
+        if (rolesSwapped) secondaryDisplayId ?: Display.DEFAULT_DISPLAY
         else Display.DEFAULT_DISPLAY
-    }
+
+    /**
+     * The display a game goes to under [target], or null while [target] names no screen of its own
+     * and the launch should be placed the way it is on a device with two screens.
+     */
+    fun getDisplayTargetId(target: EmulatorDisplayTarget, rolesSwapped: Boolean): Int? =
+        resolveDisplayTargetId(
+            target = target,
+            roleDisplayIds = getRoleDisplayIds(rolesSwapped),
+            appScreenDisplayId = appScreenDisplayId(rolesSwapped)
+        )
 
     /**
      * Which physical display holds each role: the one the viewer is driving, then the one
@@ -172,14 +183,17 @@ class DisplayAffinityHelper @Inject constructor(
         overrideDisplayId: Int? = null
     ): Bundle? {
         val appTarget = resolvedAppTarget
-        if (overrideDisplayId == null && !hasSecondaryDisplay && appTarget == null) return null
-
-        val targetDisplayId = overrideDisplayId ?: appTarget ?: if (forEmulator) {
-            if (rolesSwapped) secondaryDisplayId ?: return null
-            else Display.DEFAULT_DISPLAY
-        } else {
-            secondaryDisplayId ?: return null
+        if (overrideDisplayId == null && !hasSecondaryDisplay && (forEmulator || appTarget == null)) {
+            return null
         }
+
+        val targetDisplayId = resolveLaunchDisplayId(
+            forEmulator = forEmulator,
+            overrideDisplayId = overrideDisplayId,
+            appTarget = appTarget,
+            secondaryDisplayId = secondaryDisplayId,
+            rolesSwapped = rolesSwapped
+        ) ?: return null
 
         return ActivityOptions.makeBasic()
             .setLaunchDisplayId(targetDisplayId)
@@ -235,6 +249,46 @@ class DisplayAffinityHelper @Inject constructor(
                 ?.firstOrNull { it != Display.DEFAULT_DISPLAY && it in attachedIds }
                 ?.let { return it }
             return positionalFallback
+        }
+
+        /**
+         * The display [target] names, or null when it names none. An app-screen choice falls back
+         * to the presentation screen, which is where the setting sends a game on a device with no
+         * third screen attached.
+         */
+        internal fun resolveDisplayTargetId(
+            target: EmulatorDisplayTarget,
+            roleDisplayIds: Pair<Int, Int>?,
+            appScreenDisplayId: Int?
+        ): Int? {
+            if (target == EmulatorDisplayTarget.DEFAULT) return null
+            val (primary, presentation) = roleDisplayIds ?: return null
+            return when (target) {
+                EmulatorDisplayTarget.PRIMARY -> primary
+                EmulatorDisplayTarget.PRESENTATION -> presentation
+                EmulatorDisplayTarget.APP_SCREEN -> appScreenDisplayId ?: presentation
+                EmulatorDisplayTarget.DEFAULT -> null
+            }
+        }
+
+        /**
+         * Where a launch lands. An explicit choice wins outright. A game then takes the screen it
+         * would take on a two-screen device, so an app-target screen never captures gameplay; an
+         * app takes the app-target screen when one is set.
+         */
+        internal fun resolveLaunchDisplayId(
+            forEmulator: Boolean,
+            overrideDisplayId: Int?,
+            appTarget: Int?,
+            secondaryDisplayId: Int?,
+            rolesSwapped: Boolean
+        ): Int? {
+            overrideDisplayId?.let { return it }
+            if (forEmulator) {
+                return if (rolesSwapped) secondaryDisplayId else Display.DEFAULT_DISPLAY
+            }
+            appTarget?.let { return it }
+            return secondaryDisplayId
         }
 
         /**

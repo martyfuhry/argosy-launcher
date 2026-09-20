@@ -220,7 +220,7 @@
     <string name="settings_screens_role_presentation">प्रस्तुति</string>
     <string name="settings_screens_role_presentation_detail">आप जो देख रहे हैं वह दिखाती है, बिना नियंत्रण के</string>
     <string name="settings_screens_role_app_target">ऐप स्क्रीन</string>
-    <string name="settings_screens_role_app_target_detail">आपके शुरू किए ऐप और गेम यहीं खुलते हैं</string>
+    <string name="settings_screens_role_app_target_detail">आपके शुरू किए ऐप यहीं खुलते हैं</string>
     <string name="settings_screens_role_off">बंद</string>
     <string name="settings_screens_role_off_detail">Argosy इस स्क्रीन पर कुछ नहीं दिखाता</string>
     <string name="settings_displays_ambient_led_title">LED नियंत्रण</string>
@@ -1506,6 +1506,10 @@
     <string name="settings_platform_extension_title">फ़ाइल एक्सटेंशन</string>
     <string name="settings_platform_extension_default">डिफ़ॉल्ट</string>
     <string name="settings_platform_display_target_title">डिस्प्ले टार्गेट</string>
+    <string name="settings_platform_display_target_default">डिफ़ॉल्ट</string>
+    <string name="settings_platform_display_target_presentation">प्रस्तुति स्क्रीन</string>
+    <string name="settings_platform_display_target_primary">प्राथमिक स्क्रीन</string>
+    <string name="settings_platform_display_target_app_screen">ऐप स्क्रीन</string>
     <string name="settings_platform_legacy_mode_title">लेगेसी मोड</string>
     <string name="settings_platform_legacy_mode_subtitle">Drastic के लिए file:// URI उपयोग करें</string>
     <string name="settings_platform_launch_args_title">लॉन्च आर्ग्स</string>

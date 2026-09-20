@@ -176,7 +176,7 @@ data class PlatformEmulatorConfig(
     val extensionOptions: List<ExtensionOption> = emptyList(),
     val selectedExtension: String? = null,
     val useFileUri: Boolean = false,
-    val displayTarget: EmulatorDisplayTarget = EmulatorDisplayTarget.TOP,
+    val displayTarget: EmulatorDisplayTarget = EmulatorDisplayTarget.DEFAULT,
     val hasSecondaryDisplay: Boolean = false
 ) {
     val hasInstalledEmulators: Boolean get() = availableEmulators.isNotEmpty()

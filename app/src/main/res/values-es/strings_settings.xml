@@ -233,7 +233,7 @@
     <string name="settings_screens_role_presentation">Presentación</string>
     <string name="settings_screens_role_presentation_detail">Muestra lo que estás viendo, sin controles</string>
     <string name="settings_screens_role_app_target">Pantalla de apps</string>
-    <string name="settings_screens_role_app_target_detail">Las apps y los juegos que inicies se abren aquí</string>
+    <string name="settings_screens_role_app_target_detail">Las apps que inicies se abren aquí</string>
     <string name="settings_screens_role_off">Apagada</string>
     <string name="settings_screens_role_off_detail">Argosy no muestra nada en esta pantalla</string>
     <string name="settings_displays_ambient_led_title">Control LED</string>
@@ -1559,6 +1559,10 @@
     <string name="settings_platform_extension_title">Extensión de archivo</string>
     <string name="settings_platform_extension_default">Predeterminada</string>
     <string name="settings_platform_display_target_title">Pantalla de destino</string>
+    <string name="settings_platform_display_target_default">Predeterminada</string>
+    <string name="settings_platform_display_target_presentation">Pantalla de presentación</string>
+    <string name="settings_platform_display_target_primary">Pantalla principal</string>
+    <string name="settings_platform_display_target_app_screen">Pantalla de apps</string>
     <string name="settings_platform_legacy_mode_title">Modo heredado</string>
     <string name="settings_platform_legacy_mode_subtitle">Usar URI file:// para Drastic</string>
     <string name="settings_platform_launch_args_title">Argumentos de inicio</string>

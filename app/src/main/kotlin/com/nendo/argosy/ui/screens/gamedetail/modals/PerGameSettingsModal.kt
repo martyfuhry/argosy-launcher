@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.common.labelRes
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.components.Modal
 import com.nendo.argosy.ui.screens.gamedetail.components.OptionItem
@@ -145,10 +146,10 @@ fun PerGameSettingsModal(
 
                 PerGameSettingsRow.DISPLAY_TARGET -> ValueConfigItem(
                     label = stringResource(R.string.gamedetail_per_game_display_target_label),
-                    value = state.displayTarget?.displayName
+                    value = state.displayTarget?.let { stringResource(it.labelRes) }
                         ?: stringResource(
                             R.string.gamedetail_per_game_display_target_inherit,
-                            state.inheritedDisplayTarget.displayName
+                            stringResource(state.inheritedDisplayTarget.labelRes)
                         ),
                     isOverride = state.displayTarget != null,
                     isFocused = isFocused(row),

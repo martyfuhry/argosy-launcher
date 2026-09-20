@@ -1102,14 +1102,23 @@ enum class DualScreenInputFocus(val displayName: String) {
     }
 }
 
-enum class EmulatorDisplayTarget(val displayName: String) {
-    HERO("Same as Hero"),
-    LIBRARY("Same as Library"),
-    TOP("Top Screen"),
-    BOTTOM("Bottom Screen");
+enum class EmulatorDisplayTarget {
+    DEFAULT,
+    PRESENTATION,
+    PRIMARY,
+    APP_SCREEN;
 
     companion object {
-        fun fromString(value: String?): EmulatorDisplayTarget =
-            entries.find { it.name == value } ?: TOP
+        fun fromString(value: String?): EmulatorDisplayTarget = when (value) {
+            LEGACY_TOP -> DEFAULT
+            LEGACY_HERO -> PRESENTATION
+            LEGACY_BOTTOM, LEGACY_LIBRARY -> PRIMARY
+            else -> entries.find { it.name == value } ?: DEFAULT
+        }
+
+        private const val LEGACY_TOP = "TOP"
+        private const val LEGACY_BOTTOM = "BOTTOM"
+        private const val LEGACY_HERO = "HERO"
+        private const val LEGACY_LIBRARY = "LIBRARY"
     }
 }
