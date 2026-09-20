@@ -139,7 +139,7 @@
     <string name="library_apps_hint_show_hidden">Mostrar ocultas</string>
 
     <string name="library_apps_menu_app_info">Información de la app</string>
-    <string name="library_apps_menu_open_on_top">Abrir en la pantalla superior</string>
+    <string name="library_apps_menu_open_on_screen">Abrir en la pantalla %1$d</string>
     <string name="library_apps_menu_remove_from_home">Quitar del inicio</string>
     <string name="library_apps_menu_add_to_home">Agregar al inicio</string>
     <string name="library_apps_menu_remove_from_second_screen">Quitar de la segunda pantalla</string>

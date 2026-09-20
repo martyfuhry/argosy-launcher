@@ -33,6 +33,7 @@ private const val MENU_INDEX_MAX_REMOTE = 4
 
 sealed class GameMenuAction {
     data class Play(val gameId: Long, val needsInstall: Boolean, val isDownloaded: Boolean) : GameMenuAction()
+    data class PlayOnDisplay(val gameId: Long, val displayId: Int) : GameMenuAction()
     data class ToggleFavorite(val gameId: Long) : GameMenuAction()
     data class ViewDetails(val gameId: Long) : GameMenuAction()
     data class AddToCollection(val gameId: Long) : GameMenuAction()
@@ -77,7 +78,12 @@ class HomeGameMenuDelegate @Inject constructor(
         _state.update { it.copy(showGameMenu = false) }
     }
 
-    fun moveGameMenuFocus(delta: Int, focusedGame: HomeGameUi?, isPlatformRow: Boolean) {
+    fun moveGameMenuFocus(
+        delta: Int,
+        focusedGame: HomeGameUi?,
+        isPlatformRow: Boolean,
+        extraRows: Int = 0
+    ) {
         _state.update {
             val isDownloaded = focusedGame?.isDownloaded == true
             val needsInstall = focusedGame?.needsInstall == true
@@ -85,6 +91,7 @@ class HomeGameMenuDelegate @Inject constructor(
             val isAndroidApp = focusedGame?.isAndroidApp == true
             val isSyncable = isPlatformRow && focusedGame != null && focusedGame.platformId > 0
             var maxIndex = if (isDownloaded || needsInstall) MENU_INDEX_MAX_DOWNLOADED else MENU_INDEX_MAX_REMOTE
+            maxIndex += extraRows
             if (isRommGame || isAndroidApp) maxIndex++
             if (isAndroidApp) maxIndex++
             if (isSyncable) maxIndex++
@@ -93,9 +100,27 @@ class HomeGameMenuDelegate @Inject constructor(
         }
     }
 
-    fun resolveMenuAction(focusIndex: Int, game: HomeGameUi, isPlatformRow: Boolean): GameMenuAction {
+    fun resolveMenuAction(
+        focusIndex: Int,
+        game: HomeGameUi,
+        isPlatformRow: Boolean,
+        playDisplays: List<Int> = emptyList()
+    ): GameMenuAction {
         var currentIdx = 0
         val playIdx = currentIdx++
+        val playOnDisplayRange = if (playDisplays.size > 1 && game.isDownloaded) {
+            val start = currentIdx
+            currentIdx += playDisplays.size
+            start until currentIdx
+        } else {
+            IntRange.EMPTY
+        }
+        if (focusIndex in playOnDisplayRange) {
+            return GameMenuAction.PlayOnDisplay(
+                game.id,
+                playDisplays[focusIndex - playOnDisplayRange.first]
+            )
+        }
         val favoriteIdx = currentIdx++
         val detailsIdx = currentIdx++
         val addToCollectionIdx = currentIdx++

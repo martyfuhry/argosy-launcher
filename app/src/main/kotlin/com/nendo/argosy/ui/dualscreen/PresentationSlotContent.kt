@@ -30,7 +30,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.offset
@@ -60,6 +62,8 @@ private const val TIMELINE_SCROLL_DELAY_MS = 1500L
 private const val PLAY_SHARE_COLUMNS = 2
 private const val PLAY_SHARE_TOP_GAMES = 2
 private const val GAME_HERO_SCRIM = 0.88f
+private val IN_GAME_APP_BAR_HEIGHT =
+    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionAppBarHeight.dp
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
@@ -89,14 +93,19 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             is PresentationSlot.PlatformShowcase -> PlatformShowcaseContent(slot)
             is PresentationSlot.InGame -> {
                 val manager = com.nendo.argosy.DualScreenManagerHolder.instance
+                val bar = rememberInGameAppBarState()
                 CompanionDashboard(
                     state = slot.state,
                     sessionTimer = manager?.swappedSessionTimer,
                     liveAchievements = slot.achievements,
+                    bottomInset = if (bar == null) Dimens.spacingMd else IN_GAME_APP_BAR_HEIGHT,
                     onQuickSave = { manager?.sessionQuickActions?.quickSave() },
                     onQuickLoad = { manager?.sessionQuickActions?.quickLoad() },
                     onScreenshot = { manager?.sessionQuickActions?.screenshot() }
                 )
+                if (bar != null) {
+                    InGameAppBar(bar, modifier = Modifier.align(Alignment.BottomCenter))
+                }
             }
         }
         if (slot !is PresentationSlot.InGame) {
@@ -106,6 +115,113 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     .padding(Dimens.spacingLg)
             )
         }
+    }
+}
+
+private data class InGameAppBarState(
+    val manager: com.nendo.argosy.DualScreenManager,
+    val apps: List<String>,
+    val displays: List<com.nendo.argosy.ui.components.DisplayFocusTarget>,
+    val pickerOpen: Boolean,
+    val pickerIndex: Int
+)
+
+@Composable
+private fun rememberInGameAppBarState(): InGameAppBarState? {
+    val manager = com.nendo.argosy.DualScreenManagerHolder.instance ?: return null
+    val apps by manager.homeAppsFlow.collectAsState(initial = manager.homeAppsList)
+    val pickerOpen by manager.focusPickerOpen.collectAsState()
+    val pickerIndex by manager.focusPickerIndex.collectAsState()
+    val displays = remember(pickerOpen) {
+        manager.focusableDisplays().map { (displayId, number) ->
+            com.nendo.argosy.ui.components.DisplayFocusTarget(displayId, number)
+        }
+    }
+    if (apps.isEmpty() && displays.size <= 1) return null
+    return InGameAppBarState(manager, apps, displays, pickerOpen, pickerIndex)
+}
+
+@Composable
+private fun InGameAppBar(state: InGameAppBarState, modifier: Modifier = Modifier) {
+    val manager = state.manager
+    var menuPackage by remember { mutableStateOf<String?>(null) }
+    var drawerOpen by remember { mutableStateOf(false) }
+    var drawerApps by remember {
+        mutableStateOf(emptyList<com.nendo.argosy.ui.components.AppDrawerEntry>())
+    }
+
+    LaunchedEffect(drawerOpen) {
+        if (!drawerOpen || drawerApps.isNotEmpty()) return@LaunchedEffect
+        drawerApps = manager.installedAppLabels().map { (packageName, label) ->
+            com.nendo.argosy.ui.components.AppDrawerEntry(packageName, label)
+        }
+    }
+
+    com.nendo.argosy.ui.components.CompanionAppBar(
+        apps = state.apps,
+        onAppClick = { manager.launchCompanionApp(it) },
+        focusedIndex = com.nendo.argosy.ui.components.APP_BAR_NOTHING_FOCUSED,
+        onAppLongPress = if (state.displays.size > 1) {
+            { packageName -> menuPackage = packageName }
+        } else {
+            null
+        },
+        onOpenDrawer = { drawerOpen = true },
+        focusDisplays = state.displays,
+        focusPickerOpen = state.pickerOpen,
+        focusPickerIndex = state.pickerIndex,
+        onFocusPickerToggle = {
+            if (state.pickerOpen) manager.closeFocusPicker() else manager.openFocusPicker()
+        },
+        onFocusDisplay = { displayId ->
+            manager.focusDisplay(displayId)
+            manager.closeFocusPicker()
+        },
+        modifier = modifier
+    )
+
+    if (drawerOpen) {
+        com.nendo.argosy.ui.components.CompanionAppDrawer(
+            apps = drawerApps,
+            onLaunch = { packageName ->
+                drawerOpen = false
+                manager.launchCompanionApp(packageName)
+            },
+            onLongPress = if (state.displays.size > 1) {
+                { packageName ->
+                    drawerOpen = false
+                    menuPackage = packageName
+                }
+            } else {
+                null
+            },
+            onDismiss = { drawerOpen = false }
+        )
+    }
+
+    menuPackage?.let { packageName ->
+        val rows = remember(packageName, state.displays) {
+            manager.appMenuRowsFor(state.displays.map { it.displayId to it.number })
+        }
+        var pinned by remember(packageName) { mutableStateOf(false) }
+        var hidden by remember(packageName) { mutableStateOf(false) }
+        LaunchedEffect(packageName) {
+            pinned = manager.isAppPinned(packageName)
+            hidden = manager.isAppHidden(packageName)
+        }
+        com.nendo.argosy.ui.components.AppLaunchMenu(
+            appLabel = manager.appLabel(packageName),
+            rows = rows,
+            focusIndex = -1,
+            isAppHidden = hidden,
+            isOnSecondaryHome = pinned,
+            onSelect = { index ->
+                val row = rows.getOrNull(index)
+                menuPackage = null
+                if (row != null) manager.runAppMenuRow(packageName, row)
+            },
+            onDismiss = { menuPackage = null }
+        )
     }
 }
 

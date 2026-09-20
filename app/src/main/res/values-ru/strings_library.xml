@@ -147,7 +147,7 @@
     <string name="library_apps_hint_show_hidden">Показать скрытые</string>
 
     <string name="library_apps_menu_app_info">Сведения о приложении</string>
-    <string name="library_apps_menu_open_on_top">Открыть на верхнем экране</string>
+    <string name="library_apps_menu_open_on_screen">Открыть на экране %1$d</string>
     <string name="library_apps_menu_remove_from_home">Убрать с главного экрана</string>
     <string name="library_apps_menu_add_to_home">Добавить на главный экран</string>
     <string name="library_apps_menu_remove_from_second_screen">Убрать со второго экрана</string>

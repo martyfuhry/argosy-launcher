@@ -35,6 +35,7 @@
     <string name="dual_companion_saves_synced_icon_description">Сохранено</string>
 
     <string name="dual_companion_app_bar_add_description">Добавить приложение</string>
+    <string name="dual_companion_app_drawer_title">Все приложения</string>
     <string name="dual_companion_app_bar_media_to_library_description">Назад к библиотеке</string>
     <string name="dual_companion_app_bar_media_to_player_description">Сейчас смотрите</string>
     <string name="dual_companion_app_bar_keyboard_description">Клавиатура</string>

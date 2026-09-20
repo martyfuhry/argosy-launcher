@@ -115,6 +115,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var homeTileRepository: com.nendo.argosy.data.repository.HomeTileRepository
     @Inject lateinit var homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue
     @Inject lateinit var appsRepository: com.nendo.argosy.data.repository.AppsRepository
+    @Inject lateinit var appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions
     @Inject lateinit var ambientAudioManager: AmbientAudioManager
     @Inject lateinit var bgmPlaylistCoordinator: com.nendo.argosy.ui.audio.BgmPlaylistCoordinator
     @Inject lateinit var ambientLedManager: AmbientLedManager
@@ -323,6 +324,7 @@ class MainActivity : ComponentActivity() {
                 homeTileRepository = homeTileRepository,
                 homeTilePromptQueue = homeTilePromptQueue,
                 appsRepository = appsRepository,
+                appShortcutActions = appShortcutActions,
                 notificationManager = notificationManager,
                 titleIdDownloadObserver = titleIdDownloadObserver,
                 homeGridPageRepository = homeGridPageRepository,

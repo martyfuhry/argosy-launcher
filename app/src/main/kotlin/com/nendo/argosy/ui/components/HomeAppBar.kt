@@ -74,6 +74,7 @@ fun CompanionAppBar(
     onAppClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     focusedIndex: Int = -1,
+    onAppLongPress: ((String) -> Unit)? = null,
     onOpenDrawer: () -> Unit = {},
     mediaToggle: CompanionMediaToggle? = null,
     onMediaToggle: () -> Unit = {},
@@ -147,7 +148,8 @@ fun CompanionAppBar(
                 CompanionAppItem(
                     packageName = apps[index],
                     isFocused = index == focusedIndex,
-                    onClick = { onAppClick(apps[index]) }
+                    onClick = { onAppClick(apps[index]) },
+                    onLongPress = onAppLongPress?.let { press -> { press(apps[index]) } }
                 )
             }
         }
@@ -377,12 +379,16 @@ private fun CompanionMediaButton(
 internal fun CompanionAppItem(
     packageName: String,
     isFocused: Boolean = false,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongPress: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
             .width(COMPANION_APP_BAR_SLOT_WIDTH)
-            .touchOnly(onClick)
+            .let { base ->
+                if (onLongPress == null) base.touchOnly(onClick)
+                else base.touchOnly(onClick = onClick, onLongPress = onLongPress)
+            }
             .padding(Dimens.spacingXs),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

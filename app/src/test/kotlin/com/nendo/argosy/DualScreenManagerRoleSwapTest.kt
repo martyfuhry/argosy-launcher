@@ -136,6 +136,7 @@ class DualScreenManagerRoleSwapTest {
         homeTileRepository = mockk(relaxed = true),
         homeTilePromptQueue = mockk(relaxed = true),
         appsRepository = mockk(relaxed = true),
+        appShortcutActions = mockk(relaxed = true),
         notificationManager = mockk(relaxed = true),
         titleIdDownloadObserver = mockk(relaxed = true),
         homeGridPageRepository = mockk(relaxed = true),

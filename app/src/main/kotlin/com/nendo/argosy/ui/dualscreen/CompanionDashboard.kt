@@ -62,6 +62,7 @@ fun CompanionDashboard(
     state: CompanionInGameState,
     sessionTimer: CompanionSessionTimer?,
     liveAchievements: List<AchievementUi>,
+    bottomInset: androidx.compose.ui.unit.Dp = Dimens.spacingMd,
     onQuickSave: () -> Unit = {},
     onQuickLoad: () -> Unit = {},
     onScreenshot: () -> Unit = {}
@@ -87,7 +88,7 @@ fun CompanionDashboard(
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = Dimens.spacingMd)
+        contentPadding = PaddingValues(bottom = bottomInset)
     ) {
         item { HeroGameCard(state) }
         item { SessionTimerCard(sessionMillis) }

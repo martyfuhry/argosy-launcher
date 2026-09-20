@@ -27,9 +27,17 @@ interface HomeInputActions {
     fun previousRow()
     fun nextRow()
     fun focusAppBar(): Boolean
+    fun openAppBarAppMenu(): Boolean
+    fun moveAppBarAppMenu(delta: Int)
+    fun confirmAppBarAppMenu()
+    fun dismissAppBarAppMenu()
+    fun openAppDrawer()
+    fun moveAppDrawer(delta: Int)
+    fun confirmAppDrawer()
+    fun dismissAppDrawer()
     fun releaseAppBar()
     fun moveAppBarFocus(delta: Int)
-    fun activateAppBarSlot(onOpenDrawer: () -> Unit)
+    fun activateAppBarSlot()
     fun previousGame(): Boolean
     fun nextGame(): Boolean
     fun moveGridFocus(direction: GridDirection): AutoGridMove
@@ -139,6 +147,14 @@ class HomeInputHandler(
             ?.takeIf { it.focusPickerOpen.value }
 
     override fun onUp(): InputResult {
+        if (actions.uiState.value.appBarMenu != null) {
+            actions.moveAppBarAppMenu(-1)
+            return InputResult.HANDLED
+        }
+        if (actions.uiState.value.appDrawer != null) {
+            actions.moveAppDrawer(-1)
+            return InputResult.handled(SoundType.NAVIGATE)
+        }
         focusPicker?.let {
             it.moveFocusPicker(-1)
             return InputResult.HANDLED
@@ -189,6 +205,14 @@ class HomeInputHandler(
     }
 
     override fun onDown(): InputResult {
+        if (actions.uiState.value.appBarMenu != null) {
+            actions.moveAppBarAppMenu(1)
+            return InputResult.HANDLED
+        }
+        if (actions.uiState.value.appDrawer != null) {
+            actions.moveAppDrawer(1)
+            return InputResult.handled(SoundType.NAVIGATE)
+        }
         focusPicker?.let {
             it.moveFocusPicker(1)
             return InputResult.HANDLED
@@ -236,6 +260,8 @@ class HomeInputHandler(
     }
 
     override fun onLeft(): InputResult {
+        if (actions.uiState.value.appBarMenu != null) return InputResult.handled(SoundType.BOUNDARY)
+        if (actions.uiState.value.appDrawer != null) return InputResult.handled(SoundType.BOUNDARY)
         if (focusPicker != null) return InputResult.handled(SoundType.BOUNDARY)
         if (actions.uiState.value.appBarFocused) {
             actions.moveAppBarFocus(-1)
@@ -267,6 +293,8 @@ class HomeInputHandler(
     }
 
     override fun onRight(): InputResult {
+        if (actions.uiState.value.appBarMenu != null) return InputResult.handled(SoundType.BOUNDARY)
+        if (actions.uiState.value.appDrawer != null) return InputResult.handled(SoundType.BOUNDARY)
         if (focusPicker != null) return InputResult.handled(SoundType.BOUNDARY)
         if (actions.uiState.value.appBarFocused) {
             actions.moveAppBarFocus(1)
@@ -425,13 +453,21 @@ class HomeInputHandler(
         }
 
     override fun onConfirm(): InputResult {
+        if (actions.uiState.value.appBarMenu != null) {
+            actions.confirmAppBarAppMenu()
+            return InputResult.handled(SoundType.SELECT)
+        }
+        if (actions.uiState.value.appDrawer != null) {
+            actions.confirmAppDrawer()
+            return InputResult.handled(SoundType.SELECT)
+        }
         focusPicker?.let {
             it.confirmFocusPicker()
             return InputResult.handled(SoundType.SELECT)
         }
         val state = actions.uiState.value
         if (state.appBarFocused) {
-            actions.activateAppBarSlot(onDrawerToggle)
+            actions.activateAppBarSlot()
             return InputResult.handled(SoundType.SELECT)
         }
         if (state.customGrid.engagedTileId != null) {
@@ -487,6 +523,14 @@ class HomeInputHandler(
     }
 
     override fun onBack(): InputResult {
+        if (actions.uiState.value.appBarMenu != null) {
+            actions.dismissAppBarAppMenu()
+            return InputResult.handled(SoundType.CLOSE_MODAL)
+        }
+        if (actions.uiState.value.appDrawer != null) {
+            actions.dismissAppDrawer()
+            return InputResult.handled(SoundType.CLOSE_MODAL)
+        }
         focusPicker?.let {
             it.closeFocusPicker()
             return InputResult.handled(SoundType.CLOSE_MODAL)
@@ -613,6 +657,20 @@ class HomeInputHandler(
      */
     override fun onLongConfirm(): InputResult {
         val state = actions.uiState.value
+        if (state.appDrawer != null) {
+            return if (actions.openAppBarAppMenu()) {
+                InputResult.handled(SoundType.OPEN_MODAL)
+            } else {
+                InputResult.handled(SoundType.BOUNDARY)
+            }
+        }
+        if (state.appBarFocused) {
+            return if (actions.openAppBarAppMenu()) {
+                InputResult.handled(SoundType.OPEN_MODAL)
+            } else {
+                InputResult.handled(SoundType.BOUNDARY)
+            }
+        }
         if (isCustomGrid(state)) {
             if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
             if (state.showTilePicker || state.customGrid.showMenu) return InputResult.UNHANDLED

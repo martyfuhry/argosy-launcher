@@ -99,6 +99,12 @@ class AppsRepository @Inject constructor(
         return packageManager.getLaunchIntentForPackage(packageName)
     }
 
+    fun getAppLabel(packageName: String): String? = runCatching {
+        packageManager.getApplicationLabel(
+            packageManager.getApplicationInfo(packageName, 0)
+        ).toString()
+    }.getOrNull()
+
     /**
      * Every Argosy on the device, not just this one. These are reported as system apps rather
      * than dropped, so they stay reachable from anywhere that asks for system apps while staying

@@ -96,6 +96,8 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
+    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
     private val notificationManager: NotificationManager,
     private val gameNavigationContext: GameNavigationContext,
@@ -851,7 +853,7 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(appBarIndex = appBarFocusMove(it.appBarIndex, delta, slots)) }
     }
 
-    override fun activateAppBarSlot(onOpenDrawer: () -> Unit) {
+    override fun activateAppBarSlot() {
         if (!appBarIsDrawn()) {
             releaseAppBar()
             return
@@ -859,7 +861,7 @@ class HomeViewModel @Inject constructor(
         val state = _uiState.value
         val dsm = DualScreenManagerHolder.instance
         when (val index = state.appBarIndex) {
-            APP_BAR_DRAWER_INDEX -> onOpenDrawer()
+            APP_BAR_DRAWER_INDEX -> openAppDrawer()
             in state.homeApps.indices -> launchTileApp(state.homeApps[index])
             focusPickerSlotIndex() -> if (hasFocusPickerSlot()) {
                 if (dsm?.focusPickerOpen?.value == true) dsm.closeFocusPicker() else dsm?.openFocusPicker()
@@ -1459,6 +1461,145 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    override fun openAppBarAppMenu(): Boolean {
+        val state = _uiState.value
+        val packageName = state.appDrawer?.focusedPackage
+            ?: state.homeApps.getOrNull(state.appBarIndex)
+            ?: return false
+        return openAppMenuFor(packageName)
+    }
+
+    private fun openAppMenuFor(packageName: String): Boolean {
+        val screens = DualScreenManagerHolder.instance
+            ?.focusableDisplays()
+            ?.map { (displayId, number) ->
+                com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen(displayId, number)
+            }
+            .orEmpty()
+        val rows = buildList<com.nendo.argosy.ui.components.AppMenuRow> {
+            if (screens.size > 1) addAll(screens)
+            add(
+                com.nendo.argosy.ui.components.AppMenuRow.Action(
+                    com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME
+                )
+            )
+            add(
+                com.nendo.argosy.ui.components.AppMenuRow.Action(
+                    com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_VISIBILITY
+                )
+            )
+            add(
+                com.nendo.argosy.ui.components.AppMenuRow.Action(
+                    com.nendo.argosy.ui.components.AppContextMenuItem.UNINSTALL
+                )
+            )
+        }
+        _uiState.update {
+            it.copy(
+                appBarMenu = AppBarLaunchMenu(
+                    packageName = packageName,
+                    label = appsRepository.getAppLabel(packageName) ?: packageName,
+                    rows = rows
+                )
+            )
+        }
+        viewModelScope.launch {
+            val pinned = appShortcutActions.isPinned(packageName)
+            val hidden = appShortcutActions.isHidden(packageName)
+            _uiState.update { state ->
+                state.appBarMenu
+                    ?.takeIf { it.packageName == packageName }
+                    ?.let { state.copy(appBarMenu = it.copy(isPinned = pinned, isHidden = hidden)) }
+                    ?: state
+            }
+        }
+        if (screens.size > 1) {
+            DualScreenManagerHolder.instance
+                ?.showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
+        }
+        return true
+    }
+
+    override fun moveAppBarAppMenu(delta: Int) {
+        val menu = _uiState.value.appBarMenu ?: return
+        val next = (menu.focusIndex + delta).mod(menu.rows.size)
+        _uiState.update { it.copy(appBarMenu = menu.copy(focusIndex = next)) }
+    }
+
+    override fun confirmAppBarAppMenu() {
+        val menu = _uiState.value.appBarMenu ?: return
+        val row = menu.rows.getOrNull(menu.focusIndex) ?: return
+        val packageName = menu.packageName
+        dismissAppBarAppMenu()
+        when (row) {
+            is com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen -> {
+                val intent = appsRepository.getLaunchIntent(packageName) ?: return
+                val options = displayAffinityHelper.getActivityOptions(
+                    forEmulator = false,
+                    overrideDisplayId = row.displayId
+                )
+                viewModelScope.launch { _events.emit(HomeEvent.LaunchIntent(intent, options)) }
+            }
+            is com.nendo.argosy.ui.components.AppMenuRow.Action -> when (row.item) {
+                com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME ->
+                    viewModelScope.launch { appShortcutActions.togglePinned(packageName) }
+                com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_VISIBILITY ->
+                    viewModelScope.launch { appShortcutActions.toggleHidden(packageName) }
+                com.nendo.argosy.ui.components.AppContextMenuItem.UNINSTALL ->
+                    viewModelScope.launch {
+                        _events.emit(
+                            HomeEvent.LaunchIntent(appShortcutActions.uninstallIntent(packageName))
+                        )
+                    }
+                else -> Unit
+            }
+        }
+    }
+
+    override fun dismissAppBarAppMenu() {
+        if (_uiState.value.appBarMenu == null) return
+        _uiState.update { it.copy(appBarMenu = null) }
+        if (_uiState.value.appDrawer == null) {
+            DualScreenManagerHolder.instance?.hideScreenNumbers()
+        }
+    }
+
+    override fun openAppDrawer() {
+        if (_uiState.value.appDrawer != null) return
+        _uiState.update { it.copy(appDrawer = AppDrawerState()) }
+        viewModelScope.launch {
+            val apps = appsRepository.getInstalledApps()
+                .map { com.nendo.argosy.ui.components.AppDrawerEntry(it.packageName, it.label) }
+                .sortedBy { it.label.lowercase() }
+            _uiState.update { state ->
+                state.appDrawer?.let { drawer ->
+                    state.copy(appDrawer = drawer.copy(apps = apps))
+                } ?: state
+            }
+        }
+    }
+
+    override fun moveAppDrawer(delta: Int) {
+        val drawer = _uiState.value.appDrawer ?: return
+        if (drawer.apps.isEmpty()) return
+        val next = (drawer.focusIndex + delta).mod(drawer.apps.size)
+        _uiState.update { it.copy(appDrawer = drawer.copy(focusIndex = next)) }
+    }
+
+    override fun confirmAppDrawer() {
+        val packageName = _uiState.value.appDrawer?.focusedPackage ?: return
+        dismissAppDrawer()
+        launchTileApp(packageName)
+    }
+
+    override fun dismissAppDrawer() {
+        if (_uiState.value.appDrawer == null) return
+        _uiState.update { it.copy(appDrawer = null) }
+        if (_uiState.value.appBarMenu == null) {
+            DualScreenManagerHolder.instance?.hideScreenNumbers()
+        }
+    }
+
     override fun openTileCollection(collectionId: Long) {
         viewModelScope.launch { _events.emit(HomeEvent.NavigateToCollections(collectionId)) }
     }
@@ -1693,8 +1834,25 @@ class HomeViewModel @Inject constructor(
             allowVariantPrompt = false,
             onLaunch = { intent ->
                 viewModelScope.launch {
-                    val options = displayAffinityHelper.getActivityOptions(
-                        forEmulator = true, rolesSwapped = sessionStateStore.isRolesSwapped()
+                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId)
+                    _events.emit(HomeEvent.LaunchIntent(intent, options))
+                }
+            }
+        )
+    }
+
+    private fun playGameOnDisplay(gameId: Long, displayId: Int) {
+        videoPreviewDelegate.deactivateVideoPreview()
+        saveCurrentState()
+        gameLaunchDelegate.launchGame(
+            scope = viewModelScope,
+            gameId = gameId,
+            allowVariantPrompt = false,
+            onLaunch = { intent ->
+                viewModelScope.launch {
+                    val options = emulatorLaunchTargetResolver.launchOptionsFor(
+                        gameId = gameId,
+                        overrideDisplayId = displayId
                     )
                     _events.emit(HomeEvent.LaunchIntent(intent, options))
                 }
@@ -1752,12 +1910,37 @@ class HomeViewModel @Inject constructor(
 
     // --- Public API: Game Menu ---
 
-    override fun toggleGameMenu() = gameMenuDelegate.toggleGameMenu()
+    override fun toggleGameMenu() {
+        val opening = !_uiState.value.showGameMenu
+        val displays = if (opening) {
+            DualScreenManagerHolder.instance
+                ?.focusableDisplays()
+                ?.map { (displayId, number) ->
+                    com.nendo.argosy.ui.components.AppLaunchTarget(displayId, number)
+                }
+                .orEmpty()
+        } else {
+            emptyList()
+        }
+        _uiState.update { it.copy(gameMenuDisplays = displays) }
+        gameMenuDelegate.toggleGameMenu()
+        val dsm = DualScreenManagerHolder.instance
+        if (opening && displays.size > 1) {
+            dsm?.showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
+        } else if (!opening) {
+            dsm?.hideScreenNumbers()
+        }
+    }
 
     override fun moveGameMenuFocus(delta: Int) {
         val state = _uiState.value
         val isPlatformRow = state.currentRow is HomeRow.Platform
-        gameMenuDelegate.moveGameMenuFocus(delta, state.focusedGame, isPlatformRow)
+        val extraRows = if (state.gameMenuDisplays.size > 1 && state.focusedGame?.isDownloaded == true) {
+            state.gameMenuDisplays.size
+        } else {
+            0
+        }
+        gameMenuDelegate.moveGameMenuFocus(delta, state.focusedGame, isPlatformRow, extraRows)
     }
 
     override fun confirmGameMenuSelection(onGameSelect: (Long) -> Unit) {
@@ -1765,10 +1948,20 @@ class HomeViewModel @Inject constructor(
         val game = state.focusedGame ?: return
         val isPlatformRow = state.currentRow is HomeRow.Platform
 
-        when (val action = gameMenuDelegate.resolveMenuAction(state.gameMenuFocusIndex, game, isPlatformRow)) {
+        val action = gameMenuDelegate.resolveMenuAction(
+            state.gameMenuFocusIndex,
+            game,
+            isPlatformRow,
+            state.gameMenuDisplays.map { it.displayId }
+        )
+        when (action) {
             is GameMenuAction.Play -> {
                 toggleGameMenu()
                 activateGame(game)
+            }
+            is GameMenuAction.PlayOnDisplay -> {
+                toggleGameMenu()
+                playGameOnDisplay(action.gameId, action.displayId)
             }
             is GameMenuAction.ToggleFavorite -> toggleFavorite(action.gameId)
             is GameMenuAction.ViewDetails -> {

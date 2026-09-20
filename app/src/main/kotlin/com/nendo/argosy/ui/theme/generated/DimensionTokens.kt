@@ -107,6 +107,7 @@ object DimensionTokens {
         const val gameHeaderLandscapeMin = 720
         const val slotPickerListMaxHeight = 260
         const val companionAppBarSlotWidth = 64
+        const val companionAppBarHeight = 88
         const val companionArtHeight = 180
         const val companionProgressHeight = 6
     }

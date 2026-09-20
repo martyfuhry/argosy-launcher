@@ -131,7 +131,7 @@
     <string name="library_apps_hint_show_hidden">छिपे हुए दिखाएं</string>
 
     <string name="library_apps_menu_app_info">ऐप जानकारी</string>
-    <string name="library_apps_menu_open_on_top">टॉप स्क्रीन पर खोलें</string>
+    <string name="library_apps_menu_open_on_screen">स्क्रीन %1$d पर खोलें</string>
     <string name="library_apps_menu_remove_from_home">होम से हटाएं</string>
     <string name="library_apps_menu_add_to_home">होम में जोड़ें</string>
     <string name="library_apps_menu_remove_from_second_screen">सेकंड स्क्रीन से हटाएं</string>

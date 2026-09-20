@@ -6,6 +6,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.data.cache.ImageCacheManager
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.repository.PlatformRepository
@@ -18,6 +19,8 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.playstore.PlayStoreService
 import com.nendo.argosy.data.repository.AppsRepository
 import com.nendo.argosy.data.repository.InstalledApp
+import com.nendo.argosy.ui.components.AppContextMenuItem
+import com.nendo.argosy.ui.components.AppMenuRow
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.SoundFeedbackManager
@@ -45,16 +48,6 @@ data class AppUi(
     val isOnSecondaryHome: Boolean = false
 )
 
-enum class AppContextMenuItem {
-    APP_INFO,
-    OPEN_ON_TOP,
-    TOGGLE_HOME,
-    TOGGLE_SECONDARY_HOME,
-    TOGGLE_VISIBILITY,
-    REORDER,
-    UNINSTALL
-}
-
 data class AppsUiState(
     val apps: List<AppUi> = emptyList(),
     val focusedIndex: Int = 0,
@@ -67,7 +60,8 @@ data class AppsUiState(
     val isTouchMode: Boolean = false,
     val hasSelectedApp: Boolean = false,
     val screenWidthDp: Int = 0,
-    val hasSecondaryDisplay: Boolean = false
+    val hasSecondaryDisplay: Boolean = false,
+    val launchableScreens: List<AppMenuRow.OpenOnScreen> = emptyList()
 ) {
     val columnsCount: Int
         get() = GridUtils.getAppGridColumns(gridDensity, screenWidthDp)
@@ -75,19 +69,17 @@ data class AppsUiState(
     val focusedApp: AppUi?
         get() = apps.getOrNull(focusedIndex)
 
-    val contextMenuItems: List<AppContextMenuItem>
+    val contextMenuItems: List<AppMenuRow>
         get() = buildList {
-            add(AppContextMenuItem.APP_INFO)
+            add(AppMenuRow.Action(AppContextMenuItem.APP_INFO))
+            if (launchableScreens.size > 1) addAll(launchableScreens)
+            add(AppMenuRow.Action(AppContextMenuItem.TOGGLE_HOME))
             if (hasSecondaryDisplay) {
-                add(AppContextMenuItem.OPEN_ON_TOP)
+                add(AppMenuRow.Action(AppContextMenuItem.TOGGLE_SECONDARY_HOME))
             }
-            add(AppContextMenuItem.TOGGLE_HOME)
-            if (hasSecondaryDisplay) {
-                add(AppContextMenuItem.TOGGLE_SECONDARY_HOME)
-            }
-            add(AppContextMenuItem.TOGGLE_VISIBILITY)
-            add(AppContextMenuItem.REORDER)
-            add(AppContextMenuItem.UNINSTALL)
+            add(AppMenuRow.Action(AppContextMenuItem.TOGGLE_VISIBILITY))
+            add(AppMenuRow.Action(AppContextMenuItem.REORDER))
+            add(AppMenuRow.Action(AppContextMenuItem.UNINSTALL))
         }
 }
 
@@ -221,19 +213,47 @@ class AppsViewModel @Inject constructor(
     fun showContextMenuAt(index: Int) {
         val apps = _uiState.value.apps
         if (index < 0 || index >= apps.size) return
-        _uiState.update { it.copy(focusedIndex = index, showContextMenu = true, contextMenuFocusIndex = 0) }
+        _uiState.update {
+            it.copy(
+                focusedIndex = index,
+                showContextMenu = true,
+                contextMenuFocusIndex = 0,
+                launchableScreens = launchableScreens()
+            )
+        }
+        showScreenBadges()
         soundManager.play(SoundType.OPEN_MODAL)
     }
 
     fun showContextMenu() {
         if (_uiState.value.focusedApp == null) return
-        _uiState.update { it.copy(showContextMenu = true, contextMenuFocusIndex = 0) }
+        _uiState.update {
+            it.copy(
+                showContextMenu = true,
+                contextMenuFocusIndex = 0,
+                launchableScreens = launchableScreens()
+            )
+        }
+        showScreenBadges()
         soundManager.play(SoundType.OPEN_MODAL)
     }
 
     fun dismissContextMenu() {
         _uiState.update { it.copy(showContextMenu = false, contextMenuFocusIndex = 0) }
+        DualScreenManagerHolder.instance?.hideScreenNumbers()
         soundManager.play(SoundType.CLOSE_MODAL)
+    }
+
+    private fun launchableScreens(): List<AppMenuRow.OpenOnScreen> =
+        DualScreenManagerHolder.instance
+            ?.focusableDisplays()
+            ?.map { (displayId, number) -> AppMenuRow.OpenOnScreen(displayId, number) }
+            .orEmpty()
+
+    private fun showScreenBadges() {
+        if (_uiState.value.launchableScreens.size <= 1) return
+        DualScreenManagerHolder.instance
+            ?.showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
     }
 
     fun selectContextMenuItem(index: Int) {
@@ -254,14 +274,16 @@ class AppsViewModel @Inject constructor(
         val app = state.focusedApp ?: return
         val item = state.contextMenuItems.getOrNull(state.contextMenuFocusIndex) ?: return
 
-        when (item) {
+        if (item is AppMenuRow.OpenOnScreen) {
+            launchApp(app.packageName, overrideDisplayId = item.displayId)
+            dismissContextMenu()
+            return
+        }
+        when ((item as AppMenuRow.Action).item) {
             AppContextMenuItem.APP_INFO -> {
                 viewModelScope.launch {
                     _events.emit(AppsEvent.OpenAppInfo(app.packageName))
                 }
-            }
-            AppContextMenuItem.OPEN_ON_TOP -> {
-                launchApp(app.packageName, overrideDisplayId = android.view.Display.DEFAULT_DISPLAY)
             }
             AppContextMenuItem.TOGGLE_HOME -> {
                 toggleHomeStatus(app.packageName, app.label, app.isOnHome)

@@ -188,6 +188,9 @@
     <string name="home_quick_actions_install">Install</string>
     <!-- Row in that menu, for a game that is on the device. Verb: launches the game. -->
     <string name="home_quick_actions_play">Play</string>
+    <!-- Row in the game menu. Verb phrase: start the game on one particular screen. %1$d is the
+         number shown on that screen. -->
+    <string name="home_quick_actions_play_on_screen">Play on screen %1$d</string>
     <!-- Row in that menu, for a game that is not on the device. Verb: fetches it from the
          server. -->
     <string name="home_quick_actions_download">Download</string>

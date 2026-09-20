@@ -257,10 +257,31 @@ sealed class HomeRow(
         HomeRow(HomeSectionKind.PINNED_VIRTUAL)
 }
 
+/**
+ * The screens a focused app-bar app can be opened on, while that menu is open.
+ */
+data class AppDrawerState(
+    val apps: List<com.nendo.argosy.ui.components.AppDrawerEntry> = emptyList(),
+    val focusIndex: Int = 0
+) {
+    val focusedPackage: String? get() = apps.getOrNull(focusIndex)?.packageName
+}
+
+data class AppBarLaunchMenu(
+    val packageName: String,
+    val label: String,
+    val rows: List<com.nendo.argosy.ui.components.AppMenuRow>,
+    val focusIndex: Int = 0,
+    val isPinned: Boolean = false,
+    val isHidden: Boolean = false
+)
+
 data class HomeUiState(
     val homeApps: List<String> = emptyList(),
     val appBarFocused: Boolean = false,
     val appBarIndex: Int = 0,
+    val appBarMenu: AppBarLaunchMenu? = null,
+    val appDrawer: AppDrawerState? = null,
     val platforms: List<HomePlatformUi> = emptyList(),
     val platformItems: List<HomeRowItem> = emptyList(),
     val platformItemsFor: Long? = null,
@@ -310,6 +331,7 @@ data class HomeUiState(
     val isRommConfigured: Boolean = false,
     val showGameMenu: Boolean = false,
     val gameMenuFocusIndex: Int = 0,
+    val gameMenuDisplays: List<com.nendo.argosy.ui.components.AppLaunchTarget> = emptyList(),
     val showAddToCollectionModal: Boolean = false,
     val collectionGameId: Long? = null,
     val collections: List<CollectionItemUi> = emptyList(),

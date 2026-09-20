@@ -27,9 +27,9 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.SwapVert
@@ -72,6 +72,8 @@ import com.nendo.argosy.R
 import com.nendo.argosy.ui.coil.AppIconData
 import com.nendo.argosy.ui.input.LocalInputDispatcher
 import com.nendo.argosy.ui.navigation.Screen
+import com.nendo.argosy.ui.components.AppContextMenuItem
+import com.nendo.argosy.ui.components.AppMenuRow
 import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.FooterSpacer
 import com.nendo.argosy.ui.components.InputButton
@@ -338,15 +340,15 @@ fun AppsScreen(
                             modifier = Modifier.padding(horizontal = Dimens.spacingMd, vertical = Dimens.radiusLg)
                         )
 
-                        uiState.contextMenuItems.forEachIndexed { index, item ->
-                            if (item == AppContextMenuItem.UNINSTALL) {
+                        uiState.contextMenuItems.forEachIndexed { index, row ->
+                            if (row is AppMenuRow.Action && row.item == AppContextMenuItem.UNINSTALL) {
                                 HorizontalDivider(
                                     modifier = Modifier.padding(vertical = Dimens.spacingSm),
                                     color = MaterialTheme.colorScheme.outlineVariant
                                 )
                             }
-                            ContextMenuItem(
-                                item = item,
+                            com.nendo.argosy.ui.components.AppMenuItemRow(
+                                row = row,
                                 isFocused = index == uiState.contextMenuFocusIndex,
                                 isAppHidden = uiState.focusedApp?.isHidden ?: false,
                                 isOnHome = uiState.focusedApp?.isOnHome ?: false,
@@ -360,86 +362,6 @@ fun AppsScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun ContextMenuItem(
-    item: AppContextMenuItem,
-    isFocused: Boolean,
-    isAppHidden: Boolean = false,
-    isOnHome: Boolean = false,
-    isOnSecondaryHome: Boolean = false,
-    onClick: () -> Unit = {}
-) {
-    val (icon, label) = when (item) {
-        AppContextMenuItem.APP_INFO ->
-            Icons.Default.Info to stringResource(R.string.library_apps_menu_app_info)
-        AppContextMenuItem.OPEN_ON_TOP ->
-            Icons.Default.ArrowUpward to stringResource(R.string.library_apps_menu_open_on_top)
-        AppContextMenuItem.TOGGLE_HOME -> if (isOnHome) {
-            Icons.Default.Home to stringResource(R.string.library_apps_menu_remove_from_home)
-        } else {
-            Icons.Outlined.Home to stringResource(R.string.library_apps_menu_add_to_home)
-        }
-        AppContextMenuItem.TOGGLE_SECONDARY_HOME -> if (isOnSecondaryHome) {
-            Icons.Default.Devices to stringResource(R.string.library_apps_menu_remove_from_second_screen)
-        } else {
-            Icons.Outlined.Devices to stringResource(R.string.library_apps_menu_add_to_second_screen)
-        }
-        AppContextMenuItem.TOGGLE_VISIBILITY -> if (isAppHidden) {
-            Icons.Default.Visibility to stringResource(R.string.library_apps_menu_show)
-        } else {
-            Icons.Default.VisibilityOff to stringResource(R.string.library_apps_menu_hide)
-        }
-        AppContextMenuItem.REORDER ->
-            Icons.Default.SwapVert to stringResource(R.string.library_apps_menu_reorder)
-        AppContextMenuItem.UNINSTALL ->
-            Icons.Default.Delete to stringResource(R.string.library_apps_menu_uninstall)
-    }
-
-    val isDangerous = item == AppContextMenuItem.UNINSTALL
-
-    val backgroundColor = when {
-        isFocused && isDangerous -> LocalArgosyTheme.current.destructive.copy(alpha = 0.15f)
-        isFocused -> LocalArgosyTheme.current.focusAccent.copy(alpha = 0.15f)
-        else -> Color.Transparent
-    }
-
-    val contentColor = when {
-        isFocused && isDangerous -> lerp(LocalArgosyTheme.current.destructive, Color.White, 0.45f)
-        isFocused -> lerp(LocalArgosyTheme.current.focusAccent, Color.White, 0.45f)
-        isDangerous -> LocalArgosyTheme.current.destructive
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-
-    val iconColor = when {
-        isFocused && isDangerous -> lerp(LocalArgosyTheme.current.destructive, Color.White, 0.45f)
-        isFocused -> lerp(LocalArgosyTheme.current.focusAccent, Color.White, 0.45f)
-        isDangerous -> LocalArgosyTheme.current.destructive
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickableNoFocus(onClick = onClick)
-            .background(backgroundColor)
-            .padding(horizontal = Dimens.spacingMd, vertical = Dimens.radiusLg),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = iconColor,
-            modifier = Modifier.size(Dimens.iconMd)
-        )
-        Spacer(modifier = Modifier.width(Dimens.radiusLg))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            color = contentColor
-        )
     }
 }
 

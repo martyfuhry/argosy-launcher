@@ -131,7 +131,7 @@
     <string name="library_apps_hint_show_hidden">Ausgeblendete anzeigen</string>
 
     <string name="library_apps_menu_app_info">App-Info</string>
-    <string name="library_apps_menu_open_on_top">Auf oberem Bildschirm öffnen</string>
+    <string name="library_apps_menu_open_on_screen">Auf Bildschirm %1$d öffnen</string>
     <string name="library_apps_menu_remove_from_home">Von Startseite entfernen</string>
     <string name="library_apps_menu_add_to_home">Zur Startseite hinzufügen</string>
     <string name="library_apps_menu_remove_from_second_screen">Vom zweiten Bildschirm entfernen</string>

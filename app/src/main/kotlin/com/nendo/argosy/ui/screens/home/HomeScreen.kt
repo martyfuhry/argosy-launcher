@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Whatshot
@@ -1233,6 +1234,39 @@ fun HomeScreen(
         }
         }
 
+        uiState.appDrawer?.let { drawer ->
+            com.nendo.argosy.ui.components.CompanionAppDrawer(
+                apps = drawer.apps,
+                focusIndex = drawer.focusIndex,
+                onLaunch = { packageName ->
+                    val index = drawer.apps.indexOfFirst { it.packageName == packageName }
+                    if (index >= 0) viewModel.moveAppDrawer(index - drawer.focusIndex)
+                    viewModel.confirmAppDrawer()
+                },
+                onLongPress = { packageName ->
+                    val index = drawer.apps.indexOfFirst { it.packageName == packageName }
+                    if (index >= 0) viewModel.moveAppDrawer(index - drawer.focusIndex)
+                    viewModel.openAppBarAppMenu()
+                },
+                onDismiss = { viewModel.dismissAppDrawer() }
+            )
+        }
+
+        uiState.appBarMenu?.let { menu ->
+            com.nendo.argosy.ui.components.AppLaunchMenu(
+                appLabel = menu.label,
+                rows = menu.rows,
+                focusIndex = menu.focusIndex,
+                isAppHidden = menu.isHidden,
+                isOnSecondaryHome = menu.isPinned,
+                onSelect = { index ->
+                    viewModel.moveAppBarAppMenu(index - menu.focusIndex)
+                    viewModel.confirmAppBarAppMenu()
+                },
+                onDismiss = { viewModel.dismissAppBarAppMenu() }
+            )
+        }
+
         AnimatedVisibility(
             visible = uiState.showGameMenu,
             enter = fadeIn(),
@@ -1253,6 +1287,11 @@ fun HomeScreen(
                             focusedGame.isSteamGame -> viewModel.queueSteamDownload(focusedGame.id)
                             else -> viewModel.queueDownload(focusedGame.id)
                         }
+                    },
+                    playDisplays = uiState.gameMenuDisplays,
+                    onPlayOnDisplay = { index ->
+                        viewModel.moveGameMenuFocus(index + 1 - uiState.gameMenuFocusIndex)
+                        viewModel.confirmGameMenuSelection(onGameSelect)
                     },
                     onFavorite = { viewModel.toggleFavorite(focusedGame.id) },
                     onDetails = {
@@ -1513,7 +1552,14 @@ fun HomeScreen(
                 } else {
                     com.nendo.argosy.ui.components.APP_BAR_NOTHING_FOCUSED
                 },
-                onOpenDrawer = onDrawerToggle,
+                onOpenDrawer = { viewModel.openAppDrawer() },
+                onAppLongPress = { packageName ->
+                    val index = uiState.homeApps.indexOf(packageName)
+                    if (index >= 0) {
+                        viewModel.moveAppBarFocus(index - uiState.appBarIndex)
+                        viewModel.openAppBarAppMenu()
+                    }
+                },
                 onKeyboardToggle = {
                     com.nendo.argosy.DualScreenManagerHolder.instance?.toggleUpperKeyboard()
                 },
@@ -2076,6 +2122,8 @@ private fun GameSelectOverlay(
     focusIndex: Int,
     onDismiss: () -> Unit,
     onPrimaryAction: () -> Unit,
+    playDisplays: List<com.nendo.argosy.ui.components.AppLaunchTarget>,
+    onPlayOnDisplay: (Int) -> Unit,
     onFavorite: () -> Unit,
     onDetails: () -> Unit,
     onAddToCollection: () -> Unit,
@@ -2118,6 +2166,17 @@ private fun GameSelectOverlay(
 
     val options = buildList {
         add(MenuEntry(primaryIcon, primaryLabel, onClick = onPrimaryAction))
+        if (playDisplays.size > 1 && game.isDownloaded) {
+            playDisplays.forEachIndexed { index, target ->
+                add(
+                    MenuEntry(
+                        Icons.Default.Tv,
+                        stringResource(R.string.home_quick_actions_play_on_screen, target.number),
+                        onClick = { onPlayOnDisplay(index) }
+                    )
+                )
+            }
+        }
         add(
             MenuEntry(
                 if (game.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,

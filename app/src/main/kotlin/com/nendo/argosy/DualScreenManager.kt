@@ -64,6 +64,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.withTimeoutOrNull
@@ -129,6 +130,7 @@ class DualScreenManager(
     internal val homeTileRepository: com.nendo.argosy.data.repository.HomeTileRepository,
     internal val homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue,
     internal val appsRepository: com.nendo.argosy.data.repository.AppsRepository,
+    private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val notificationManager: com.nendo.argosy.core.notification.NotificationManager,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
     internal val homeGridPageRepository: com.nendo.argosy.data.repository.HomeGridPageRepository,
@@ -762,7 +764,6 @@ class DualScreenManager(
 
     interface AppScreenHost {
         fun releaseAppScreen()
-        fun focusAppScreen()
     }
 
     private val appScreenHosts =
@@ -792,15 +793,7 @@ class DualScreenManager(
      * Moves input focus to [displayId], through whichever surface of ours is rendered there.
      */
     fun focusDisplay(displayId: Int) {
-        appScreenHosts.hostFor(displayId)?.let {
-            it.focusAppScreen()
-            return
-        }
-        companionHosts.hostFor(displayId)?.let {
-            it.refocusSelf()
-            return
-        }
-        if (displayId == android.view.Display.DEFAULT_DISPLAY) refocusMain()
+        FocusDirectorActivity.launchOnDisplay(activityContext, displayId)
     }
 
     fun releaseStaleAppScreens() {
@@ -1549,6 +1542,66 @@ class DualScreenManager(
     val homeAppsList: List<String>
         get() = sessionStateStore.getHomeApps()?.toList() ?: emptyList()
 
+    val homeAppsFlow: kotlinx.coroutines.flow.Flow<List<String>>
+        get() = preferencesRepository.userPreferences
+            .map { it.secondaryHomeApps.toList() }
+            .distinctUntilChanged()
+
+    suspend fun installedAppLabels(): List<Pair<String, String>> =
+        appsRepository.getInstalledApps()
+            .map { it.packageName to it.label }
+            .sortedBy { it.second.lowercase() }
+
+    fun appLabel(packageName: String): String =
+        appsRepository.getAppLabel(packageName) ?: packageName
+
+    suspend fun isAppPinned(packageName: String): Boolean =
+        appShortcutActions.isPinned(packageName)
+
+    suspend fun isAppHidden(packageName: String): Boolean =
+        appShortcutActions.isHidden(packageName)
+
+    fun appMenuRowsFor(
+        screens: List<Pair<Int, Int>>
+    ): List<com.nendo.argosy.ui.components.AppMenuRow> = buildList {
+        if (screens.size > 1) {
+            screens.forEach { (displayId, number) ->
+                add(com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen(displayId, number))
+            }
+        }
+        add(
+            com.nendo.argosy.ui.components.AppMenuRow.Action(
+                com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME
+            )
+        )
+        add(
+            com.nendo.argosy.ui.components.AppMenuRow.Action(
+                com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_VISIBILITY
+            )
+        )
+        add(
+            com.nendo.argosy.ui.components.AppMenuRow.Action(
+                com.nendo.argosy.ui.components.AppContextMenuItem.UNINSTALL
+            )
+        )
+    }
+
+    fun runAppMenuRow(packageName: String, row: com.nendo.argosy.ui.components.AppMenuRow) {
+        when (row) {
+            is com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen ->
+                launchCompanionApp(packageName, row.displayId)
+            is com.nendo.argosy.ui.components.AppMenuRow.Action -> when (row.item) {
+                com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME ->
+                    scope.launch { appShortcutActions.togglePinned(packageName) }
+                com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_VISIBILITY ->
+                    scope.launch { appShortcutActions.toggleHidden(packageName) }
+                com.nendo.argosy.ui.components.AppContextMenuItem.UNINSTALL ->
+                    activityContext.startActivity(appShortcutActions.uninstallIntent(packageName))
+                else -> Unit
+            }
+        }
+    }
+
     fun clearPendingOverlay() {
         _pendingOverlayEvent.value = null
     }
@@ -2128,6 +2181,24 @@ class DualScreenManager(
             .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
         Log.d(TAG, "Launching app screen on display $displayId")
         activityContext.startActivity(intent, options)
+    }
+
+    fun launchCompanionApp(packageName: String, overrideDisplayId: Int? = null) {
+        val intent = appsRepository.getLaunchIntent(packageName) ?: return
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        scope.launch {
+            val affinity = preferencesRepository.userPreferences.first().appAffinityEnabled
+            val options = if (affinity || overrideDisplayId != null) {
+                displayAffinityHelper.getActivityOptions(
+                    forEmulator = false,
+                    overrideDisplayId = overrideDisplayId
+                )
+            } else {
+                null
+            }
+            if (options != null) activityContext.startActivity(intent, options)
+            else activityContext.startActivity(intent)
+        }
     }
 
     private fun launchCompanionOnSecondaryDisplay() {

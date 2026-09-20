@@ -304,7 +304,8 @@
     <string name="library_apps_menu_app_info">App Info</string>
     <!-- Entry in an app's action menu on a device with two screens. Verb phrase, starts the
          app on the upper screen. -->
-    <string name="library_apps_menu_open_on_top">Open on Top Screen</string>
+    <!-- %1$d is the number drawn on that screen while the menu is open -->
+    <string name="library_apps_menu_open_on_screen">Open on screen %1$d</string>
     <!-- Entry in an app's action menu when the app is already on Argosy's home screen. Verb
          phrase, takes it off. -->
     <string name="library_apps_menu_remove_from_home">Remove from Home</string>

@@ -123,7 +123,7 @@
     <string name="library_apps_hint_show_hidden">顯示已隱藏項目</string>
 
     <string name="library_apps_menu_app_info">應用程式資訊</string>
-    <string name="library_apps_menu_open_on_top">在上方螢幕開啟</string>
+    <string name="library_apps_menu_open_on_screen">在螢幕 %1$d 上開啟</string>
     <string name="library_apps_menu_remove_from_home">從主畫面移除</string>
     <string name="library_apps_menu_add_to_home">加入主畫面</string>
     <string name="library_apps_menu_remove_from_second_screen">從副螢幕移除</string>

@@ -37,21 +37,6 @@ class AppScreenActivity : ComponentActivity(), DualScreenManager.AppScreenHost {
         runOnUiThread { finish() }
     }
 
-    override fun focusAppScreen() {
-        runOnUiThread {
-            window.decorView.requestFocus()
-            startActivity(
-                android.content.Intent(this, AppScreenActivity::class.java).apply {
-                    addFlags(
-                        android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-                            android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                            android.content.Intent.FLAG_ACTIVITY_NO_ANIMATION
-                    )
-                }
-            )
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val dsm = DualScreenManagerHolder.instance
