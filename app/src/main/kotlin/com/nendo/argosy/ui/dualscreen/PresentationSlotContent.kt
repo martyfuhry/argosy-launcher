@@ -105,6 +105,13 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                 )
             }
         }
+        if (slot !is PresentationSlot.InGame) {
+            com.nendo.argosy.ui.components.SystemStatusBar(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(Dimens.spacingLg)
+            )
+        }
     }
 }
 
