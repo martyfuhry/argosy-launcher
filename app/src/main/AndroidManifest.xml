@@ -196,6 +196,14 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".hardware.AppScreenActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:theme="@style/Theme.Argosy"
+            android:taskAffinity=".appscreen"
+            android:excludeFromRecents="true"
+            android:exported="false" />
+
 
         <receiver
             android:name=".data.quaypass.ble.QuayPassScanReceiver"

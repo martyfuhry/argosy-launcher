@@ -222,14 +222,24 @@ class DualScreenManager(
      */
     val screenNumbers: StateFlow<Map<Int, Int>> = _screenNumbers
 
-    fun showScreenNumbers() {
-        _screenNumbers.value = com.nendo.argosy.util.ScreenCatalog(appContext)
+    private val displayBadges by lazy {
+        com.nendo.argosy.hardware.DisplayBadgeOverlay(appContext)
+    }
+
+    fun showScreenNumbers(
+        size: com.nendo.argosy.hardware.DisplayBadgeSize =
+            com.nendo.argosy.hardware.DisplayBadgeSize.LARGE
+    ) {
+        val numbers = com.nendo.argosy.util.ScreenCatalog(appContext)
             .attachedScreens()
             .associate { it.displayId to it.number }
+        _screenNumbers.value = numbers
+        displayBadges.show(numbers, size)
     }
 
     fun hideScreenNumbers() {
         _screenNumbers.value = emptyMap()
+        displayBadges.hide()
     }
 
     class ResolvedScreenLayout(
@@ -278,6 +288,7 @@ class DualScreenManager(
             _unconfiguredScreenSet.value = setKey.takeIf {
                 promptWhenUnknown && known == null && attached.size > 1
             }
+            ensureAppScreenLaunched()
         }
     }
 
@@ -715,6 +726,30 @@ class DualScreenManager(
 
     private fun eachCompanion(action: (CompanionHost) -> Unit) {
         companionHosts.all().forEach(action)
+    }
+
+    interface AppScreenHost {
+        fun releaseAppScreen()
+    }
+
+    private val appScreenHosts =
+        com.nendo.argosy.ui.dualscreen.DisplayHostRegistry<AppScreenHost>()
+
+    fun registerAppScreenHost(displayId: Int, host: AppScreenHost) {
+        appScreenHosts.register(displayId, host)
+    }
+
+    fun unregisterAppScreenHost(displayId: Int, host: AppScreenHost) {
+        appScreenHosts.unregister(displayId, host)
+    }
+
+    fun holdsAppScreen(displayId: Int): Boolean =
+        displayAffinityHelper.appScreenDisplayId(_isRolesSwapped.value) == displayId
+
+    fun releaseStaleAppScreens() {
+        appScreenHosts.displayIds()
+            .filterNot { holdsAppScreen(it) }
+            .forEach { appScreenHosts.hostFor(it)?.releaseAppScreen() }
     }
 
     fun notifyLibraryRefresh() {
@@ -1835,6 +1870,7 @@ class DualScreenManager(
         sessionStateStore.setArgosyForeground(isForeground)
         eachCompanion { it.onForegroundChanged(isForeground) }
         if (isForeground) {
+            ensureAppScreenLaunched()
             if (!_isCompanionActive.value && displayAffinityHelper.hasSecondaryDisplay) {
                 ensureCompanionLaunched()
             }
@@ -2019,6 +2055,22 @@ class DualScreenManager(
             if (!allowDuringSession && sessionStateStore.hasActiveSession()) return@launch
             launchCompanionOnSecondaryDisplay()
         }
+    }
+
+    /**
+     * Puts a surface on the display holding the app-target role, and does nothing when no display
+     * holds it.
+     */
+    fun ensureAppScreenLaunched() {
+        releaseStaleAppScreens()
+        if (!sessionStateStore.isDualScreenEnabled()) return
+        val displayId = displayAffinityHelper.appScreenDisplayId(_isRolesSwapped.value) ?: return
+        if (appScreenHosts.hostFor(displayId) != null) return
+        val options = displayAffinityHelper.getAppScreenLaunchOptions(_isRolesSwapped.value) ?: return
+        val intent = Intent(activityContext, com.nendo.argosy.hardware.AppScreenActivity::class.java)
+            .apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        Log.d(TAG, "Launching app screen on display $displayId")
+        activityContext.startActivity(intent, options)
     }
 
     private fun launchCompanionOnSecondaryDisplay() {

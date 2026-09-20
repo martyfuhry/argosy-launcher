@@ -1,0 +1,92 @@
+package com.nendo.argosy.hardware
+
+import android.os.Bundle
+import android.view.Display
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.core.content.ContextCompat
+import com.nendo.argosy.DualScreenManager
+import com.nendo.argosy.DualScreenManagerHolder
+import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.dualscreen.PresentationSlotContent
+import com.nendo.argosy.ui.theme.CustomFontFamilies
+import com.nendo.argosy.ui.theme.ThemeState
+import com.nendo.argosy.ui.theme.toThemeState
+import com.nendo.argosy.util.hideSystemBars
+
+/**
+ * The surface on the display holding the app-target role. Holding that display is the point: it
+ * stops the system mirroring another screen onto it, and gives a launch there somewhere to land.
+ */
+class AppScreenActivity : ComponentActivity(), DualScreenManager.AppScreenHost {
+
+    private var hostDisplayId: Int = Display.DEFAULT_DISPLAY
+
+    override fun releaseAppScreen() {
+        runOnUiThread { finish() }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val dsm = DualScreenManagerHolder.instance
+        if (dsm == null) {
+            finish()
+            return
+        }
+        hostDisplayId = ContextCompat.getDisplayOrDefault(this).displayId
+        if (!dsm.holdsAppScreen(hostDisplayId)) {
+            finish()
+            return
+        }
+        dsm.registerAppScreenHost(hostDisplayId, this)
+
+        setContent {
+            val themeState = remember { mutableStateOf(ThemeState()) }
+            val fonts = remember { mutableStateOf(CustomFontFamilies()) }
+            LaunchedEffect(Unit) {
+                dsm.preferencesRepository.userPreferences.collect { prefs ->
+                    themeState.value = prefs.toThemeState()
+                }
+            }
+            SecondaryHomeTheme(themeState = themeState.value, fonts = fonts.value) {
+                val sink = remember { FocusRequester() }
+                LaunchedEffect(Unit) { sink.requestFocus() }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .focusRequester(sink)
+                        .focusable()
+                ) {
+                    PresentationSlotContent(PresentationSlot.Fallback)
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        window.hideSystemBars()
+        val dsm = DualScreenManagerHolder.instance ?: return
+        if (!dsm.holdsAppScreen(hostDisplayId)) {
+            finish()
+            return
+        }
+        dsm.registerAppScreenHost(hostDisplayId, this)
+    }
+
+    override fun onDestroy() {
+        DualScreenManagerHolder.instance?.unregisterAppScreenHost(hostDisplayId, this)
+        super.onDestroy()
+    }
+}

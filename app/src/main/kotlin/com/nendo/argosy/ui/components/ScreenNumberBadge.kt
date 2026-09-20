@@ -15,6 +15,29 @@ import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 
 @Composable
+fun ScreenNumberChip(number: Int, modifier: Modifier = Modifier) {
+    val theme = LocalArgosyTheme.current
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(Dimens.radiusControl))
+            .background(theme.focusAccent.copy(alpha = 0.22f))
+            .border(
+                width = Dimens.borderThin,
+                color = theme.focusAccent,
+                shape = RoundedCornerShape(Dimens.radiusControl)
+            )
+            .padding(horizontal = Dimens.spacingSm, vertical = Dimens.spacingXs),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = number.toString(),
+            style = MaterialTheme.typography.labelLarge,
+            color = theme.textPrimary
+        )
+    }
+}
+
+@Composable
 fun ScreenNumberBadge(number: Int, modifier: Modifier = Modifier) {
     val theme = LocalArgosyTheme.current
     Box(
@@ -26,12 +49,12 @@ fun ScreenNumberBadge(number: Int, modifier: Modifier = Modifier) {
                 color = theme.focusAccent,
                 shape = RoundedCornerShape(Dimens.radiusPanel)
             )
-            .padding(horizontal = Dimens.spacingXl, vertical = Dimens.spacingLg),
+            .padding(horizontal = Dimens.spacingLg, vertical = Dimens.spacingSm),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = number.toString(),
-            style = MaterialTheme.typography.displayLarge,
+            style = MaterialTheme.typography.headlineMedium,
             color = theme.textPrimary
         )
     }

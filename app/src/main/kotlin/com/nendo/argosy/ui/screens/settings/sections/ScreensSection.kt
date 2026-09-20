@@ -166,14 +166,6 @@ fun ScreensSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     }
 
-        if (hereNumber != null) {
-            ScreenNumberBadge(
-                number = hereNumber,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(Dimens.spacingLg)
-            )
-        }
     }
 
     if (uiState.display.screenRoleModalOpen) {

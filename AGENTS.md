@@ -138,8 +138,9 @@ folder resolution); "tidying" them breaks resolution.
 - Input: InputDispatcher + per-screen InputHandler; index wrap via .mod().
   No Compose focus for navigation or selection - focusable() appears nowhere
   except the root key sinks, one per rendered surface: ArgosyApp for the control
-  surface, and the presentation branch of MainActivity and of
-  SecondaryHomeActivity. Both activities render either ArgosyApp or
+  surface, the presentation branch of MainActivity and of
+  SecondaryHomeActivity, and AppScreenActivity on the app-target display. Both
+  activities render either ArgosyApp or
   PresentationSlotContent, so both need a sink on the presentation side. A
   surface rendered without one leaves its window with nothing focusable, and
   Android ANRs the activity with "does not have a focused window" the moment

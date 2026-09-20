@@ -106,6 +106,24 @@ class DisplayAffinityHelper @Inject constructor(
             .toBundle()
     }
 
+    /**
+     * The display holding the app-target role, while it is attached and holds neither of the two
+     * roles that already carry a surface.
+     */
+    fun appScreenDisplayId(rolesSwapped: Boolean): Int? {
+        val target = resolvedAppTarget ?: return null
+        val roles = getRoleDisplayIds(rolesSwapped) ?: return target
+        if (target == roles.first || target == roles.second) return null
+        return target
+    }
+
+    fun getAppScreenLaunchOptions(rolesSwapped: Boolean): Bundle? {
+        val displayId = appScreenDisplayId(rolesSwapped) ?: return null
+        return ActivityOptions.makeBasic()
+            .setLaunchDisplayId(displayId)
+            .toBundle()
+    }
+
     fun getEmulatorDisplayId(rolesSwapped: Boolean): Int {
         resolvedAppTarget?.let { return it }
         return if (rolesSwapped) secondaryDisplayId ?: Display.DEFAULT_DISPLAY

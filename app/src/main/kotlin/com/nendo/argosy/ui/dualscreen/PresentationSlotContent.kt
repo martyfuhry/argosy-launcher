@@ -99,7 +99,6 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                 )
             }
         }
-        ScreenNumberOverlay(modifier = Modifier.align(Alignment.BottomEnd))
         if (slot !is PresentationSlot.InGame) {
             com.nendo.argosy.ui.components.SystemStatusBar(
                 modifier = Modifier
@@ -108,17 +107,6 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             )
         }
     }
-}
-
-@Composable
-private fun ScreenNumberOverlay(modifier: Modifier = Modifier) {
-    val manager = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
-    val numbers by manager.screenNumbers.collectAsState()
-    if (numbers.isEmpty()) return
-    val context = LocalContext.current
-    val displayId = remember(context) { ContextCompat.getDisplayOrDefault(context).displayId }
-    val number = numbers[displayId] ?: return
-    ScreenNumberBadge(number = number, modifier = modifier.padding(Dimens.spacingLg))
 }
 
 @Composable
