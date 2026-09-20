@@ -312,6 +312,15 @@ class MediaRepository @Inject constructor(
         return collected
     }
 
+    suspend fun topLevelItemsIn(libraryId: String, limit: Int): List<MediaItemEntity> {
+        val owner = currentOwner() ?: return emptyList()
+        val itemType = topLevelTypeOfLibrary(owner, libraryId) ?: return emptyList()
+        return mediaItemDao.getByLibrary(owner, libraryId, itemType.wireValue).take(limit)
+    }
+
+    suspend fun libraries(): List<MediaLibraryEntity> =
+        currentOwner()?.let { mediaLibraryDao.getLibraries(it) }.orEmpty()
+
     suspend fun showcasePosterUrls(libraryId: String, limit: Int): List<String> {
         val owner = currentOwner() ?: return emptyList()
         val itemType = topLevelTypeOfLibrary(owner, libraryId) ?: return emptyList()

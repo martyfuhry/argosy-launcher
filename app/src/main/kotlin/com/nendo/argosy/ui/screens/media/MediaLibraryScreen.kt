@@ -33,6 +33,8 @@ import com.nendo.argosy.ui.screens.media.components.MediaLibrarySkeleton
 import com.nendo.argosy.ui.screens.media.components.MediaLibraryTabs
 import com.nendo.argosy.ui.screens.media.components.MediaPosterGrid
 import com.nendo.argosy.ui.screens.media.components.MediaSignedOutState
+import com.nendo.argosy.ui.screens.media.modals.MediaDetailMenuModalHost
+import com.nendo.argosy.ui.screens.media.modals.MediaDownloadModalHost
 import com.nendo.argosy.ui.screens.media.modals.MediaResumeModalHost
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
@@ -138,12 +140,8 @@ fun MediaLibraryScreen(
                             uiState.items.getOrNull(index)?.let { onItemSelect(it.itemId) }
                         },
                         onItemLongClick = { index ->
-                            val item = uiState.items.getOrNull(index)
-                            when {
-                                item == null || !item.isPlayable -> Unit
-                                viewModel.openResumePrompt(index) -> Unit
-                                else -> onPlay(item.itemId, false)
-                            }
+                            viewModel.setFocusedIndex(index)
+                            viewModel.openMenu()
                         },
                         onPosterLoaded = viewModel::onPosterLoaded
                     )
@@ -179,6 +177,24 @@ fun MediaLibraryScreen(
             onPlay(itemId, true)
         },
         onDismiss = viewModel::dismissResumePrompt
+    )
+
+    MediaDownloadModalHost(
+        prompt = uiState.downloadPrompt,
+        onMove = viewModel::moveDownloadFocus,
+        onFocus = viewModel::focusDownloadOption,
+        onConfirm = viewModel::confirmDownloadOption,
+        onDismiss = viewModel::dismissDownloadPrompt,
+        onCollapseSeason = viewModel::moveDownloadSideways,
+        onCommitSelection = viewModel::commitEpisodeSelection
+    )
+
+    MediaDetailMenuModalHost(
+        menu = uiState.menu,
+        onMove = viewModel::moveMenuFocus,
+        onFocus = viewModel::focusMenuOption,
+        onConfirm = viewModel::confirmMenuOption,
+        onDismiss = viewModel::dismissMenu
     )
 }
 

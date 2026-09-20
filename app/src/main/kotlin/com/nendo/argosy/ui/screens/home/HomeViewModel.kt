@@ -174,7 +174,7 @@ class HomeViewModel @Inject constructor(
         ownerUserId = { syncPreferencesRepository.getRommUserId() },
         onPageAdded = { count -> persistCustomGridPageCount(count) },
         onPageRemoved = { count -> persistCustomGridPageRemoval(count) },
-        pickerEntries = { category, query ->
+        pickerEntries = { category, query, libraryId ->
             when (category) {
                 com.nendo.argosy.ui.components.TilePickerCategory.GAMES ->
                     libraryDelegate.searchInstalledForTiles(query)
@@ -183,7 +183,7 @@ class HomeViewModel @Inject constructor(
                 com.nendo.argosy.ui.components.TilePickerCategory.APPS ->
                     libraryDelegate.appsForTiles(query)
                 com.nendo.argosy.ui.components.TilePickerCategory.MEDIA ->
-                    mediaDelegate.searchForTiles(query)
+                    mediaDelegate.searchForTiles(query, libraryId)
                 com.nendo.argosy.ui.components.TilePickerCategory.FEATURES ->
                     featureTileEntries()
             }
@@ -1370,6 +1370,8 @@ class HomeViewModel @Inject constructor(
     override fun openTilePicker() = customGrid.openPicker()
 
     override fun closeTilePicker() = customGrid.closePicker()
+
+    override fun backOutOfPickerLibrary(): Boolean = customGrid.backOutOfPickerLibrary()
 
     fun setTilePickerQuery(query: String) = customGrid.setPickerQuery(query)
 

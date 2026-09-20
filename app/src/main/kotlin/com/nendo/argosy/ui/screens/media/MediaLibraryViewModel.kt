@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.nendo.argosy.ui.screens.media.delegates.MediaDownloadPromptOutcome
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -33,6 +34,8 @@ class MediaLibraryViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val mediaRepository: MediaRepository,
     private val availabilityVerifier: MediaAvailabilityVerifier,
+    private val downloadDelegate:
+        com.nendo.argosy.ui.screens.media.delegates.MediaDownloadDelegate,
     private val gradientExtractionDelegate: GradientExtractionDelegate
 ) : ViewModel() {
 
@@ -299,6 +302,130 @@ class MediaLibraryViewModel @Inject constructor(
         _uiState.update { it.copy(resumePrompt = null) }
     }
 
+    fun openMenu() {
+        val item = _uiState.value.focusedItem ?: return
+        _uiState.update {
+            it.copy(
+                menu = MediaMenuState(
+                    targetItemId = item.itemId,
+                    title = item.title,
+                    subtitle = item.seriesName ?: item.year?.toString(),
+                    actions = buildMediaMenu(
+                        MediaMenuContext(
+                            canRefreshEpisodes = false,
+                            hasDownloads = item.isDownloaded,
+                            hasLibrary = false
+                        )
+                    ),
+                    targetPlayed = item.played,
+                    targetIsFavorite = item.isFavorite
+                )
+            )
+        }
+    }
+
+    fun dismissMenu() = _uiState.update { it.copy(menu = null) }
+
+    fun moveMenuFocus(delta: Int) {
+        val menu = _uiState.value.menu ?: return
+        if (menu.actions.isEmpty()) return
+        _uiState.update {
+            it.copy(menu = menu.copy(focusedIndex = (menu.focusedIndex + delta).mod(menu.actions.size)))
+        }
+    }
+
+    fun focusMenuOption(index: Int) {
+        val menu = _uiState.value.menu ?: return
+        _uiState.update { it.copy(menu = menu.copy(focusedIndex = index)) }
+    }
+
+    fun confirmMenuOption() {
+        val menu = _uiState.value.menu ?: return
+        if (menu.isBusy) return
+        when (menu.focusedAction) {
+            MediaMenuAction.ToggleWatched -> {
+                val played = !menu.targetPlayed
+                viewModelScope.launch { mediaRepository.setPlayed(menu.targetItemId, played) }
+                dismissMenu()
+            }
+            MediaMenuAction.ToggleFavorite -> {
+                val favorite = !menu.targetIsFavorite
+                viewModelScope.launch { mediaRepository.setFavorite(menu.targetItemId, favorite) }
+                dismissMenu()
+            }
+            MediaMenuAction.Download -> {
+                dismissMenu()
+                openDownloadPrompt()
+            }
+            MediaMenuAction.RemoveDownloads,
+            MediaMenuAction.RefreshSeries,
+            MediaMenuAction.GoToLibrary,
+            null -> dismissMenu()
+        }
+    }
+
+    fun openDownloadPrompt() {
+        val item = _uiState.value.focusedItem ?: return
+        viewModelScope.launch {
+            when (val outcome = downloadDelegate.openPrompt(item)) {
+                is MediaDownloadPromptOutcome.Ready ->
+                    _uiState.update { it.copy(downloadPrompt = outcome.prompt) }
+                is MediaDownloadPromptOutcome.Refused ->
+                    _uiState.update { it.copy(errorMessage = outcome.reason) }
+            }
+        }
+    }
+
+    fun moveDownloadFocus(delta: Int) {
+        val prompt = _uiState.value.downloadPrompt ?: return
+        _uiState.update { it.copy(downloadPrompt = downloadDelegate.moveFocus(prompt, delta)) }
+    }
+
+    fun focusDownloadOption(index: Int) {
+        val prompt = _uiState.value.downloadPrompt ?: return
+        _uiState.update { it.copy(downloadPrompt = downloadDelegate.focus(prompt, index)) }
+    }
+
+    fun moveDownloadSideways(towardsEnd: Boolean) {
+        val prompt = _uiState.value.downloadPrompt ?: return
+        if (prompt.step != MediaDownloadStep.EPISODES) return
+        _uiState.update {
+            it.copy(downloadPrompt = downloadDelegate.moveSideways(prompt, towardsEnd))
+        }
+    }
+
+    fun confirmDownloadOption() {
+        val state = _uiState.value
+        val prompt = state.downloadPrompt ?: return
+        val item = state.focusedItem ?: return
+        if (prompt.step == MediaDownloadStep.EPISODES) {
+            when {
+                prompt.episodes.isCancelFocused -> dismissDownloadPrompt()
+                prompt.episodes.isConfirmFocused -> commitEpisodeSelection()
+                else -> _uiState.update {
+                    it.copy(downloadPrompt = downloadDelegate.toggleEpisode(prompt))
+                }
+            }
+            return
+        }
+        viewModelScope.launch {
+            val next = downloadDelegate.advance(prompt, item)
+            _uiState.update { it.copy(downloadPrompt = next) }
+        }
+    }
+
+    fun commitEpisodeSelection() {
+        val prompt = _uiState.value.downloadPrompt ?: return
+        if (prompt.step != MediaDownloadStep.EPISODES) return
+        if (!prompt.episodes.hasSelection) return
+        viewModelScope.launch {
+            val next = downloadDelegate.confirmEpisodeSelection(prompt)
+            _uiState.update { it.copy(downloadPrompt = next) }
+        }
+    }
+
+    fun dismissDownloadPrompt() = _uiState.update { it.copy(downloadPrompt = null) }
+
     fun createInputHandler(
         onBack: () -> Unit,
         onItemSelect: (String) -> Unit,
@@ -343,6 +470,11 @@ class MediaLibraryViewModel @Inject constructor(
             if (!item.isPlayable) return InputResult.handled(SoundType.BOUNDARY)
             if (openResumePrompt(state.focusedIndex)) return InputResult.HANDLED
             onPlay(item.itemId)
+            return InputResult.HANDLED
+        }
+
+        override fun onLongConfirm(): InputResult {
+            openMenu()
             return InputResult.HANDLED
         }
 

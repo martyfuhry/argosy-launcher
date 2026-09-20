@@ -345,15 +345,36 @@ class HomeMediaDelegate @Inject constructor(
      * happens to hold first. Only movies and series are offered: a tile stands for a show, not for
      * one episode of it, which would be stale the moment it was watched.
      */
-    suspend fun searchForTiles(query: String): List<com.nendo.argosy.ui.components.TilePickerEntry> {
+    /**
+     * The media tab's rows: the libraries when none is chosen and nothing is typed, that library's
+     * titles once one is, and matches across every library while a search is typed.
+     */
+    suspend fun searchForTiles(
+        query: String,
+        libraryId: String? = null
+    ): List<com.nendo.argosy.ui.components.TilePickerEntry> {
         if (!_state.value.isSignedIn) return emptyList()
-        val matches = if (query.isBlank()) {
-            _state.value.favorites.map { it.toPickerEntry() } +
-                mediaRepository.topLevelItems(TILE_PICKER_LIMIT).map { it.toPickerEntry() }
-        } else {
-            mediaRepository.search(query, TILE_PICKER_LIMIT).map { it.toPickerEntry() }
+        if (query.isNotBlank()) {
+            return mediaRepository.search(query, TILE_PICKER_LIMIT)
+                .map { it.toPickerEntry() }
+                .distinctBy { it.target }
+                .take(TILE_PICKER_LIMIT)
         }
-        return matches.distinctBy { it.target }.take(TILE_PICKER_LIMIT)
+        if (libraryId != null) {
+            return mediaRepository.topLevelItemsIn(libraryId, TILE_PICKER_LIMIT)
+                .map { it.toPickerEntry() }
+                .distinctBy { it.target }
+                .take(TILE_PICKER_LIMIT)
+        }
+        return mediaRepository.libraries().map { library ->
+            com.nendo.argosy.ui.components.TilePickerEntry(
+                target = com.nendo.argosy.domain.model.HomeTileTargetRef.Unresolvable,
+                title = library.name,
+                subtitle = context.getString(R.string.home_media_picker_library),
+                action = com.nendo.argosy.ui.components.TilePickerAction.OPEN_MEDIA_LIBRARY,
+                libraryId = library.libraryId
+            )
+        }
     }
 
     private fun HomeMediaUi.toPickerEntry(): com.nendo.argosy.ui.components.TilePickerEntry {

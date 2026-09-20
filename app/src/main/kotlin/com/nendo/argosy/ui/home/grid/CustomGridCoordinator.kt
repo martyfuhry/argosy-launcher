@@ -46,7 +46,7 @@ class CustomGridCoordinator(
     private val repository: HomeTileRepository?,
     private val pageRepository: com.nendo.argosy.data.repository.HomeGridPageRepository? = null,
     private val ownerUserId: suspend () -> Long?,
-    private val pickerEntries: suspend (TilePickerCategory, String) -> List<TilePickerEntry>,
+    private val pickerEntries: suspend (TilePickerCategory, String, String?) -> List<TilePickerEntry>,
     private val pageChooserEntries: (suspend (PageChooserState) -> List<PageChooserEntry>)? = null,
     private val onAdvanceFocusGame: (suspend (Long, Long) -> Long?)? = null,
     private val onPrepareQueue: (suspend (Long, Long) -> Unit)? = null,
@@ -773,7 +773,10 @@ class CustomGridCoordinator(
             val entries = if (current.pickerPurpose == TilePickerPurpose.TRACK_RA_GAME) {
                 raGamePickerEntries?.invoke(query).orEmpty()
             } else {
-                withLocalVideoRow(current, pickerEntries(current.pickerCategory, query))
+                withLocalVideoRow(
+                    current,
+                    pickerEntries(current.pickerCategory, query, current.pickerLibraryId)
+                )
             }
             write { state ->
                 val updated = state.copy(pickerEntries = entries)
@@ -793,8 +796,19 @@ class CustomGridCoordinator(
         val current = read()
         if (current.pickerCategory == category) return
         if (category !in current.pickerCategories) return
-        write { it.copy(pickerCategory = category, pickerFocusIndex = 0) }
+        write { it.copy(pickerCategory = category, pickerFocusIndex = 0, pickerLibraryId = null) }
         refreshPicker()
+    }
+
+    /**
+     * Steps out of a media library back to the library list. Answers whether there was a library
+     * to step out of, so back closes the picker only from its top level.
+     */
+    fun backOutOfPickerLibrary(): Boolean {
+        if (read().pickerLibraryId == null) return false
+        write { it.copy(pickerLibraryId = null, pickerFocusIndex = 0) }
+        refreshPicker()
+        return true
     }
 
     /**
@@ -807,7 +821,7 @@ class CustomGridCoordinator(
         if (entries.isEmpty()) return
         val position = entries.indexOf(current.pickerCategory).coerceAtLeast(0)
         val next = entries[(position + delta).mod(entries.size)]
-        write { it.copy(pickerCategory = next, pickerFocusIndex = 0) }
+        write { it.copy(pickerCategory = next, pickerFocusIndex = 0, pickerLibraryId = null) }
         refreshPicker()
     }
 
@@ -824,6 +838,7 @@ class CustomGridCoordinator(
     ): List<TilePickerEntry> {
         if (current.pickerCategory != TilePickerCategory.MEDIA) return entries
         if (!current.supportsLocalVideo) return entries
+        if (current.pickerLibraryId != null) return entries
         return listOf(
             TilePickerEntry(
                 target = HomeTileTargetRef.Unresolvable,
@@ -859,6 +874,11 @@ class CustomGridCoordinator(
         }
         if (entry.action == TilePickerAction.BROWSE_LOCAL_FILE) {
             openFileBrowser()
+            return
+        }
+        if (entry.action == TilePickerAction.OPEN_MEDIA_LIBRARY) {
+            write { it.copy(pickerLibraryId = entry.libraryId, pickerFocusIndex = 0) }
+            refreshPicker()
             return
         }
         if (entry.target is HomeTileTargetRef.Media) {

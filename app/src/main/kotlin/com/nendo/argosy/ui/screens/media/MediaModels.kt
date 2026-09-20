@@ -307,7 +307,9 @@ data class MediaLibraryUiState(
     val isRefreshing: Boolean = false,
     @StringRes val refreshLabel: Int? = null,
     val errorMessage: String? = null,
-    val resumePrompt: MediaResumePrompt? = null
+    val resumePrompt: MediaResumePrompt? = null,
+    val menu: MediaMenuState? = null,
+    val downloadPrompt: MediaDownloadPrompt? = null
 ) {
     val selectedLibrary: MediaLibraryUi? get() = libraries.getOrNull(selectedLibraryIndex)
     val focusedItem: MediaItemUi? get() = items.getOrNull(focusedIndex)

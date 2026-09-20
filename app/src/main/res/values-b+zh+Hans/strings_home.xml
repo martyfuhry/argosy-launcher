@@ -161,6 +161,7 @@
     <string name="home_tile_picker_media_movie">电影</string>
 
     <string name="home_media_picker_series">剧集</string>
+    <string name="home_media_picker_library">媒体库</string>
     <string name="home_media_picker_movie">电影</string>
 
     <string name="home_media_season_specials">特别篇</string>

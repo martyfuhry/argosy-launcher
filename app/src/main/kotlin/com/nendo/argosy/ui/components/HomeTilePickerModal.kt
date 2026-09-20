@@ -58,7 +58,7 @@ import com.nendo.argosy.ui.util.clickableNoFocus
  * choosing from this list, and an action reachable only by a second control is an action a reader
  * on a television never finds.
  */
-enum class TilePickerAction { PLACE, BROWSE_LOCAL_FILE }
+enum class TilePickerAction { PLACE, BROWSE_LOCAL_FILE, OPEN_MEDIA_LIBRARY }
 
 /**
  * What the picker can offer. Held as a resolved target rather than an id so the list can mix the
@@ -77,7 +77,8 @@ data class TilePickerEntry(
     val posterUrl: String? = null,
     val action: TilePickerAction = TilePickerAction.PLACE,
     val isSeries: Boolean = false,
-    val isLocal: Boolean = false
+    val isLocal: Boolean = false,
+    val libraryId: String? = null
 ) {
     val gameId: Long?
         get() = (target as? com.nendo.argosy.domain.model.HomeTileTargetRef.Game)?.gameId

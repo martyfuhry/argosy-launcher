@@ -173,6 +173,7 @@
     <string name="home_tile_picker_media_movie">Фильм</string>
 
     <string name="home_media_picker_series">Сериал</string>
+    <string name="home_media_picker_library">Библиотека</string>
     <string name="home_media_picker_movie">Фильм</string>
 
     <string name="home_media_season_specials">Спецвыпуски</string>

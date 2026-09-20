@@ -169,6 +169,7 @@
     <string name="home_tile_picker_media_movie">Film</string>
 
     <string name="home_media_picker_series">Série</string>
+    <string name="home_media_picker_library">Bibliothèque</string>
     <string name="home_media_picker_movie">Film</string>
 
     <string name="home_media_season_specials">Spéciaux</string>

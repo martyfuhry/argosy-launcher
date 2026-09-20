@@ -375,6 +375,8 @@
     <!-- Second line under a television series in the media half of the tile picker. Noun,
          singular: one series. -->
     <string name="home_media_picker_series">Series</string>
+    <!-- Subtitle on a row that opens one media library rather than placing a tile. Noun. -->
+    <string name="home_media_picker_library">Library</string>
     <!-- Second line under a film in the media half of the tile picker. Noun, singular. -->
     <string name="home_media_picker_movie">Movie</string>
 

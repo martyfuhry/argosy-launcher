@@ -447,7 +447,7 @@ private fun MediaEpisodeList(
                 },
                 onLongClick = {
                     viewModel.setEpisodeIndex(index)
-                    if (!viewModel.openResumePrompt(episode)) onPlay(episode.itemId, false)
+                    viewModel.openMenu()
                 },
                 modifier = Modifier.padding(horizontal = Dimens.spacingLg)
             )

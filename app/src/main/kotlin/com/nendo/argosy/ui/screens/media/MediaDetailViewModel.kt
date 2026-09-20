@@ -961,16 +961,7 @@ class MediaDetailViewModel @Inject constructor(
         }
 
         override fun onLongConfirm(): InputResult {
-            val state = _uiState.value
-            val target = when (state.section) {
-                MediaDetailSection.EPISODES -> state.focusedEpisode
-                MediaDetailSection.MENU ->
-                    if (state.focusedRow == MediaDetailRow.PLAY) state.playTarget else null
-                MediaDetailSection.SEASONS -> null
-                MediaDetailSection.CAST -> null
-                MediaDetailSection.SIMILAR -> state.focusedSimilar?.takeIf { it.isPlayable }
-            } ?: return InputResult.handled(SoundType.SILENT)
-            if (!openResumePrompt(target)) onPlay(target.itemId, false)
+            openMenu()
             return InputResult.HANDLED
         }
 

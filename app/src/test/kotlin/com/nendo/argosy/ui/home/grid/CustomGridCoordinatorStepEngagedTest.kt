@@ -28,7 +28,7 @@ class CustomGridCoordinatorStepEngagedTest {
         scope = CoroutineScope(Dispatchers.Unconfined),
         repository = null,
         ownerUserId = { null },
-        pickerEntries = { _, _ -> emptyList() },
+        pickerEntries = { _, _, _ -> emptyList() },
         read = { state },
         write = { transform -> state = transform(state) }
     )

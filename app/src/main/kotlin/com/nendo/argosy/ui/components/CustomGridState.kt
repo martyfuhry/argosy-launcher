@@ -202,6 +202,11 @@ data class CustomGridState(
     val pickerQuery: String = "",
     val pickerSearchActive: Boolean = false,
     val pickerCategory: TilePickerCategory = TilePickerCategory.GAMES,
+    /**
+     * The media library the picker has drilled into, or null while it is offering the libraries
+     * themselves. Back steps out of a library before it closes the picker.
+     */
+    val pickerLibraryId: String? = null,
     val pickerFocusIndex: Int = 0,
     val pickerEntries: List<TilePickerEntry> = emptyList(),
     val pickerPurpose: TilePickerPurpose = TilePickerPurpose.PLACE,
