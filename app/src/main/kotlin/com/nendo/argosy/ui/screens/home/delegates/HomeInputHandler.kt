@@ -54,6 +54,12 @@ interface HomeInputActions {
     fun confirmAddPage()
     fun openTilePicker()
     fun closeTilePicker()
+
+    /**
+     * Steps the media tab out of a library. False when it is already at the library list, which is
+     * how back knows to close the picker instead.
+     */
+    fun backOutOfPickerLibrary(): Boolean
     fun toggleTilePickerSearch()
     fun cycleTilePickerCategory(delta: Int)
 
@@ -490,6 +496,7 @@ class HomeInputHandler(
             return InputResult.HANDLED
         }
         if (state.showTilePicker) {
+            if (actions.backOutOfPickerLibrary()) return InputResult.HANDLED
             actions.closeTilePicker()
             return InputResult.HANDLED
         }
@@ -553,11 +560,10 @@ class HomeInputHandler(
         if (state.showAddToCollectionModal) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (state.customGrid.engagedTileId != null) return InputResult.HANDLED
-        val dualScreen = com.nendo.argosy.DualScreenManagerHolder.instance
-            ?.takeIf { it.isDualScreenDevice.value && it.hasPresentationScreen.value }
-        if (dualScreen != null) {
-            dualScreen.swapRoles()
-            return InputResult.handled(SoundType.TOGGLE)
+        if (com.nendo.argosy.DualScreenManagerHolder.instance
+                ?.let { it.isDualScreenDevice.value && it.hasPresentationScreen.value } == true
+        ) {
+            return InputResult.UNHANDLED
         }
         if (isCustomGrid(state)) return InputResult.UNHANDLED
         if (state.isMediaRow) return InputResult.HANDLED

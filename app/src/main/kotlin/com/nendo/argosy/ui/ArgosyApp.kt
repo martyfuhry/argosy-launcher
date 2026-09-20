@@ -829,6 +829,11 @@ fun ArgosyApp(
                             openDrawer()
                         }
                     }
+                    GamepadEvent.Select -> {
+                        dsm?.takeIf {
+                            it.isDualScreenDevice.value && it.hasPresentationScreen.value
+                        }?.swapRoles()
+                    }
                     GamepadEvent.LeftStickClick -> {
                         if (quickMenuState.isVisible) {
                             closeQuickMenu()
