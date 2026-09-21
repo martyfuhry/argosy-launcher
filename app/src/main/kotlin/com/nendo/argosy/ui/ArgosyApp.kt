@@ -1210,7 +1210,15 @@ fun ArgosyApp(
                 )
             }
 
-            if (!presentationShowsHints) {
+            if (presentationShowsHints) {
+                val topEntry = footerHostController.top
+                val relayed = topEntry?.hints.orEmpty().map {
+                    com.nendo.argosy.ui.dualscreen.CompanionHint(it.button, it.action)
+                }
+                LaunchedEffect(relayed) {
+                    com.nendo.argosy.DualScreenManagerHolder.instance?.publishControlHints(relayed)
+                }
+            } else {
                 FooterHost(
                     controller = footerHostController,
                     modifier = Modifier.align(Alignment.BottomCenter)

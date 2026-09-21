@@ -83,12 +83,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             is PresentationSlot.Breakdown -> BreakdownSlot(slot)
             is PresentationSlot.Detail -> CompanionDetailScreen(
                 detail = slot.detail,
-                modifier = Modifier.fillMaxSize(),
-                footerHints = slot.detail.hints
-                    .takeIf { it.isNotEmpty() }
-                    ?.let { hints ->
-                        { FooterBar(hints = hints.map { it.button to it.label }) }
-                    }
+                modifier = Modifier.fillMaxSize()
             )
             is PresentationSlot.PlatformShowcase -> PlatformShowcaseContent(slot)
             is PresentationSlot.InGame -> {
@@ -114,7 +109,18 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     .align(Alignment.TopEnd)
                     .padding(Dimens.spacingLg)
             )
+            RelayedControlHints(modifier = Modifier.align(Alignment.BottomCenter))
         }
+    }
+}
+
+@Composable
+private fun RelayedControlHints(modifier: Modifier = Modifier) {
+    val manager = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
+    val hints by manager.controlHints.collectAsState()
+    if (hints.isEmpty()) return
+    Box(modifier = modifier) {
+        FooterBar(hints = hints.map { it.button to it.label })
     }
 }
 
@@ -245,11 +251,6 @@ private fun GameHeroSlot(slot: PresentationSlot.GameHero) {
             game = slot.game,
             modifier = Modifier.align(Alignment.Center).padding(Dimens.spacingXl)
         )
-        if (slot.hints.isNotEmpty()) {
-            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-                FooterBar(hints = slot.hints.map { it.button to it.label })
-            }
-        }
     }
 }
 

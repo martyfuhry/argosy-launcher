@@ -9,7 +9,6 @@ import com.nendo.argosy.ui.components.APP_BAR_DRAWER_INDEX
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionFact
-import com.nendo.argosy.ui.dualscreen.CompanionHint
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -531,32 +530,6 @@ class HomeViewModel @Inject constructor(
                     artUrl = it.coverPath,
                     backdropUrl = it.backgroundPath,
                     isGameTitle = true,
-                    hints = listOf(
-                        CompanionHint(
-                            InputButton.A,
-                            context.getString(
-                                if (it.isDownloaded) {
-                                    R.string.home_companion_hint_play
-                                } else {
-                                    R.string.home_companion_hint_download
-                                }
-                            )
-                        ),
-                        CompanionHint(
-                            InputButton.X,
-                            context.getString(R.string.home_companion_hint_details)
-                        ),
-                        CompanionHint(
-                            InputButton.Y,
-                            context.getString(
-                                if (it.isFavorite) {
-                                    R.string.home_companion_hint_unfavorite
-                                } else {
-                                    R.string.home_companion_hint_favorite
-                                }
-                            )
-                        )
-                    ),
                     facts = buildList {
                         it.developer?.let { developer ->
                             add(

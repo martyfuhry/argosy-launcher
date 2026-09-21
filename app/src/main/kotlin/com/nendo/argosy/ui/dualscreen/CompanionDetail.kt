@@ -23,7 +23,6 @@ data class CompanionDetail(
     val artUrl: String? = null,
     val backdropUrl: String? = null,
     val facts: List<CompanionFact> = emptyList(),
-    val hints: List<CompanionHint> = emptyList(),
     val isGameTitle: Boolean = false
 )
 

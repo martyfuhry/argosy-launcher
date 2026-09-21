@@ -183,11 +183,6 @@
     <string name="home_companion_fact_developer">Développeur</string>
     <string name="home_companion_fact_genre">Genre</string>
     <string name="home_companion_fact_released">Sortie</string>
-    <string name="home_companion_hint_details">Détails</string>
-    <string name="home_companion_hint_download">Télécharger</string>
-    <string name="home_companion_hint_favorite">Ajouter aux favoris</string>
-    <string name="home_companion_hint_play">Jouer</string>
-    <string name="home_companion_hint_unfavorite">Retirer des favoris</string>
     <string name="home_grid_tile_ra_points_label">Points</string>
     <string name="home_grid_tile_ra_unlocks_label">Succès</string>
 </resources>

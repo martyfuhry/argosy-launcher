@@ -192,6 +192,20 @@ class DualScreenManager(
     private val _hasPresentationScreen = MutableStateFlow(false)
     val hasPresentationScreen: StateFlow<Boolean> = _hasPresentationScreen
 
+    private val _controlHints =
+        MutableStateFlow<List<com.nendo.argosy.ui.dualscreen.CompanionHint>>(emptyList())
+
+    /**
+     * What the buttons do on the screen being driven, for the screen describing it. Published by
+     * whichever surface holds the guide bar, so a screen with no presentation slot of its own
+     * still has its hints rendered.
+     */
+    val controlHints: StateFlow<List<com.nendo.argosy.ui.dualscreen.CompanionHint>> = _controlHints
+
+    fun publishControlHints(hints: List<com.nendo.argosy.ui.dualscreen.CompanionHint>) {
+        if (_controlHints.value != hints) _controlHints.value = hints
+    }
+
 
     private fun applyScreenLayout(
         primaryDisplayId: Int,

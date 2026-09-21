@@ -179,11 +179,6 @@
     <string name="home_companion_fact_developer">डेवलपर</string>
     <string name="home_companion_fact_genre">शैली</string>
     <string name="home_companion_fact_released">रिलीज़</string>
-    <string name="home_companion_hint_details">विवरण</string>
-    <string name="home_companion_hint_download">डाउनलोड</string>
-    <string name="home_companion_hint_favorite">पसंदीदा में जोड़ें</string>
-    <string name="home_companion_hint_play">खेलें</string>
-    <string name="home_companion_hint_unfavorite">पसंदीदा से हटाएँ</string>
     <string name="home_grid_tile_ra_points_label">अंक</string>
     <string name="home_grid_tile_ra_unlocks_label">उपलब्धियाँ</string>
 </resources>

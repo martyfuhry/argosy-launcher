@@ -2221,7 +2221,7 @@ class GameDetailViewModel @Inject constructor(
         } else {
             dsm.presentSlot(
                 companionOwner,
-                com.nendo.argosy.ui.dualscreen.PresentationSlot.GameHero(game, emptyList())
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.GameHero(game)
             )
         }
     }

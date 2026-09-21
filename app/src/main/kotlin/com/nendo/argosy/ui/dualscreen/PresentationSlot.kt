@@ -46,8 +46,7 @@ sealed interface PresentationSlot {
     ) : PresentationSlot
 
     data class GameHero(
-        val game: com.nendo.argosy.ui.screens.gamedetail.GameDetailUi,
-        val hints: List<CompanionHint>
+        val game: com.nendo.argosy.ui.screens.gamedetail.GameDetailUi
     ) : PresentationSlot
 
     data class Detail(val detail: CompanionDetail) : PresentationSlot

@@ -411,19 +411,6 @@
          of the focused game. -->
     <string name="home_companion_fact_genre">Genre</string>
 
-    <!-- Control hint on the second screen. Verb, imperative: start the focused game. -->
-    <string name="home_companion_hint_play">Play</string>
-    <!-- Control hint on the second screen. Verb, imperative: fetch the focused game from the
-         server so it can be played. -->
-    <string name="home_companion_hint_download">Download</string>
-    <!-- Control hint on the second screen. Noun, the full information screen for the focused
-         game. -->
-    <string name="home_companion_hint_details">Details</string>
-    <!-- Control hint on the second screen. Verb, imperative: mark the focused game a favourite. -->
-    <string name="home_companion_hint_favorite">Favorite</string>
-    <!-- Control hint on the second screen. Verb, imperative: stop the focused game being a
-         favourite. -->
-    <string name="home_companion_hint_unfavorite">Unfavorite</string>
     <!-- Stat label beside a RetroAchievements point total on the second screen. Noun. -->
     <string name="home_grid_tile_ra_points_label">Points</string>
     <!-- Stat label beside how many achievements have been earned. Noun. -->

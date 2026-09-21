@@ -187,11 +187,6 @@
     <string name="home_companion_fact_developer">Разработчик</string>
     <string name="home_companion_fact_genre">Жанр</string>
     <string name="home_companion_fact_released">Выход</string>
-    <string name="home_companion_hint_details">Подробности</string>
-    <string name="home_companion_hint_download">Скачать</string>
-    <string name="home_companion_hint_favorite">В избранное</string>
-    <string name="home_companion_hint_play">Играть</string>
-    <string name="home_companion_hint_unfavorite">Из избранного</string>
     <string name="home_grid_tile_ra_points_label">Очки</string>
     <string name="home_grid_tile_ra_unlocks_label">Достижения</string>
 </resources>

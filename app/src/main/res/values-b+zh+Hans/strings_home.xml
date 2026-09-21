@@ -175,11 +175,6 @@
     <string name="home_companion_fact_developer">开发商</string>
     <string name="home_companion_fact_genre">类型</string>
     <string name="home_companion_fact_released">发行日期</string>
-    <string name="home_companion_hint_details">详情</string>
-    <string name="home_companion_hint_download">下载</string>
-    <string name="home_companion_hint_favorite">收藏</string>
-    <string name="home_companion_hint_play">开始游戏</string>
-    <string name="home_companion_hint_unfavorite">取消收藏</string>
     <string name="home_grid_tile_ra_points_label">点数</string>
     <string name="home_grid_tile_ra_unlocks_label">成就</string>
 </resources>
