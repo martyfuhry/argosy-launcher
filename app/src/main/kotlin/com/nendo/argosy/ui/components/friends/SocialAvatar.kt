@@ -16,7 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import coil.compose.AsyncImage
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.toColorInt
@@ -37,13 +39,6 @@ data class LocalUserAvatarInfo(
 
 val LocalUserAvatarState = androidx.compose.runtime.compositionLocalOf { LocalUserAvatarInfo() }
 
-/**
- * Circular avatar used for social users; optional presence dot. A [avatarPngBase64]
- * raster wins when it decodes (the canonical form for anyone other than the local
- * user); otherwise the [avatarDoodle] is rendered, then the initial letter. When
- * [userId] matches the local user, their editable doodle is applied automatically
- * via [LocalUserAvatarState].
- */
 @Composable
 fun SocialAvatar(
     displayName: String,
@@ -53,6 +48,7 @@ fun SocialAvatar(
     showOnlineDot: Boolean = false,
     avatarDoodle: String? = null,
     avatarPngBase64: String? = null,
+    avatarUrl: String? = null,
     userId: String? = null
 ) {
     val localAvatar = LocalUserAvatarState.current
@@ -85,6 +81,16 @@ fun SocialAvatar(
                 modifier = Modifier
                     .size(size)
                     .clip(CircleShape)
+            )
+        } else if (!avatarUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = avatarUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(size)
+                    .clip(CircleShape)
+                    .background(circleColor)
             )
         } else {
             Box(

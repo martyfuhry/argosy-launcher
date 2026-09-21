@@ -51,7 +51,8 @@ data class SocialUser(
     val id: String,
     val username: String,
     @Json(name = "display_name") val displayName: String,
-    @Json(name = "avatar_color") val avatarColor: String
+    @Json(name = "avatar_color") val avatarColor: String,
+    @Json(name = "avatar_url") val avatarUrl: String? = null
 )
 
 @JsonClass(generateAdapter = true)

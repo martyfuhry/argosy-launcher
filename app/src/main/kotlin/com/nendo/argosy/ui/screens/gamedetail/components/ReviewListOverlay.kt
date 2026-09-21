@@ -268,6 +268,13 @@ private fun ReviewCard(
                 },
                 modifier = Modifier.size(Dimens.iconSm)
             )
+            com.nendo.argosy.ui.components.friends.SocialAvatar(
+                displayName = author?.displayName.orEmpty(),
+                avatarColor = author?.avatarColor,
+                avatarUrl = author?.avatarUrl,
+                userId = review.userId,
+                size = Dimens.iconMd
+            )
             Text(
                 text = author?.displayName?.takeIf { it.isNotBlank() }
                     ?: author?.username?.takeIf { it.isNotBlank() }

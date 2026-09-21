@@ -1688,7 +1688,8 @@ class ArgosSocialService @Inject constructor(
             id = obj.optString("id").ifBlank { id },
             username = username,
             displayName = displayName,
-            avatarColor = obj.optString("avatar_color")
+            avatarColor = obj.optString("avatar_color"),
+            avatarUrl = obj.optString("avatar_url").takeIf { it.isNotBlank() }
         )
     }
 
