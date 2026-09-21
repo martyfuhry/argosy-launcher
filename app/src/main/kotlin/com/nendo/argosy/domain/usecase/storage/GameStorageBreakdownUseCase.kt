@@ -29,8 +29,9 @@ fun bucketForCategory(category: VariantCategory): GameStorageBucket = when (cate
     VariantCategory.HACK, VariantCategory.MOD,
     VariantCategory.PATCH, VariantCategory.TRANSLATION -> GameStorageBucket.HACKS
     VariantCategory.SOUNDTRACK -> GameStorageBucket.SOUNDTRACK
-    VariantCategory.MANUAL, VariantCategory.CHEAT, VariantCategory.DEMO,
-    VariantCategory.PROTOTYPE, VariantCategory.SCREENSHOT -> GameStorageBucket.OTHER
+    VariantCategory.MANUAL, VariantCategory.WALKTHROUGH, VariantCategory.CHEAT,
+    VariantCategory.DEMO, VariantCategory.PROTOTYPE,
+    VariantCategory.SCREENSHOT -> GameStorageBucket.OTHER
 }
 
 fun bucketForFile(category: String?, isDeeperThanRoot: Boolean): GameStorageBucket {

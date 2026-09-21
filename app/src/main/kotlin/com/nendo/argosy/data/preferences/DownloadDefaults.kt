@@ -9,9 +9,19 @@ import com.nendo.argosy.data.model.VariantCategory
 object DownloadDefaults {
     const val OTHER_KEY = "other"
 
+    /**
+     * Categories that ride along with every download and are never offered as a choice.
+     */
+    val DOCUMENT_KEYS: Set<String> =
+        setOf(VariantCategory.MANUAL.key, VariantCategory.WALKTHROUGH.key)
+
     val CONFIGURABLE_KEYS: List<String> =
         VariantCategory.entries
-            .filter { it != VariantCategory.GAME && it != VariantCategory.UNKNOWN }
+            .filter {
+                it != VariantCategory.GAME &&
+                    it != VariantCategory.UNKNOWN &&
+                    it.key !in DOCUMENT_KEYS
+            }
             .map { it.key } + OTHER_KEY
 
     val FACTORY: Map<String, Boolean> = mapOf(
@@ -24,7 +34,8 @@ object DownloadDefaults {
         VariantCategory.DEMO.key to false,
         VariantCategory.PROTOTYPE.key to false,
         VariantCategory.CHEAT.key to false,
-        VariantCategory.MANUAL.key to false,
+        VariantCategory.MANUAL.key to true,
+        VariantCategory.WALKTHROUGH.key to true,
         VariantCategory.SOUNDTRACK.key to false,
         VariantCategory.SCREENSHOT.key to false,
         OTHER_KEY to false
@@ -57,9 +68,13 @@ object DownloadDefaults {
         }.toMap()
     }
 
-    /** factory -> global -> platform override, later layers win per key. */
+    /**
+     * factory -> global -> platform override, later layers win per key, and a document category
+     * is on whatever any layer says.
+     */
     fun resolve(
         global: Map<String, Boolean>,
         platformOverride: Map<String, Boolean>
-    ): Map<String, Boolean> = FACTORY + global + platformOverride
+    ): Map<String, Boolean> =
+        FACTORY + global + platformOverride + DOCUMENT_KEYS.associateWith { true }
 }

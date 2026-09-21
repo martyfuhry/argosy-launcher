@@ -75,6 +75,7 @@
     <string name="variant_category_update">Обновления</string>
     <string name="variant_category_dlc">DLC</string>
     <string name="variant_category_manual">Руководства</string>
+    <string name="variant_category_walkthrough">Прохождения</string>
     <string name="variant_category_cheat">Читы</string>
     <string name="variant_category_soundtrack">Саундтреки</string>
     <string name="variant_category_screenshot">Скриншоты</string>

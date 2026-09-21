@@ -16,9 +16,10 @@ enum class VariantCategory(
     UPDATE("update", "Updates", 10, false),
     DLC("dlc", "DLC", 11, false),
     MANUAL("manual", "Manuals", 20, false),
-    CHEAT("cheat", "Cheats", 21, false),
-    SOUNDTRACK("soundtrack", "Soundtracks", 22, false),
-    SCREENSHOT("screenshot", "Screenshots", 23, false),
+    WALKTHROUGH("walkthrough", "Walkthroughs", 21, false),
+    CHEAT("cheat", "Cheats", 22, false),
+    SOUNDTRACK("soundtrack", "Soundtracks", 23, false),
+    SCREENSHOT("screenshot", "Screenshots", 24, false),
     UNKNOWN("unknown", "Other", 99, true);
 
     companion object {

@@ -75,6 +75,7 @@
     <string name="variant_category_update">更新</string>
     <string name="variant_category_dlc">DLC</string>
     <string name="variant_category_manual">说明书</string>
+    <string name="variant_category_walkthrough">攻略</string>
     <string name="variant_category_cheat">作弊码</string>
     <string name="variant_category_soundtrack">原声带</string>
     <string name="variant_category_screenshot">截图</string>

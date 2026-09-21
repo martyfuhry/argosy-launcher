@@ -21,6 +21,7 @@ val VariantCategory.labelRes: Int
         VariantCategory.UPDATE -> R.string.variant_category_update
         VariantCategory.DLC -> R.string.variant_category_dlc
         VariantCategory.MANUAL -> R.string.variant_category_manual
+        VariantCategory.WALKTHROUGH -> R.string.variant_category_walkthrough
         VariantCategory.CHEAT -> R.string.variant_category_cheat
         VariantCategory.SOUNDTRACK -> R.string.variant_category_soundtrack
         VariantCategory.SCREENSHOT -> R.string.variant_category_screenshot

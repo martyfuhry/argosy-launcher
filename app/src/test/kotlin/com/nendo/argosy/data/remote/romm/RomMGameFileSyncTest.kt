@@ -10,6 +10,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -138,5 +139,25 @@ class RomMGameFileSyncTest {
 
         coVerify(exactly = 0) { gameFileDao.deleteByGameId(any()) }
         coVerify(exactly = 0) { gameFileDao.insertAll(any()) }
+    }
+
+    @Test
+    fun `a walkthrough is a document rather than something to launch`() = runTest {
+        val captured = slot<List<GameFileEntity>>()
+        coEvery { gameFileDao.insertAll(capture(captured)) } returns Unit
+
+        sync.sync(
+            gameId = 1L,
+            rom = rom(listOf(
+                file(1, "Super Mario World (USA).sfc", "game"),
+                file(2, "super-mario-world-guide-by-crazyreyn.txt", "walkthrough")
+            )),
+            platformSlug = "snes",
+            fileListIsAuthoritative = true
+        )
+
+        val walkthrough = captured.captured.single { it.fileName.endsWith(".txt") }
+        assertEquals(VariantCategory.WALKTHROUGH.key, walkthrough.category)
+        assertFalse("a guide is not a launch target", walkthrough.isLaunchTarget)
     }
 }

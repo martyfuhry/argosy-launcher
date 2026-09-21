@@ -116,11 +116,13 @@ class FilePickerFlowUseCase @Inject constructor(
             if (preselectedVersions.isEmpty()) preselectedVersions += rommId
         }
 
-        val romFiles = when (val result = romMRepository.getRom(rommId)) {
+        val allFiles = when (val result = romMRepository.getRom(rommId)) {
             is RomMResult.Success -> result.data.files
                 ?.filter { it.isGameContent } ?: emptyList()
             is RomMResult.Error -> emptyList()
         }
+        val (documents, romFiles) = allFiles.partition { it.category in DownloadDefaults.DOCUMENT_KEYS }
+        documents.forEach { preselectedFiles += it.id }
         if (romFiles.size > 1) {
             val rootLen = romFiles.minOf { it.filePath.length }
             val grouped = romFiles.groupBy { f ->

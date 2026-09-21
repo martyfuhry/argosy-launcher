@@ -80,6 +80,7 @@
     <string name="variant_category_update">更新</string>
     <string name="variant_category_dlc">DLC</string>
     <string name="variant_category_manual">說明書</string>
+    <string name="variant_category_walkthrough">攻略</string>
     <string name="variant_category_cheat">金手指</string>
     <string name="variant_category_soundtrack">原聲帶</string>
     <string name="variant_category_screenshot">螢幕截圖</string>
