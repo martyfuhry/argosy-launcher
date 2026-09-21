@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -128,7 +129,11 @@ fun ManagedInstallersSection(uiState: SettingsUiState, viewModel: SettingsViewMo
                 ActionPreference(
                     title = row.displayName,
                     subtitle = subtitle,
-                    icon = if (row.locked) Icons.Default.Lock else Icons.Default.Download,
+                    icon = when {
+                        busy -> Icons.Default.Autorenew
+                        row.locked -> Icons.Default.Lock
+                        else -> Icons.Default.Download
+                    },
                     isFocused = isFocused(index),
                     isEnabled = !busy,
                     spinIcon = busy,
