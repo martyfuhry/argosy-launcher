@@ -1,6 +1,7 @@
 package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.local.entity.GameEntity
+import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.util.SearchNormalizer
 import java.time.Instant
 import java.time.ZoneOffset
@@ -82,5 +83,19 @@ internal fun GameEntity.withRomMetadata(rom: RomMRom): GameEntity = copy(
     isIdentified = rom.isIdentified,
     youtubeVideoId = rom.youtubeVideoId,
     achievementCount = rom.raMetadata?.achievements?.size ?: achievementCount,
-    fileSizeBytes = rom.fileSize.takeIf { it > 0 }
+    fileSizeBytes = rom.fileSize.takeIf { it > 0 },
+    titleId = titleId ?: remoteTitleId(rom, platformSlug),
+    saveTarget = saveTarget ?: rom.saveTarget?.takeIf { remoteIdentityTrusted(platformSlug) },
+    saveTargetLayout = saveTargetLayout
+        ?: rom.saveTargetLayout?.takeIf { remoteIdentityTrusted(platformSlug) }
 )
+
+private fun GameEntity.remoteTitleId(rom: RomMRom, platformSlug: String): String? {
+    if (titleIdLocked) return null
+    return rom.titleId?.takeIf { it.isNotBlank() && remoteIdentityTrusted(platformSlug) }
+}
+
+private fun remoteIdentityTrusted(platformSlug: String): Boolean =
+    PlatformDefinitions.getCanonicalSlug(platformSlug) != SWITCH_SLUG
+
+private const val SWITCH_SLUG = "switch"

@@ -20,7 +20,10 @@ class RomMGameMetadataTest {
     private fun rom(
         name: String = "Ocarina of Time 3D",
         hasSoundtrack: Boolean = false,
-        achievements: Int? = null
+        achievements: Int? = null,
+        titleId: String? = null,
+        saveTarget: String? = null,
+        saveTargetLayout: String? = null
     ) = RomMRom(
         id = 42L,
         platformId = 1L,
@@ -45,6 +48,9 @@ class RomMGameMetadataTest {
         sha1Hash = "sha1",
         youtubeVideoId = "abc123",
         alternativeNames = listOf("Zelda OoT 3D"),
+        titleId = titleId,
+        saveTarget = saveTarget,
+        saveTargetLayout = saveTargetLayout,
         raMetadata = achievements?.let { count ->
             RomMRAMetadata(
                 achievements = List(count) {
@@ -132,5 +138,60 @@ class RomMGameMetadataTest {
     @Test
     fun `an absent achievement count keeps what the row already had`() {
         assertEquals(12, existing().withRomMetadata(rom(achievements = null)).achievementCount)
+    }
+
+    @Test
+    fun `a server title id fills a row that has none`() {
+        val result = existing().withRomMetadata(rom(titleId = "0004000000033500"))
+
+        assertEquals("0004000000033500", result.titleId)
+    }
+
+    @Test
+    fun `a locally extracted title id outranks the server's`() {
+        val local = existing().copy(titleId = "LOCAL0001")
+
+        val result = local.withRomMetadata(rom(titleId = "0004000000033500"))
+
+        assertEquals("LOCAL0001", result.titleId)
+    }
+
+    @Test
+    fun `a locked row takes no title id from the server`() {
+        val locked = existing().copy(titleId = null, titleIdLocked = true)
+
+        assertNull(locked.withRomMetadata(rom(titleId = "0004000000033500")).titleId)
+    }
+
+    @Test
+    fun `switch keeps its locally extracted identity`() {
+        val switchRow = existing().copy(platformSlug = "switch")
+
+        val result = switchRow.withRomMetadata(
+            rom(titleId = "0100000000010000", saveTarget = "0100000000010000")
+        )
+
+        assertNull("the server does not decrypt switch headers", result.titleId)
+        assertNull(result.saveTarget)
+    }
+
+    @Test
+    fun `a save target rides along with the title id`() {
+        val result = existing().withRomMetadata(
+            rom(titleId = "0004000000033500", saveTarget = "00040000", saveTargetLayout = "folder-prefix")
+        )
+
+        assertEquals("00040000", result.saveTarget)
+        assertEquals("folder-prefix", result.saveTargetLayout)
+    }
+
+    @Test
+    fun `a save target already on the row is kept`() {
+        val local = existing().copy(saveTarget = "LOCALTARGET", saveTargetLayout = "file-exact")
+
+        val result = local.withRomMetadata(rom(saveTarget = "00040000", saveTargetLayout = "folder-prefix"))
+
+        assertEquals("LOCALTARGET", result.saveTarget)
+        assertEquals("file-exact", result.saveTargetLayout)
     }
 }

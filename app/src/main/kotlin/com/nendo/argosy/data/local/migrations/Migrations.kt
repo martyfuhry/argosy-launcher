@@ -3633,3 +3633,10 @@ object Migration_190_191 : Migration(190, 191) {
         )
     }
 }
+
+object Migration_191_192 : Migration(191, 192) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE games ADD COLUMN saveTarget TEXT")
+        db.execSQL("ALTER TABLE games ADD COLUMN saveTargetLayout TEXT")
+    }
+}
