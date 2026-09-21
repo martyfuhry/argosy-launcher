@@ -483,6 +483,7 @@
     <string name="reviews_heading_friends">मित्र</string>
     <string name="reviews_heading_everyone">बाकी सभी</string>
     <string name="reviews_reader_write_row">समीक्षा लिखें</string>
+    <string name="reviews_reader_unknown_author">कोई</string>
     <string name="reviews_editor_title">समीक्षा लिखें</string>
     <string name="reviews_editor_title_edit">अपनी समीक्षा संपादित करें</string>
     <string name="reviews_editor_verdict_label">राय</string>

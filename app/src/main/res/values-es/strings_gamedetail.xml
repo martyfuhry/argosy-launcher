@@ -495,6 +495,7 @@
     <string name="reviews_heading_friends">Amigos</string>
     <string name="reviews_heading_everyone">Todos los demás</string>
     <string name="reviews_reader_write_row">Escribir una reseña</string>
+    <string name="reviews_reader_unknown_author">Alguien</string>
     <string name="reviews_editor_title">Escribir una reseña</string>
     <string name="reviews_editor_title_edit">Editar tu reseña</string>
     <string name="reviews_editor_verdict_label">Veredicto</string>

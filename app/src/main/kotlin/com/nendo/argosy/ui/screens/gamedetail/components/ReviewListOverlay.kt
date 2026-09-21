@@ -269,7 +269,9 @@ private fun ReviewCard(
                 modifier = Modifier.size(Dimens.iconSm)
             )
             Text(
-                text = author?.displayName ?: review.userId,
+                text = author?.displayName?.takeIf { it.isNotBlank() }
+                    ?: author?.username?.takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.reviews_reader_unknown_author),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface

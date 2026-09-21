@@ -1599,12 +1599,7 @@ class ArgosSocialService @Inject constructor(
         if (obj == null) return emptyMap()
         return obj.keys().asSequence().mapNotNull { key ->
             val entry = obj.optJSONObject(key) ?: return@mapNotNull null
-            key to SocialUser(
-                id = entry.optString("id", key),
-                username = entry.optString("username"),
-                displayName = entry.optString("display_name"),
-                avatarColor = entry.optString("avatar_color")
-            )
+            key to parseUserRef(entry, key)
         }.toMap()
     }
 
@@ -1684,12 +1679,16 @@ class ArgosSocialService @Inject constructor(
         }
     }
 
-    private fun parseUser(obj: JSONObject): SocialUser {
+    private fun parseUser(obj: JSONObject): SocialUser = parseUserRef(obj, obj.getString("id"))
+
+    private fun parseUserRef(obj: JSONObject, id: String): SocialUser {
+        val username = obj.optString("username").orEmpty()
+        val displayName = obj.optString("display_name").ifBlank { username }
         return SocialUser(
-            id = obj.getString("id"),
-            username = obj.getString("username"),
-            displayName = obj.getString("display_name"),
-            avatarColor = obj.getString("avatar_color")
+            id = obj.optString("id").ifBlank { id },
+            username = username,
+            displayName = displayName,
+            avatarColor = obj.optString("avatar_color")
         )
     }
 

@@ -422,6 +422,7 @@
     <string name="reviews_heading_friends">好友</string>
     <string name="reviews_heading_everyone">其他人</string>
     <string name="reviews_reader_write_row">写评价</string>
+    <string name="reviews_reader_unknown_author">某人</string>
     <string name="reviews_editor_title">写评价</string>
     <string name="reviews_editor_title_edit">编辑我的评价</string>
     <string name="reviews_editor_verdict_label">评价</string>

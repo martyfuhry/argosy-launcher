@@ -266,6 +266,8 @@
     <!-- Row at the top of the review reader when this user has not reviewed the game yet.
          Selecting it opens the editor. Verb phrase. -->
     <string name="reviews_reader_write_row">Write a review</string>
+    <!-- Stands where a reviewer's name would go when the server sent no name for them. -->
+    <string name="reviews_reader_unknown_author">Someone</string>
     <!-- Title of the review editor when no review exists yet. Verb phrase. -->
     <string name="reviews_editor_title">Write a Review</string>
     <!-- Title of the review editor when this user's review already exists. Verb phrase. -->

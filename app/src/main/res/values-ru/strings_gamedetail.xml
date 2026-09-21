@@ -456,6 +456,7 @@
     <string name="reviews_heading_friends">Друзья</string>
     <string name="reviews_heading_everyone">Остальные</string>
     <string name="reviews_reader_write_row">Написать отзыв</string>
+    <string name="reviews_reader_unknown_author">Кто-то</string>
     <string name="reviews_editor_title">Написать отзыв</string>
     <string name="reviews_editor_title_edit">Изменить свой отзыв</string>
     <string name="reviews_editor_verdict_label">Вердикт</string>

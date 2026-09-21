@@ -80,4 +80,91 @@ class ArgosSocialServiceParserTest {
         assertNull(payload.gameIgdbId)
         assertEquals("bob", payload.hostUsername)
     }
+
+    @Test
+    fun readsAReviewAuthorsName() = runBlocking {
+        val page = reviewsPageFrom(
+            """
+            "users": {
+              "user-1": {
+                "id": "user-1",
+                "username": "alice",
+                "display_name": "Alice",
+                "avatar_color": "#6366f1"
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertEquals("Alice", page.users["user-1"]?.displayName)
+    }
+
+    @Test
+    fun `falls back to the username when a review author has no display name`() = runBlocking {
+        val page = reviewsPageFrom(
+            """
+            "users": {
+              "user-1": {
+                "id": "user-1",
+                "username": "alice",
+                "display_name": "",
+                "avatar_color": "#6366f1"
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertEquals("alice", page.users["user-1"]?.displayName)
+    }
+
+    @Test
+    fun keepsTheMapKeyAsTheAuthorIdWhenTheEntryOmitsOne() = runBlocking {
+        val page = reviewsPageFrom(
+            """
+            "users": {
+              "user-1": {
+                "username": "alice",
+                "display_name": "Alice",
+                "avatar_color": "#6366f1"
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertEquals("user-1", page.users["user-1"]?.id)
+    }
+
+    private suspend fun reviewsPageFrom(usersBlock: String): GameReviewsPage {
+        val service = newService()
+        val envelope = """
+            {
+              "type": "game_reviews_data",
+              "payload": {
+                "igdb_id": 1234,
+                "friends": [],
+                "public": [
+                  {
+                    "user_id": "user-1",
+                    "igdb_id": 1234,
+                    "recommended": true,
+                    "body": "good",
+                    "visibility": "public",
+                    "play_minutes": 60,
+                    "created_at": "2026-01-01T00:00:00Z",
+                    "updated_at": "2026-01-01T00:00:00Z",
+                    "is_friend": false,
+                    "helpful_count": 0,
+                    "unhelpful_count": 0
+                  }
+                ],
+                "has_more": false,
+                $usersBlock
+              }
+            }
+        """.trimIndent()
+
+        service.handleMessageForTest(envelope)
+        val message = withTimeout(2000) { service.incomingMessages.first() }
+        return (message as ArgosSocialService.IncomingMessage.GameReviewsData).page
+    }
 }

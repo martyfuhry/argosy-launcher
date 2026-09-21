@@ -383,9 +383,9 @@ class SocialRepository @Inject constructor(
                         _reviewSummaries.update { it + (message.summary.igdbId to message.summary) }
                     }
                     is ArgosSocialService.IncomingMessage.GameReviewsData -> {
+                        val page = withOwnAuthor(message.page)
                         _gameReviews.update { current ->
-                            val existing = current[message.page.igdbId]
-                            current + (message.page.igdbId to mergeReviewPage(existing, message.page))
+                            current + (page.igdbId to mergeReviewPage(current[page.igdbId], page))
                         }
                     }
                     is ArgosSocialService.IncomingMessage.ReviewSaved -> {
@@ -1040,6 +1040,17 @@ class SocialRepository @Inject constructor(
             val page = current[igdbId] ?: return@update current
             current + (igdbId to page.copy(myReview = review))
         }
+    }
+
+    private fun withOwnAuthor(page: GameReviewsPage): GameReviewsPage {
+        val myReview = page.myReview ?: return page
+        if (page.users.containsKey(myReview.userId)) return page
+        val me = (_connectionState.value as? SocialConnectionState.Connected)
+            ?.user
+            ?.takeIf { it.id == myReview.userId }
+            ?: _usersCache[myReview.userId]
+            ?: return page
+        return page.copy(users = page.users + (myReview.userId to me))
     }
 
     private fun mergeReviewPage(existing: GameReviewsPage?, incoming: GameReviewsPage): GameReviewsPage {

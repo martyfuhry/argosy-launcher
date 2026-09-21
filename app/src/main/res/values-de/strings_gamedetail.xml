@@ -484,6 +484,7 @@
     <string name="reviews_heading_friends">Freunde</string>
     <string name="reviews_heading_everyone">Alle anderen</string>
     <string name="reviews_reader_write_row">Rezension schreiben</string>
+    <string name="reviews_reader_unknown_author">Jemand</string>
     <string name="reviews_editor_title">Rezension schreiben</string>
     <string name="reviews_editor_title_edit">Rezension bearbeiten</string>
     <string name="reviews_editor_verdict_label">Urteil</string>
