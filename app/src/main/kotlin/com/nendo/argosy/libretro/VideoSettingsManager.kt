@@ -144,6 +144,7 @@ class VideoSettingsManager(
         LibretroSettingDef.VSync -> currentVSync.toString()
         LibretroSettingDef.RewindSpeed -> currentRewindSpeed
         LibretroSettingDef.RewindBufferDuration -> currentRewindBufferDuration
+        LibretroSettingDef.GbColorStyle,
         LibretroSettingDef.AutoSaveState,
         LibretroSettingDef.AutoRestoreState,
         LibretroSettingDef.PreferNewerServerSave,
@@ -171,6 +172,7 @@ class VideoSettingsManager(
         LibretroSettingDef.VSync -> (!globalSettings.forceSoftwareTiming).toString()
         LibretroSettingDef.RewindSpeed -> globalSettings.rewindSpeedDisplay
         LibretroSettingDef.RewindBufferDuration -> globalSettings.rewindBufferDurationDisplay
+        LibretroSettingDef.GbColorStyle,
         LibretroSettingDef.AutoSaveState,
         LibretroSettingDef.AutoRestoreState,
         LibretroSettingDef.PreferNewerServerSave,
@@ -342,6 +344,7 @@ class VideoSettingsManager(
                 LibretroSettingDef.VSync -> current.copy(vsync = null)
                 LibretroSettingDef.RewindSpeed -> current.copy(rewindSpeed = null)
                 LibretroSettingDef.RewindBufferDuration -> current.copy(rewindBufferDuration = null)
+                LibretroSettingDef.GbColorStyle,
                 LibretroSettingDef.AutoSaveState,
                 LibretroSettingDef.AutoRestoreState,
                 LibretroSettingDef.PreferNewerServerSave,
@@ -491,6 +494,7 @@ class VideoSettingsManager(
             LibretroSettingDef.AudioBufferFrames,
             LibretroSettingDef.VSync -> {
             }
+            LibretroSettingDef.GbColorStyle,
             LibretroSettingDef.AutoSaveState,
             LibretroSettingDef.AutoRestoreState,
             LibretroSettingDef.PreferNewerServerSave,
@@ -581,6 +585,7 @@ class VideoSettingsManager(
                 LibretroSettingDef.VSync -> current.copy(vsync = value.toBooleanStrictOrNull())
                 LibretroSettingDef.RewindSpeed -> current.copy(rewindSpeed = value.removeSuffix("x").toIntOrNull())
                 LibretroSettingDef.RewindBufferDuration -> current.copy(rewindBufferDuration = value.removeSuffix("s").toIntOrNull())
+                LibretroSettingDef.GbColorStyle,
                 LibretroSettingDef.AutoSaveState,
                 LibretroSettingDef.AutoRestoreState,
                 LibretroSettingDef.PreferNewerServerSave,

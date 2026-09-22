@@ -67,10 +67,12 @@ fun LibretroSettingItem(
             ?.map { stringResource(it) }
         val resolvedValue = displayValue.resolve()
         val cycleValue = cycleType?.labelResFor(resolvedValue)?.let { stringResource(it) } ?: resolvedValue
+        val isColorStyle = setting == LibretroSettingDef.GbColorStyle
         CyclePreference(
             title = stringResource(setting.title),
-            subtitle = subtitle,
+            subtitle = if (isColorStyle) gbColorStyleSubtitle(resolvedValue) else subtitle,
             value = cycleValue,
+            valueFooter = if (isColorStyle) ({ GbColorStylePreview(resolvedValue, isFocused) }) else null,
             isFocused = isFocused,
             isCustom = isPerPlatform && hasOverride,
             showResetButton = isPerPlatform && hasOverride && isFocused,

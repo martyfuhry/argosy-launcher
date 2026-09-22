@@ -28,7 +28,9 @@ import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.local.dao.GameDiscDao
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
+import com.nendo.argosy.core.emulator.GbColorStyles
 import com.nendo.argosy.libretro.coreoptions.CoreOptionResolver
+import com.nendo.argosy.libretro.coreoptions.GbColorStyleCoreOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -708,14 +710,23 @@ class GameLauncher @Inject constructor(
             return null
         }
 
+        val platformLibretroOverride = platformLibretroSettingsDao.getByPlatformId(game.platformId)
+        val platformCoreOptions = if (game.platformSlug == GbColorStyles.PLATFORM_SLUG) {
+            GbColorStyleCoreOptions.forCore(
+                platformLibretroOverride?.gbColorStyle ?: GbColorStyles.CUSTOM,
+                coreName
+            ).toMap()
+        } else {
+            emptyMap()
+        }
         val coreVariables = coreOptionResolver.resolveVariables(
             coreName,
-            gameId = game.id.takeIf { game.perGameSettingsEnabled }
+            gameId = game.id.takeIf { game.perGameSettingsEnabled },
+            platformOverrides = platformCoreOptions
         )
 
         Logger.info(TAG, "[BuiltIn] Launching: rom=${romFile.name}, core=$coreName, romSize=${romFile.length()}b, coreVars=${coreVariables.size}")
         val builtinSettings = userPreferencesRepository.getBuiltinEmulatorSettings().first()
-        val platformLibretroOverride = platformLibretroSettingsDao.getByPlatformId(game.platformId)
         val effectiveSavePath = builtinSaveBase.forGame(game, romFile.absolutePath)
         val effectiveStatePath = libretroStatePathResolver
             .liveStateBaseDir(platformLibretroOverride?.statePath, builtinSettings.customStatePath)

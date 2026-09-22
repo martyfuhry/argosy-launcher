@@ -352,7 +352,7 @@ fun InGameSettingsScreen(
         )
     }
     val videoLibretroCount = remember(platformSlug, canEnableBFI) {
-        libretroSettingsMaxFocusIndex(platformSlug, canEnableBFI, showSavingSection = false) + 1
+        libretroSettingsMaxFocusIndex(platformSlug, canEnableBFI, showSavingSection = false, showColorStyle = false) + 1
     }
     val maxVideoFocusIndex = videoLibretroCount + InGameHudItem.entries.size - 1
     val controlsMaxFocusIndex = remember(controlsVisibility) {
@@ -382,7 +382,7 @@ fun InGameSettingsScreen(
             index = index,
             platformSlug = platformSlug,
             canEnableBFI = canEnableBFI,
-            showSavingSection = false
+            showSavingSection = false, showColorStyle = false
         )
         InGameSettingsTab.CONTROLS -> null
         InGameSettingsTab.CORE_OPTIONS -> null
@@ -657,7 +657,7 @@ fun InGameSettingsScreen(
                             focusedIndex = focusedIndex,
                             platformSlug = platformSlug,
                             canEnableBFI = canEnableBFI,
-                            showSavingSection = false,
+                            showSavingSection = false, showColorStyle = false,
                             listState = videoListState,
                             enablePicker = false,
                             trailingContent = { InGameHudHeader() },
