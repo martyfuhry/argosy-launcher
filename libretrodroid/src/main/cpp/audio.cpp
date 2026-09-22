@@ -54,9 +54,10 @@ namespace {
         const std::string api = readAudioProperty("api");
         const std::string fpc = readAudioProperty("fpc");
         const std::string contentType = readAudioProperty("contenttype");
+        const std::string session = readAudioProperty("session");
 
         if (perf.empty() && sharing.empty() && usage.empty() && format.empty() && rate.empty() &&
-            channels.empty() && api.empty() && fpc.empty() && contentType.empty()) {
+            channels.empty() && api.empty() && fpc.empty() && contentType.empty() && session.empty()) {
             return;
         }
 
@@ -90,7 +91,11 @@ namespace {
         else if (contentType == "sonification") builder.setContentType(oboe::ContentType::Sonification);
         else if (contentType == "speech") builder.setContentType(oboe::ContentType::Speech);
 
-        LOGI("Audio overrides: perf=%s sharing=%s usage=%s format=%s rate=%s channels=%s api=%s fpc=%s contenttype=%s -> perf=%s sharing=%s usage=%d format=%s rate=%d channels=%d api=%s fpc=%d contenttype=%d",
+        if (session == "allocate") builder.setSessionId(oboe::SessionId::Allocate);
+        else if (session == "none") builder.setSessionId(oboe::SessionId::None);
+
+        LOGI("Audio overrides: session=%s perf=%s sharing=%s usage=%s format=%s rate=%s channels=%s api=%s fpc=%s contenttype=%s -> perf=%s sharing=%s usage=%d format=%s rate=%d channels=%d api=%s fpc=%d contenttype=%d",
+             session.empty() ? "-" : session.c_str(),
              perf.empty() ? "-" : perf.c_str(),
              sharing.empty() ? "-" : sharing.c_str(),
              usage.empty() ? "-" : usage.c_str(),
