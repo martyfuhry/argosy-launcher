@@ -4,6 +4,7 @@ import com.nendo.argosy.data.storage.AndroidDataAccessor
 import com.nendo.argosy.data.storage.FileAccessLayer
 import com.nendo.argosy.data.storage.FileInfo
 import com.nendo.argosy.util.Logger
+import com.nendo.argosy.util.isInside
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -272,7 +273,7 @@ class SaveArchiver @Inject constructor(
                 while (zis.nextEntry.also { entry = it } != null) {
                     val entryFile = File(targetFolder, entry!!.name)
 
-                    if (!entryFile.canonicalPath.startsWith(targetFolder.canonicalPath)) {
+                    if (!entryFile.isInside(targetFolder)) {
                         Logger.error(TAG, "Zip path traversal detected: ${entry!!.name}")
                         return false
                     }
@@ -511,7 +512,7 @@ class SaveArchiver @Inject constructor(
                         continue
                     }
                     val entryFile = File(target, relativePath)
-                    if (!entryFile.canonicalPath.startsWith(target.canonicalPath)) {
+                    if (!entryFile.isInside(target)) {
                         Logger.error(TAG, "[SaveSync] ARCHIVE | Zip path traversal detected | entry=$entryName, target=${target.absolutePath}")
                         return false
                     }
@@ -603,7 +604,7 @@ class SaveArchiver @Inject constructor(
                     if (relativePath.isEmpty()) continue
 
                     val entryFile = File(targetFolder, relativePath)
-                    if (!entryFile.canonicalPath.startsWith(targetFolder.canonicalPath)) {
+                    if (!entryFile.isInside(targetFolder)) {
                         Logger.error(TAG, "[SaveSync] ARCHIVE | Zip path traversal detected | entry=$entryName, target=${targetFolder.absolutePath}")
                         return false
                     }
@@ -769,7 +770,7 @@ class SaveArchiver @Inject constructor(
                     if (excludeFiles.contains(fileName)) continue
 
                     val entryFile = File(targetFolder, relativePath)
-                    if (!entryFile.canonicalPath.startsWith(targetFolder.canonicalPath)) return false
+                    if (!entryFile.isInside(targetFolder)) return false
 
                     if (entry!!.isDirectory) {
                         entryFile.mkdirs()
@@ -848,7 +849,7 @@ class SaveArchiver @Inject constructor(
                     if (excludeFiles.contains(fileName)) continue
 
                     val entryFile = File(targetFolder, entryName)
-                    if (!entryFile.canonicalPath.startsWith(targetFolder.canonicalPath)) return false
+                    if (!entryFile.isInside(targetFolder)) return false
 
                     if (entry!!.isDirectory) {
                         entryFile.mkdirs()
