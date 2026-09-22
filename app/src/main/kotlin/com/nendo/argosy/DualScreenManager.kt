@@ -1450,7 +1450,7 @@ class DualScreenManager(
     private var companionLaunchAttempts = 0
 
     private fun dockedWithExternalDisplay(): Boolean =
-        displayAffinityHelper.secondaryDisplayType == SecondaryDisplayType.EXTERNAL &&
+        displayAffinityHelper.hasExternalDisplay &&
             sessionStateStore.pauseDualScreenWhileDocked()
 
     private val displayListener = object : DisplayManager.DisplayListener {

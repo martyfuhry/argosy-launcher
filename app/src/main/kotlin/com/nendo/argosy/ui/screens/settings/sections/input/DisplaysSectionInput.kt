@@ -61,6 +61,10 @@ internal class DisplaysSectionInput(
             DisplaysItem.DisplayRoles -> { viewModel.cycleDisplayRoleOverride(direction); return InputResult.HANDLED }
             DisplaysItem.DualScreenEnabled ->
                 return toggleLeftRight(direction, state.display.dualScreenEnabled) { viewModel.setDualScreenEnabled(it) }
+            DisplaysItem.PauseWhileDocked ->
+                return toggleLeftRight(direction, state.display.pauseDualScreenWhileDocked) {
+                    viewModel.setPauseDualScreenWhileDocked(it)
+                }
             DisplaysItem.ScreenDimmer ->
                 return toggleLeftRight(direction, state.storage.screenDimmerEnabled) { viewModel.toggleScreenDimmer() }
             else -> {}
