@@ -819,6 +819,7 @@ class DownloadManager @Inject constructor(
         .replace(Regex("\\s+"), " ")
         .trim()
         .take(200)
+        .let(FileNames::entryName)
 
     /** Server dir of this file relative to the rom root, or null for root files. */
     /**
