@@ -78,6 +78,7 @@ import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.FooterSpacer
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.components.Modal
+import com.nendo.argosy.ui.components.keepFocusedVisible
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.LocalInputDispatcher
@@ -337,31 +338,10 @@ private fun VolumePane(
 ) {
     val listState = rememberLazyListState()
 
-    val scrollAhead = 2
-
     LaunchedEffect(focusedIndex, isFocused, volumes.size) {
         if (!isFocused || volumes.isEmpty() || focusedIndex !in volumes.indices) return@LaunchedEffect
 
-        val visibleItems = listState.layoutInfo.visibleItemsInfo
-        if (visibleItems.isEmpty()) {
-            listState.animateScrollToItem(focusedIndex)
-            return@LaunchedEffect
-        }
-
-        val firstVisible = visibleItems.first().index
-        val lastVisible = visibleItems.last().index
-        val visibleCount = lastVisible - firstVisible
-
-        when {
-            focusedIndex <= firstVisible + scrollAhead -> {
-                val newFirst = (focusedIndex - scrollAhead).coerceAtLeast(0)
-                listState.animateScrollToItem(newFirst)
-            }
-            focusedIndex >= lastVisible - scrollAhead -> {
-                val newFirst = (focusedIndex - visibleCount + scrollAhead).coerceAtLeast(0)
-                listState.animateScrollToItem(newFirst)
-            }
-        }
+        listState.keepFocusedVisible(focusedIndex)
     }
 
     val borderColor = if (isFocused) {
@@ -492,31 +472,10 @@ private fun FilePane(
 ) {
     val listState = rememberLazyListState()
 
-    val scrollAhead = 3
-
     LaunchedEffect(focusedIndex, isFocused, entries.size) {
         if (!isFocused || entries.isEmpty() || focusedIndex !in entries.indices) return@LaunchedEffect
 
-        val visibleItems = listState.layoutInfo.visibleItemsInfo
-        if (visibleItems.isEmpty()) {
-            listState.animateScrollToItem(focusedIndex)
-            return@LaunchedEffect
-        }
-
-        val firstVisible = visibleItems.first().index
-        val lastVisible = visibleItems.last().index
-        val visibleCount = lastVisible - firstVisible
-
-        when {
-            focusedIndex <= firstVisible + scrollAhead -> {
-                val newFirst = (focusedIndex - scrollAhead).coerceAtLeast(0)
-                listState.animateScrollToItem(newFirst)
-            }
-            focusedIndex >= lastVisible - scrollAhead -> {
-                val newFirst = (focusedIndex - visibleCount + scrollAhead).coerceAtLeast(0)
-                listState.animateScrollToItem(newFirst)
-            }
-        }
+        listState.keepFocusedVisible(focusedIndex)
     }
 
     val borderColor = if (isFocused) {

@@ -231,11 +231,17 @@ fun SectionHeaderLockScroll(
     }
 }
 
-private suspend fun LazyListState.keepFocusedVisible(
+/**
+ * The smallest scroll that brings the item at [listIndex] fully into view: a target above the safe
+ * top, which sits below any pinned header in [headerListIndices], lands on the top edge, a target
+ * past the safe bottom, [footerPx] above the viewport end, lands on the bottom edge, and one already
+ * in view leaves the list where it is.
+ */
+suspend fun LazyListState.keepFocusedVisible(
     listIndex: Int,
-    headerListIndices: Set<Int>,
-    instant: Boolean,
-    footerPx: Int
+    headerListIndices: Set<Int> = emptySet(),
+    instant: Boolean = false,
+    footerPx: Int = 0
 ) {
     if (listIndex < 0 || listIndex >= layoutInfo.totalItemsCount) return
     if (!canScrollForward && !canScrollBackward) return
