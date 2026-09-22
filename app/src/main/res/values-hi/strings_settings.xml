@@ -2319,6 +2319,18 @@
     <string name="settings_libretro_def_auto_restore_state_subtitle">केवल कैज़ुअल गेम पर लागू</string>
     <string name="settings_libretro_def_hw_core_save_states_title">Dolphin और Flycast सेव स्टेट</string>
     <string name="settings_libretro_def_hw_core_save_states_subtitle">प्रायोगिक; ये कोर ब्लैक-स्क्रीन हो सकते हैं या रिज़्यूम करने में विफल हो सकते हैं। अगले लॉन्च पर लागू होता है, केवल कैज़ुअल गेम</string>
+    <string name="settings_libretro_def_gb_color_style_title">रंग शैली</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">मूल (हरा)</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Game Boy Color पैलेट</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy फ़्रेम के साथ</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy, बिना फ़्रेम</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">कस्टम (कोर विकल्प उपयोग करें)</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">पहले Game Boy जैसे हरे रंग के चार शेड। केवल Game Boy Color के लिए बने गेम शुरू नहीं होंगे।</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">वह पैलेट जो Game Boy Color हर गेम को देता है। बिना प्रीसेट वाले गेम को इसके डिफ़ॉल्ट रंग मिलते हैं।</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">Super Game Boy का पैलेट और स्क्रीन फ़्रेम। Gambatte पैलेट बिना फ़्रेम के दिखाता है। केवल Game Boy Color के लिए बने गेम शुरू नहीं होंगे।</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">Super Game Boy का पैलेट, बिना स्क्रीन फ़्रेम के। केवल Game Boy Color के लिए बने गेम शुरू नहीं होंगे।</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">कोर विकल्पों को नियंत्रण में छोड़ता है। मॉडल और पैलेट कोर विकल्प में सेट करें।</string>
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">गेम के अनुसार बदलता है</string>
 
     <string name="settings_libretro_def_shader_option_none">कोई नहीं</string>
     <string name="settings_libretro_def_shader_option_custom">कस्टम</string>
