@@ -49,7 +49,8 @@ data class PlatformLibretroSettingsEntity(
     val hwCoreSaveStates: Boolean? = null,
     val frameOffsetX: Float? = null,
     val frameOffsetY: Float? = null,
-    val frameZoom: Float? = null
+    val frameZoom: Float? = null,
+    val audioBufferFrames: Int? = null
 ) {
     fun hasAnyOverrides(): Boolean =
         hasAnyVideoOverrides() || hasAnyControlOverrides() || hasAnyPathOverrides() || hasAnySavingOverrides()
@@ -75,7 +76,8 @@ data class PlatformLibretroSettingsEntity(
         audioVolume != null ||
         rewindSpeed != null ||
         rewindBufferDuration != null ||
-        vsync != null
+        vsync != null ||
+        audioBufferFrames != null
 
     fun hasAnyControlOverrides(): Boolean =
         analogAsDpad != null || dpadAsAnalog != null || rumbleEnabled != null
