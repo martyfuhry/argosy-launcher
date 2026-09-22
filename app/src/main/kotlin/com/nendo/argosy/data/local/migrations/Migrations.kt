@@ -3660,3 +3660,9 @@ object Migration_194_195 : Migration(194, 195) {
         db.execSQL("ALTER TABLE games ADD COLUMN logoPath TEXT")
     }
 }
+
+object Migration_195_196 : Migration(195, 196) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `audioBufferFrames` INTEGER DEFAULT NULL")
+    }
+}

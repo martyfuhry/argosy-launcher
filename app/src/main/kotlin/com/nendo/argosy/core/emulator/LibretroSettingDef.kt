@@ -222,6 +222,23 @@ sealed class LibretroSettingDef(
         type = SettingType.Switch
     )
 
+    data object AudioBufferFrames : LibretroSettingDef(
+        key = "audioBufferFrames",
+        section = "performance",
+        title = R.string.settings_libretro_def_audio_buffer_frames_title,
+        subtitle = R.string.settings_libretro_def_audio_buffer_frames_subtitle,
+        type = SettingType.Cycle(
+            options = listOf("0", "2", "4", "6", "8"),
+            labels = listOf(
+                R.string.settings_libretro_def_audio_buffer_frames_option_auto,
+                R.string.settings_libretro_def_audio_buffer_frames_option_2,
+                R.string.settings_libretro_def_audio_buffer_frames_option_4,
+                R.string.settings_libretro_def_audio_buffer_frames_option_6,
+                R.string.settings_libretro_def_audio_buffer_frames_option_8
+            )
+        )
+    )
+
     data object AudioVolume : LibretroSettingDef(
         key = "audioVolume",
         section = "performance",
@@ -309,6 +326,7 @@ sealed class LibretroSettingDef(
                 RewindBufferDuration,
                 SkipDuplicateFrames,
                 LowLatencyAudio,
+                AudioBufferFrames,
                 AudioVolume,
                 AutoSaveState,
                 AutoRestoreState,

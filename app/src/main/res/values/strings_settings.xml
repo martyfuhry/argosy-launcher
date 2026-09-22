@@ -4369,6 +4369,9 @@
     <string name="settings_libretro_def_low_latency_audio_title">Low Latency Audio</string>
     <!-- Second line of that row. -->
     <string name="settings_libretro_def_low_latency_audio_subtitle">Reduce audio delay for better responsiveness</string>
+    <string name="settings_libretro_def_audio_buffer_frames_title">Audio Buffer</string>
+    <!-- Second line of that row. "Frames" here means video frames of audio held in the buffer. -->
+    <string name="settings_libretro_def_audio_buffer_frames_subtitle">Smaller buffers cut audio delay but risk crackling</string>
     <!-- Row title. Emulator audio output level. -->
     <string name="settings_libretro_def_audio_volume_title">Volume</string>
     <!-- Second line of that row. The literal percent sign is not a format placeholder here. -->
@@ -4481,6 +4484,11 @@
     <string name="settings_libretro_def_audio_volume_option_180" translatable="false">180%</string>
     <string name="settings_libretro_def_audio_volume_option_190" translatable="false">190%</string>
     <string name="settings_libretro_def_audio_volume_option_200" translatable="false">200%</string>
+    <string name="settings_libretro_def_audio_buffer_frames_option_auto">Auto</string>
+    <string name="settings_libretro_def_audio_buffer_frames_option_2">2 frames (minimal)</string>
+    <string name="settings_libretro_def_audio_buffer_frames_option_4">4 frames</string>
+    <string name="settings_libretro_def_audio_buffer_frames_option_6">6 frames</string>
+    <string name="settings_libretro_def_audio_buffer_frames_option_8">8 frames</string>
 
     <!-- ===== Top level of the settings screen: Language row ===== -->
 
