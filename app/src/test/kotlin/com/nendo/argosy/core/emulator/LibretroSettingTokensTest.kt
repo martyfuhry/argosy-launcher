@@ -60,6 +60,7 @@ class LibretroSettingTokensTest {
         )
         assertTrue(optionsOf(LibretroSettingDef.AudioVolume).all { it.endsWith("%") })
         assertEquals("100%", optionsOf(LibretroSettingDef.AudioVolume)[10])
+        assertEquals(listOf("0", "2", "4", "6", "8"), optionsOf(LibretroSettingDef.AudioBufferFrames))
     }
 
     @Test
