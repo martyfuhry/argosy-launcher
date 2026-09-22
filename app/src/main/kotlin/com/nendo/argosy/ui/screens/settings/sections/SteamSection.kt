@@ -8,8 +8,6 @@ import android.provider.Settings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -86,6 +84,7 @@ import com.nendo.argosy.ui.screens.settings.components.SteamLauncherPreference
 import com.nendo.argosy.ui.screens.settings.menu.SettingsLayout
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.util.clickableNoFocus
 
 private const val GN_PACKAGE = "app.gamenative"
 
@@ -795,11 +794,7 @@ private fun FocusableButton(
         modifier = Modifier
             .clip(RoundedCornerShape(Dimens.radiusMd))
             .background(backgroundColor)
-            .clickable(
-                onClick = onClick,
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            )
+            .clickableNoFocus(onClick)
             .padding(horizontal = Dimens.spacingLg, vertical = Dimens.spacingMd),
         contentAlignment = Alignment.Center
     ) {
