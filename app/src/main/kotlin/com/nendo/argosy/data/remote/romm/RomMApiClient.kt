@@ -8,6 +8,7 @@ import com.nendo.argosy.data.model.ServerArt
 import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
+import com.nendo.argosy.util.isSameHost
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -102,6 +103,16 @@ class RomMApiClient @Inject constructor(
                 rom.backgroundUrls.map { ServerArt(it, ArtProvider.LAUNCHBOX) } +
                 screenshots.map { ServerArt(it, ArtProvider.ROMM) }
             ).distinctBy { it.url }
+    }
+
+    /**
+     * Whether an absolute url addresses the connected RomM server. False while disconnected,
+     * which leaves the session token off every request.
+     */
+    fun isSameRommHost(url: String): Boolean {
+        val base = baseUrl
+        if (base.isEmpty()) return false
+        return isSameHost(url, base)
     }
 
     fun isVersionAtLeast(minVersion: String): Boolean =
