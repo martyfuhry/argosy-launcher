@@ -4347,6 +4347,21 @@
     <string name="settings_libretro_def_hw_core_save_states_title">Dolphin and Flycast Save States</string>
     <!-- Second line of that row. -->
     <string name="settings_libretro_def_hw_core_save_states_subtitle">Experimental; these cores may black-screen or fail to resume. Takes effect on next launch, casual games only</string>
+    <!-- Row title on the Game Boy platform page: which color palette a Game Boy game is drawn with. -->
+    <string name="settings_libretro_def_gb_color_style_title">Color Style</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">Original (green)</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Game Boy Color palette</string>
+    <!-- "frame" is the decorative picture border a Super Game Boy draws around the game screen, not an animation frame. -->
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy with frame</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy, no frame</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">Custom (use core options)</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">Four green shades, as on the first Game Boy. Games made only for Game Boy Color will not start.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">The palette a Game Boy Color assigns to each game. Games without a preset get its default colors.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">The palette and screen frame a Super Game Boy shows. Gambatte shows the palette without a frame. Games made only for Game Boy Color will not start.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">The palette a Super Game Boy shows, without the screen frame. Games made only for Game Boy Color will not start.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">Leaves the core options in charge. Set the model and palette under Core Options.</string>
+    <!-- Caption under a sample palette: the real palette differs from game to game. -->
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">Varies by game</string>
 
     <!-- Shader cycle labels. "Sharp", "CUT", "CUT2", "CUT3", "CRT" and "LCD" are upstream
          libretrodroid ShaderConfig names and must stay exactly as written. -->

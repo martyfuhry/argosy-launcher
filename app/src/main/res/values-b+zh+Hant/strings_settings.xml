@@ -2068,6 +2068,18 @@
     <string name="settings_libretro_def_auto_restore_state_subtitle">僅適用於一般模式的遊戲</string>
     <string name="settings_libretro_def_hw_core_save_states_title">Dolphin與Flycast即時存檔</string>
     <string name="settings_libretro_def_hw_core_save_states_subtitle">實驗性功能；這些核心可能出現黑畫面或無法繼續遊戲。將於下次啟動時生效，僅適用於一般模式的遊戲</string>
+    <string name="settings_libretro_def_gb_color_style_title">色彩風格</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">原版（綠色）</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Game Boy Color 調色盤</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy，含邊框</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy，無邊框</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">自訂（使用核心選項）</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">如初代 Game Boy 的四階綠色。僅支援 Game Boy Color 的遊戲將無法啟動。</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">Game Boy Color 為每款遊戲指定的調色盤。沒有預設的遊戲使用其預設顏色。</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">Super Game Boy 顯示的調色盤與螢幕邊框。Gambatte 只顯示調色盤，不顯示邊框。僅支援 Game Boy Color 的遊戲將無法啟動。</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">Super Game Boy 顯示的調色盤，不含螢幕邊框。僅支援 Game Boy Color 的遊戲將無法啟動。</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">交由核心選項決定。請在核心選項中設定機型與調色盤。</string>
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">因遊戲而異</string>
 
     <string name="settings_libretro_def_shader_option_none">無</string>
     <string name="settings_libretro_def_shader_option_custom">自訂</string>

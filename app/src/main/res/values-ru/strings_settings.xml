@@ -2388,6 +2388,18 @@
     <string name="settings_libretro_def_auto_restore_state_subtitle">Применяется только к обычным играм</string>
     <string name="settings_libretro_def_hw_core_save_states_title">Быстрые сохранения Dolphin и Flycast</string>
     <string name="settings_libretro_def_hw_core_save_states_subtitle">Экспериментально; эти ядра могут показывать чёрный экран или не возобновляться. Вступает в силу при следующем запуске, только для обычных игр</string>
+    <string name="settings_libretro_def_gb_color_style_title">Стиль цвета</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">Оригинал (зелёный)</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Палитра Game Boy Color</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy с рамкой</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy, без рамки</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">Свой (использовать опции ядра)</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">Четыре оттенка зелёного, как на первом Game Boy. Игры только для Game Boy Color не запустятся.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">Палитра, которую Game Boy Color назначает каждой игре. Игры без пресета получают его цвета по умолчанию.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">Палитра и рамка экрана Super Game Boy. Gambatte показывает палитру без рамки. Игры только для Game Boy Color не запустятся.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">Палитра Super Game Boy без рамки экрана. Игры только для Game Boy Color не запустятся.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">Оставляет решение за опциями ядра. Модель и палитру задайте в Опциях ядра.</string>
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">Зависит от игры</string>
 
     <string name="settings_libretro_def_shader_option_none">Нет</string>
     <string name="settings_libretro_def_shader_option_custom">Свой</string>
