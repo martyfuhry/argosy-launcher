@@ -27,6 +27,7 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.repository.BiosRepository
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -803,8 +804,8 @@ class RomMLibrarySyncService @Inject constructor(
         val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
         val entity = PlatformEntity(
             id = platformId,
-            slug = effectiveSlug,
-            fsSlug = remote.fsSlug,
+            slug = FileNames.sanitize(effectiveSlug),
+            fsSlug = remote.fsSlug?.let { if (it.isBlank()) it else FileNames.sanitize(it) },
             name = normalizedName,
             shortName = resolvedShortName,
             romExtensions = platformDef?.extensions?.joinToString(",") ?: "",
