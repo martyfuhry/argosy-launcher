@@ -3639,3 +3639,9 @@ object Migration_191_192 : Migration(191, 192) {
         db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `audioBufferFrames` INTEGER DEFAULT NULL")
     }
 }
+
+object Migration_192_193 : Migration(192, 193) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `gbColorStyle` TEXT DEFAULT NULL")
+    }
+}

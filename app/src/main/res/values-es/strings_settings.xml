@@ -2347,6 +2347,18 @@
     <string name="settings_libretro_def_auto_restore_state_subtitle">Se aplica solo a los juegos en modo casual</string>
     <string name="settings_libretro_def_hw_core_save_states_title">Estados guardados de Dolphin y Flycast</string>
     <string name="settings_libretro_def_hw_core_save_states_subtitle">Experimental; estos cores pueden mostrar pantalla negra o no reanudarse. Se aplica en el próximo inicio, solo en juegos en modo casual</string>
+    <string name="settings_libretro_def_gb_color_style_title">Estilo de color</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">Original (verde)</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Paleta de Game Boy Color</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy con marco</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy, sin marco</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">Personalizado (opciones del core)</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">Cuatro tonos de verde, como en la primera Game Boy. Los juegos solo para Game Boy Color no arrancan.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">La paleta que una Game Boy Color asigna a cada juego. Los juegos sin preajuste reciben sus colores por defecto.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">La paleta y el marco de pantalla de una Super Game Boy. Gambatte muestra la paleta sin marco. Los juegos solo para Game Boy Color no arrancan.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">La paleta de una Super Game Boy, sin el marco de pantalla. Los juegos solo para Game Boy Color no arrancan.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">Deja mandar a las opciones del core. Ajusta el modelo y la paleta en Opciones del core.</string>
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">Varía según el juego</string>
 
     <string name="settings_libretro_def_shader_option_none">Ninguno</string>
     <string name="settings_libretro_def_shader_option_custom">Personalizado</string>
