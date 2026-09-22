@@ -311,7 +311,7 @@ private fun NavigationContent(
 
     LaunchedEffect(focusedIndex) {
         if (items.isNotEmpty() && focusedIndex in items.indices) {
-            listState.animateScrollToItem(focusedIndex)
+            listState.keepFocusedVisible(focusedIndex)
         }
     }
 
