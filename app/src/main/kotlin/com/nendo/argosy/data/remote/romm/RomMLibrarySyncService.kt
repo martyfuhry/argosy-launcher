@@ -1038,7 +1038,7 @@ class RomMLibrarySyncService @Inject constructor(
             playCount = localDataSource?.playCount ?: 0,
             playTimeMinutes = localDataSource?.playTimeMinutes ?: 0,
             lastPlayed = localDataSource?.lastPlayed,
-            addedAt = localDataSource?.addedAt ?: java.time.Instant.now(),
+            addedAt = localDataSource?.addedAt ?: resolveAddedAt(rom.createdAt, Instant.now()),
             achievementCount = localDataSource?.achievementCount ?: 0,
             earnedAchievementCount = localDataSource?.earnedAchievementCount ?: 0
         ).withRomMetadata(rom)
