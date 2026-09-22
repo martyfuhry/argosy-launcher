@@ -1,5 +1,6 @@
 package com.nendo.argosy.data.platform
 
+import com.nendo.argosy.core.emulator.GbColorStyles
 import com.nendo.argosy.core.emulator.LibretroSettingDef
 
 object PlatformWeightRegistry {
@@ -69,6 +70,10 @@ object PlatformWeightRegistry {
         canEnableBFI: Boolean = true
     ): Boolean {
         if (setting == LibretroSettingDef.BlackFrameInsertion && !canEnableBFI) {
+            return false
+        }
+
+        if (setting == LibretroSettingDef.GbColorStyle && platformSlug != GbColorStyles.PLATFORM_SLUG) {
             return false
         }
 
