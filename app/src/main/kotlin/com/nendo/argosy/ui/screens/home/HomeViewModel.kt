@@ -221,11 +221,8 @@ class HomeViewModel @Inject constructor(
         }.launchIn(viewModelScope)
 
         loadData()
-        syncDelegate.initializeRomM(
-            viewModelScope,
-            onSyncComplete = { refreshRecentGames() },
-            onFavoritesRefreshed = { libraryDelegate.loadFavorites() }
-        )
+        syncDelegate.initializeRomM(viewModelScope) { libraryDelegate.loadFavorites() }
+        syncDelegate.observeSyncCompletion(viewModelScope) { refreshAfterSync(it) }
         observeBackgroundSettings()
         observeGradientChanges()
         observeSyncOverlay()
@@ -761,6 +758,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch { libraryDelegate.loadPlatformGames(platform) }
     }
 
+    private suspend fun refreshAfterSync(platformId: Long?) {
+        if (platformId != null && platformId != _uiState.value.currentPlatform?.id) return
+        libraryDelegate.invalidateRecentGamesCache()
+        if (platformId == null) libraryDelegate.loadRecentGames()
+        refreshCurrentRowInternal()
+    }
+
     private fun loadData() {
         libraryDelegate.loadInitialData(viewModelScope) { startRow ->
             flushLibraryState()
@@ -802,6 +806,7 @@ class HomeViewModel @Inject constructor(
         } else state.focusedGameIndex
 
         flushLibraryState()
+        if (_uiState.value.currentRow != state.currentRow) return
 
         if (result.isEmpty && _uiState.value.currentItems.isEmpty()) {
             val newRow = _uiState.value.availableRows.firstOrNull() ?: HomeRow.Continue
@@ -2084,7 +2089,7 @@ class HomeViewModel @Inject constructor(
 
     // --- Public API: Sync & Changelog ---
 
-    override fun syncFromRomm() = syncDelegate.syncFromRomm(viewModelScope) { refreshRecentGames() }
+    override fun syncFromRomm() = syncDelegate.syncFromRomm()
     fun dismissChangelog() = syncDelegate.dismissChangelog(viewModelScope)
     fun handleChangelogAction(action: RequiredAction): RequiredAction = syncDelegate.handleChangelogAction(viewModelScope, action)
 
