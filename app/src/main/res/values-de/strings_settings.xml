@@ -2324,6 +2324,18 @@
     <string name="settings_libretro_def_auto_restore_state_subtitle">Gilt nur für Casual-Spiele</string>
     <string name="settings_libretro_def_hw_core_save_states_title">Dolphin- und Flycast-Savestates</string>
     <string name="settings_libretro_def_hw_core_save_states_subtitle">Experimentell; diese Cores können schwarz bleiben oder nicht fortsetzen. Wirkt sich erst beim nächsten Start aus, nur Casual-Spiele</string>
+    <string name="settings_libretro_def_gb_color_style_title">Farbstil</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">Original (grün)</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Game-Boy-Color-Palette</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy mit Rahmen</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy, ohne Rahmen</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">Benutzerdefiniert (Core-Optionen)</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">Vier Grüntöne wie auf dem ersten Game Boy. Spiele nur für Game Boy Color starten nicht.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">Die Palette, die ein Game Boy Color jedem Spiel zuweist. Spiele ohne Voreinstellung erhalten seine Standardfarben.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">Palette und Bildschirmrahmen eines Super Game Boy. Gambatte zeigt die Palette ohne Rahmen. Spiele nur für Game Boy Color starten nicht.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">Die Palette eines Super Game Boy ohne den Bildschirmrahmen. Spiele nur für Game Boy Color starten nicht.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">Überlässt die Entscheidung den Core-Optionen. Modell und Palette unter Core-Optionen einstellen.</string>
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">Je nach Spiel</string>
 
     <string name="settings_libretro_def_shader_option_none">Keiner</string>
     <string name="settings_libretro_def_shader_option_custom">Eigen</string>
