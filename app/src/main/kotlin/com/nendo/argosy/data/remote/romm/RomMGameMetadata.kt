@@ -92,3 +92,10 @@ internal fun GameEntity.withRomMetadata(rom: RomMRom): GameEntity = copy(
  */
 internal fun resolveAddedAt(serverCreatedAt: String?, now: Instant): Instant =
     serverCreatedAt?.let(::parseTimestamp)?.let(Instant::ofEpochMilli) ?: now
+
+/**
+ * The added time of a game already in the library: the earlier of [existing] and the server's
+ * creation time, so a stamp only ever moves earlier.
+ */
+internal fun reconcileAddedAt(existing: Instant, serverCreatedAt: String?): Instant =
+    minOf(existing, resolveAddedAt(serverCreatedAt, existing))
