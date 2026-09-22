@@ -169,8 +169,10 @@ fun BuiltinControlsSection(
 ) {
     val controlsState = uiState.builtinControls
     val context = LocalContext.current
-    val controllerOrder by viewModel.getControllerOrder().collectAsState(initial = emptyList())
-    val hotkeys by viewModel.observeHotkeys().collectAsState(initial = emptyList())
+    val controllerOrderFlow = remember(viewModel) { viewModel.getControllerOrder() }
+    val hotkeysFlow = remember(viewModel) { viewModel.observeHotkeys() }
+    val controllerOrder by controllerOrderFlow.collectAsState(initial = emptyList())
+    val hotkeys by hotkeysFlow.collectAsState(initial = emptyList())
 
     val videoState = uiState.builtinVideo
     val isGlobal = videoState.isGlobalContext
