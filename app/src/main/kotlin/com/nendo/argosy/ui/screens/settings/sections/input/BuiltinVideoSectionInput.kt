@@ -114,7 +114,8 @@ internal class BuiltinVideoSectionInput(
         LibretroSettingDef.AudioVolume,
         LibretroSettingDef.AudioBufferFrames,
         LibretroSettingDef.RewindSpeed,
-        LibretroSettingDef.RewindBufferDuration -> {
+        LibretroSettingDef.RewindBufferDuration,
+        LibretroSettingDef.GbColorStyle -> {
             viewModel.requestEnumPicker(setting.key)
             InputResult.handled(SoundType.OPEN_MODAL)
         }
