@@ -51,6 +51,7 @@ import com.nendo.argosy.core.input.ControllerDetector
 import com.nendo.argosy.ui.input.LocalABIconsSwapped
 import com.nendo.argosy.ui.input.LocalSwapStartSelect
 import com.nendo.argosy.ui.input.LocalXYIconsSwapped
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.nendo.argosy.BuildConfig
 import com.nendo.argosy.R
@@ -63,6 +64,7 @@ import com.nendo.argosy.hardware.AmbientLedManager
 import com.nendo.argosy.data.local.dao.AchievementDao
 import com.nendo.argosy.data.local.dao.CheatDao
 import com.nendo.argosy.data.local.dao.GameDao
+import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.platform.PlatformWeightRegistry
 import com.nendo.argosy.data.preferences.EffectiveLibretroSettingsResolver
 import com.nendo.argosy.data.preferences.UserPreferences
@@ -150,6 +152,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -291,10 +294,6 @@ class LibretroActivity : ComponentActivity() {
     private var hardcoreConfirmed by mutableStateOf(false)
     private var secureSavesEnabled = true
 
-    /**
-     * Preferences as they stood when the session started. Read once because onCreate blocks
-     * the main thread on each read, and a mid-session change must not alter a running game.
-     */
     private lateinit var launchPreferences: UserPreferences
     private var launchMode = LaunchMode.RESUME
     private var launchOrigin = LaunchOrigin.INTERNAL
@@ -475,23 +474,29 @@ class LibretroActivity : ComponentActivity() {
             statesDir = variantIsolatedDir(baseStatesDir).apply { mkdirs() }
         }
 
-        val game = kotlinx.coroutines.runBlocking { gameDao.getById(gameId) }
-        platformId = game?.platformId ?: -1L
-        platformSlug = intent.getStringExtra(EXTRA_PLATFORM_SLUG)?.takeIf { it.isNotBlank() }
-            ?: game?.platformSlug ?: ""
-        activeSaveChannel = kotlinx.coroutines.runBlocking {
-            activeSaveRepository.getActiveChannel(gameId)
+        lifecycleScope.launch {
+            val launchContext = withContext(Dispatchers.IO + NonCancellable) { loadLaunchContext(savesDir, statesDir) }
+            if (isFinishing) return@launch
+            initializeSession(launchContext, systemDir, savesDir)
         }
-        perGameSettingsEnabled = game?.perGameSettingsEnabled == true
-        perGameControlsEnabled = game?.perGameControlsEnabled == true
+    }
 
-        initializeSaveState(savesDir, statesDir, activeSaveChannel)
+    private fun initializeSession(launchContext: LaunchContext, systemDir: File, savesDir: File) {
+        launchPreferences = launchContext.preferences
+        secureSavesEnabled = launchContext.preferences.secureSaves
+        launchMode = launchContext.launchMode
+        hardcoreMode = launchContext.hardcoreMode
+        platformId = launchContext.platformId
+        platformSlug = launchContext.platformSlug
+        activeSaveChannel = launchContext.activeSaveChannel
+        perGameSettingsEnabled = launchContext.game?.perGameSettingsEnabled == true
+        perGameControlsEnabled = launchContext.game?.perGameControlsEnabled == true
+
+        initializeSaveState(launchContext)
         if (hardcoreMode) {
             com.nendo.argosy.DualScreenManagerHolder.instance?.sessionQuickActions = null
         }
-        val globalSettings = kotlinx.coroutines.runBlocking {
-            preferencesRepository.getBuiltinEmulatorSettings().first()
-        }
+        val globalSettings = launchContext.globalSettings
         touchSettingsState = globalSettings
         var lastLockOrientation = globalSettings.touchControlsLockOrientation
         var lastShow = globalSettings.showTouchControlsWhenNoGamepad
@@ -518,9 +523,7 @@ class LibretroActivity : ComponentActivity() {
             }
         }
         applyOrientationLock(globalSettings.touchControlsLockOrientation)
-        val settings = kotlinx.coroutines.runBlocking {
-            effectiveLibretroSettingsResolver.getEffectiveSettings(platformId, platformSlug)
-        }
+        val settings = launchContext.settings
 
         autoSaveEnabled = settings.autoSaveState && !isGuestJoinedSession
         hwCoreSaveStatesEnabled = settings.hwCoreSaveStatesEnabled
@@ -583,6 +586,7 @@ class LibretroActivity : ComponentActivity() {
 
         buildContentView()
         setUpSecondScreen()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) showSecondScreen()
 
         if (gameId != -1L) {
             val isNewGame = launchMode == LaunchMode.NEW_CASUAL || launchMode == LaunchMode.NEW_HARDCORE
@@ -655,24 +659,10 @@ class LibretroActivity : ComponentActivity() {
         coreName = intent.getStringExtra(EXTRA_CORE_NAME)
         launchMode = LaunchMode.fromString(intent.getStringExtra(LaunchMode.EXTRA_LAUNCH_MODE))
         launchOrigin = LaunchOrigin.fromString(intent.getStringExtra(LaunchOrigin.EXTRA_LAUNCH_ORIGIN))
-        launchPreferences = kotlinx.coroutines.runBlocking {
-            preferencesRepository.preferences.first()
-        }
-        secureSavesEnabled = launchPreferences.secureSaves
-        if (!secureSavesEnabled && launchMode.isHardcore) {
-            launchMode = if (launchMode == LaunchMode.RESUME_HARDCORE) LaunchMode.RESUME else LaunchMode.NEW_CASUAL
-        }
-        hardcoreMode = launchMode.isHardcore
 
         val joinSessionId = intent.getStringExtra(EXTRA_NETPLAY_JOIN_SESSION_ID)
         val joinHostUserId = intent.getStringExtra(EXTRA_NETPLAY_JOIN_HOST_USER_ID)
-        if (netplay.parseJoinIntent(joinSessionId, joinHostUserId)) {
-            // Guests joining a netplay session do not fetch, create, or sync
-            // local saves/states. The runtime state is bound to the host's
-            // snapshot for the duration of the session. Force a fresh launch
-            // so nothing tries to auto-restore.
-            launchMode = LaunchMode.NEW_CASUAL
-        }
+        netplay.parseJoinIntent(joinSessionId, joinHostUserId)
 
         return true
     }
@@ -744,22 +734,48 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
-    private fun initializeSaveState(savesDir: File, statesDir: File, channelName: String? = null) {
-        val sramPath = File(savesDir, "${File(romPath).nameWithoutExtension}.srm").absolutePath
+    private data class LaunchContext(
+        val preferences: UserPreferences,
+        val launchMode: LaunchMode,
+        val hardcoreMode: Boolean,
+        val game: GameEntity?,
+        val platformId: Long,
+        val platformSlug: String,
+        val activeSaveChannel: String?,
+        val saveStateManager: SaveStateManager,
+        val restore: SaveStateManager.RestoreResult,
+        val globalSettings: BuiltinEmulatorSettings,
+        val settings: BuiltinEmulatorSettings
+    )
+
+    private suspend fun loadLaunchContext(savesDir: File, statesDir: File): LaunchContext {
+        val preferences = preferencesRepository.preferences.first()
+        var mode = launchMode
+        if (!preferences.secureSaves && mode.isHardcore) {
+            mode = if (mode == LaunchMode.RESUME_HARDCORE) LaunchMode.RESUME else LaunchMode.NEW_CASUAL
+        }
+        val hardcore = mode.isHardcore
+        if (isGuestJoinedSession) mode = LaunchMode.NEW_CASUAL
+
+        val game = gameDao.getById(gameId)
+        val platformId = game?.platformId ?: -1L
+        val platformSlug = intent.getStringExtra(EXTRA_PLATFORM_SLUG)?.takeIf { it.isNotBlank() }
+            ?: game?.platformSlug ?: ""
+        val channelName = activeSaveRepository.getActiveChannel(gameId)
+        val romFile = File(romPath)
+        val sramPath = File(savesDir, "${romFile.nameWithoutExtension}.srm").absolutePath
         val primarySavePath = coreName?.let { layout ->
-            kotlinx.coroutines.runBlocking {
-                val game = gameDao.getById(gameId)
-                saveUnitResolver.expectedPrimaryPath(sramPath, layout, platformSlug, File(romPath).name, game)
-            }
+            saveUnitResolver.expectedPrimaryPath(sramPath, layout, platformSlug, romFile.name, game)
         } ?: sramPath
-        saveStateManager = SaveStateManager(
+        val canonicalSlug = com.nendo.argosy.data.platform.PlatformDefinitions.getCanonicalSlug(platformSlug)
+        val manager = SaveStateManager(
             savesDir = savesDir,
             statesDir = statesDir,
             romPath = romPath,
             gameId = gameId,
             activeSaveRepository = activeSaveRepository,
             saveCacheManager = saveCacheManager,
-            usesExternalMemcard = com.nendo.argosy.data.platform.PlatformDefinitions.getCanonicalSlug(platformSlug) == "gc",
+            usesExternalMemcard = canonicalSlug == "gc",
             channelName = channelName,
             isVariant = variantFileId >= 0,
             primarySavePath = primarySavePath,
@@ -772,18 +788,36 @@ class LibretroActivity : ComponentActivity() {
                 publishSessionControls()
             }
         )
-        saveStateManager.adoptLegacySaveIfMissing()
-        if (coreName == "genesis_plus_gx" && isSegaCd()) saveStateManager.adoptSharedSegaCdBramIfMissing()
-        val restoreResult = kotlinx.coroutines.runBlocking {
-            saveStateManager.withRtcFromDisk(saveStateManager.restoreSaveForLaunchMode(launchMode))
-        }
+        manager.adoptLegacySaveIfMissing()
+        if (coreName == "genesis_plus_gx" && canonicalSlug == "scd") manager.adoptSharedSegaCdBramIfMissing()
+        val restore = manager.withRtcFromDisk(manager.restoreSaveForLaunchMode(mode))
+        manager.initializeFromExistingSave(restore.sramData)
+        val globalSettings = preferencesRepository.getBuiltinEmulatorSettings().first()
+        val settings = effectiveLibretroSettingsResolver.getEffectiveSettings(platformId, platformSlug)
+        return LaunchContext(
+            preferences = preferences,
+            launchMode = mode,
+            hardcoreMode = hardcore,
+            game = game,
+            platformId = platformId,
+            platformSlug = platformSlug,
+            activeSaveChannel = channelName,
+            saveStateManager = manager,
+            restore = restore,
+            globalSettings = globalSettings,
+            settings = settings
+        )
+    }
+
+    private fun initializeSaveState(launchContext: LaunchContext) {
+        saveStateManager = launchContext.saveStateManager
+        val restoreResult = launchContext.restore
         restoredSram = restoreResult.sramData
         restoredRtc = restoreResult.rtcData
         casualSaveInHardcore = restoreResult.casualSaveInHardcore
         if (restoreResult.switchToHardcore && secureSavesEnabled) {
             hardcoreMode = true
         }
-        saveStateManager.initializeFromExistingSave(restoreResult.sramData)
         lifecycleScope.launch {
             snapshotFlow { hardcoreMode }.collect { publishSessionControls() }
         }
@@ -878,9 +912,6 @@ class LibretroActivity : ComponentActivity() {
                 }
         }
     }
-
-    private fun isSegaCd(): Boolean =
-        com.nendo.argosy.data.platform.PlatformDefinitions.getCanonicalSlug(platformSlug) == "scd"
 
     @Suppress("DEPRECATION")
     private fun onSecondaryDisplay(): Boolean =
@@ -2971,6 +3002,7 @@ class LibretroActivity : ComponentActivity() {
     }
 
     private fun showMenu() {
+        if (!::retroView.isInitialized) return
         if (!netplay.inSession) {
             menuOpenedAtMs = System.currentTimeMillis()
             pauseForMenu()
@@ -3070,7 +3102,7 @@ class LibretroActivity : ComponentActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        if (isAnyMenuOpen) return super.onKeyDown(keyCode, event)
+        if (isAnyMenuOpen || !::retroView.isInitialized) return super.onKeyDown(keyCode, event)
 
         if (event.repeatCount > 0 && keyCode in hotkeyConsumedKeys) return true
         if (event.repeatCount > 0 && deferredCoreKeys.isHolding(keyCode)) return true
@@ -3104,7 +3136,7 @@ class LibretroActivity : ComponentActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        if (isAnyMenuOpen) return super.onKeyUp(keyCode, event)
+        if (isAnyMenuOpen || !::retroView.isInitialized) return super.onKeyUp(keyCode, event)
 
         if (deferredCoreKeys.release(keyCode, event)) return true
 
@@ -3117,6 +3149,7 @@ class LibretroActivity : ComponentActivity() {
     }
 
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        if (!::retroView.isInitialized) return super.onGenericMotionEvent(event)
         val device = event.device
         triggerAxisKeyEmitter.emit(event) { axis ->
             device != null && inputMapper.hasAnalogMappingForAxis(device, axis)
@@ -3136,6 +3169,7 @@ class LibretroActivity : ComponentActivity() {
         super.onResume()
         autoSaveStateCaptured = false
         window.hideSystemBars()
+        if (!::retroView.isInitialized) return
         retroView.onResume()
         setUpSecondScreen()
         showSecondScreen()
