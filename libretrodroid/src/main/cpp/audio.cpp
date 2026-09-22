@@ -107,9 +107,12 @@ std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool
 }
 
 void Audio::logStreamState() {
-    LOGI("Audio stream opened: perf=%s sharing=%s burst=%d bufferSize=%d bufferCapacity=%d fifoMs=%.1f",
+    LOGI("Audio stream opened: api=%s perf=%s sharing=%s format=%s rate=%d burst=%d bufferSize=%d bufferCapacity=%d fifoMs=%.1f",
+         oboe::convertToText(stream->getAudioApi()),
          oboe::convertToText(stream->getPerformanceMode()),
          oboe::convertToText(stream->getSharingMode()),
+         oboe::convertToText(stream->getFormat()),
+         stream->getSampleRate(),
          stream->getFramesPerBurst(),
          stream->getBufferSizeInFrames(),
          stream->getBufferCapacityInFrames(),
