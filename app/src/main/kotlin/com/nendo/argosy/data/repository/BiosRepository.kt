@@ -15,6 +15,7 @@ import com.nendo.argosy.data.remote.romm.RomMResult
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
 import com.nendo.argosy.util.AppPaths
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -156,7 +157,7 @@ class BiosRepository @Inject constructor(
     private suspend fun getActiveBiosPlatformDir(platformSlug: String): File {
         val customPath = userPreferencesRepository.preferences.first().customBiosPath
         val base = if (customPath != null) resolveBiosDir(customPath) else getInternalBiosDir()
-        val dir = File(base, platformSlug)
+        val dir = File(base, FileNames.sanitize(platformSlug))
         if (!dir.exists()) dir.mkdirs()
         return dir
     }
@@ -237,8 +238,9 @@ class BiosRepository @Inject constructor(
         }
 
         val platformDir = getActiveBiosPlatformDir(firmware.platformSlug)
-        val targetFile = File(platformDir, firmware.fileName)
-        val partFile = File(platformDir, "${firmware.fileName}$FIRMWARE_PART_SUFFIX")
+        val diskName = FileNames.sanitize(firmware.fileName)
+        val targetFile = File(platformDir, diskName)
+        val partFile = File(platformDir, "$diskName$FIRMWARE_PART_SUFFIX")
 
         val expectedBytes = firmware.fileSizeBytes
 
@@ -476,7 +478,7 @@ class BiosRepository @Inject constructor(
 
         for (slug in platformSlugs) {
             cleanupDistributedCopies(slug)
-            val platformDir = File(getInternalBiosDir(), slug)
+            val platformDir = File(getInternalBiosDir(), FileNames.sanitize(slug))
             if (platformDir.exists()) platformDir.deleteRecursively()
         }
 
