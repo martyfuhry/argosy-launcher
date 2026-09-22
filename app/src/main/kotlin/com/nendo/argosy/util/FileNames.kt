@@ -34,6 +34,13 @@ object FileNames {
     }
 
     /**
+     * [name] as a directory entry: the fallback stands in for an empty name and for the two
+     * entries every directory already holds.
+     */
+    fun entryName(name: String): String =
+        if (name.isEmpty() || name == "." || name == "..") FALLBACK else name
+
+    /**
      * An archive entry path with every segment folded. Empty, `.` and `..` segments are dropped,
      * so a crafted entry cannot climb out of the directory it is being extracted into.
      */
