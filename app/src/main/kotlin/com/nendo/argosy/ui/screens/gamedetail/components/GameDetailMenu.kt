@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -75,7 +76,8 @@ data class MenuLayoutState(
     val hasSocialAccount: Boolean = false,
     val hasSaveSync: Boolean = false,
     val hasRelated: Boolean = false,
-    val hasPerGameSettings: Boolean = false
+    val hasPerGameSettings: Boolean = false,
+    val hasDocuments: Boolean = false
 )
 
 sealed class MenuItem(
@@ -91,13 +93,17 @@ sealed class MenuItem(
     data object Details : MenuItem("details")
     data object Description : MenuItem("description", visibleWhen = { it.hasDescription })
     data object Screenshots : MenuItem("screenshots", visibleWhen = { it.hasScreenshots })
+    data object Documents : MenuItem("documents", visibleWhen = { it.hasDocuments })
     data object Reviews : MenuItem("reviews", visibleWhen = { it.hasSocialAccount })
     data object Achievements : MenuItem("achievements", visibleWhen = { it.hasAchievements })
     data object RelatedGames : MenuItem("related", visibleWhen = { it.hasRelated })
 
     companion object {
         val ALL: List<MenuItem>
-            get() = listOf(Play, Saves, Favorite, Privacy, PerGameSettings, Options, Details, Description, Screenshots, Reviews, Achievements, RelatedGames)
+            get() = listOf(
+                Play, Saves, Favorite, Privacy, PerGameSettings, Options, Details,
+                Description, Screenshots, Documents, Reviews, Achievements, RelatedGames
+            )
     }
 }
 
@@ -253,6 +259,16 @@ fun GameDetailMenu(
                     )
                 }
 
+                MenuItem.Documents -> {
+                    IconTextMenuItem(
+                        label = stringResource(R.string.gamedetail_menu_documents),
+                        icon = Icons.AutoMirrored.Filled.MenuBook,
+                        isFocused = isFocused,
+                        isCompact = isCompact,
+                        onClick = { onFocusChange(focusIndex); onItemClick(item) }
+                    )
+                }
+
                 MenuItem.Reviews -> {
                     IconTextMenuItem(
                         label = stringResource(R.string.gamedetail_menu_reviews),
@@ -298,6 +314,8 @@ private fun PlayMenuItem(
     onClick: () -> Unit
 ) {
     val label = when (downloadStatus) {
+        GameDownloadStatus.NO_FILE ->
+            stringResource(R.string.gamedetail_menu_play_button_no_file)
         GameDownloadStatus.EXTRACTING ->
             stringResource(R.string.gamedetail_menu_play_button_extracting)
         GameDownloadStatus.DOWNLOADING -> if (isAwaitingServer) {

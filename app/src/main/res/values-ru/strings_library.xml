@@ -150,8 +150,8 @@
     <string name="library_apps_menu_open_on_screen">Открыть на экране %1$d</string>
     <string name="library_apps_menu_remove_from_home">Убрать с главного экрана</string>
     <string name="library_apps_menu_add_to_home">Добавить на главный экран</string>
-    <string name="library_apps_menu_remove_from_second_screen">Убрать со второго экрана</string>
-    <string name="library_apps_menu_add_to_second_screen">Добавить на второй экран</string>
+    <string name="library_apps_menu_unpin_from_app_bar">Открепить от панели приложений</string>
+    <string name="library_apps_menu_pin_to_app_bar">Закрепить на панели приложений</string>
     <string name="library_apps_menu_show">Показать</string>
     <string name="library_apps_menu_hide">Скрыть</string>
     <string name="library_apps_menu_reorder">Изменение порядка приложений</string>

@@ -52,6 +52,7 @@ class UserPreferencesRepository @Inject constructor(
             rommBaseUrl = sync.rommBaseUrl,
             rommUsername = sync.rommUsername,
             rommUserId = sync.rommUserId,
+            rommAvatarPath = sync.rommAvatarPath,
             rommToken = sync.rommToken,
             rommDeviceId = sync.rommDeviceId,
             rommDeviceClientVersion = sync.rommDeviceClientVersion,
@@ -60,6 +61,9 @@ class UserPreferencesRepository @Inject constructor(
             raProxyEnabled = sync.raProxyEnabled,
             raProxyAddress = sync.raProxyAddress,
             romStoragePath = storage.romStoragePath,
+            showStatusClock = display.showStatusClock,
+            showStatusBattery = display.showStatusBattery,
+            showStatusNetwork = display.showStatusNetwork,
             themeMode = display.themeMode,
             primaryColor = display.primaryColor,
             secondaryColor = display.secondaryColor,
@@ -192,7 +196,7 @@ class UserPreferencesRepository @Inject constructor(
             ambientLedTransitionMs = display.ambientLedTransitionMs,
             ambientLedAchievementFlash = display.ambientLedAchievementFlash,
             builtinLibretroEnabled = builtinEnabled,
-            appAffinityEnabled = app.appAffinityEnabled,
+            appDisplayTargets = app.appDisplayTargets,
             dualScreenEnabled = display.dualScreenEnabled,
             pauseDualScreenWhileDocked = display.pauseDualScreenWhileDocked,
             displayRoleOverride = display.displayRoleOverride,
@@ -331,6 +335,12 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setDualScreenInputFocus(focus: DualScreenInputFocus) = displayPrefs.setDualScreenInputFocus(focus)
     suspend fun setInstalledOnlyHome(enabled: Boolean) = displayPrefs.setInstalledOnlyHome(enabled)
 
+    suspend fun setShowStatusClock(show: Boolean) = displayPrefs.setShowStatusClock(show)
+
+    suspend fun setShowStatusBattery(show: Boolean) = displayPrefs.setShowStatusBattery(show)
+
+    suspend fun setShowStatusNetwork(show: Boolean) = displayPrefs.setShowStatusNetwork(show)
+
     // --- Sync delegates ---
 
     suspend fun setRommConfig(url: String?, username: String?) = syncPrefs.setRommConfig(url, username)
@@ -346,6 +356,7 @@ class UserPreferencesRepository @Inject constructor(
         syncPrefs.getEffectiveDownloadDefaults(platformSlug)
     suspend fun setRomMCredentials(baseUrl: String, token: String, username: String? = null, userId: Long? = null) =
         syncPrefs.setRomMCredentials(baseUrl, token, username, userId)
+    suspend fun setRomMAvatarPath(path: String?) = syncPrefs.setRomMAvatarPath(path)
     suspend fun clearRomMCredentials() = syncPrefs.clearRomMCredentials()
     suspend fun setRommDeviceId(deviceId: String, clientVersion: String) = syncPrefs.setRommDeviceId(deviceId, clientVersion)
     suspend fun clearRommDeviceId() = syncPrefs.clearRommDeviceId()
@@ -478,7 +489,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setFileLoggingEnabled(enabled: Boolean) = appPrefs.setFileLoggingEnabled(enabled)
     suspend fun setFileLoggingPath(path: String?) = appPrefs.setFileLoggingPath(path)
     suspend fun setFileLogLevel(level: LogLevel) = appPrefs.setFileLogLevel(level)
-    suspend fun setAppAffinityEnabled(enabled: Boolean) = appPrefs.setAppAffinityEnabled(enabled)
+    suspend fun setAppDisplayTarget(packageName: String, screenKey: String?) =
+        appPrefs.setAppDisplayTarget(packageName, screenKey)
     suspend fun setAppLanguage(tag: String) = appPrefs.setAppLanguage(tag)
 
     // --- Builtin emulator delegates ---
@@ -687,6 +699,7 @@ data class UserPreferences(
     val rommBaseUrl: String? = null,
     val rommUsername: String? = null,
     val rommUserId: Long? = null,
+    val rommAvatarPath: String? = null,
     val rommToken: String? = null,
     val rommDeviceId: String? = null,
     val rommDeviceClientVersion: String? = null,
@@ -695,6 +708,9 @@ data class UserPreferences(
     val raProxyEnabled: Boolean = false,
     val raProxyAddress: String = "",
     val romStoragePath: String? = null,
+    val showStatusClock: Boolean = true,
+    val showStatusBattery: Boolean = true,
+    val showStatusNetwork: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val primaryColor: Int? = null,
     val secondaryColor: Int? = null,
@@ -826,7 +842,7 @@ data class UserPreferences(
     val ambientLedTransitionMs: Int = 250,
     val ambientLedAchievementFlash: Boolean = true,
     val builtinLibretroEnabled: Boolean = true,
-    val appAffinityEnabled: Boolean = false,
+    val appDisplayTargets: Map<String, String> = emptyMap(),
     val dualScreenEnabled: Boolean = false,
     val pauseDualScreenWhileDocked: Boolean = true,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,

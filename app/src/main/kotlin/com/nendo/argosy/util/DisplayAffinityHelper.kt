@@ -15,7 +15,8 @@ enum class SecondaryDisplayType { NONE, BUILT_IN, EXTERNAL }
 
 @Singleton
 class DisplayAffinityHelper @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val screenCatalog: ScreenCatalog
 ) {
     private val displayManager = context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
@@ -77,18 +78,11 @@ class DisplayAffinityHelper @Inject constructor(
         )
 
     /**
-     * The roomiest physical display, by pixel area.
-     *
-     * Measured rather than assumed to be the default one, because which panel is larger is a fact
-     * about the hardware; a handheld whose second screen is the bigger of the two would otherwise
-     * send video to the smaller.
+     * The roomiest attached display: an external panel over a built-in one, then by pixel area.
      */
-    fun largestDisplayId(): Int? = physicalDisplays
-        .maxByOrNull { display ->
-            val size = ScreenCatalog.panelSizeOf(context, display)
-            size.x.toLong() * size.y.toLong()
-        }
-        ?.displayId
+    fun largestDisplayId(): Int? =
+        pickLargestScreen(screenCatalog.attachedScreens().filter { it.displayId in attachedIds })
+            ?.displayId
 
     fun registerDisplayListener(
         listener: DisplayManager.DisplayListener,
@@ -127,8 +121,38 @@ class DisplayAffinityHelper @Inject constructor(
     }
 
     fun getEmulatorDisplayId(rolesSwapped: Boolean): Int =
-        if (rolesSwapped) secondaryDisplayId ?: Display.DEFAULT_DISPLAY
-        else Display.DEFAULT_DISPLAY
+        getRoleDisplayIds(rolesSwapped)?.second ?: Display.DEFAULT_DISPLAY
+
+    /**
+     * Where an app, a video or anything else that is not a game belongs. [preferredScreenKey] is
+     * the screen this app is pinned to, keyed as the stored screen layout keys it, and
+     * [occupiedDisplayId] names a screen a game holds. Either one being absent passes it over for
+     * this launch alone.
+     */
+    fun appLaunchDisplayId(
+        preferredScreenKey: String? = null,
+        rolesSwapped: Boolean = false,
+        occupiedDisplayId: Int? = null
+    ): Int? = resolveAppLaunchDisplayId(
+        preferredDisplayId = preferredScreenKey?.let { key ->
+            screenCatalog.attachedScreens().find { it.key == key }?.displayId
+        },
+        appTargetDisplayId = resolvedAppTarget,
+        roleDisplayIds = getRoleDisplayIds(rolesSwapped),
+        occupiedDisplayId = occupiedDisplayId
+    )
+
+    fun getAppLaunchOptions(
+        preferredScreenKey: String? = null,
+        rolesSwapped: Boolean = false,
+        occupiedDisplayId: Int? = null
+    ): Bundle? {
+        val displayId = appLaunchDisplayId(preferredScreenKey, rolesSwapped, occupiedDisplayId)
+            ?: return null
+        return ActivityOptions.makeBasic()
+            .setLaunchDisplayId(displayId)
+            .toBundle()
+    }
 
     /**
      * The display a game goes to under [target], or null while [target] names no screen of its own
@@ -182,18 +206,17 @@ class DisplayAffinityHelper @Inject constructor(
         rolesSwapped: Boolean = false,
         overrideDisplayId: Int? = null
     ): Bundle? {
-        val appTarget = resolvedAppTarget
-        if (overrideDisplayId == null && !hasSecondaryDisplay && (forEmulator || appTarget == null)) {
+        if (overrideDisplayId == null && !hasSecondaryDisplay && (forEmulator || resolvedAppTarget == null)) {
             return null
         }
 
-        val targetDisplayId = resolveLaunchDisplayId(
-            forEmulator = forEmulator,
-            overrideDisplayId = overrideDisplayId,
-            appTarget = appTarget,
-            secondaryDisplayId = secondaryDisplayId,
-            rolesSwapped = rolesSwapped
-        ) ?: return null
+        val targetDisplayId = overrideDisplayId
+            ?: if (forEmulator) {
+                getRoleDisplayIds(rolesSwapped)?.second
+            } else {
+                appLaunchDisplayId(rolesSwapped = rolesSwapped)
+            }
+            ?: return null
 
         return ActivityOptions.makeBasic()
             .setLaunchDisplayId(targetDisplayId)
@@ -272,24 +295,34 @@ class DisplayAffinityHelper @Inject constructor(
         }
 
         /**
-         * Where a launch lands. An explicit choice wins outright. A game then takes the screen it
-         * would take on a two-screen device, so an app-target screen never captures gameplay; an
-         * app takes the app-target screen when one is set.
+         * Where an app lands, best screen first: the one it is pinned to, the app-target role, the
+         * presentation screen, then the interactive one. [occupiedDisplayId] names a screen a game
+         * holds, which moves the launch down the list and never off it.
          */
-        internal fun resolveLaunchDisplayId(
-            forEmulator: Boolean,
-            overrideDisplayId: Int?,
-            appTarget: Int?,
-            secondaryDisplayId: Int?,
-            rolesSwapped: Boolean
+        internal fun resolveAppLaunchDisplayId(
+            preferredDisplayId: Int?,
+            appTargetDisplayId: Int?,
+            roleDisplayIds: Pair<Int, Int>?,
+            occupiedDisplayId: Int?
         ): Int? {
-            overrideDisplayId?.let { return it }
-            if (forEmulator) {
-                return if (rolesSwapped) secondaryDisplayId else Display.DEFAULT_DISPLAY
-            }
-            appTarget?.let { return it }
-            return secondaryDisplayId
+            val candidates = listOfNotNull(
+                preferredDisplayId,
+                appTargetDisplayId,
+                roleDisplayIds?.second,
+                roleDisplayIds?.first
+            ).distinct()
+            return candidates.firstOrNull { it != occupiedDisplayId } ?: candidates.firstOrNull()
         }
+
+        /**
+         * The roomiest screen: any external panel outranks every built-in one, then pixel area
+         * decides.
+         */
+        internal fun pickLargestScreen(screens: List<AttachedScreen>): AttachedScreen? =
+            screens.maxWithOrNull(
+                compareBy<AttachedScreen> { if (it.builtIn) 0 else 1 }
+                    .thenBy { it.widthPx.toLong() * it.heightPx.toLong() }
+            )
 
         /**
          * The display driving input, then the one describing it. [rolesSwapped] exchanges them.

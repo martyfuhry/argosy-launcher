@@ -4,6 +4,15 @@
     <string name="gamedetail_menu_details">詳情</string>
     <string name="gamedetail_menu_description">簡介</string>
     <string name="gamedetail_menu_screenshots">截圖</string>
+    <string name="gamedetail_menu_documents">文件</string>
+    <string name="gamedetail_menu_play_button_no_file">無檔案</string>
+    <string name="gamedetail_action_buttons_no_file">已擁有，無檔案</string>
+    <string name="gamedetail_notice_no_file">此遊戲沒有可執行的檔案</string>
+    <string name="gamedetail_section_documents_heading">文件</string>
+    <string name="gamedetail_document_reader_failed">無法開啟此文件</string>
+    <string name="gamedetail_document_reader_turn_page">翻頁</string>
+    <string name="gamedetail_document_reader_page">%1$d / %2$d</string>
+    <string name="gamedetail_section_documents_remote">未下載</string>
     <string name="gamedetail_menu_reviews">評論</string>
     <string name="gamedetail_menu_achievements">成就</string>
     <string name="gamedetail_menu_related_games">相關遊戲</string>

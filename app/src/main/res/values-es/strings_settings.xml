@@ -264,6 +264,12 @@
     <string name="settings_home_screen_section_background">Fondo</string>
     <string name="settings_home_screen_section_video">Fondo de video</string>
     <string name="settings_home_screen_section_content">Contenido</string>
+    <string name="settings_interface_status_clock_title">Reloj</string>
+    <string name="settings_interface_status_clock_subtitle">Mostrar la hora actual en la barra de estado</string>
+    <string name="settings_interface_status_battery_title">Batería</string>
+    <string name="settings_interface_status_battery_subtitle">Mostrar el nivel de batería en la barra de estado</string>
+    <string name="settings_interface_status_network_title">Red</string>
+    <string name="settings_interface_status_network_subtitle">Mostrar la conexión actual en la barra de estado</string>
 
     <string name="settings_home_screen_background_title">Fondo</string>
     <string name="settings_home_screen_background_subtitle">Carátula del juego o patrón de fondo</string>

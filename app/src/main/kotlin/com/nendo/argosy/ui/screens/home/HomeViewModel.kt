@@ -1421,15 +1421,21 @@ class HomeViewModel @Inject constructor(
      * screen uses; a collection has no destination of its own on this surface, so it opens the
      * collections screen rather than pretending to filter something.
      */
-    override fun launchTileApp(packageName: String) {
+    override fun launchTileApp(packageName: String) = launchApp(packageName)
+
+    private fun launchApp(packageName: String, pinnedScreenKey: String? = null) {
         val intent = appsRepository.getLaunchIntent(packageName) ?: return
         viewModelScope.launch {
-            val prefs = preferencesRepository.preferences.first()
-            val options = if (prefs.appAffinityEnabled) {
-                displayAffinityHelper.getActivityOptions(forEmulator = false)
-            } else {
-                null
+            if (pinnedScreenKey != null) {
+                preferencesRepository.setAppDisplayTarget(packageName, pinnedScreenKey)
             }
+            val dsm = DualScreenManagerHolder.instance
+            val options = displayAffinityHelper.getAppLaunchOptions(
+                preferredScreenKey = pinnedScreenKey
+                    ?: preferencesRepository.preferences.first().appDisplayTargets[packageName],
+                rolesSwapped = dsm?.isRolesSwapped?.value == true,
+                occupiedDisplayId = dsm?.emulatorDisplayId
+            )
             _events.emit(HomeEvent.LaunchIntent(intent, options))
         }
     }
@@ -1445,8 +1451,12 @@ class HomeViewModel @Inject constructor(
     private fun openAppMenuFor(packageName: String): Boolean {
         val screens = DualScreenManagerHolder.instance
             ?.focusableDisplays()
-            ?.map { (displayId, number) ->
-                com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen(displayId, number)
+            ?.map { screen ->
+                com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen(
+                    screen.displayId,
+                    screen.number,
+                    screen.key
+                )
             }
             .orEmpty()
         val rows = buildList<com.nendo.argosy.ui.components.AppMenuRow> {
@@ -1505,14 +1515,8 @@ class HomeViewModel @Inject constructor(
         val packageName = menu.packageName
         dismissAppBarAppMenu()
         when (row) {
-            is com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen -> {
-                val intent = appsRepository.getLaunchIntent(packageName) ?: return
-                val options = displayAffinityHelper.getActivityOptions(
-                    forEmulator = false,
-                    overrideDisplayId = row.displayId
-                )
-                viewModelScope.launch { _events.emit(HomeEvent.LaunchIntent(intent, options)) }
-            }
+            is com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen ->
+                launchApp(packageName, pinnedScreenKey = row.screenKey)
             is com.nendo.argosy.ui.components.AppMenuRow.Action -> when (row.item) {
                 com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME ->
                     viewModelScope.launch { appShortcutActions.togglePinned(packageName) }
@@ -1888,8 +1892,8 @@ class HomeViewModel @Inject constructor(
         val displays = if (opening) {
             DualScreenManagerHolder.instance
                 ?.focusableDisplays()
-                ?.map { (displayId, number) ->
-                    com.nendo.argosy.ui.components.AppLaunchTarget(displayId, number)
+                ?.map { screen ->
+                    com.nendo.argosy.ui.components.AppLaunchTarget(screen.displayId, screen.number)
                 }
                 .orEmpty()
         } else {

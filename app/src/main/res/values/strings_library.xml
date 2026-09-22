@@ -312,12 +312,12 @@
     <!-- Entry in an app's action menu when the app is not on Argosy's home screen. Verb
          phrase, puts it there. -->
     <string name="library_apps_menu_add_to_home">Add to Home</string>
-    <!-- Entry in an app's action menu when the app is already on the second screen's home.
-         Verb phrase, takes it off. -->
-    <string name="library_apps_menu_remove_from_second_screen">Remove from Second Screen</string>
-    <!-- Entry in an app's action menu when the app is not on the second screen's home. Verb
-         phrase, puts it there. -->
-    <string name="library_apps_menu_add_to_second_screen">Add to Second Screen</string>
+    <!-- Entry in an app's action menu when the app is already on the app bar, the strip of app
+         icons along the bottom of the control screen. Verb phrase, takes it off. -->
+    <string name="library_apps_menu_unpin_from_app_bar">Unpin from App Bar</string>
+    <!-- Entry in an app's action menu when the app is not on the app bar, the strip of app icons
+         along the bottom of the control screen. Verb phrase, puts it there. -->
+    <string name="library_apps_menu_pin_to_app_bar">Pin to App Bar</string>
     <!-- Entry in an app's action menu when the app is hidden. Verb, puts it back into the
          normal list. Not the noun "show". -->
     <string name="library_apps_menu_show">Show</string>

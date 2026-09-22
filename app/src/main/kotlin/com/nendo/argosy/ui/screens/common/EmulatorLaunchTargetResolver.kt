@@ -11,6 +11,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * A game intent with the placement its display target resolved to.
+ */
+data class GameLaunchRequest(
+    val intent: android.content.Intent,
+    val options: Bundle? = null
+)
+
 @Singleton
 class EmulatorLaunchTargetResolver @Inject constructor(
     @ApplicationContext context: Context,

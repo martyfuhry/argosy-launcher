@@ -139,8 +139,8 @@ private fun rememberInGameAppBarState(): InGameAppBarState? {
     val pickerOpen by manager.focusPickerOpen.collectAsState()
     val pickerIndex by manager.focusPickerIndex.collectAsState()
     val displays = remember(pickerOpen) {
-        manager.focusableDisplays().map { (displayId, number) ->
-            com.nendo.argosy.ui.components.DisplayFocusTarget(displayId, number)
+        manager.focusableDisplays().map { screen ->
+            com.nendo.argosy.ui.components.DisplayFocusTarget(screen.displayId, screen.number)
         }
     }
     if (apps.isEmpty() && displays.size <= 1) return null
@@ -207,7 +207,7 @@ private fun InGameAppBar(state: InGameAppBarState, modifier: Modifier = Modifier
 
     menuPackage?.let { packageName ->
         val rows = remember(packageName, state.displays) {
-            manager.appMenuRowsFor(state.displays.map { it.displayId to it.number })
+            manager.appMenuRowsFor(manager.focusableDisplays())
         }
         var pinned by remember(packageName) { mutableStateOf(false) }
         var hidden by remember(packageName) { mutableStateOf(false) }

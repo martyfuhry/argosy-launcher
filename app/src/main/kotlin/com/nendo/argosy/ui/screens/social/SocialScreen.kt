@@ -164,7 +164,7 @@ fun SocialScreen(
             when (event) {
                 is SocialLaunchEvent.LaunchIntent -> {
                     event.intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                    launchContext.startActivity(event.intent)
+                    launchContext.startActivity(event.intent, event.options)
                 }
                 is SocialLaunchEvent.LaunchError -> {
                     viewModel.notificationManager.show(

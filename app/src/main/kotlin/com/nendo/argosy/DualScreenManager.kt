@@ -286,7 +286,7 @@ class DualScreenManager(
     fun confirmFocusPicker() {
         val displays = focusableDisplays()
         val target = displays.getOrNull(_focusPickerIndex.value) ?: return
-        focusDisplay(target.first)
+        focusDisplay(target.displayId)
         closeFocusPicker()
     }
 
@@ -798,10 +798,8 @@ class DualScreenManager(
      * The displays a viewer can hand input to, in screen-number order, each with the number the
      * badge draws for it.
      */
-    fun focusableDisplays(): List<Pair<Int, Int>> =
-        com.nendo.argosy.util.ScreenCatalog(appContext)
-            .attachedScreens()
-            .map { it.displayId to it.number }
+    fun focusableDisplays(): List<com.nendo.argosy.util.AttachedScreen> =
+        com.nendo.argosy.util.ScreenCatalog(appContext).attachedScreens()
 
     /**
      * Moves input focus to [displayId], through whichever surface of ours is rendered there.
@@ -1078,18 +1076,6 @@ class DualScreenManager(
         return displayAffinityHelper.largestDisplayId() ?: interactiveDisplayId()
     }
 
-    /**
-     * Opens one media item in the player window wherever that window currently is.
-     *
-     * The companion is the caller: it lists the episodes of what is playing, and confirming one has
-     * to reach a window on the other display. A live player states where it is, and that wins,
-     * because resolution for a non-emulator activity answers "the secondary display"
-     * unconditionally and would drag the film off the screen it is being watched on.
-     *
-     * Resolution is the fallback for when nothing has stated a position yet. Without it the first
-     * play of a session lands on the default display, on top of the launcher, where the home UI
-     * closes it the moment it comes forward.
-     */
     fun playMediaItem(itemId: String, startOver: Boolean = false) {
         if (itemId.isBlank()) return
         val target = mediaPlayerDisplayId ?: mediaPlayerRelocationDisplayId()
@@ -1576,11 +1562,17 @@ class DualScreenManager(
         appShortcutActions.isHidden(packageName)
 
     fun appMenuRowsFor(
-        screens: List<Pair<Int, Int>>
+        screens: List<com.nendo.argosy.util.AttachedScreen>
     ): List<com.nendo.argosy.ui.components.AppMenuRow> = buildList {
         if (screens.size > 1) {
-            screens.forEach { (displayId, number) ->
-                add(com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen(displayId, number))
+            screens.forEach { screen ->
+                add(
+                    com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen(
+                        screen.displayId,
+                        screen.number,
+                        screen.key
+                    )
+                )
             }
         }
         add(
@@ -1603,7 +1595,7 @@ class DualScreenManager(
     fun runAppMenuRow(packageName: String, row: com.nendo.argosy.ui.components.AppMenuRow) {
         when (row) {
             is com.nendo.argosy.ui.components.AppMenuRow.OpenOnScreen ->
-                launchCompanionApp(packageName, row.displayId)
+                launchCompanionApp(packageName, row.screenKey)
             is com.nendo.argosy.ui.components.AppMenuRow.Action -> when (row.item) {
                 com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME ->
                     scope.launch { appShortcutActions.togglePinned(packageName) }
@@ -2197,19 +2189,19 @@ class DualScreenManager(
         activityContext.startActivity(intent, options)
     }
 
-    fun launchCompanionApp(packageName: String, overrideDisplayId: Int? = null) {
+    fun launchCompanionApp(packageName: String, pinnedScreenKey: String? = null) {
         val intent = appsRepository.getLaunchIntent(packageName) ?: return
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         scope.launch {
-            val affinity = preferencesRepository.userPreferences.first().appAffinityEnabled
-            val options = if (affinity || overrideDisplayId != null) {
-                displayAffinityHelper.getActivityOptions(
-                    forEmulator = false,
-                    overrideDisplayId = overrideDisplayId
-                )
-            } else {
-                null
+            if (pinnedScreenKey != null) {
+                preferencesRepository.setAppDisplayTarget(packageName, pinnedScreenKey)
             }
+            val options = displayAffinityHelper.getAppLaunchOptions(
+                preferredScreenKey = pinnedScreenKey
+                    ?: preferencesRepository.userPreferences.first().appDisplayTargets[packageName],
+                rolesSwapped = _isRolesSwapped.value,
+                occupiedDisplayId = emulatorDisplayId
+            )
             if (options != null) activityContext.startActivity(intent, options)
             else activityContext.startActivity(intent)
         }

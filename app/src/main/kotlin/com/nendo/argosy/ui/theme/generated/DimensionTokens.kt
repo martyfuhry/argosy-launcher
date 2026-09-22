@@ -104,7 +104,6 @@ object DimensionTokens {
         const val timelineDotActive = 12
         const val timelineDotSelected = 20
         const val timelineCoverHeight = 64
-        const val gameHeaderLandscapeMin = 720
         const val slotPickerListMaxHeight = 260
         const val companionAppBarSlotWidth = 64
         const val companionAppBarHeight = 88

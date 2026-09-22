@@ -247,7 +247,7 @@ class AppsViewModel @Inject constructor(
     private fun launchableScreens(): List<AppMenuRow.OpenOnScreen> =
         DualScreenManagerHolder.instance
             ?.focusableDisplays()
-            ?.map { (displayId, number) -> AppMenuRow.OpenOnScreen(displayId, number) }
+            ?.map { screen -> AppMenuRow.OpenOnScreen(screen.displayId, screen.number, screen.key) }
             .orEmpty()
 
     private fun showScreenBadges() {
@@ -275,7 +275,7 @@ class AppsViewModel @Inject constructor(
         val item = state.contextMenuItems.getOrNull(state.contextMenuFocusIndex) ?: return
 
         if (item is AppMenuRow.OpenOnScreen) {
-            launchApp(app.packageName, overrideDisplayId = item.displayId)
+            launchApp(app.packageName, pinnedScreenKey = item.screenKey)
             dismissContextMenu()
             return
         }
@@ -421,8 +421,12 @@ class AppsViewModel @Inject constructor(
         val state = _uiState.value
         if (state.showContextMenu || state.isReorderMode) return
         if (state.hasSecondaryDisplay) {
+            val dsm = DualScreenManagerHolder.instance
+            val presentation = displayAffinityHelper
+                .getRoleDisplayIds(dsm?.isRolesSwapped?.value == true)
+                ?.second
             state.focusedApp?.let {
-                launchApp(it.packageName, overrideDisplayId = android.view.Display.DEFAULT_DISPLAY)
+                launchApp(it.packageName, overrideDisplayId = presentation)
             }
         } else {
             enterReorderMode()
@@ -552,16 +556,29 @@ class AppsViewModel @Inject constructor(
         showContextMenu()
     }
 
-    private fun launchApp(packageName: String, overrideDisplayId: Int? = null) {
+    private fun launchApp(
+        packageName: String,
+        pinnedScreenKey: String? = null,
+        overrideDisplayId: Int? = null
+    ) {
         val intent = appsRepository.getLaunchIntent(packageName) ?: return
         viewModelScope.launch {
-            val prefs = preferencesRepository.preferences.first()
-            val options = when {
-                overrideDisplayId != null ->
-                    displayAffinityHelper.getActivityOptions(forEmulator = false, overrideDisplayId = overrideDisplayId)
-                prefs.appAffinityEnabled ->
-                    displayAffinityHelper.getActivityOptions(forEmulator = false)
-                else -> null
+            if (pinnedScreenKey != null) {
+                preferencesRepository.setAppDisplayTarget(packageName, pinnedScreenKey)
+            }
+            val options = if (overrideDisplayId != null) {
+                displayAffinityHelper.getActivityOptions(
+                    forEmulator = false,
+                    overrideDisplayId = overrideDisplayId
+                )
+            } else {
+                val dsm = DualScreenManagerHolder.instance
+                displayAffinityHelper.getAppLaunchOptions(
+                    preferredScreenKey = pinnedScreenKey
+                        ?: preferencesRepository.preferences.first().appDisplayTargets[packageName],
+                    rolesSwapped = dsm?.isRolesSwapped?.value == true,
+                    occupiedDisplayId = dsm?.emulatorDisplayId
+                )
             }
             _events.emit(AppsEvent.Launch(intent, options))
         }

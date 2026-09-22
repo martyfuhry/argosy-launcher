@@ -147,12 +147,20 @@ class SecondaryHomeActivity :
             val themeState = remember { mutableStateOf(ThemeState()) }
             val customFonts = remember { mutableStateOf(CustomFontFamilies()) }
             val screenDimmerPrefs = remember { mutableStateOf(ScreenDimmerPreferences()) }
+            val statusBarItems = remember {
+                mutableStateOf(com.nendo.argosy.ui.components.StatusBarItems())
+            }
             LaunchedEffect(isInitialized) {
                 if (!isInitialized) return@LaunchedEffect
                 dsm.preferencesRepository.userPreferences.collect { prefs ->
                     themeState.value = prefs.toThemeState()
                     customFonts.value = resolveCustomFonts(prefs.displayFontPath, prefs.bodyFontPath)
                     screenDimmerPrefs.value = prefs.toScreenDimmerPreferences()
+                    statusBarItems.value = com.nendo.argosy.ui.components.StatusBarItems(
+                        clock = prefs.showStatusClock,
+                        battery = prefs.showStatusBattery,
+                        network = prefs.showStatusNetwork
+                    )
                 }
             }
             LaunchedEffect(isInitialized) {
@@ -174,7 +182,8 @@ class SecondaryHomeActivity :
                 val dimmerEnabled = dimmerPrefs.enabled &&
                     !isGameActive && !isWizardActive && mediaPlayback == null
                 androidx.compose.runtime.CompositionLocalProvider(
-                    com.nendo.argosy.ui.components.LocalArtworkScraping provides scrapingArtwork
+                    com.nendo.argosy.ui.components.LocalArtworkScraping provides scrapingArtwork,
+                    com.nendo.argosy.ui.components.LocalStatusBarItems provides statusBarItems.value
                 ) {
                     com.nendo.argosy.ui.input.ProvideButtonGlyphs(dsm.preferencesRepository.userPreferences) {
                         ScreenDimmerOverlay(

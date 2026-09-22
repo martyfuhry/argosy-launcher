@@ -113,6 +113,8 @@ class RomMConnectionManager @Inject constructor(
 
     fun getBaseUrl(): String = baseUrl
 
+    fun getAccessToken(): String? = accessToken
+
     fun isConnected(): Boolean = _connectionState.value is ConnectionState.Connected
 
     fun getDeviceId(): String? = cachedDeviceId
@@ -231,6 +233,11 @@ class RomMConnectionManager @Inject constructor(
         if (response.isSuccessful) response.body() else null
     } catch (_: Exception) {
         null
+    }
+
+    private suspend fun refreshAvatarPath(target: RomMApi) {
+        val user = fetchCurrentUser(target) ?: return
+        userPreferencesRepository.setRomMAvatarPath(user.avatarPath)
     }
 
     private suspend fun requireSameInstance(newBaseUrl: String) {
@@ -374,6 +381,7 @@ class RomMConnectionManager @Inject constructor(
                 Logger.info(TAG, "connect: server live at $normalizedUrl but the token was rejected")
                 return RomMResult.Error("Sign in again")
             }
+            if (token != null) refreshAvatarPath(newApi)
             if (baseUrl.isNotEmpty() && baseUrl != normalizedUrl) {
                 Logger.info(TAG, "connect: moving from $baseUrl to $normalizedUrl")
             }

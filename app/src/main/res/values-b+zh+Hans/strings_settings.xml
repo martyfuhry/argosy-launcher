@@ -246,6 +246,12 @@
     <string name="settings_home_screen_section_background">背景</string>
     <string name="settings_home_screen_section_video">视频壁纸</string>
     <string name="settings_home_screen_section_content">内容</string>
+    <string name="settings_interface_status_clock_title">时钟</string>
+    <string name="settings_interface_status_clock_subtitle">在状态栏显示当前时间</string>
+    <string name="settings_interface_status_battery_title">电量</string>
+    <string name="settings_interface_status_battery_subtitle">在状态栏显示电池电量</string>
+    <string name="settings_interface_status_network_title">网络</string>
+    <string name="settings_interface_status_network_subtitle">在状态栏显示当前连接</string>
 
     <string name="settings_home_screen_background_title">背景</string>
     <string name="settings_home_screen_background_subtitle">游戏美术图或背景图案</string>

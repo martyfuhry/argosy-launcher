@@ -126,8 +126,8 @@
     <string name="library_apps_menu_open_on_screen">在屏幕 %1$d 上打开</string>
     <string name="library_apps_menu_remove_from_home">从主页移除</string>
     <string name="library_apps_menu_add_to_home">添加到主页</string>
-    <string name="library_apps_menu_remove_from_second_screen">从副屏幕移除</string>
-    <string name="library_apps_menu_add_to_second_screen">添加到副屏幕</string>
+    <string name="library_apps_menu_unpin_from_app_bar">从应用栏取消固定</string>
+    <string name="library_apps_menu_pin_to_app_bar">固定到应用栏</string>
     <string name="library_apps_menu_show">显示</string>
     <string name="library_apps_menu_hide">隐藏</string>
     <string name="library_apps_menu_reorder">重新排列应用</string>

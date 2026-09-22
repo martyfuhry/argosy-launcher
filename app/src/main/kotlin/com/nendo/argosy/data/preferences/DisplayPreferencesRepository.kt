@@ -20,6 +20,9 @@ import javax.inject.Singleton
 
 
 data class DisplayPreferences(
+    val showStatusClock: Boolean = true,
+    val showStatusBattery: Boolean = true,
+    val showStatusNetwork: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val primaryColor: Int? = null,
     val secondaryColor: Int? = null,
@@ -113,6 +116,9 @@ class DisplayPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
     private object Keys {
+        val SHOW_STATUS_CLOCK = booleanPreferencesKey("show_status_clock")
+        val SHOW_STATUS_BATTERY = booleanPreferencesKey("show_status_battery")
+        val SHOW_STATUS_NETWORK = booleanPreferencesKey("show_status_network")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val PRIMARY_COLOR = intPreferencesKey("primary_color")
         val SECONDARY_COLOR = intPreferencesKey("secondary_color")
@@ -202,6 +208,9 @@ class DisplayPreferencesRepository @Inject constructor(
 
     val preferences: Flow<DisplayPreferences> = dataStore.data.map { prefs ->
         DisplayPreferences(
+            showStatusClock = prefs[Keys.SHOW_STATUS_CLOCK] ?: true,
+            showStatusBattery = prefs[Keys.SHOW_STATUS_BATTERY] ?: true,
+            showStatusNetwork = prefs[Keys.SHOW_STATUS_NETWORK] ?: false,
             themeMode = ThemeMode.fromString(prefs[Keys.THEME_MODE]),
             primaryColor = prefs[Keys.PRIMARY_COLOR],
             secondaryColor = prefs[Keys.SECONDARY_COLOR],
@@ -298,6 +307,18 @@ class DisplayPreferencesRepository @Inject constructor(
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[Keys.THEME_MODE] = mode.name }
+    }
+
+    suspend fun setShowStatusClock(show: Boolean) {
+        dataStore.edit { it[Keys.SHOW_STATUS_CLOCK] = show }
+    }
+
+    suspend fun setShowStatusBattery(show: Boolean) {
+        dataStore.edit { it[Keys.SHOW_STATUS_BATTERY] = show }
+    }
+
+    suspend fun setShowStatusNetwork(show: Boolean) {
+        dataStore.edit { it[Keys.SHOW_STATUS_NETWORK] = show }
     }
 
     suspend fun setCustomColors(primary: Int?, secondary: Int?, tertiary: Int?) {

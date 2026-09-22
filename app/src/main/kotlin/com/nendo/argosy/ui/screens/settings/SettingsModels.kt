@@ -308,7 +308,10 @@ data class DisplayState(
     val screens: List<ScreenAssignment> = emptyList(),
     val screenRoleModalOpen: Boolean = false,
     val screenRoleModalFocus: Int = 0,
-    val installedOnlyHome: Boolean = false
+    val installedOnlyHome: Boolean = false,
+    val showStatusClock: Boolean = true,
+    val showStatusBattery: Boolean = true,
+    val showStatusNetwork: Boolean = false
 ) {
     val secondaryDisplayUnsupported: Boolean
         get() = dualScreenEnabled && hasPhysicalSecondaryDisplay && !hasSecondaryDisplay
@@ -1748,6 +1751,5 @@ data class SettingsUiState(
     val gradientExtractionResult: GradientExtractionResult? = null,
     val frameDownloadingId: String? = null,
     val frameInstalledRefresh: Int = 0,
-    val pendingCustomFrameRemovalId: String? = null,
-    val appAffinityEnabled: Boolean = false
+    val pendingCustomFrameRemovalId: String? = null
 )

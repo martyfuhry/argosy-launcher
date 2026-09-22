@@ -254,6 +254,12 @@
     <string name="settings_home_screen_section_background">Arrière-plan</string>
     <string name="settings_home_screen_section_video">Fond animé</string>
     <string name="settings_home_screen_section_content">Contenu</string>
+    <string name="settings_interface_status_clock_title">Horloge</string>
+    <string name="settings_interface_status_clock_subtitle">Afficher l\'heure dans la barre d\'état</string>
+    <string name="settings_interface_status_battery_title">Batterie</string>
+    <string name="settings_interface_status_battery_subtitle">Afficher le niveau de batterie dans la barre d\'état</string>
+    <string name="settings_interface_status_network_title">Réseau</string>
+    <string name="settings_interface_status_network_subtitle">Afficher la connexion actuelle dans la barre d\'état</string>
 
     <string name="settings_home_screen_background_title">Arrière-plan</string>
     <string name="settings_home_screen_background_subtitle">Jaquette du jeu ou motif de fond</string>

@@ -94,7 +94,6 @@ internal sealed class AboutItem(
         section = "debug",
         visibleWhen = { it.hasLogPath }
     )
-    data object AppAffinity : AboutItem("appAffinity", "debug")
 
     companion object {
         private val VersionHeader = Header("versionHeader", "version", R.string.settings_about_section_version)
@@ -349,17 +348,6 @@ fun AboutSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     isEnabled = uiState.saveDebugLoggingEnabled,
                     isFocused = isFocused(item),
                     onToggle = { viewModel.setSaveDebugLoggingEnabled(it) }
-                )
-
-                AboutItem.AppAffinity -> SwitchPreference(
-                    title = "App Display Affinity",
-                    subtitle = if (uiState.appAffinityEnabled)
-                        "Emulators primary, apps secondary"
-                    else
-                        "Default display behavior",
-                    isEnabled = uiState.appAffinityEnabled,
-                    isFocused = isFocused(item),
-                    onToggle = { viewModel.setAppAffinityEnabled(it) }
                 )
             }
     }

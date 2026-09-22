@@ -900,6 +900,27 @@ class DisplaySettingsDelegate @Inject constructor(
         }
     }
 
+    fun setShowStatusClock(scope: CoroutineScope, show: Boolean) {
+        scope.launch {
+            preferencesRepository.setShowStatusClock(show)
+            _state.update { it.copy(showStatusClock = show) }
+        }
+    }
+
+    fun setShowStatusBattery(scope: CoroutineScope, show: Boolean) {
+        scope.launch {
+            preferencesRepository.setShowStatusBattery(show)
+            _state.update { it.copy(showStatusBattery = show) }
+        }
+    }
+
+    fun setShowStatusNetwork(scope: CoroutineScope, show: Boolean) {
+        scope.launch {
+            preferencesRepository.setShowStatusNetwork(show)
+            _state.update { it.copy(showStatusNetwork = show) }
+        }
+    }
+
     fun hasScreenCapturePermission(): Boolean = screenCaptureManager.hasPermission.value
 
     fun observeScreenCapturePermission(scope: CoroutineScope) {

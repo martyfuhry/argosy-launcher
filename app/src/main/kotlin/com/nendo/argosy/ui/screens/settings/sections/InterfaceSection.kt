@@ -60,6 +60,9 @@ internal sealed class InterfaceItem(
     data object Language : InterfaceItem("language", "layout")
     data object UiScale : InterfaceItem("uiScale", "layout")
     data object CompactFooter : InterfaceItem("compactFooter", "layout")
+    data object StatusClock : InterfaceItem("statusClock", "layout")
+    data object StatusBattery : InterfaceItem("statusBattery", "layout")
+    data object StatusNetwork : InterfaceItem("statusNetwork", "layout")
     data object ControllerGrip : InterfaceItem("controllerGrip", "layout")
     data object HomeScreen : InterfaceItem("homeScreen", "layout")
     data object LibraryView : InterfaceItem("libraryView", "layout")
@@ -74,7 +77,8 @@ internal sealed class InterfaceItem(
          */
         val ALL: List<InterfaceItem>
             get() = listOf(
-                Language, UiScale, CompactFooter, ControllerGrip,
+                Language, UiScale, CompactFooter,
+                StatusClock, StatusBattery, StatusNetwork, ControllerGrip,
                 HomeScreen, LibraryView, BoxArt
             )
     }
@@ -188,6 +192,30 @@ fun InterfaceSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     isEnabled = display.compactFooter,
                     isFocused = isFocused(item),
                     onToggle = { viewModel.setCompactFooter(it) }
+                )
+
+                InterfaceItem.StatusClock -> SwitchPreference(
+                    title = stringResource(R.string.settings_interface_status_clock_title),
+                    subtitle = stringResource(R.string.settings_interface_status_clock_subtitle),
+                    isEnabled = display.showStatusClock,
+                    isFocused = isFocused(item),
+                    onToggle = { viewModel.setShowStatusClock(it) }
+                )
+
+                InterfaceItem.StatusBattery -> SwitchPreference(
+                    title = stringResource(R.string.settings_interface_status_battery_title),
+                    subtitle = stringResource(R.string.settings_interface_status_battery_subtitle),
+                    isEnabled = display.showStatusBattery,
+                    isFocused = isFocused(item),
+                    onToggle = { viewModel.setShowStatusBattery(it) }
+                )
+
+                InterfaceItem.StatusNetwork -> SwitchPreference(
+                    title = stringResource(R.string.settings_interface_status_network_title),
+                    subtitle = stringResource(R.string.settings_interface_status_network_subtitle),
+                    isEnabled = display.showStatusNetwork,
+                    isFocused = isFocused(item),
+                    onToggle = { viewModel.setShowStatusNetwork(it) }
                 )
 
                 InterfaceItem.ControllerGrip -> NavigationPreference(

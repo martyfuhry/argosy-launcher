@@ -20,6 +20,7 @@ data class SyncPreferences(
     val rommBaseUrl: String? = null,
     val rommUsername: String? = null,
     val rommUserId: Long? = null,
+    val rommAvatarPath: String? = null,
     val rommToken: String? = null,
     val rommDeviceId: String? = null,
     val rommDeviceClientVersion: String? = null,
@@ -71,6 +72,7 @@ class SyncPreferencesRepository @Inject constructor(
         val ROMM_URL = stringPreferencesKey("romm_url")
         val ROMM_USERNAME = stringPreferencesKey("romm_username")
         val ROMM_USER_ID = longPreferencesKey("romm_user_id")
+        val ROMM_AVATAR_PATH = stringPreferencesKey("romm_avatar_path")
         val ROMM_TOKEN = stringPreferencesKey("romm_token")
         val ROMM_DEVICE_ID = stringPreferencesKey("romm_device_id")
         val ROMM_DEVICE_CLIENT_VERSION = stringPreferencesKey("romm_device_client_version")
@@ -258,6 +260,7 @@ class SyncPreferencesRepository @Inject constructor(
             rommBaseUrl = prefs[Keys.ROMM_URL],
             rommUsername = prefs[Keys.ROMM_USERNAME],
             rommUserId = prefs[Keys.ROMM_USER_ID],
+            rommAvatarPath = prefs[Keys.ROMM_AVATAR_PATH],
             rommToken = prefs[Keys.ROMM_TOKEN],
             rommDeviceId = prefs[Keys.ROMM_DEVICE_ID],
             rommDeviceClientVersion = prefs[Keys.ROMM_DEVICE_CLIENT_VERSION],
@@ -359,11 +362,19 @@ class SyncPreferencesRepository @Inject constructor(
             prefs.remove(Keys.ROMM_TOKEN)
             prefs.remove(Keys.ROMM_USERNAME)
             prefs.remove(Keys.ROMM_USER_ID)
+            prefs.remove(Keys.ROMM_AVATAR_PATH)
             prefs.remove(Keys.ROMM_DEVICE_ID)
             prefs.remove(Keys.ROMM_DEVICE_CLIENT_VERSION)
             prefs.remove(Keys.ROMM_PLAY_SESSION_BACKFILL_DONE)
             prefs.remove(Keys.ROMM_PLAY_SESSION_LAST_UPLOAD)
             prefs.remove(Keys.ROMM_PLAY_SESSION_LAST_PULL)
+        }
+    }
+
+    suspend fun setRomMAvatarPath(path: String?) {
+        dataStore.edit { prefs ->
+            val trimmed = path?.trim().orEmpty()
+            if (trimmed.isEmpty()) prefs.remove(Keys.ROMM_AVATAR_PATH) else prefs[Keys.ROMM_AVATAR_PATH] = trimmed
         }
     }
 

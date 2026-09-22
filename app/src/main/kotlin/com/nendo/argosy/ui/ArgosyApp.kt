@@ -676,21 +676,21 @@ fun ArgosyApp(
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.netplayInviteLaunch.collect { intent ->
-            context.startActivity(intent)
+        viewModel.netplayInviteLaunch.collect { request ->
+            context.startActivity(request.intent, request.options)
         }
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.coreCrashLaunch.collect { intent ->
-            context.startActivity(intent)
+        viewModel.coreCrashLaunch.collect { request ->
+            context.startActivity(request.intent, request.options)
         }
     }
 
     LaunchedEffect(netplayJoinState) {
         val s = netplayJoinState
         if (s is NetplayJoinState.LaunchReady) {
-            context.startActivity(s.intent)
+            context.startActivity(s.intent, viewModel.launchOptionsFor(s.gameId))
             viewModel.resetNetplayJoin()
         }
     }
@@ -912,6 +912,12 @@ fun ArgosyApp(
         LocalFooterHost provides footerHostController,
         com.nendo.argosy.ui.common.LocalImageCacheManager provides viewModel.imageCacheManager,
         com.nendo.argosy.ui.components.LocalArtworkScraping provides isScrapingArtwork,
+        com.nendo.argosy.ui.components.LocalStatusBarItems provides
+            com.nendo.argosy.ui.components.StatusBarItems(
+                clock = uiState.showStatusClock,
+                battery = uiState.showStatusBattery,
+                network = uiState.showStatusNetwork
+            ),
         com.nendo.argosy.ui.components.friends.LocalUserAvatarState provides localAvatarInfo
     ) {
         if (uiState.isLoading) {

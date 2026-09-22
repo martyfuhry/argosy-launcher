@@ -17,12 +17,14 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,7 +65,7 @@ enum class AppContextMenuItem {
  */
 sealed interface AppMenuRow {
     data class Action(val item: AppContextMenuItem) : AppMenuRow
-    data class OpenOnScreen(val displayId: Int, val number: Int) : AppMenuRow
+    data class OpenOnScreen(val displayId: Int, val number: Int, val screenKey: String) : AppMenuRow
 }
 
 @Composable
@@ -121,9 +123,9 @@ fun AppMenuItemRow(
             Icons.Outlined.Home to stringResource(R.string.library_apps_menu_add_to_home)
         }
         AppContextMenuItem.TOGGLE_SECONDARY_HOME -> if (isOnSecondaryHome) {
-            Icons.Default.Devices to stringResource(R.string.library_apps_menu_remove_from_second_screen)
+            Icons.Default.PushPin to stringResource(R.string.library_apps_menu_unpin_from_app_bar)
         } else {
-            Icons.Outlined.Devices to stringResource(R.string.library_apps_menu_add_to_second_screen)
+            Icons.Outlined.PushPin to stringResource(R.string.library_apps_menu_pin_to_app_bar)
         }
         AppContextMenuItem.TOGGLE_VISIBILITY -> if (isAppHidden) {
             Icons.Default.Visibility to stringResource(R.string.library_apps_menu_show)

@@ -698,6 +698,9 @@ private fun routeInterfaceConfirm(vm: SettingsViewModel, state: SettingsUiState)
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
         InterfaceItem.CompactFooter -> vm.setCompactFooter(!state.display.compactFooter)
+        InterfaceItem.StatusClock -> vm.setShowStatusClock(!state.display.showStatusClock)
+        InterfaceItem.StatusBattery -> vm.setShowStatusBattery(!state.display.showStatusBattery)
+        InterfaceItem.StatusNetwork -> vm.setShowStatusNetwork(!state.display.showStatusNetwork)
         InterfaceItem.ControllerGrip -> vm.navigateToControllerGrip()
         InterfaceItem.HomeScreen -> vm.navigateToHomeScreen()
         InterfaceItem.LibraryView -> vm.navigateToLibraryView()
@@ -1119,10 +1122,6 @@ private fun routeAboutConfirm(vm: SettingsViewModel, state: SettingsUiState): In
         }
         AboutItem.SaveDebugLogging -> {
             vm.setSaveDebugLoggingEnabled(!state.saveDebugLoggingEnabled)
-            return InputResult.handled(SoundType.TOGGLE)
-        }
-        AboutItem.AppAffinity -> {
-            vm.setAppAffinityEnabled(!state.appAffinityEnabled)
             return InputResult.handled(SoundType.TOGGLE)
         }
         AboutItem.ExportSettings -> vm.exportSettings()

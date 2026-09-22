@@ -16,7 +16,8 @@ import org.junit.Test
 class SettingsBackupKeysTest {
 
     private val credentialsAndIdentity = setOf(
-        "romm_token", "romm_url", "romm_username", "romm_user_id", "romm_device_id",
+        "romm_token", "romm_url", "romm_username", "romm_user_id", "romm_avatar_path",
+        "romm_device_id",
         "romm_device_client_version", "ra_token", "ra_username", "ra_proxy_enabled",
         "ra_proxy_address", "social_session_token", "social_user_id", "social_username",
         "social_display_name", "jellyfin_access_token", "jellyfin_device_id",
@@ -74,8 +75,12 @@ class SettingsBackupKeysTest {
         "ambient_led_screen_enabled", "ambient_led_transition_ms", "display_role_override",
         "dual_screen_enabled", "dual_screen_input_focus", "screen_dimmer_enabled",
         "screen_dimmer_level", "screen_dimmer_timeout_minutes", "ui_scale",
-        "builtin_architecture_override", "grip_auto_controllers", "app_affinity_enabled",
+        "builtin_architecture_override", "grip_auto_controllers",
         "screen_layouts", "pause_dual_screen_while_docked"
+    )
+
+    private val perDeviceScreenChoices = setOf(
+        "app_display_targets"
     )
 
     private val derivedAndGenerated = setOf(
@@ -91,7 +96,8 @@ class SettingsBackupKeysTest {
     private val excluded: Set<String> =
         credentialsAndIdentity + presenceSharingAndServiceAccounts + syncWatermarksAndResume +
             oneShotAndVersionMarkers + liveSessionState + saveAndStateSafetyGates +
-            filesystemLocations + hardwareAndUnit + derivedAndGenerated + diagnostics
+            filesystemLocations + hardwareAndUnit + perDeviceScreenChoices +
+            derivedAndGenerated + diagnostics
 
     private val credentialShapes = listOf(
         "token", "credential", "password", "username", "user_name", "user_id", "device_id",

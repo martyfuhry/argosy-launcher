@@ -296,6 +296,19 @@
     <!-- Second line of that row. "Control guide bar" is the strip that says what each button
          does. -->
     <string name="settings_interface_compact_footer_subtitle">Use a thinner control guide bar</string>
+
+    <!-- Row title. Noun: the time of day shown in the status bar. -->
+    <string name="settings_interface_status_clock_title">Clock</string>
+    <!-- Second line of that row. -->
+    <string name="settings_interface_status_clock_subtitle">Show the current time in the status bar</string>
+    <!-- Row title. Noun: the battery charge level shown in the status bar. -->
+    <string name="settings_interface_status_battery_title">Battery</string>
+    <!-- Second line of that row. -->
+    <string name="settings_interface_status_battery_subtitle">Show the battery level in the status bar</string>
+    <!-- Row title. Noun phrase: the icon telling whether the device has a network connection. -->
+    <string name="settings_interface_status_network_title">Network</string>
+    <!-- Second line of that row. Wi-Fi, Ethernet and mobile data each get their own icon. -->
+    <string name="settings_interface_status_network_subtitle">Show the current connection in the status bar</string>
     <!-- Row opening the settings for handhelds with a clip-on grip. Noun phrase. -->
     <string name="settings_interface_controller_grip_title">Controller Grip</string>
     <!-- Second line of that row. -->

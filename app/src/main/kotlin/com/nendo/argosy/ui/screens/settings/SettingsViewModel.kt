@@ -1321,6 +1321,12 @@ class SettingsViewModel @Inject constructor(
     fun setAmbientLedAchievementFlash(enabled: Boolean) = displayDelegate.setAmbientLedAchievementFlash(viewModelScope, enabled)
     fun setInstalledOnlyHome(enabled: Boolean) = displayDelegate.setInstalledOnlyHome(viewModelScope, enabled)
 
+    fun setShowStatusClock(show: Boolean) = displayDelegate.setShowStatusClock(viewModelScope, show)
+
+    fun setShowStatusBattery(show: Boolean) = displayDelegate.setShowStatusBattery(viewModelScope, show)
+
+    fun setShowStatusNetwork(show: Boolean) = displayDelegate.setShowStatusNetwork(viewModelScope, show)
+
     fun loadPreviewGames() = routeLoadPreviewGames(this)
     fun cyclePrevPreviewGame() = routeCyclePrevPreviewGame(this)
     fun cycleNextPreviewGame() = routeCycleNextPreviewGame(this)
@@ -1343,7 +1349,6 @@ class SettingsViewModel @Inject constructor(
     fun setSoundEnabled(enabled: Boolean) = soundsDelegate.setSoundEnabled(viewModelScope, enabled)
 
     fun setBetaUpdatesEnabled(enabled: Boolean) = routeSetBetaUpdatesEnabled(this, enabled)
-    fun setAppAffinityEnabled(enabled: Boolean) = routeSetAppAffinityEnabled(this, enabled)
     fun setAppLanguage(tag: String) = routeSetAppLanguage(this, tag)
     fun cycleAppLanguage(direction: Int = 1) = routeCycleAppLanguage(this, direction)
 

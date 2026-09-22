@@ -142,8 +142,8 @@
     <string name="library_apps_menu_open_on_screen">Ouvrir sur l\'écran %1$d</string>
     <string name="library_apps_menu_remove_from_home">Retirer de l\'accueil</string>
     <string name="library_apps_menu_add_to_home">Ajouter à l\'accueil</string>
-    <string name="library_apps_menu_remove_from_second_screen">Retirer du second écran</string>
-    <string name="library_apps_menu_add_to_second_screen">Ajouter au second écran</string>
+    <string name="library_apps_menu_unpin_from_app_bar">Retirer de la barre d\'applis</string>
+    <string name="library_apps_menu_pin_to_app_bar">Épingler à la barre d\'applis</string>
     <string name="library_apps_menu_show">Afficher</string>
     <string name="library_apps_menu_hide">Masquer</string>
     <string name="library_apps_menu_reorder">Réorganiser les applications</string>

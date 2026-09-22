@@ -123,6 +123,7 @@ sealed class LaunchEvent {
 }
 
 enum class GameDownloadStatus {
+    NO_FILE,
     NOT_DOWNLOADED,
     QUEUED,
     WAITING_FOR_STORAGE,
@@ -144,6 +145,25 @@ data class CoverCandidate(
 ) {
     val dimensionLabel: String?
         get() = if (width != null && height != null) "$width x $height" else null
+}
+
+/**
+ * A manual or a walkthrough attached to a game. [localPath] is null while the document is only
+ * on the server.
+ */
+data class GameDocument(
+    val fileName: String,
+    val title: String,
+    val category: String,
+    val rommFileId: Long? = null,
+    val remoteUrl: String? = null,
+    val source: String? = null,
+    val localPath: String? = null,
+    val sizeBytes: Long = 0
+) {
+    val isLocal: Boolean get() = localPath != null
+
+    val isPdf: Boolean get() = fileName.endsWith(".pdf", ignoreCase = true)
 }
 
 data class MoreOptionsContext(
@@ -226,6 +246,9 @@ data class GameDetailUiState(
     val menuFocusIndex: Int = 0,
     val showMoreOptions: Boolean = false,
     val moreOptionsFocusIndex: Int = 0,
+    val documents: List<GameDocument> = emptyList(),
+    val documentFocusIndex: Int = 0,
+    val documentReader: com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderState? = null,
     val launchDisplayNumbers: List<Int> = emptyList(),
     val launchDisplayIndex: Int = 0,
     val showPlayOptions: Boolean = false,

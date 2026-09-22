@@ -99,6 +99,30 @@ class RomMRepository @Inject constructor(
 
     fun buildCoverUrls(rom: RomMRom): List<String> = apiClient.buildCoverUrls(rom)
 
+    fun buildResourceUrlPublic(path: String?): String? = apiClient.buildResourceUrl(path)
+
+    suspend fun openResource(url: String): okhttp3.ResponseBody? = runCatching {
+        apiClient.api?.downloadRaw(url)?.takeIf { it.isSuccessful }?.body()
+    }.getOrNull()
+
+    suspend fun getDocumentProgress(romId: Long, fileId: Long): RomMDocumentProgress? =
+        runCatching {
+            apiClient.api?.getDocumentProgress(romId, fileId)?.takeIf { it.isSuccessful }?.body()
+        }.getOrNull()
+
+    suspend fun updateDocumentProgress(
+        romId: Long,
+        fileId: Long,
+        progress: Float,
+        lastPage: Int?
+    ): Boolean = runCatching {
+        apiClient.api?.updateDocumentProgress(
+            romId,
+            fileId,
+            RomMDocumentProgressUpdate(progress = progress, lastPage = lastPage)
+        )?.isSuccessful == true
+    }.getOrDefault(false)
+
     suspend fun getRom(romId: Long): RomMResult<RomMRom> = apiClient.getRom(romId)
 
     suspend fun downloadRom(

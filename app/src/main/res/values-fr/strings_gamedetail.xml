@@ -7,6 +7,15 @@
     <string name="gamedetail_menu_details">Détails</string>
     <string name="gamedetail_menu_description">Description</string>
     <string name="gamedetail_menu_screenshots">Captures d\'écran</string>
+    <string name="gamedetail_menu_documents">Documents</string>
+    <string name="gamedetail_menu_play_button_no_file">Aucun fichier</string>
+    <string name="gamedetail_action_buttons_no_file">Possédé, sans fichier</string>
+    <string name="gamedetail_notice_no_file">Ce jeu n\'a aucun fichier à lancer</string>
+    <string name="gamedetail_section_documents_heading">DOCUMENTS</string>
+    <string name="gamedetail_document_reader_failed">Ce document n\'a pas pu être ouvert</string>
+    <string name="gamedetail_document_reader_turn_page">Tourner la page</string>
+    <string name="gamedetail_document_reader_page">%1$d / %2$d</string>
+    <string name="gamedetail_section_documents_remote">Non téléchargé</string>
     <string name="gamedetail_menu_reviews">Avis</string>
     <string name="gamedetail_menu_achievements">Succès</string>
     <string name="gamedetail_menu_related_games">Jeux similaires</string>

@@ -4,6 +4,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.BatteryManager
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -18,6 +21,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.SettingsEthernet
+import androidx.compose.material.icons.outlined.SignalCellularAlt
+import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -119,6 +126,55 @@ private fun Modifier.legibilityScrim(content: Color): Modifier =
         shape = RoundedCornerShape(Dimens.radiusPill)
     )
 
+data class StatusBarItems(
+    val clock: Boolean = true,
+    val battery: Boolean = true,
+    val network: Boolean = false
+)
+
+enum class NetworkLink { OFFLINE, WIFI, ETHERNET, CELLULAR }
+
+@Composable
+fun rememberNetworkLink(): State<NetworkLink> {
+    val context = LocalContext.current
+    val link = remember { mutableStateOf(NetworkLink.OFFLINE) }
+
+    DisposableEffect(context) {
+        val manager = context.getSystemService(ConnectivityManager::class.java)
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                link.value = caps.toNetworkLink()
+            }
+
+            override fun onLost(network: Network) {
+                link.value = NetworkLink.OFFLINE
+            }
+        }
+        link.value = manager
+            ?.let { it.getNetworkCapabilities(it.activeNetwork) }
+            .toNetworkLink()
+        manager?.registerDefaultNetworkCallback(callback)
+
+        onDispose { manager?.unregisterNetworkCallback(callback) }
+    }
+
+    return link
+}
+
+private fun NetworkCapabilities?.toNetworkLink(): NetworkLink {
+    if (this == null || !hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)) {
+        return NetworkLink.OFFLINE
+    }
+    return when {
+        hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> NetworkLink.ETHERNET
+        hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkLink.WIFI
+        hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> NetworkLink.CELLULAR
+        else -> NetworkLink.OFFLINE
+    }
+}
+
+val LocalStatusBarItems = androidx.compose.runtime.compositionLocalOf { StatusBarItems() }
+
 /**
  * [scrim] backs the bar with a plate so it reads over artwork. Turn it off on a flat surface,
  * where the plate has nothing to separate the bar from and only shows as a panel of its own.
@@ -159,17 +215,27 @@ fun SystemStatusBar(
             ArtworkScrapeIndicator(color = effectiveColor)
         }
 
-        Text(
-            text = formatClockTime(LocalContext.current, currentTime.longValue),
-            style = MaterialTheme.typography.titleMedium,
-            color = effectiveColor
-        )
+        val shown = LocalStatusBarItems.current
 
-        BatteryIndicator(
-            level = batteryState.level,
-            isCharging = batteryState.isCharging,
-            color = effectiveColor
-        )
+        if (shown.clock) {
+            Text(
+                text = formatClockTime(LocalContext.current, currentTime.longValue),
+                style = MaterialTheme.typography.titleMedium,
+                color = effectiveColor
+            )
+        }
+
+        if (shown.network) {
+            NetworkIndicator(color = effectiveColor)
+        }
+
+        if (shown.battery) {
+            BatteryIndicator(
+                level = batteryState.level,
+                isCharging = batteryState.isCharging,
+                color = effectiveColor
+            )
+        }
     }
 }
 
@@ -193,6 +259,23 @@ private fun ArtworkScrapeIndicator(color: Color, modifier: Modifier = Modifier) 
         imageVector = Icons.Outlined.Image,
         contentDescription = null,
         tint = color.copy(alpha = alpha),
+        modifier = modifier.size(Dimens.iconSm)
+    )
+}
+
+@Composable
+private fun NetworkIndicator(color: Color, modifier: Modifier = Modifier) {
+    val link by rememberNetworkLink()
+    val icon = when (link) {
+        NetworkLink.OFFLINE -> Icons.Outlined.WifiOff
+        NetworkLink.WIFI -> Icons.Outlined.Wifi
+        NetworkLink.ETHERNET -> Icons.Outlined.SettingsEthernet
+        NetworkLink.CELLULAR -> Icons.Outlined.SignalCellularAlt
+    }
+    Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = color,
         modifier = modifier.size(Dimens.iconSm)
     )
 }

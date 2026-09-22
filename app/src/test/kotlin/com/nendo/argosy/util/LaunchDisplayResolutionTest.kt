@@ -2,7 +2,8 @@ package com.nendo.argosy.util
 
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import com.nendo.argosy.util.DisplayAffinityHelper.Companion.resolveDisplayTargetId
-import com.nendo.argosy.util.DisplayAffinityHelper.Companion.resolveLaunchDisplayId
+import com.nendo.argosy.util.DisplayAffinityHelper.Companion.pickLargestScreen
+import com.nendo.argosy.util.DisplayAffinityHelper.Companion.resolveAppLaunchDisplayId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -17,108 +18,151 @@ private const val MONITOR = 7
 class LaunchDisplayResolutionTest {
 
     @Test
-    fun `a game ignores the app-target screen`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = true,
-            overrideDisplayId = null,
-            appTarget = MONITOR,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = false
+    fun `an app takes the app-target screen`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = null,
+            appTargetDisplayId = MONITOR,
+            roleDisplayIds = LOWER to BUILT_IN,
+            occupiedDisplayId = null
+        )
+
+        assertEquals(MONITOR, resolved)
+    }
+
+    @Test
+    fun `an app falls back to the presentation screen when no app target is set`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = null,
+            appTargetDisplayId = null,
+            roleDisplayIds = LOWER to BUILT_IN,
+            occupiedDisplayId = null
         )
 
         assertEquals(BUILT_IN, resolved)
     }
 
     @Test
-    fun `a game with no app-target screen lands where it always did`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = true,
-            overrideDisplayId = null,
-            appTarget = null,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = false
-        )
-
-        assertEquals(BUILT_IN, resolved)
-    }
-
-    @Test
-    fun `a swapped game takes the companion screen over the app-target screen`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = true,
-            overrideDisplayId = null,
-            appTarget = MONITOR,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = true
+    fun `an app pinned to a screen beats the app-target screen`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = LOWER,
+            appTargetDisplayId = MONITOR,
+            roleDisplayIds = LOWER to BUILT_IN,
+            occupiedDisplayId = null
         )
 
         assertEquals(LOWER, resolved)
     }
 
     @Test
-    fun `a swapped game on a single screen has nowhere named to go`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = true,
-            overrideDisplayId = null,
-            appTarget = MONITOR,
-            secondaryDisplayId = null,
-            rolesSwapped = true
+    fun `a pinned screen holding a game hands this launch to the next one`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = MONITOR,
+            appTargetDisplayId = MONITOR,
+            roleDisplayIds = LOWER to BUILT_IN,
+            occupiedDisplayId = MONITOR
+        )
+
+        assertEquals(BUILT_IN, resolved)
+    }
+
+    @Test
+    fun `an unplugged pinned screen resolves to nothing and falls through`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = null,
+            appTargetDisplayId = null,
+            roleDisplayIds = LOWER to BUILT_IN,
+            occupiedDisplayId = BUILT_IN
+        )
+
+        assertEquals(LOWER, resolved)
+    }
+
+    @Test
+    fun `a game on every screen still leaves the best one`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = BUILT_IN,
+            appTargetDisplayId = null,
+            roleDisplayIds = BUILT_IN to BUILT_IN,
+            occupiedDisplayId = BUILT_IN
+        )
+
+        assertEquals(BUILT_IN, resolved)
+    }
+
+    @Test
+    fun `an app on a single-screen device names no screen`() {
+        val resolved = resolveAppLaunchDisplayId(
+            preferredDisplayId = null,
+            appTargetDisplayId = null,
+            roleDisplayIds = null,
+            occupiedDisplayId = null
         )
 
         assertNull(resolved)
     }
 
     @Test
-    fun `an app takes the app-target screen`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = false,
-            overrideDisplayId = null,
-            appTarget = MONITOR,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = false
+    fun `a television outranks a built-in panel of the same resolution`() {
+        val largest = pickLargestScreen(
+            listOf(
+                screen(BUILT_IN, 1920, 1080, builtIn = true),
+                screen(MONITOR, 1920, 1080, builtIn = false)
+            )
         )
 
-        assertEquals(MONITOR, resolved)
+        assertEquals(MONITOR, largest?.displayId)
     }
 
     @Test
-    fun `an app falls back to the companion screen when no app target is set`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = false,
-            overrideDisplayId = null,
-            appTarget = null,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = false
+    fun `a television outranks a higher-resolution built-in panel`() {
+        val largest = pickLargestScreen(
+            listOf(
+                screen(BUILT_IN, 2560, 1440, builtIn = true),
+                screen(MONITOR, 1280, 720, builtIn = false)
+            )
         )
 
-        assertEquals(LOWER, resolved)
+        assertEquals(MONITOR, largest?.displayId)
     }
 
     @Test
-    fun `an explicit choice beats the app-target screen`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = false,
-            overrideDisplayId = LOWER,
-            appTarget = MONITOR,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = false
+    fun `pixel area decides between two built-in panels`() {
+        val largest = pickLargestScreen(
+            listOf(
+                screen(BUILT_IN, 1920, 1080, builtIn = true),
+                screen(LOWER, 1240, 1080, builtIn = true)
+            )
         )
 
-        assertEquals(LOWER, resolved)
+        assertEquals(BUILT_IN, largest?.displayId)
     }
 
     @Test
-    fun `an explicit choice sends a game to the app-target screen`() {
-        val resolved = resolveLaunchDisplayId(
-            forEmulator = true,
-            overrideDisplayId = MONITOR,
-            appTarget = MONITOR,
-            secondaryDisplayId = LOWER,
-            rolesSwapped = false
+    fun `pixel area decides between two external panels`() {
+        val largest = pickLargestScreen(
+            listOf(
+                screen(MONITOR, 1920, 1080, builtIn = false),
+                screen(LOWER, 3840, 2160, builtIn = false)
+            )
         )
 
-        assertEquals(MONITOR, resolved)
+        assertEquals(LOWER, largest?.displayId)
     }
+
+    @Test
+    fun `no screens name no screen`() {
+        assertNull(pickLargestScreen(emptyList()))
+    }
+
+    private fun screen(displayId: Int, widthPx: Int, heightPx: Int, builtIn: Boolean) =
+        AttachedScreen(
+            key = "display:$displayId:${widthPx}x$heightPx",
+            displayId = displayId,
+            number = displayId,
+            widthPx = widthPx,
+            heightPx = heightPx,
+            builtIn = builtIn
+        )
 
     @Test
     fun `the default target names no screen of its own`() {

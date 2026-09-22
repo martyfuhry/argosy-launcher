@@ -137,6 +137,7 @@ data class GameEntity(
     val titleIdLocked: Boolean = false,
     val saveTarget: String? = null,
     val saveTargetLayout: String? = null,
+    val hasFileOnDisk: Boolean = true,
     val storeEnrichStatus: Int = 0,
     val titleIdCandidates: String? = null,
     val saveId: String? = null,

@@ -556,7 +556,8 @@ class VideoSettingsManager(
                 LibretroSettingDef.PortraitPosition -> current.copy(portraitPosition = value)
                 LibretroSettingDef.Rotation -> current.copy(rotation = parseRotation(value))
                 LibretroSettingDef.OverscanCrop -> current.copy(overscanCrop = parseOverscan(value))
-                LibretroSettingDef.Frame -> current.copy(frame = if (value == "None") null else currentFrame)
+                LibretroSettingDef.Frame ->
+                    current.copy(frame = if (value == "None") FrameRegistry.NO_FRAME_ID else currentFrame)
                 LibretroSettingDef.BlackFrameInsertion -> current.copy(blackFrameInsertion = value.toBooleanStrictOrNull())
                 LibretroSettingDef.FastForwardEnabled -> current.copy(fastForwardEnabled = value.toBooleanStrictOrNull())
                 LibretroSettingDef.FastForwardSpeed -> current.copy(fastForwardSpeed = value.removeSuffix("x").toIntOrNull())

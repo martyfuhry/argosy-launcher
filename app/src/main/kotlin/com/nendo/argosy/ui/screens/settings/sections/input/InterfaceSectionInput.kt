@@ -61,6 +61,15 @@ internal class InterfaceSectionInput(
             InterfaceItem.CompactFooter -> return toggleLeftRight(direction, state.display.compactFooter) {
                 viewModel.setCompactFooter(it)
             }
+            InterfaceItem.StatusClock -> return toggleLeftRight(direction, state.display.showStatusClock) {
+                viewModel.setShowStatusClock(it)
+            }
+            InterfaceItem.StatusBattery -> return toggleLeftRight(direction, state.display.showStatusBattery) {
+                viewModel.setShowStatusBattery(it)
+            }
+            InterfaceItem.StatusNetwork -> return toggleLeftRight(direction, state.display.showStatusNetwork) {
+                viewModel.setShowStatusNetwork(it)
+            }
             else -> {}
         }
         return InputResult.UNHANDLED

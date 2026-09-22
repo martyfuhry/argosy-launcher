@@ -29,13 +29,6 @@ internal fun routeSetBetaUpdatesEnabled(vm: SettingsViewModel, enabled: Boolean)
     }
 }
 
-internal fun routeSetAppAffinityEnabled(vm: SettingsViewModel, enabled: Boolean) {
-    vm.viewModelScope.launch {
-        vm.preferencesRepository.setAppAffinityEnabled(enabled)
-        vm._uiState.update { it.copy(appAffinityEnabled = enabled) }
-    }
-}
-
 /**
  * Persists the launcher's display language and mirrors it into SessionStateStore, so every
  * Activity and foreground service can read it synchronously from attachBaseContext. The writes

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -110,6 +111,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+
+private const val READER_PAGE_JUMP = 10
 
 @Composable
 fun GameDetailScreen(
@@ -431,6 +434,71 @@ fun GameDetailScreen(
         }
     }
 
+    val documentReaderOpen = uiState.documentReader != null
+    val documentReaderInputHandler = remember(viewModel) {
+        object : com.nendo.argosy.ui.input.InputHandler {
+            override fun onLeft(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.turnDocumentPage(-1)
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onRight(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.turnDocumentPage(1)
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onUp(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.turnDocumentPage(-1)
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onDown(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.turnDocumentPage(1)
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onPrevTrigger(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.turnDocumentPage(-READER_PAGE_JUMP)
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onNextTrigger(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.turnDocumentPage(READER_PAGE_JUMP)
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onBack(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.dismissDocumentReader()
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onConfirm(): com.nendo.argosy.ui.input.InputResult =
+                com.nendo.argosy.ui.input.InputResult.HANDLED
+        }
+    }
+
+    LaunchedEffect(documentReaderOpen) {
+        if (documentReaderOpen) {
+            inputDispatcher.pushModal(documentReaderInputHandler)
+        }
+    }
+
+    DisposableEffect(documentReaderOpen) {
+        onDispose {
+            if (documentReaderOpen) {
+                inputDispatcher.removeModal(documentReaderInputHandler)
+            }
+        }
+    }
+
+    uiState.documentReader?.let { reader ->
+        com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderOverlay(
+            state = reader,
+            onLinesPerPageMeasured = { viewModel.setDocumentLinesPerPage(it) },
+            onDismiss = { viewModel.dismissDocumentReader() }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.isLoading || game == null) {
             GameDetailSkeleton()
@@ -487,7 +555,8 @@ private fun GameDetailContent(
         uiState.showRatingPicker || uiState.showMissingDiscPrompt || isAnySyncing ||
         uiState.showSaveCacheDialog || uiState.showRenameDialog || uiState.showScreenshotViewer ||
         uiState.showExtractionFailedPrompt || uiState.showAchievementList ||
-        uiState.showReviewList || uiState.reviewEditor != null || uiState.perGameSettings.visible
+        uiState.showReviewList || uiState.reviewEditor != null || uiState.perGameSettings.visible ||
+        uiState.documentReader != null
     val modalBlur by animateDpAsState(
         targetValue = if (showAnyOverlay) Motion.blurRadiusModal else 0.dp,
         animationSpec = Motion.focusSpringDp,
@@ -501,6 +570,7 @@ private fun GameDetailContent(
     var reviewsTopY by remember { mutableIntStateOf(0) }
     var achievementTopY by remember { mutableIntStateOf(0) }
     var relatedTopY by remember { mutableIntStateOf(0) }
+    var documentsTopY by remember { mutableIntStateOf(0) }
 
     val headerScrollThreshold = 200
     val heroOnOtherScreen = DualScreenManagerHolder.instance
@@ -551,6 +621,7 @@ private fun GameDetailContent(
                 MenuItem.Details -> scrollState.animateScrollTo(0)
                 MenuItem.Description -> scrollState.animateScrollTo(descriptionTopY.coerceAtLeast(0))
                 MenuItem.Screenshots -> scrollState.animateScrollTo(screenshotTopY.coerceAtLeast(0))
+                MenuItem.Documents -> scrollState.animateScrollTo(documentsTopY.coerceAtLeast(0))
                 MenuItem.Achievements -> scrollState.animateScrollTo(achievementTopY.coerceAtLeast(0))
                 MenuItem.RelatedGames -> scrollState.animateScrollTo(relatedTopY.coerceAtLeast(0))
                 else -> {}
@@ -672,6 +743,9 @@ private fun GameDetailContent(
                                     MenuItem.Description -> coroutineScope.launch {
                                         scrollState.animateScrollTo(descriptionTopY.coerceAtLeast(0))
                                     }
+                                    MenuItem.Documents -> coroutineScope.launch {
+                                        scrollState.animateScrollTo(documentsTopY.coerceAtLeast(0))
+                                    }
                                     MenuItem.Screenshots -> viewModel.openScreenshotViewer()
                                     MenuItem.Reviews -> viewModel.showReviewList()
                                     MenuItem.Achievements -> coroutineScope.launch {
@@ -733,6 +807,22 @@ private fun GameDetailContent(
                                     cacheEnabled = uiState.syncScreenshotsEnabled,
                                     onSectionFocus = {
                                         viewModel.setMenuFocusIndex(menuLayout.focusIndexOf(MenuItem.Screenshots, menuLayoutState))
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(Dimens.spacingLg))
+                            }
+
+                            if (uiState.documents.isNotEmpty()) {
+                                com.nendo.argosy.ui.screens.gamedetail.components.DocumentsSection(
+                                    documents = uiState.documents,
+                                    focusedIndex = uiState.documentFocusIndex,
+                                    isActive = focusedItem == MenuItem.Documents,
+                                    onOpen = { viewModel.openDocument(it) },
+                                    onPositioned = { y -> documentsTopY = y },
+                                    onSectionFocus = {
+                                        viewModel.setMenuFocusIndex(
+                                            menuLayout.focusIndexOf(MenuItem.Documents, menuLayoutState)
+                                        )
                                     }
                                 )
                                 Spacer(modifier = Modifier.height(Dimens.spacingLg))
@@ -876,6 +966,7 @@ private fun GameDetailContent(
                             MenuItem.PerGameSettings -> add(InputButton.A to configureHint)
                             MenuItem.Options -> add(InputButton.A to optionsHint)
                             MenuItem.Screenshots -> add(InputButton.A to viewScreenshotHint)
+                            MenuItem.Documents -> Unit
                             MenuItem.Reviews -> add(InputButton.A to viewReviewsHint)
                             MenuItem.Achievements -> add(InputButton.A to viewAllAchievementsHint)
                             MenuItem.RelatedGames -> add(InputButton.A to openRelatedHint)

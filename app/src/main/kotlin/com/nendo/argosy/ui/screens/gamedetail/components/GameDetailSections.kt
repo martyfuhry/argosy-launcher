@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
@@ -368,6 +369,11 @@ fun ActionButtons(
                             Spacer(modifier = Modifier.width(Dimens.spacingSm))
                             Text(stringResource(R.string.gamedetail_action_buttons_play))
                         }
+                    }
+                    GameDownloadStatus.NO_FILE -> {
+                        Icon(Icons.Default.Album, contentDescription = null)
+                        Spacer(modifier = Modifier.width(Dimens.spacingSm))
+                        Text(stringResource(R.string.gamedetail_action_buttons_no_file))
                     }
                     GameDownloadStatus.NOT_DOWNLOADED -> {
                         Icon(Icons.Default.Download, contentDescription = null)

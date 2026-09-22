@@ -1539,8 +1539,8 @@ fun HomeScreen(
                 ?: remember { kotlinx.coroutines.flow.MutableStateFlow(0) }
             ).collectAsState()
         val focusDisplays = remember(hasPresentationScreen, focusPickerOpen) {
-            dsmForFocus?.focusableDisplays()?.map { (displayId, number) ->
-                com.nendo.argosy.ui.components.DisplayFocusTarget(displayId, number)
+            dsmForFocus?.focusableDisplays()?.map { screen ->
+                com.nendo.argosy.ui.components.DisplayFocusTarget(screen.displayId, screen.number)
             }.orEmpty()
         }
         if (hasPresentationScreen && uiState.homeApps.isNotEmpty()) {

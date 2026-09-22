@@ -49,7 +49,8 @@ internal fun GameEntity.withRomMetadata(rom: RomMRom): GameEntity = copy(
         Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).year
     },
     genre = rom.genres?.firstOrNull(),
-    developer = rom.companies?.firstOrNull(),
+    developer = rom.developerName,
+    publisher = rom.publisherName ?: publisher,
     rating = rom.metadatum?.averageRating?.takeIf { rom.igdbId != null && it < 98f },
     regions = rom.regions?.joinToString(","),
     languages = rom.languages?.joinToString(","),
@@ -77,6 +78,7 @@ internal fun GameEntity.withRomMetadata(rom: RomMRom): GameEntity = copy(
     md5Hash = rom.md5Hash,
     sha1Hash = rom.sha1Hash,
     raHash = rom.raHash,
+    hasFileOnDisk = rom.hasFileOnDisk && !rom.isPhysical,
     hasManual = rom.hasManual,
     manualPath = rom.manualPath,
     remoteHasSoundtrack = rom.hasSoundtrack,

@@ -3640,3 +3640,17 @@ object Migration_191_192 : Migration(191, 192) {
         db.execSQL("ALTER TABLE games ADD COLUMN saveTargetLayout TEXT")
     }
 }
+
+object Migration_192_193 : Migration(192, 193) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE game_files ADD COLUMN docTitle TEXT")
+        db.execSQL("ALTER TABLE game_files ADD COLUMN docSource TEXT")
+        db.execSQL("ALTER TABLE game_files ADD COLUMN docSourceUrl TEXT")
+    }
+}
+
+object Migration_193_194 : Migration(193, 194) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE games ADD COLUMN hasFileOnDisk INTEGER NOT NULL DEFAULT 1")
+    }
+}

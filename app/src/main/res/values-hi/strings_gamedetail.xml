@@ -6,6 +6,15 @@
     <string name="gamedetail_menu_details">जानकारी</string>
     <string name="gamedetail_menu_description">विवरण</string>
     <string name="gamedetail_menu_screenshots">स्क्रीनशॉट</string>
+    <string name="gamedetail_menu_documents">दस्तावेज़</string>
+    <string name="gamedetail_menu_play_button_no_file">कोई फ़ाइल नहीं</string>
+    <string name="gamedetail_action_buttons_no_file">स्वामित्व, फ़ाइल नहीं</string>
+    <string name="gamedetail_notice_no_file">इस गेम की कोई फ़ाइल नहीं है</string>
+    <string name="gamedetail_section_documents_heading">दस्तावेज़</string>
+    <string name="gamedetail_document_reader_failed">यह दस्तावेज़ नहीं खुल सका</string>
+    <string name="gamedetail_document_reader_turn_page">पृष्ठ पलटें</string>
+    <string name="gamedetail_document_reader_page">%1$d / %2$d</string>
+    <string name="gamedetail_section_documents_remote">डाउनलोड नहीं हुआ</string>
     <string name="gamedetail_menu_reviews">समीक्षाएं</string>
     <string name="gamedetail_menu_achievements">अचीवमेंट्स</string>
     <string name="gamedetail_menu_related_games">संबंधित गेम</string>

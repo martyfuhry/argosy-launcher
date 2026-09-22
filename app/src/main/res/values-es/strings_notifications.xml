@@ -211,6 +211,7 @@
     <string name="notif_settings_downloads_validate_failed">Error al comprobar las descargas</string>
     <plurals name="notification_persistent_also_running">
         <item quantity="one">+%1$d más</item>
+        <item quantity="many">+%1$d más</item>
         <item quantity="other">+%1$d más</item>
     </plurals>
 

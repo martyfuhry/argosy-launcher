@@ -104,6 +104,7 @@ fun MainDrawer(
                 localUser = drawerState.localUser,
                 localAvatarDoodle = drawerState.localAvatarDoodle,
                 rommUsername = drawerState.rommUsername,
+                rommAvatarUrl = drawerState.rommAvatarUrl,
                 isFocused = drawerState.currentTab == DrawerTab.NAVIGATION &&
                     drawerState.navFocusIndex == DRAWER_ACCOUNT_ROW_INDEX,
                 onOpenAccounts = {
@@ -594,6 +595,7 @@ private fun DrawerStatusBar(
     localUser: SocialUser?,
     localAvatarDoodle: String? = null,
     rommUsername: String? = null,
+    rommAvatarUrl: String? = null,
     isFocused: Boolean = false,
     onOpenAccounts: () -> Unit = {}
 ) {
@@ -622,7 +624,11 @@ private fun DrawerStatusBar(
                 userId = localUser.id
             )
         } else {
-            AccountInitialAvatar(name = rommUsername, size = Dimens.iconLg)
+            AccountAvatar(
+                name = rommUsername,
+                avatarUrl = rommAvatarUrl,
+                size = Dimens.iconLg
+            )
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -642,13 +648,25 @@ private fun DrawerStatusBar(
     }
 }
 
-/**
- * Stand-in avatar for a device with no social link: the RomM name's first character, or a
- * neutral glyph when there is no account at all.
- */
 @Composable
-private fun AccountInitialAvatar(name: String?, size: androidx.compose.ui.unit.Dp) {
+private fun AccountAvatar(
+    name: String?,
+    size: androidx.compose.ui.unit.Dp,
+    avatarUrl: String? = null
+) {
     val initial = name?.trim()?.firstOrNull()?.uppercaseChar()?.toString()
+    if (!avatarUrl.isNullOrBlank()) {
+        coil.compose.AsyncImage(
+            model = avatarUrl,
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+        return
+    }
     Box(
         modifier = Modifier
             .size(size)

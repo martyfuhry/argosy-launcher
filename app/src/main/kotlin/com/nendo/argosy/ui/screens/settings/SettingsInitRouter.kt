@@ -585,7 +585,10 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             dualScreenEnabled = prefs.dualScreenEnabled,
             pauseDualScreenWhileDocked = prefs.pauseDualScreenWhileDocked,
             displayRoleOverride = prefs.displayRoleOverride,
-            installedOnlyHome = prefs.installedOnlyHome
+            installedOnlyHome = prefs.installedOnlyHome,
+            showStatusClock = prefs.showStatusClock,
+            showStatusBattery = prefs.showStatusBattery,
+            showStatusNetwork = prefs.showStatusNetwork
         ))
 
         val detectionResult = ControllerDetector.detectFromActiveGamepad()
@@ -835,7 +838,6 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
                 fileLoggingPath = prefs.fileLoggingPath,
                 fileLogLevel = prefs.fileLogLevel,
                 saveDebugLoggingEnabled = prefs.saveDebugLoggingEnabled,
-                appAffinityEnabled = prefs.appAffinityEnabled,
                 builtinVideo = it.builtinVideo.copy(
                     shader = refreshSettings.shader,
                     shaderChainJson = refreshSettings.shaderChainJson,

@@ -126,8 +126,8 @@
     <string name="library_apps_menu_open_on_screen">在螢幕 %1$d 上開啟</string>
     <string name="library_apps_menu_remove_from_home">從主畫面移除</string>
     <string name="library_apps_menu_add_to_home">加入主畫面</string>
-    <string name="library_apps_menu_remove_from_second_screen">從副螢幕移除</string>
-    <string name="library_apps_menu_add_to_second_screen">加入副螢幕</string>
+    <string name="library_apps_menu_unpin_from_app_bar">從應用程式列取消釘選</string>
+    <string name="library_apps_menu_pin_to_app_bar">釘選到應用程式列</string>
     <string name="library_apps_menu_show">顯示</string>
     <string name="library_apps_menu_hide">隱藏</string>
     <string name="library_apps_menu_reorder">重新排序應用程式</string>

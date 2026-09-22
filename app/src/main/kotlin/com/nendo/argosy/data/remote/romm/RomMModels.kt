@@ -92,6 +92,8 @@ data class RomMRom(
     @Json(name = "has_manual") val hasManual: Boolean = false,
     @Json(name = "path_manual") val manualPath: String? = null,
     @Json(name = "has_soundtrack") val hasSoundtrack: Boolean = false,
+    @Json(name = "is_physical") val isPhysical: Boolean = false,
+    @Json(name = "has_file_on_disk") val hasFileOnDisk: Boolean = true,
     @Json(name = "title_id") val titleId: String? = null,
     @Json(name = "save_target") val saveTarget: String? = null,
     @Json(name = "save_target_layout") val saveTargetLayout: String? = null,
@@ -112,6 +114,16 @@ data class RomMRom(
         get() = effectiveSiblings.filter { it.name == null || it.name.equals(name, ignoreCase = true) }
     val genres: List<String>? get() = metadatum?.genres
     val companies: List<String>? get() = metadatum?.companies
+
+    /**
+     * RomM split companies into developers and publishers in 5.3. An older server, or a provider
+     * that named neither role, still reports only the combined list.
+     */
+    val developerName: String?
+        get() = metadatum?.developers?.firstOrNull() ?: metadatum?.companies?.firstOrNull()
+
+    val publisherName: String? get() = metadatum?.publishers?.firstOrNull()
+
     val firstReleaseDateMillis: Long? get() = metadatum?.firstReleaseDate
 
     val backgroundUrls: List<String>
@@ -200,7 +212,8 @@ data class RomMRomFile(
     @Json(name = "file_size_bytes") val fileSizeBytes: Long,
     @Json(name = "full_path") val fullPath: String,
     @Json(name = "category") val category: String? = null,
-    @Json(name = "track_meta") val trackMeta: RomMTrackMeta? = null
+    @Json(name = "track_meta") val trackMeta: RomMTrackMeta? = null,
+    @Json(name = "doc_meta") val docMeta: RomMDocMeta? = null
 ) {
     val discNumber: Int?
         get() = DISC_NUMBER_REGEX.find(
@@ -239,6 +252,30 @@ data class RomMRomFile(
 }
 
 @JsonClass(generateAdapter = true)
+data class RomMDocumentProgress(
+    @Json(name = "rom_file_id") val romFileId: Long,
+    @Json(name = "progress") val progress: Float = 0f,
+    @Json(name = "last_page") val lastPage: Int? = null,
+    @Json(name = "finished") val finished: Boolean = false,
+    @Json(name = "last_read_at") val lastReadAt: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RomMDocumentProgressUpdate(
+    @Json(name = "progress") val progress: Float,
+    @Json(name = "last_page") val lastPage: Int? = null,
+    @Json(name = "finished") val finished: Boolean? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class RomMDocMeta(
+    @Json(name = "source") val source: String? = null,
+    @Json(name = "source_url") val sourceUrl: String? = null,
+    @Json(name = "author") val author: String? = null,
+    @Json(name = "title") val title: String? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class RomMTrackMeta(
     @Json(name = "title") val title: String? = null,
     @Json(name = "artist") val artist: String? = null,
@@ -256,6 +293,8 @@ data class RomMTrackMeta(
 data class RomMMetadatum(
     @Json(name = "genres") val genres: List<String>? = null,
     @Json(name = "companies") val companies: List<String>? = null,
+    @Json(name = "developers") val developers: List<String>? = null,
+    @Json(name = "publishers") val publishers: List<String>? = null,
     @Json(name = "first_release_date") val firstReleaseDate: Long? = null,
     @Json(name = "franchises") val franchises: List<String>? = null,
     @Json(name = "collections") val collections: List<String>? = null,
@@ -297,6 +336,7 @@ data class RomMUser(
     @Json(name = "username") val username: String,
     @Json(name = "enabled") val enabled: Boolean,
     @Json(name = "role") val role: String,
+    @Json(name = "avatar_path") val avatarPath: String? = null,
     @Json(name = "ra_username") val raUsername: String? = null,
     @Json(name = "ra_progression") val raProgression: RomMRAProgression? = null
 )

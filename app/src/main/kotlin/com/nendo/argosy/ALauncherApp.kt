@@ -52,6 +52,9 @@ class ArgosyApp : Application(), Configuration.Provider, ImageLoaderFactory {
     lateinit var userCertStore: com.nendo.argosy.data.remote.ssl.UserCertStore
 
     @Inject
+    lateinit var rommConnectionManager: com.nendo.argosy.data.remote.romm.RomMConnectionManager
+
+    @Inject
     lateinit var socialSyncCoordinator: com.nendo.argosy.data.sync.SocialSyncCoordinator
 
     @Inject
@@ -212,6 +215,9 @@ class ArgosyApp : Application(), Configuration.Provider, ImageLoaderFactory {
 
     override fun newImageLoader(): ImageLoader {
         val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(
+                com.nendo.argosy.data.remote.romm.RomMImageAuthInterceptor(rommConnectionManager)
+            )
             .withUserCertTrust(userCertStore)
             .build()
 

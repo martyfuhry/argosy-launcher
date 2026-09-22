@@ -311,6 +311,19 @@ interface RomMApi {
         @Body body: RomMDeviceIdRequest
     ): Response<RomMSave>
 
+    @GET("api/roms/{romId}/files/{fileId}/progress")
+    suspend fun getDocumentProgress(
+        @Path("romId") romId: Long,
+        @Path("fileId") fileId: Long
+    ): Response<RomMDocumentProgress>
+
+    @PUT("api/roms/{romId}/files/{fileId}/progress")
+    suspend fun updateDocumentProgress(
+        @Path("romId") romId: Long,
+        @Path("fileId") fileId: Long,
+        @Body body: RomMDocumentProgressUpdate
+    ): Response<RomMDocumentProgress>
+
     @Streaming
     @GET
     suspend fun downloadRaw(

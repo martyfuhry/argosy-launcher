@@ -40,6 +40,7 @@ import com.nendo.argosy.data.sync.ConflictInfo
 import com.nendo.argosy.data.sync.ConflictResolution
 import com.nendo.argosy.data.sync.SyncQueueManager
 import com.nendo.argosy.ui.components.SaveConflictInfo
+import com.nendo.argosy.ui.screens.common.GameLaunchRequest
 import com.nendo.argosy.data.preferences.ThemeMode
 import com.nendo.argosy.data.preferences.UserPreferences
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -94,6 +95,9 @@ data class ArgosyUiState(
     val isFirstRun: Boolean = true,
     val isLoading: Boolean = true,
     @StringRes val startupStatusRes: Int? = null,
+    val showStatusClock: Boolean = true,
+    val showStatusBattery: Boolean = true,
+    val showStatusNetwork: Boolean = false,
     val abIconsSwapped: Boolean = false,
     val xyIconsSwapped: Boolean = false,
     val swapStartSelect: Boolean = false,
@@ -125,6 +129,7 @@ data class DrawerState(
     val localUser: SocialUser? = null,
     val localAvatarDoodle: String? = null,
     val rommUsername: String? = null,
+    val rommAvatarUrl: String? = null,
     val downloadCount: Int = 0,
     val saveSyncAttentionCount: Int = 0,
     val emulatorUpdatesAvailable: Int = 0,
@@ -209,7 +214,9 @@ class ArgosyViewModel @Inject constructor(
     private val launchGameUseCase: LaunchGameUseCase,
     private val homeLibraryDelegate: com.nendo.argosy.ui.screens.home.delegates.HomeLibraryDelegate,
     private val pendingConflictDao: com.nendo.argosy.data.local.dao.PendingConflictDao,
-    private val deepLinkLaunchCoordinator: com.nendo.argosy.ui.deeplink.DeepLinkLaunchCoordinator
+    private val deepLinkLaunchCoordinator: com.nendo.argosy.ui.deeplink.DeepLinkLaunchCoordinator,
+    private val emulatorLaunchTargetResolver:
+        com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver
 ) : ViewModel() {
 
     suspend fun resolveDeepLinkLaunch(
@@ -496,6 +503,9 @@ class ArgosyViewModel @Inject constructor(
             isFirstRun = !prefs.firstRunComplete && !hasExistingConfig,
             isLoading = !startupDone,
             startupStatusRes = status,
+            showStatusClock = prefs.showStatusClock,
+            showStatusBattery = prefs.showStatusBattery,
+            showStatusNetwork = prefs.showStatusNetwork,
             abIconsSwapped = glyphSwaps.ab,
             xyIconsSwapped = glyphSwaps.xy,
             swapStartSelect = glyphSwaps.startSelect,
@@ -573,6 +583,7 @@ class ArgosyViewModel @Inject constructor(
             localUser = (socialConnection as? SocialConnectionState.Connected)?.user,
             localAvatarDoodle = userPrefs.socialAvatarDoodle.takeIf { userPrefs.socialAvatarUseDoodle },
             rommUsername = userPrefs.rommUsername?.takeIf { it.isNotBlank() },
+            rommAvatarUrl = rommAvatarUrl(userPrefs),
             downloadCount = downloadCount,
             saveSyncAttentionCount = saveSyncAttentionCount,
             emulatorUpdatesAvailable = emulatorUpdateCount,
@@ -1000,18 +1011,25 @@ class ArgosyViewModel @Inject constructor(
     private val _netplayInviteFocusIndex = MutableStateFlow(0)
     val netplayInviteFocusIndex: StateFlow<Int> = _netplayInviteFocusIndex.asStateFlow()
 
-    private val _netplayInviteLaunch = kotlinx.coroutines.flow.MutableSharedFlow<android.content.Intent>(extraBufferCapacity = 4)
-    val netplayInviteLaunch: kotlinx.coroutines.flow.SharedFlow<android.content.Intent> = _netplayInviteLaunch
+    private val _netplayInviteLaunch =
+        kotlinx.coroutines.flow.MutableSharedFlow<GameLaunchRequest>(extraBufferCapacity = 4)
+    val netplayInviteLaunch: kotlinx.coroutines.flow.SharedFlow<GameLaunchRequest> = _netplayInviteLaunch
 
-    private val _coreCrashLaunch = kotlinx.coroutines.flow.MutableSharedFlow<android.content.Intent>(extraBufferCapacity = 1)
-    val coreCrashLaunch: kotlinx.coroutines.flow.SharedFlow<android.content.Intent> = _coreCrashLaunch
+    private val _coreCrashLaunch =
+        kotlinx.coroutines.flow.MutableSharedFlow<GameLaunchRequest>(extraBufferCapacity = 1)
+    val coreCrashLaunch: kotlinx.coroutines.flow.SharedFlow<GameLaunchRequest> = _coreCrashLaunch
+
+    suspend fun launchOptionsFor(gameId: Long): android.os.Bundle? =
+        emulatorLaunchTargetResolver.launchOptionsFor(gameId)
 
     fun launchFromCoreCrash() {
         val gameId = coreCrashController.prompt.value?.gameId ?: return
         coreCrashController.dismiss()
         viewModelScope.launch {
             (launchGameUseCase(gameId = gameId, allowVariantPrompt = false) as? LaunchResult.Success)?.let {
-                _coreCrashLaunch.tryEmit(it.intent)
+                _coreCrashLaunch.tryEmit(
+                    GameLaunchRequest(it.intent, emulatorLaunchTargetResolver.launchOptionsFor(gameId))
+                )
             }
         }
     }
@@ -1097,7 +1115,9 @@ class ArgosyViewModel @Inject constructor(
                             putExtra(LibretroActivity.EXTRA_CORE_PATH, preflight.resolvedCorePath)
                         }
                     }
-                    _netplayInviteLaunch.tryEmit(decorated)
+                    _netplayInviteLaunch.tryEmit(
+                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(gameId))
+                    )
                 }
                 is LaunchResult.Error -> {
                     notificationManager.show(
@@ -1195,7 +1215,9 @@ class ArgosyViewModel @Inject constructor(
                             putExtra(LibretroActivity.EXTRA_CORE_PATH, preflight.resolvedCorePath)
                         }
                     }
-                    _netplayInviteLaunch.tryEmit(decorated)
+                    _netplayInviteLaunch.tryEmit(
+                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(game.id))
+                    )
                 }
                 is LaunchResult.Error -> {
                     notificationManager.show(
@@ -1561,4 +1583,11 @@ class ArgosyViewModel @Inject constructor(
         _pendingLaunch.value = null
         return launch
     }
+}
+
+private fun rommAvatarUrl(prefs: UserPreferences): String? {
+    if (prefs.rommAvatarPath.isNullOrBlank()) return null
+    val baseUrl = prefs.rommBaseUrl?.trim()?.trimEnd('/')?.takeIf { it.isNotEmpty() } ?: return null
+    val userId = prefs.rommUserId ?: return null
+    return "$baseUrl/api/users/$userId/avatar"
 }

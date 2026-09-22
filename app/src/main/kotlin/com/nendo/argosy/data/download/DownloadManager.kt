@@ -767,12 +767,16 @@ class DownloadManager @Inject constructor(
     private suspend fun romFileFolderName(gameId: Long): String? {
         if (!preferencesRepository.userPreferences.first().folderNameFromRom) return null
         val game = gameDao.getById(gameId) ?: return null
+        val baseFileName = gameFileDao.getFilesForGame(gameId)
+            .firstOrNull { it.isLaunchTarget && it.fileName.contains('.') }
+            ?.fileName
+            ?.takeIf { it.isNotBlank() }
         val fromServer = game.rommFileName?.takeIf { it.isNotBlank() }
         val fromDisk = game.localPath
             ?.let { File(it) }
             ?.takeIf { it.isFile }
             ?.name
-        return fromServer ?: fromDisk
+        return baseFileName ?: fromServer ?: fromDisk
     }
 
     private suspend fun gameFolderNameFor(

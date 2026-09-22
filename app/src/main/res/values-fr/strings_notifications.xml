@@ -211,6 +211,7 @@
     <string name="notif_settings_downloads_validate_failed">Échec de la vérification des téléchargements</string>
     <plurals name="notification_persistent_also_running">
         <item quantity="one">+%1$d autre</item>
+        <item quantity="many">+%1$d autres</item>
         <item quantity="other">+%1$d autres</item>
     </plurals>
 

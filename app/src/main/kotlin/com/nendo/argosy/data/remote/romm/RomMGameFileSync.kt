@@ -102,7 +102,10 @@ class RomMGameFileSync @Inject constructor(
                 versionGroup = existing?.versionGroup,
                 trackTitle = file.trackMeta?.title ?: existing?.trackTitle,
                 trackNumber = file.trackMeta?.track ?: existing?.trackNumber,
-                durationSeconds = file.trackMeta?.durationSeconds ?: existing?.durationSeconds
+                durationSeconds = file.trackMeta?.durationSeconds ?: existing?.durationSeconds,
+                docTitle = file.docMeta?.title ?: existing?.docTitle,
+                docSource = file.docMeta?.source ?: existing?.docSource,
+                docSourceUrl = file.docMeta?.sourceUrl ?: existing?.docSourceUrl
             )
         }
         gameFileDao.insertAll(entities)

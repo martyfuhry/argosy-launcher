@@ -80,6 +80,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val PDF_PAGE_WIDTH_PX = 1080
+private const val DOCUMENT_PROGRESS_DEBOUNCE_MS = 1500L
+
 @HiltViewModel
 class GameDetailViewModel @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
@@ -111,6 +114,7 @@ class GameDetailViewModel @Inject constructor(
     private val modalResetSignal: ModalResetSignal,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
     private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader,
     val pickerModalDelegate: PickerModalDelegate,
     private val achievementDelegate: AchievementDelegate,
     private val downloadDelegate: DownloadDelegate,
@@ -153,6 +157,12 @@ class GameDetailViewModel @Inject constructor(
     val launchEvents: SharedFlow<LaunchEvent> = _launchEvents.asSharedFlow()
 
     private var currentGameId: Long = 0
+    private var documentBody: String? = null
+    private var openDocument: GameDocument? = null
+    private var documentProgressJob: kotlinx.coroutines.Job? = null
+    private var resumeFraction: Float = 0f
+    private var documentLinesPerPage: Int =
+        com.nendo.argosy.ui.screens.gamedetail.components.TEXT_LINES_PER_PAGE
     private var pendingLaunchOrigin: LaunchOrigin = LaunchOrigin.INTERNAL
     private var lastActionTime: Long = 0
     private val actionDebounceMs = 300L
@@ -591,6 +601,7 @@ class GameDetailViewModel @Inject constructor(
                     val downloadedCount = gameDiscDao.getDownloadedDiscCount(gameId)
                     if (downloadedCount > 0) GameDownloadStatus.DOWNLOADED else GameDownloadStatus.NOT_DOWNLOADED
                 }
+                !game.hasFileOnDisk -> GameDownloadStatus.NO_FILE
                 else -> GameDownloadStatus.NOT_DOWNLOADED
             }
 
@@ -731,6 +742,23 @@ class GameDetailViewModel @Inject constructor(
                 val localDlcFileNames = if (localPath != null) {
                     ZipExtractor.listAllDlcFiles(localPath, platformSlug).map { it.name }.toSet()
                 } else emptySet()
+
+                val fileDocuments = files
+                    .filter { it.category in com.nendo.argosy.data.preferences.DownloadDefaults.DOCUMENT_KEYS }
+                    .mapNotNull { file ->
+                        val rommFileId = file.rommFileId ?: return@mapNotNull null
+                        GameDocument(
+                            fileName = file.fileName,
+                            title = file.docTitle?.takeIf { it.isNotBlank() } ?: file.fileName,
+                            category = file.category,
+                            rommFileId = rommFileId,
+                            source = file.docSource,
+                            localPath = file.localPath?.takeIf { file.isLocallyPresent() },
+                            sizeBytes = file.fileSize
+                        )
+                    }
+                val documents = providerManual(gameId) + fileDocuments
+                _uiState.update { it.copy(documents = documents) }
 
                 val dbUpdates = files.filter { it.category == "update" }.map { file ->
                     UpdateFileUi(
@@ -1037,6 +1065,9 @@ class GameDetailViewModel @Inject constructor(
 
         val state = _uiState.value
         when (state.downloadStatus) {
+            GameDownloadStatus.NO_FILE -> notificationManager.showError(
+                NotificationText.Res(R.string.gamedetail_notice_no_file)
+            )
             GameDownloadStatus.DOWNLOADED -> playGame(origin = origin)
             GameDownloadStatus.NEEDS_INSTALL -> downloadDelegate.installApk(viewModelScope, currentGameId)
             GameDownloadStatus.NOT_DOWNLOADED, GameDownloadStatus.FAILED -> {
@@ -1177,7 +1208,7 @@ class GameDetailViewModel @Inject constructor(
     fun toggleMoreOptions() {
         val opening = !_uiState.value.showMoreOptions
         val targets = if (opening) launchDisplayTargets() else emptyList()
-        _uiState.update { it.copy(launchDisplayNumbers = targets.map { target -> target.second }) }
+        _uiState.update { it.copy(launchDisplayNumbers = targets.map { target -> target.number }) }
         moreOptionsDelegate.toggleMoreOptions()
         val dsm = com.nendo.argosy.DualScreenManagerHolder.instance
         if (opening && targets.size > 1) {
@@ -1207,8 +1238,170 @@ class GameDetailViewModel @Inject constructor(
         )
     }
 
-    private fun launchDisplayTargets(): List<Pair<Int, Int>> =
+    private fun launchDisplayTargets(): List<com.nendo.argosy.util.AttachedScreen> =
         com.nendo.argosy.DualScreenManagerHolder.instance?.focusableDisplays().orEmpty()
+
+    private suspend fun providerManual(gameId: Long): List<GameDocument> {
+        val game = gameRepository.getById(gameId) ?: return emptyList()
+        if (!game.hasManual) return emptyList()
+        val url = romMRepository.buildResourceUrlPublic(game.manualPath) ?: return emptyList()
+        return listOf(
+            GameDocument(
+                fileName = game.manualPath?.substringAfterLast('/') ?: "manual.pdf",
+                title = game.title,
+                category = com.nendo.argosy.data.model.VariantCategory.MANUAL.key,
+                remoteUrl = url
+            )
+        )
+    }
+
+    fun moveDocumentFocus(delta: Int) {
+        val documents = _uiState.value.documents
+        if (documents.isEmpty()) return
+        val next = (_uiState.value.documentFocusIndex + delta).mod(documents.size)
+        _uiState.update { it.copy(documentFocusIndex = next) }
+    }
+
+    fun openFocusedDocument() {
+        val state = _uiState.value
+        state.documents.getOrNull(state.documentFocusIndex)?.let { openDocument(it) }
+    }
+
+    fun openDocument(document: GameDocument) {
+        openDocument = document
+        resumeFraction = 0f
+        _uiState.update {
+            it.copy(
+                documentReader = com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderState(
+                    title = document.title
+                )
+            )
+        }
+        viewModelScope.launch {
+            val fileId = document.rommFileId
+            val romId = gameRepository.getById(currentGameId)?.rommId
+            if (fileId != null && romId != null) {
+                resumeFraction = romMRepository.getDocumentProgress(romId, fileId)
+                    ?.progress
+                    ?.coerceIn(0f, 1f)
+                    ?: 0f
+            }
+        }
+        viewModelScope.launch {
+            val content = if (document.isPdf) {
+                gameDocumentLoader.readPdf(
+                    localPath = document.localPath,
+                    rommFileId = document.rommFileId,
+                    remoteUrl = document.remoteUrl,
+                    fileName = document.fileName,
+                    pageWidthPx = PDF_PAGE_WIDTH_PX
+                )
+            } else {
+                gameDocumentLoader.readText(
+                    localPath = document.localPath,
+                    rommFileId = document.rommFileId,
+                    remoteUrl = document.remoteUrl,
+                    fileName = document.fileName
+                )
+            }
+            _uiState.update { state ->
+                val reader = state.documentReader ?: return@update state
+                if (reader.title != document.title) return@update state
+                state.copy(
+                    documentReader = when (content) {
+                        is com.nendo.argosy.data.repository.DocumentContent.Text -> {
+                            documentBody = content.body
+                            val pages = com.nendo.argosy.ui.screens.gamedetail.components
+                                .paginateText(content.body, documentLinesPerPage)
+                            reader.copy(
+                                textPages = pages,
+                                pageIndex = resumePage(pages.size),
+                                isLoading = false
+                            )
+                        }
+                        is com.nendo.argosy.data.repository.DocumentContent.Pages ->
+                            reader.copy(
+                                pages = content.pages,
+                                pageIndex = resumePage(content.pages.size),
+                                isLoading = false
+                            )
+                        is com.nendo.argosy.data.repository.DocumentContent.Unavailable ->
+                            reader.copy(isLoading = false, errorReason = content.reason ?: "unavailable")
+                    }
+                )
+            }
+        }
+    }
+
+    /**
+     * Re-splits the open text document for [linesPerPage], keeping the reader's position by
+     * carrying its fraction through the new page count.
+     */
+    fun setDocumentLinesPerPage(linesPerPage: Int) {
+        val reader = _uiState.value.documentReader ?: return
+        val body = documentBody ?: return
+        if (linesPerPage == documentLinesPerPage) return
+        documentLinesPerPage = linesPerPage
+        val fraction = if (reader.pageCount > 1) {
+            reader.pageIndex.toFloat() / (reader.pageCount - 1)
+        } else {
+            0f
+        }
+        val pages = com.nendo.argosy.ui.screens.gamedetail.components.paginateText(body, linesPerPage)
+        val index = ((pages.size - 1) * fraction).toInt().coerceIn(0, pages.lastIndex)
+        _uiState.update {
+            it.copy(documentReader = reader.copy(textPages = pages, pageIndex = index))
+        }
+    }
+
+    fun turnDocumentPage(delta: Int) {
+        val reader = _uiState.value.documentReader ?: return
+        if (reader.pageCount <= 1) return
+        val next = (reader.pageIndex + delta).coerceIn(0, reader.pageCount - 1)
+        if (next == reader.pageIndex) return
+        _uiState.update { it.copy(documentReader = reader.copy(pageIndex = next)) }
+        scheduleDocumentProgressSave()
+    }
+
+    private fun resumePage(pageCount: Int): Int =
+        if (pageCount <= 1) 0 else ((pageCount - 1) * resumeFraction).toInt().coerceIn(0, pageCount - 1)
+
+    private fun scheduleDocumentProgressSave() {
+        documentProgressJob?.cancel()
+        documentProgressJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(DOCUMENT_PROGRESS_DEBOUNCE_MS)
+            saveDocumentProgress()
+        }
+    }
+
+    private suspend fun saveDocumentProgress() {
+        val reader = _uiState.value.documentReader ?: return
+        val document = openDocument ?: return
+        val fileId = document.rommFileId ?: return
+        val romId = gameRepository.getById(currentGameId)?.rommId ?: return
+        val fraction = if (reader.pageCount > 1) {
+            reader.pageIndex.toFloat() / (reader.pageCount - 1)
+        } else {
+            0f
+        }
+        romMRepository.updateDocumentProgress(
+            romId = romId,
+            fileId = fileId,
+            progress = fraction,
+            lastPage = reader.pageIndex.takeIf { document.isPdf }
+        )
+    }
+
+    fun dismissDocumentReader() {
+        if (_uiState.value.documentReader == null) return
+        documentProgressJob?.cancel()
+        viewModelScope.launch {
+            saveDocumentProgress()
+            documentBody = null
+            openDocument = null
+            _uiState.update { it.copy(documentReader = null) }
+        }
+    }
 
     private fun isLaunchDisplayRowFocused(): Boolean =
         moreOptionsDelegate.resolveOptionAction(moreOptionsContext()) == MoreOptionAction.LaunchOnDisplay
@@ -1220,7 +1413,7 @@ class GameDetailViewModel @Inject constructor(
     private fun launchOnSelectedDisplay() {
         val displayId = launchDisplayTargets()
             .getOrNull(_uiState.value.launchDisplayIndex)
-            ?.first ?: return
+            ?.displayId ?: return
         toggleMoreOptions()
         val callbacks = makeLaunchCallbacks(overrideDisplayId = displayId)
         gameLaunchDelegate.launchGame(
@@ -1929,7 +2122,8 @@ class GameDetailViewModel @Inject constructor(
             hasSaveSync = hasSaveSync,
             hasRelated = state.relatedGames.isNotEmpty(),
             hasPerGameSettings = game != null && !game.isSteamGame && !game.isAndroidApp &&
-                state.downloadStatus == GameDownloadStatus.DOWNLOADED
+                state.downloadStatus == GameDownloadStatus.DOWNLOADED,
+            hasDocuments = state.documents.isNotEmpty()
         )
     }
 
@@ -1960,6 +2154,7 @@ class GameDetailViewModel @Inject constructor(
             MenuItem.Details -> {}
             MenuItem.Description -> {}
             MenuItem.Screenshots -> openScreenshotViewer()
+            MenuItem.Documents -> openFocusedDocument()
             MenuItem.Reviews -> showReviewList()
             MenuItem.Achievements -> showAchievementList()
             MenuItem.RelatedGames -> {}

@@ -166,7 +166,10 @@ data class SocialUiState(
 }
 
 sealed class SocialLaunchEvent {
-    data class LaunchIntent(val intent: Intent) : SocialLaunchEvent()
+    data class LaunchIntent(
+        val intent: Intent,
+        val options: android.os.Bundle? = null
+    ) : SocialLaunchEvent()
     data class LaunchError(val message: String) : SocialLaunchEvent()
 }
 
@@ -179,6 +182,8 @@ class SocialViewModel @Inject constructor(
     private val netplayPreflightChecker: NetplayPreflightChecker,
     private val netplayJoinService: com.nendo.argosy.data.netplay.NetplayJoinService,
     private val launchGameUseCase: LaunchGameUseCase,
+    private val emulatorLaunchTargetResolver:
+        com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
     val notificationManager: NotificationManager
 ) : ViewModel() {
 
@@ -233,7 +238,12 @@ class SocialViewModel @Inject constructor(
                             putExtra(LibretroActivity.EXTRA_CORE_PATH, preflight.resolvedCorePath)
                         }
                     }
-                    _launchEvents.emit(SocialLaunchEvent.LaunchIntent(decorated))
+                    _launchEvents.emit(
+                        SocialLaunchEvent.LaunchIntent(
+                            decorated,
+                            emulatorLaunchTargetResolver.launchOptionsFor(gameId)
+                        )
+                    )
                 }
                 is LaunchResult.Error -> {
                     _launchEvents.emit(SocialLaunchEvent.LaunchError(result.message))
