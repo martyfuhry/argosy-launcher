@@ -31,12 +31,12 @@ namespace {
     constexpr double kStretchBypassEpsilon = 0.02;
 }
 
-Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio) {
+Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio, int audioBufferFrames) {
     LOGI("Audio initialization has been called with input sample rate %d", sampleRate);
 
     contentRefreshRate = refreshRate;
     inputSampleRate = sampleRate;
-    audioLatencySettings = findBestLatencySettings(preferLowLatencyAudio);
+    audioLatencySettings = findBestLatencySettings(preferLowLatencyAudio, audioBufferFrames);
     initializeStream();
 }
 
@@ -54,6 +54,8 @@ bool Audio::initializeStream() {
 
     if (audioLatencySettings->useLowLatencyStream) {
         builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
+        builder.setSharingMode(oboe::SharingMode::Exclusive);
+        builder.setUsage(oboe::Usage::Game);
     } else {
         builder.setFramesPerCallback(audioBufferSize / 10);
     }
@@ -64,6 +66,9 @@ bool Audio::initializeStream() {
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
+        statsLogIntervalFrames = stream->getSampleRate() * 2;
+        framesSinceStatsLog = 0;
+        logStreamState();
 
         // SoundTouch operates in stereo float and is configured for the emulator's
         // native sample rate. The final rate conversion to stream->getSampleRate()
@@ -91,12 +96,24 @@ bool Audio::initializeStream() {
     }
 }
 
-std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool preferLowLatencyAudio) {
-    if (oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowLatencyAudio) {
-        return std::make_unique<AudioLatencySettings>(LOW_LATENCY_SETTINGS);
-    } else {
-        return std::make_unique<AudioLatencySettings>(DEFAULT_LATENCY_SETTINGS);
+std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool preferLowLatencyAudio, int audioBufferFrames) {
+    bool useLowLatencyStream = oboe::AudioStreamBuilder::isAAudioRecommended() && preferLowLatencyAudio;
+    AudioLatencySettings settings = useLowLatencyStream ? LOW_LATENCY_SETTINGS : DEFAULT_LATENCY_SETTINGS;
+    if (audioBufferFrames > 0) {
+        settings.bufferSizeInVideoFrames = (unsigned) std::clamp(audioBufferFrames, 1, 16);
     }
+    LOGI("Audio buffer frames requested %d, using %u", audioBufferFrames, settings.bufferSizeInVideoFrames);
+    return std::make_unique<AudioLatencySettings>(settings);
+}
+
+void Audio::logStreamState() {
+    LOGI("Audio stream opened: perf=%s sharing=%s burst=%d bufferSize=%d bufferCapacity=%d fifoMs=%.1f",
+         oboe::convertToText(stream->getPerformanceMode()),
+         oboe::convertToText(stream->getSharingMode()),
+         stream->getFramesPerBurst(),
+         stream->getBufferSizeInFrames(),
+         stream->getBufferCapacityInFrames(),
+         computeMaximumLatency());
 }
 
 int32_t Audio::computeAudioBufferSize() {
@@ -251,6 +268,16 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     }
 
     latencyTuner->tune();
+
+    framesSinceStatsLog += numFrames;
+    if (framesSinceStatsLog >= statsLogIntervalFrames) {
+        framesSinceStatsLog = 0;
+        double fifoFillMs = 1000.0 * fifoBuffer->getFullFramesAvailable() / inputSampleRate;
+        auto latency = oboeStream->calculateLatencyMillis();
+        LOGI("Audio stats: fifoFillMs=%.1f streamLatencyMs=%.1f",
+             fifoFillMs,
+             latency ? latency.value() : -1.0);
+    }
 
     return oboe::DataCallbackResult::Continue;
 }

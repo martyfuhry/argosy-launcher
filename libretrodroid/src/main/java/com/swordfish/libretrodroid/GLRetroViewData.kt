@@ -32,6 +32,7 @@ class GLRetroViewData(context: Context) {
     var shader: ShaderConfig = ShaderConfig.Default
     var rumbleEventsEnabled: Boolean = true
     var preferLowLatencyAudio: Boolean = true
+    var audioBufferFrames: Int = 0
     var forceSoftwareTiming: Boolean = false
     var skipDuplicateFrames: Boolean = false
     var enableMicrophone: Boolean = false

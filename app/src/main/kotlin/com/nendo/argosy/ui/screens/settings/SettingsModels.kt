@@ -591,6 +591,7 @@ data class BuiltinVideoState(
     val overscanCrop: String = "Off",
     val framesEnabled: Boolean = false,
     val lowLatencyAudio: Boolean = true,
+    val audioBufferFrames: String = "0",
     val audioVolume: String = "100%",
     val vsync: Boolean = true,
     val rewindEnabled: Boolean = true,
