@@ -97,7 +97,8 @@ data class RomMRom(
     @Json(name = "title_id") val titleId: String? = null,
     @Json(name = "save_target") val saveTarget: String? = null,
     @Json(name = "save_target_layout") val saveTargetLayout: String? = null,
-    @Json(name = "is_identified") val isIdentified: Boolean = true
+    @Json(name = "is_identified") val isIdentified: Boolean = true,
+    @Json(name = "created_at") val createdAt: String? = null
 ) {
     val effectiveSiblings: List<RomMSibling> get() = siblingRoms ?: siblings ?: emptyList()
 
