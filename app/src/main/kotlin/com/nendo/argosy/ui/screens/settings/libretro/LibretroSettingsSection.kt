@@ -25,7 +25,8 @@ import com.nendo.argosy.ui.theme.Dimens
 data class LibretroVisibilityState(
     val platformSlug: String?,
     val canEnableBFI: Boolean,
-    val showSavingSection: Boolean = true
+    val showSavingSection: Boolean = true,
+    val showColorStyle: Boolean = true
 )
 
 private val libretroSettingsLayout = SettingsLayout<LibretroSettingDef, LibretroVisibilityState>(
@@ -33,6 +34,7 @@ private val libretroSettingsLayout = SettingsLayout<LibretroSettingDef, Libretro
     isFocusable = { true },
     visibleWhen = { item, state ->
         if (item.section == "saving" && !state.showSavingSection) return@SettingsLayout false
+        if (item == LibretroSettingDef.GbColorStyle && !state.showColorStyle) return@SettingsLayout false
         PlatformWeightRegistry.isSettingVisible(item, state.platformSlug, state.canEnableBFI)
     },
     sectionOf = { it.section }
@@ -45,6 +47,7 @@ fun LibretroSettingsSection(
     platformSlug: String? = null,
     canEnableBFI: Boolean = false,
     showSavingSection: Boolean = true,
+    showColorStyle: Boolean = true,
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier,
     enablePicker: Boolean = true,
@@ -55,8 +58,8 @@ fun LibretroSettingsSection(
 ) {
     val isPerPlatform = platformSlug != null
 
-    val visibilityState = remember(platformSlug, canEnableBFI, showSavingSection) {
-        LibretroVisibilityState(platformSlug, canEnableBFI, showSavingSection)
+    val visibilityState = remember(platformSlug, canEnableBFI, showSavingSection, showColorStyle) {
+        LibretroVisibilityState(platformSlug, canEnableBFI, showSavingSection, showColorStyle)
     }
 
     val visibleSettings = remember(visibilityState) {
@@ -196,8 +199,15 @@ private fun buildFlatItemSections(
     }
 }
 
-fun libretroSettingsMaxFocusIndex(platformSlug: String?, canEnableBFI: Boolean, showSavingSection: Boolean = true): Int =
-    libretroSettingsLayout.maxFocusIndex(LibretroVisibilityState(platformSlug, canEnableBFI, showSavingSection))
+fun libretroSettingsMaxFocusIndex(
+    platformSlug: String?,
+    canEnableBFI: Boolean,
+    showSavingSection: Boolean = true,
+    showColorStyle: Boolean = true
+): Int =
+    libretroSettingsLayout.maxFocusIndex(
+        LibretroVisibilityState(platformSlug, canEnableBFI, showSavingSection, showColorStyle)
+    )
 
 /**
  * Resolves a focus index to a libretro setting. [showSavingSection] must match the value the
@@ -208,9 +218,10 @@ fun libretroSettingsItemAtFocusIndex(
     index: Int,
     platformSlug: String?,
     canEnableBFI: Boolean,
-    showSavingSection: Boolean = true
+    showSavingSection: Boolean = true,
+    showColorStyle: Boolean = true
 ): LibretroSettingDef? =
     libretroSettingsLayout.itemAtFocusIndex(
         index,
-        LibretroVisibilityState(platformSlug, canEnableBFI, showSavingSection)
+        LibretroVisibilityState(platformSlug, canEnableBFI, showSavingSection, showColorStyle)
     )

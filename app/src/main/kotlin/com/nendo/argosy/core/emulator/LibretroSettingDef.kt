@@ -128,6 +128,22 @@ sealed class LibretroSettingDef(
         )
     )
 
+    data object GbColorStyle : LibretroSettingDef(
+        key = "gbColorStyle",
+        section = "display",
+        title = R.string.settings_libretro_def_gb_color_style_title,
+        type = SettingType.Cycle(
+            options = GbColorStyles.ALL,
+            labels = listOf(
+                R.string.settings_libretro_def_gb_color_style_option_original,
+                R.string.settings_libretro_def_gb_color_style_option_gbc,
+                R.string.settings_libretro_def_gb_color_style_option_sgb,
+                R.string.settings_libretro_def_gb_color_style_option_sgb_noframe,
+                R.string.settings_libretro_def_gb_color_style_option_custom
+            )
+        )
+    )
+
     data object Frame : LibretroSettingDef(
         key = "frame",
         section = "shaders",
@@ -317,6 +333,7 @@ sealed class LibretroSettingDef(
                 PortraitPosition,
                 Rotation,
                 OverscanCrop,
+                GbColorStyle,
                 BlackFrameInsertion,
                 VSync,
                 FastForwardEnabled,
