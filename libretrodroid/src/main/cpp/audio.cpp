@@ -272,7 +272,7 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     framesSinceStatsLog += numFrames;
     if (framesSinceStatsLog >= statsLogIntervalFrames) {
         framesSinceStatsLog = 0;
-        double fifoFillMs = 1000.0 * fifoBuffer->getFullFramesAvailable() / inputSampleRate;
+        double fifoFillMs = 500.0 * fifoBuffer->getFullFramesAvailable() / inputSampleRate;
         auto latency = oboeStream->calculateLatencyMillis();
         LOGI("Audio stats: fifoFillMs=%.1f streamLatencyMs=%.1f",
              fifoFillMs,
