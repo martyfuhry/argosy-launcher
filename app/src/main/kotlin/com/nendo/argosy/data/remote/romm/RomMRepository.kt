@@ -97,6 +97,8 @@ class RomMRepository @Inject constructor(
 
     fun buildMediaUrlPublic(path: String?): String? = apiClient.buildMediaUrl(path)
 
+    fun isSameRommHost(url: String): Boolean = apiClient.isSameRommHost(url)
+
     fun buildCoverUrls(rom: RomMRom): List<String> = apiClient.buildCoverUrls(rom)
 
     suspend fun getRom(romId: Long): RomMResult<RomMRom> = apiClient.getRom(romId)
