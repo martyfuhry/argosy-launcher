@@ -4,17 +4,21 @@ import androidx.compose.ui.graphics.toArgb
 import com.nendo.argosy.BuildConfig
 import com.nendo.argosy.ui.theme.ALauncherColors
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
+import com.nendo.argosy.data.remote.romm.PlatformSyncState
 import com.nendo.argosy.data.remote.romm.RomMRepository
+import com.nendo.argosy.data.remote.romm.SyncProgress
 import com.nendo.argosy.data.steam.SteamAuthManager
 import com.nendo.argosy.domain.model.Changelog
 import com.nendo.argosy.domain.model.ChangelogEntry
 import com.nendo.argosy.domain.model.RequiredAction
 import com.nendo.argosy.data.sync.PlatformSyncQueue
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -36,7 +40,7 @@ class HomeSyncDelegate @Inject constructor(
     private val _state = MutableStateFlow(SyncState())
     val state: StateFlow<SyncState> = _state.asStateFlow()
 
-    fun initializeRomM(scope: CoroutineScope, onSyncComplete: () -> Unit, onFavoritesRefreshed: suspend () -> Unit) {
+    fun initializeRomM(scope: CoroutineScope, onFavoritesRefreshed: suspend () -> Unit) {
         scope.launch {
             romMRepository.initialize()
 
@@ -50,7 +54,7 @@ class HomeSyncDelegate @Inject constructor(
                 val isStale = lastSync == null || lastSync.isBefore(oneWeekAgo)
 
                 if (isStale && !platformSyncQueue.isLibraryBusyNow()) {
-                    syncFromRomm(scope, onSyncComplete)
+                    syncFromRomm()
                 } else {
                     romMRepository.refreshFavoritesIfNeeded()
                     onFavoritesRefreshed()
@@ -59,8 +63,21 @@ class HomeSyncDelegate @Inject constructor(
         }
     }
 
-    fun syncFromRomm(@Suppress("UNUSED_PARAMETER") scope: CoroutineScope, onSyncComplete: () -> Unit) {
-        platformSyncQueue.enqueueLibrary(initializeFirst = true, onComplete = onSyncComplete)
+    fun syncFromRomm() {
+        platformSyncQueue.enqueueLibrary(initializeFirst = true)
+    }
+
+    /**
+     * Library writes a sync has just finished, whichever screen enqueued it: each platform's id as
+     * a pass finishes writing its games, and null when a queued job ends.
+     */
+    fun observeSyncCompletion(scope: CoroutineScope, onSynced: suspend (platformId: Long?) -> Unit) {
+        scope.launch {
+            platformSyncQueue.activeJob.jobCompletions().collect { onSynced(null) }
+        }
+        scope.launch {
+            romMRepository.syncProgress.platformsFinished().collect { onSynced(it) }
+        }
     }
 
     fun refreshFavoritesIfConnected(scope: CoroutineScope, onFavoritesRefreshed: suspend () -> Unit) {
@@ -133,3 +150,23 @@ class HomeSyncDelegate @Inject constructor(
     }
 }
 
+internal fun Flow<PlatformSyncQueue.Job?>.jobCompletions(): Flow<PlatformSyncQueue.Job> = flow {
+    var previous: PlatformSyncQueue.Job? = null
+    collect { current ->
+        val ended = previous
+        previous = current
+        if (ended != null && ended != current) emit(ended)
+    }
+}
+
+internal fun Flow<SyncProgress>.platformsFinished(): Flow<Long> = flow {
+    var finished = emptySet<Long>()
+    collect { progress ->
+        val now = progress.platforms
+            .filter { it.state == PlatformSyncState.DONE }
+            .map { it.platformId }
+            .toSet()
+        (now - finished).forEach { emit(it) }
+        finished = now
+    }
+}
