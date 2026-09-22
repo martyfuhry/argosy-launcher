@@ -28,6 +28,7 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
         val BUILTIN_PORTRAIT_POSITION = stringPreferencesKey("builtin_portrait_position")
         val BUILTIN_SKIP_DUPLICATE_FRAMES = booleanPreferencesKey("builtin_skip_duplicate_frames")
         val BUILTIN_LOW_LATENCY_AUDIO = booleanPreferencesKey("builtin_low_latency_audio")
+        val BUILTIN_AUDIO_BUFFER_FRAMES = intPreferencesKey("builtin_audio_buffer_frames")
         val BUILTIN_AUDIO_VOLUME = intPreferencesKey("builtin_audio_volume")
         val BUILTIN_FORCE_SOFTWARE_TIMING = booleanPreferencesKey("builtin_force_software_timing")
         val BUILTIN_RUMBLE_ENABLED = booleanPreferencesKey("builtin_rumble_enabled")
@@ -94,6 +95,7 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
             portraitPosition = prefs[Keys.BUILTIN_PORTRAIT_POSITION] ?: "Auto",
             skipDuplicateFrames = prefs[Keys.BUILTIN_SKIP_DUPLICATE_FRAMES] ?: false,
             lowLatencyAudio = prefs[Keys.BUILTIN_LOW_LATENCY_AUDIO] ?: true,
+            audioBufferFrames = prefs[Keys.BUILTIN_AUDIO_BUFFER_FRAMES] ?: 0,
             forceSoftwareTiming = prefs[Keys.BUILTIN_FORCE_SOFTWARE_TIMING] ?: false,
             rumbleEnabled = prefs[Keys.BUILTIN_RUMBLE_ENABLED] ?: true,
             blackFrameInsertion = prefs[Keys.BUILTIN_BLACK_FRAME_INSERTION] ?: false,
@@ -206,6 +208,11 @@ class BuiltinEmulatorPreferencesRepository @Inject constructor(
 
     suspend fun setBuiltinLowLatencyAudio(enabled: Boolean) {
         dataStore.edit { it[Keys.BUILTIN_LOW_LATENCY_AUDIO] = enabled }
+    }
+
+    suspend fun setBuiltinAudioBufferFrames(frames: Int) {
+        val valid = listOf(0, 2, 4, 6, 8)
+        dataStore.edit { it[Keys.BUILTIN_AUDIO_BUFFER_FRAMES] = if (frames in valid) frames else 0 }
     }
 
     suspend fun setBuiltinForceSoftwareTiming(enabled: Boolean) {

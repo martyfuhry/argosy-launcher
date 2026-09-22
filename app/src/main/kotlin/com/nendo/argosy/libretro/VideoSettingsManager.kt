@@ -44,6 +44,7 @@ class VideoSettingsManager(
     var currentSkipDupFrames by mutableStateOf(false)
     var currentLowLatencyAudio by mutableStateOf(true)
     var currentAudioVolume by mutableStateOf("100%")
+    var currentAudioBufferFrames by mutableStateOf("0")
     var currentVSync by mutableStateOf(true)
     var currentRewindSpeed by mutableStateOf("1x")
     var currentRewindBufferDuration by mutableStateOf("15s")
@@ -95,6 +96,7 @@ class VideoSettingsManager(
         currentSkipDupFrames = settings.skipDuplicateFrames
         currentLowLatencyAudio = settings.lowLatencyAudio
         currentAudioVolume = settings.audioVolumeDisplay
+        currentAudioBufferFrames = settings.audioBufferFramesDisplay
         currentVSync = !settings.forceSoftwareTiming
         currentRewindSpeed = settings.rewindSpeedDisplay
         currentRewindBufferDuration = settings.rewindBufferDurationDisplay
@@ -138,6 +140,7 @@ class VideoSettingsManager(
         LibretroSettingDef.SkipDuplicateFrames -> currentSkipDupFrames.toString()
         LibretroSettingDef.LowLatencyAudio -> currentLowLatencyAudio.toString()
         LibretroSettingDef.AudioVolume -> currentAudioVolume
+        LibretroSettingDef.AudioBufferFrames -> currentAudioBufferFrames
         LibretroSettingDef.VSync -> currentVSync.toString()
         LibretroSettingDef.RewindSpeed -> currentRewindSpeed
         LibretroSettingDef.RewindBufferDuration -> currentRewindBufferDuration
@@ -163,6 +166,7 @@ class VideoSettingsManager(
         LibretroSettingDef.SkipDuplicateFrames -> globalSettings.skipDuplicateFrames.toString()
         LibretroSettingDef.LowLatencyAudio -> globalSettings.lowLatencyAudio.toString()
         LibretroSettingDef.AudioVolume -> globalSettings.audioVolumeDisplay
+        LibretroSettingDef.AudioBufferFrames -> globalSettings.audioBufferFramesDisplay
         LibretroSettingDef.VSync -> (!globalSettings.forceSoftwareTiming).toString()
         LibretroSettingDef.RewindSpeed -> globalSettings.rewindSpeedDisplay
         LibretroSettingDef.RewindBufferDuration -> globalSettings.rewindBufferDurationDisplay
@@ -277,6 +281,7 @@ class VideoSettingsManager(
             LibretroSettingDef.FastForwardEnabled -> currentFastForwardEnabled = globalValue.toBooleanStrictOrNull() ?: true
             LibretroSettingDef.FastForwardSpeed -> currentFastForwardSpeed = globalValue
             LibretroSettingDef.AudioVolume -> currentAudioVolume = globalValue
+            LibretroSettingDef.AudioBufferFrames -> currentAudioBufferFrames = globalValue
             LibretroSettingDef.Frame -> currentFrame = getGlobalFrameForPlatform()
             else -> {}
         }
@@ -331,6 +336,7 @@ class VideoSettingsManager(
                 LibretroSettingDef.SkipDuplicateFrames -> current.copy(skipDuplicateFrames = null)
                 LibretroSettingDef.LowLatencyAudio -> current.copy(lowLatencyAudio = null)
                 LibretroSettingDef.AudioVolume -> current.copy(audioVolume = null)
+                LibretroSettingDef.AudioBufferFrames -> current.copy(audioBufferFrames = null)
                 LibretroSettingDef.VSync -> current.copy(vsync = null)
                 LibretroSettingDef.RewindSpeed -> current.copy(rewindSpeed = null)
                 LibretroSettingDef.RewindBufferDuration -> current.copy(rewindBufferDuration = null)
@@ -365,6 +371,7 @@ class VideoSettingsManager(
             LibretroSettingDef.FastForwardEnabled -> currentFastForwardEnabled = newValue.toBooleanStrictOrNull() ?: true
             LibretroSettingDef.FastForwardSpeed -> currentFastForwardSpeed = newValue
             LibretroSettingDef.AudioVolume -> currentAudioVolume = newValue
+            LibretroSettingDef.AudioBufferFrames -> currentAudioBufferFrames = newValue
             LibretroSettingDef.RewindSpeed -> currentRewindSpeed = newValue
             LibretroSettingDef.RewindBufferDuration -> currentRewindBufferDuration = newValue
             else -> {}
@@ -478,6 +485,7 @@ class VideoSettingsManager(
             }
             LibretroSettingDef.SkipDuplicateFrames,
             LibretroSettingDef.LowLatencyAudio,
+            LibretroSettingDef.AudioBufferFrames,
             LibretroSettingDef.VSync -> {
             }
             LibretroSettingDef.AutoSaveState,
@@ -564,6 +572,7 @@ class VideoSettingsManager(
                 LibretroSettingDef.SkipDuplicateFrames -> current.copy(skipDuplicateFrames = value.toBooleanStrictOrNull())
                 LibretroSettingDef.LowLatencyAudio -> current.copy(lowLatencyAudio = value.toBooleanStrictOrNull())
                 LibretroSettingDef.AudioVolume -> current.copy(audioVolume = value.removeSuffix("%").toIntOrNull())
+                LibretroSettingDef.AudioBufferFrames -> current.copy(audioBufferFrames = value.toIntOrNull())
                 LibretroSettingDef.VSync -> current.copy(vsync = value.toBooleanStrictOrNull())
                 LibretroSettingDef.RewindSpeed -> current.copy(rewindSpeed = value.removeSuffix("x").toIntOrNull())
                 LibretroSettingDef.RewindBufferDuration -> current.copy(rewindBufferDuration = value.removeSuffix("s").toIntOrNull())

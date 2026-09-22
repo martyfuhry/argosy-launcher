@@ -63,6 +63,7 @@ fun BuiltinVideoSection(
                         LibretroSettingDef.OverscanCrop -> viewModel.cycleBuiltinOverscanCrop(direction)
                         LibretroSettingDef.FastForwardSpeed -> viewModel.cycleBuiltinFastForwardSpeed(direction)
                         LibretroSettingDef.AudioVolume -> viewModel.cycleBuiltinAudioVolume(direction)
+                        LibretroSettingDef.AudioBufferFrames -> viewModel.cycleBuiltinAudioBufferFrames(direction)
                         LibretroSettingDef.RewindSpeed -> viewModel.cycleBuiltinRewindSpeed(direction)
                         LibretroSettingDef.RewindBufferDuration -> viewModel.cycleBuiltinRewindBufferDuration(direction)
                         else -> {}
