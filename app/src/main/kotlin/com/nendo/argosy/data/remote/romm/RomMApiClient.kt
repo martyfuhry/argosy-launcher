@@ -3,6 +3,7 @@ package com.nendo.argosy.data.remote.romm
 import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.local.entity.PlatformEntity
 import com.nendo.argosy.data.platform.PlatformDefinitions
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -364,8 +365,8 @@ class RomMApiClient @Inject constructor(
                     val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
                     PlatformEntity(
                         id = remote.id,
-                        slug = effectiveSlug,
-                        fsSlug = remote.fsSlug,
+                        slug = FileNames.sanitize(effectiveSlug),
+                        fsSlug = remote.fsSlug?.let { if (it.isBlank()) it else FileNames.sanitize(it) },
                         name = normalizedName,
                         shortName = resolvedShortName,
                         romExtensions = platformDef?.extensions?.joinToString(",") ?: "",
