@@ -223,11 +223,20 @@ fun SectionHeaderLockScroll(
 private suspend fun LazyListState.keepFocusedVisible(listIndex: Int, headerListIndices: Set<Int>, instant: Boolean) {
     if (listIndex < 0 || listIndex >= layoutInfo.totalItemsCount) return
     if (!canScrollForward && !canScrollBackward) return
-    val item = layoutInfo.visibleItemsInfo.firstOrNull { it.index == listIndex }
-    if (item == null) {
-        if (instant) scrollToItem(listIndex) else fastAnimateScrollToItem(listIndex)
-        return
+    val visible = layoutInfo.visibleItemsInfo
+    if (visible.none { it.index == listIndex }) {
+        val last = visible.lastOrNull()
+        val offset = if (last != null && listIndex > last.index) {
+            bottomAlignedOffset(layoutInfo.viewportEndOffset, 0, last.size)
+        } else {
+            0
+        }
+        if (instant) scrollToItem(listIndex, offset) else fastAnimateScrollToItem(listIndex, offset)
     }
+    val item = layoutInfo.visibleItemsInfo.firstOrNull { it.index == listIndex }
+        ?: snapshotFlow { layoutInfo.visibleItemsInfo.firstOrNull { it.index == listIndex } }
+            .filterNotNull()
+            .first()
     val info = layoutInfo
     val pinnedHeader = info.visibleItemsInfo
         .filter { it.index in headerListIndices && it.index < listIndex && it.offset <= info.viewportStartOffset }
@@ -248,6 +257,14 @@ private suspend fun LazyListState.keepFocusedVisible(listIndex: Int, headerListI
 
 private fun LazyGridState.focusedItem(index: Int): LazyGridItemInfo? =
     layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
+
+/**
+ * The scroll offset that parks an item of [itemExtent] with its end against the viewport's safe
+ * end, [bottomInset] short of [viewportEnd]. An item that does not fit the band is aligned to the
+ * start instead.
+ */
+internal fun bottomAlignedOffset(viewportEnd: Int, bottomInset: Int, itemExtent: Int): Int =
+    -(viewportEnd - bottomInset - itemExtent).coerceAtLeast(0)
 
 /**
  * Keeps the focused cell of a grid inside the band the user can actually see.
@@ -285,8 +302,19 @@ fun GridFocusedScroll(
         }
         if (focusedIndex >= gridState.layoutInfo.totalItemsCount) return@LaunchedEffect
 
-        if (gridState.layoutInfo.visibleItemsInfo.none { it.index == focusedIndex }) {
-            gridState.scrollToItem(focusedIndex)
+        val visible = gridState.layoutInfo.visibleItemsInfo
+        if (visible.none { it.index == focusedIndex }) {
+            val last = visible.lastOrNull()
+            val offset = if (last != null && focusedIndex > last.index) {
+                bottomAlignedOffset(gridState.layoutInfo.viewportEndOffset, bottomInsetPx, last.size.height)
+            } else {
+                0
+            }
+            if (instant) {
+                gridState.scrollToItem(focusedIndex, offset)
+            } else {
+                gridState.fastAnimateScrollToItem(focusedIndex, offset)
+            }
         }
 
         val item = gridState.focusedItem(focusedIndex)
