@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -62,11 +64,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -97,6 +101,8 @@ import com.nendo.argosy.ui.primitives.ActionButton
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.util.PlatformFilterLogic
+
+private const val WORDMARK = "ARGOSY"
 
 @Composable
 fun FirstRunScreen(
@@ -394,16 +400,40 @@ fun FirstRunScreen(
 private fun StepColumn(
     modifier: Modifier = Modifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
 ) {
-    Column(
-        horizontalAlignment = horizontalAlignment,
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = Dimens.spacingXl, vertical = Dimens.spacingMd),
-        content = content
-    )
+    BoxWithConstraints(modifier = modifier.fillMaxSize().imePadding()) {
+        Column(
+            horizontalAlignment = horizontalAlignment,
+            verticalArrangement = verticalArrangement,
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = maxHeight)
+                .padding(horizontal = Dimens.spacingXl, vertical = Dimens.spacingMd),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun StepBrand() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            painter = painterResource(R.drawable.ic_helm),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(Dimens.iconLg)
+        )
+        Spacer(modifier = Modifier.width(Dimens.spacingSm))
+        Text(
+            text = WORDMARK,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+    Spacer(modifier = Modifier.height(Dimens.spacingMd))
 }
 
 @Composable
@@ -411,7 +441,7 @@ private fun WelcomeStep(isFocused: Boolean, onGetStarted: () -> Unit) {
     StepColumn {
         Spacer(modifier = Modifier.height(Dimens.spacingXl))
         Text(
-            text = "ARGOSY",
+            text = WORDMARK,
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.primary
         )
@@ -504,18 +534,19 @@ private fun RommLoginStep(
                 focusManager.clearFocus()
             }
         }
-        StepColumn {
+        StepColumn(verticalArrangement = Arrangement.Center) {
+            StepBrand()
             StepHeader(title = stringResource(R.string.firstrun_romm_url_title))
             Spacer(modifier = Modifier.height(Dimens.spacingLg))
 
             OutlinedTextField(
                 value = url,
-                onValueChange = onUrlChange,
+                onValueChange = { onUrlChange(it.trim()) },
                 label = { Text(stringResource(R.string.firstrun_romm_url_field_label)) },
-                placeholder = { Text("https://romm.example.com") },
+                placeholder = { Text(stringResource(R.string.firstrun_romm_url_field_placeholder)) },
                 singleLine = true,
                 shape = inputShape,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                 keyboardActions = KeyboardActions(
                     onGo = {
                         if (!isConnecting && url.isNotBlank()) {
@@ -612,7 +643,8 @@ private fun RommLoginStep(
         }
     }
 
-    StepColumn {
+    StepColumn(verticalArrangement = Arrangement.Center) {
+        StepBrand()
         StepHeader(title = stringResource(R.string.firstrun_pairing_code_title))
         Spacer(modifier = Modifier.height(Dimens.spacingSm))
 
@@ -726,7 +758,7 @@ private fun DevicePairingStep(
     onUseManualCode: () -> Unit,
     onCancel: () -> Unit
 ) {
-    StepColumn {
+    StepColumn(verticalArrangement = Arrangement.Center) {
         StepHeader(title = stringResource(R.string.firstrun_device_pairing_title))
         Spacer(modifier = Modifier.height(Dimens.spacingMd))
 
