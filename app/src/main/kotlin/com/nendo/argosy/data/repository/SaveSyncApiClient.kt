@@ -26,6 +26,7 @@ import com.nendo.argosy.data.sync.platform.SaveContext
 import com.nendo.argosy.data.sync.platform.SwitchSaveHandler
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.util.Logger
+import com.nendo.argosy.util.parseTimestamp as parseTimestampMillis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -629,20 +630,10 @@ class SaveSyncApiClient @Inject constructor(
         }
 
         internal fun parseTimestamp(timestamp: String): Instant {
-            return try {
-                Instant.parse(timestamp)
-            } catch (_: Exception) {
-                try {
-                    java.time.OffsetDateTime.parse(timestamp).toInstant()
-                } catch (_: Exception) {
-                    try {
-                        java.time.ZonedDateTime.parse(timestamp).toInstant()
-                    } catch (_: Exception) {
-                        Logger.warn(TAG, "Failed to parse timestamp: $timestamp, using current time")
-                        Instant.now()
-                    }
-                }
-            }
+            val millis = parseTimestampMillis(timestamp)
+            if (millis != null) return Instant.ofEpochMilli(millis)
+            Logger.warn(TAG, "Failed to parse timestamp: $timestamp, using current time")
+            return Instant.now()
         }
 
         /**
