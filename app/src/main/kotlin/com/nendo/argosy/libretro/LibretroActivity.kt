@@ -913,6 +913,7 @@ class LibretroActivity : ComponentActivity() {
                 shader = effectiveShader
                 skipDuplicateFrames = if (coreName == "dolphin") false else settings.skipDuplicateFrames
                 preferLowLatencyAudio = settings.lowLatencyAudio
+                audioBufferFrames = settings.audioBufferFrames
                 forceSoftwareTiming = settings.forceSoftwareTiming
                 rumbleEventsEnabled = settings.rumbleEnabled
                 variables = coreVariablesFromIntent()
