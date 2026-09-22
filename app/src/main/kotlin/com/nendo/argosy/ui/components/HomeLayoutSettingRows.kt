@@ -221,6 +221,8 @@ fun toggleHomeLayoutField(settings: HomeLayoutSettings, field: HomeLayoutSetting
     }
 }
 
+private val SelectableChipIndicators = FocusIndicators(fill = true, ring = true)
+
 /**
  * The layout selector: one tile per layout, the selected one raised. Kept separate from the picker
  * so a settings pane can place it among its own rows with the preview sitting directly above it.
@@ -264,7 +266,7 @@ private fun LayoutSelectorTile(
             .background(if (isSelected) theme.surfaceRaised else theme.surfaceBase)
             .argosyFocusIndicators(
                 focused = isFocused,
-                indicators = FocusIndicators.Pill,
+                indicators = SelectableChipIndicators,
                 selected = isSelected,
                 shape = shape
             )

@@ -439,12 +439,12 @@ private fun StubCover(gameTitle: String, useSolidStub: Boolean) {
     val stubBackground = if (useSolidStub) {
         MaterialTheme.colorScheme.primaryContainer
     } else {
-        Color.Black.copy(alpha = 0.6f)
+        MaterialTheme.colorScheme.surfaceVariant
     }
     val stubTextColor = if (useSolidStub) {
         MaterialTheme.colorScheme.onPrimaryContainer
     } else {
-        Color.White.copy(alpha = 0.9f)
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
