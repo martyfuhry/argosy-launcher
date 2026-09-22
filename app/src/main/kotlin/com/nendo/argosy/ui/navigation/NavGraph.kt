@@ -6,6 +6,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -20,6 +22,7 @@ import com.nendo.argosy.ui.screens.collections.VirtualBrowserScreen
 import com.nendo.argosy.ui.screens.collections.VirtualCategoryScreen
 import com.nendo.argosy.ui.screens.downloads.DownloadsScreen
 import com.nendo.argosy.ui.screens.firstrun.FirstRunScreen
+import com.nendo.argosy.ui.screens.firstrun.FirstRunViewModel
 import com.nendo.argosy.ui.screens.gamedetail.GameDetailScreen
 import com.nendo.argosy.ui.screens.home.HomeScreen
 import com.nendo.argosy.ui.screens.quaypass.QuayPassCheckInScreen
@@ -51,6 +54,7 @@ fun NavGraph(
             }
         }
     }
+    val wizardStoreOwner = checkNotNull(LocalViewModelStoreOwner.current)
     NavHost(
         modifier = modifier,
         navController = navController,
@@ -66,7 +70,8 @@ fun NavGraph(
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.FirstRun.route) { inclusive = true }
                     }
-                }
+                },
+                viewModel = hiltViewModel<FirstRunViewModel>(wizardStoreOwner)
             )
         }
 
