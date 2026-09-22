@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
@@ -41,6 +42,7 @@ import com.nendo.argosy.hardware.AmbientLedManager
 import com.nendo.argosy.hardware.ScreenCaptureManager
 import com.nendo.argosy.ui.ArgosyApp
 import com.nendo.argosy.ui.audio.AmbientAudioManager
+import com.nendo.argosy.ui.input.GamepadEvent
 import com.nendo.argosy.ui.input.GamepadInputHandler
 import com.nendo.argosy.ui.input.gamepadEventToKeyCode
 import com.nendo.argosy.ui.screens.common.GameActionsDelegate
@@ -618,6 +620,7 @@ class MainActivity : ComponentActivity() {
 
         if (!dualScreenManager.claimInput(event)) return true
         if (dualScreenManager.swappedIsGameActive.value && !isOverlayFocused && isGameOnOtherDisplay()) {
+            gamepadInputHandler.resetStickMotion()
             val emulatorDispatcher = dualScreenManager.emulatorMotionDispatcher
             if (emulatorDispatcher != null) {
                 return emulatorDispatcher(event)
@@ -625,43 +628,39 @@ class MainActivity : ComponentActivity() {
             return true
         }
 
-        val stickEvent = gamepadInputHandler.processStickMotion(event)
-        if (stickEvent != null) {
-            if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused) {
-                val keyCode = gamepadEventToKeyCode(stickEvent)
-                if (keyCode != null) {
-                    dualScreenManager.controlCompanion?.onForwardKey(
-                        keyCode,
-                        KeyEvent.ACTION_DOWN,
-                        0,
-                        sessionStateStore.getSwapAB(),
-                        sessionStateStore.getSwapXY(),
-                        sessionStateStore.getSwapStartSelect()
-                    )
-                }
-                return true
-            }
-
-            if (!dualScreenManager.isRolesSwapped.value &&
-                isOnHomeScreen &&
-                !isOverlayFocused &&
-                !dualScreenManager.isCompanionActive.value &&
-                !dualScreenManager.swappedIsGameActive.value &&
-                !sessionStateStore.isForeignAppOnSecondary() &&
-                displayAffinityHelper.hasSecondaryDisplay
-            ) {
-                reassertCompanionForwarding()
-                return true
-            }
-
-            gamepadInputHandler.injectEvent(stickEvent)
-            return true
-        }
-
-        if (gamepadInputHandler.handleMotionEvent(event)) {
-            return true
-        }
+        if (gamepadInputHandler.processStickMotion(event, ::deliverStickEvent)) return true
+        if (gamepadInputHandler.handleMotionEvent(event)) return true
+        if (event.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK)) return true
         return super.dispatchGenericMotionEvent(event)
+    }
+
+    private fun deliverStickEvent(stickEvent: GamepadEvent, isRepeat: Boolean) {
+        if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused) {
+            val keyCode = gamepadEventToKeyCode(stickEvent) ?: return
+            dualScreenManager.controlCompanion?.onForwardKey(
+                keyCode,
+                KeyEvent.ACTION_DOWN,
+                if (isRepeat) 1 else 0,
+                sessionStateStore.getSwapAB(),
+                sessionStateStore.getSwapXY(),
+                sessionStateStore.getSwapStartSelect()
+            )
+            return
+        }
+
+        if (!dualScreenManager.isRolesSwapped.value &&
+            isOnHomeScreen &&
+            !isOverlayFocused &&
+            !dualScreenManager.isCompanionActive.value &&
+            !dualScreenManager.swappedIsGameActive.value &&
+            !sessionStateStore.isForeignAppOnSecondary() &&
+            displayAffinityHelper.hasSecondaryDisplay
+        ) {
+            reassertCompanionForwarding()
+            return
+        }
+
+        gamepadInputHandler.injectEvent(stickEvent, isRepeat)
     }
 
     // --- Window Focus ---
