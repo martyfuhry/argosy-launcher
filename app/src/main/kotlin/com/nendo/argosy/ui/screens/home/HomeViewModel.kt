@@ -247,11 +247,8 @@ class HomeViewModel @Inject constructor(
             .launchIn(viewModelScope)
 
         loadData()
-        syncDelegate.initializeRomM(
-            viewModelScope,
-            onSyncComplete = { refreshRecentGames() },
-            onFavoritesRefreshed = { libraryDelegate.loadFavorites() }
-        )
+        syncDelegate.initializeRomM(viewModelScope) { libraryDelegate.loadFavorites() }
+        syncDelegate.observeSyncCompletion(viewModelScope) { refreshAfterSync(it) }
         observeBackgroundSettings()
         observeGradientChanges()
         observeSyncOverlay()
@@ -800,6 +797,13 @@ class HomeViewModel @Inject constructor(
         if (row !is HomeRow.Platform) return
         val platform = platforms.getOrNull(row.index) ?: return
         viewModelScope.launch { libraryDelegate.loadPlatformGames(platform) }
+    }
+
+    private suspend fun refreshAfterSync(platformId: Long?) {
+        if (platformId != null && platformId != _uiState.value.currentPlatform?.id) return
+        libraryDelegate.invalidateRecentGamesCache()
+        if (platformId == null) libraryDelegate.loadRecentGames()
+        refreshCurrentRowInternal()
     }
 
     private fun loadData() {
@@ -2149,7 +2153,7 @@ class HomeViewModel @Inject constructor(
 
     // --- Public API: Sync & Changelog ---
 
-    override fun syncFromRomm() = syncDelegate.syncFromRomm(viewModelScope) { refreshRecentGames() }
+    override fun syncFromRomm() = syncDelegate.syncFromRomm()
     fun dismissChangelog() = syncDelegate.dismissChangelog(viewModelScope)
     fun handleChangelogAction(action: RequiredAction): RequiredAction = syncDelegate.handleChangelogAction(viewModelScope, action)
 
