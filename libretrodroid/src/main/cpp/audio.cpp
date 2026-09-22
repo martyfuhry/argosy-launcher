@@ -20,7 +20,11 @@
 #include "audio.h"
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
+#include <string>
+#include <sys/system_properties.h>
 
 namespace libretrodroid {
 
@@ -29,6 +33,83 @@ namespace {
     // path during normal playback and avoids routing samples through SoundTouch
     // when the user has only nudged the speed by a negligible amount.
     constexpr double kStretchBypassEpsilon = 0.02;
+
+    constexpr float kInt16ToFloat = 1.0f / 32768.0f;
+
+    std::string readAudioProperty(const char *suffix) {
+        char name[PROP_NAME_MAX];
+        snprintf(name, sizeof(name), "debug.argosy.audio.%s", suffix);
+        char value[PROP_VALUE_MAX] = {0};
+        const int length = __system_property_get(name, value);
+        return length > 0 ? std::string(value) : std::string();
+    }
+
+    void applyAudioOverrides(oboe::AudioStreamBuilder &builder) {
+        const std::string perf = readAudioProperty("perf");
+        const std::string sharing = readAudioProperty("sharing");
+        const std::string usage = readAudioProperty("usage");
+        const std::string format = readAudioProperty("format");
+        const std::string rate = readAudioProperty("rate");
+        const std::string channels = readAudioProperty("channels");
+        const std::string api = readAudioProperty("api");
+        const std::string fpc = readAudioProperty("fpc");
+        const std::string contentType = readAudioProperty("contenttype");
+
+        if (perf.empty() && sharing.empty() && usage.empty() && format.empty() && rate.empty() &&
+            channels.empty() && api.empty() && fpc.empty() && contentType.empty()) {
+            return;
+        }
+
+        if (perf == "none") builder.setPerformanceMode(oboe::PerformanceMode::None);
+        else if (perf == "lowlatency") builder.setPerformanceMode(oboe::PerformanceMode::LowLatency);
+        else if (perf == "powersaving") builder.setPerformanceMode(oboe::PerformanceMode::PowerSaving);
+
+        if (sharing == "exclusive") builder.setSharingMode(oboe::SharingMode::Exclusive);
+        else if (sharing == "shared") builder.setSharingMode(oboe::SharingMode::Shared);
+
+        if (usage == "unset" || usage == "media") builder.setUsage(oboe::Usage::Media);
+        else if (usage == "game") builder.setUsage(oboe::Usage::Game);
+
+        if (format == "i16") builder.setFormat(oboe::AudioFormat::I16);
+        else if (format == "float") builder.setFormat(oboe::AudioFormat::Float);
+        else if (format == "unspecified") builder.setFormat(oboe::AudioFormat::Unspecified);
+
+        if (!rate.empty()) builder.setSampleRate(std::max(0, atoi(rate.c_str())));
+
+        if (channels == "1") builder.setChannelCount(1);
+        else if (channels == "2") builder.setChannelCount(2);
+
+        if (api == "aaudio") builder.setAudioApi(oboe::AudioApi::AAudio);
+        else if (api == "opensl") builder.setAudioApi(oboe::AudioApi::OpenSLES);
+        else if (api == "unspecified") builder.setAudioApi(oboe::AudioApi::Unspecified);
+
+        if (!fpc.empty()) builder.setFramesPerCallback(std::max(0, atoi(fpc.c_str())));
+
+        if (contentType == "unset" || contentType == "music") builder.setContentType(oboe::ContentType::Music);
+        else if (contentType == "movie") builder.setContentType(oboe::ContentType::Movie);
+        else if (contentType == "sonification") builder.setContentType(oboe::ContentType::Sonification);
+        else if (contentType == "speech") builder.setContentType(oboe::ContentType::Speech);
+
+        LOGI("Audio overrides: perf=%s sharing=%s usage=%s format=%s rate=%s channels=%s api=%s fpc=%s contenttype=%s -> perf=%s sharing=%s usage=%d format=%s rate=%d channels=%d api=%s fpc=%d contenttype=%d",
+             perf.empty() ? "-" : perf.c_str(),
+             sharing.empty() ? "-" : sharing.c_str(),
+             usage.empty() ? "-" : usage.c_str(),
+             format.empty() ? "-" : format.c_str(),
+             rate.empty() ? "-" : rate.c_str(),
+             channels.empty() ? "-" : channels.c_str(),
+             api.empty() ? "-" : api.c_str(),
+             fpc.empty() ? "-" : fpc.c_str(),
+             contentType.empty() ? "-" : contentType.c_str(),
+             oboe::convertToText(builder.getPerformanceMode()),
+             oboe::convertToText(builder.getSharingMode()),
+             (int) builder.getUsage(),
+             oboe::convertToText(builder.getFormat()),
+             builder.getSampleRate(),
+             builder.getChannelCount(),
+             oboe::convertToText(builder.getAudioApi()),
+             builder.getFramesPerCallback(),
+             (int) builder.getContentType());
+    }
 }
 
 Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio, int audioBufferFrames) {
@@ -60,9 +141,14 @@ bool Audio::initializeStream() {
         builder.setFramesPerCallback(audioBufferSize / 10);
     }
 
+    applyAudioOverrides(builder);
+
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
         baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
+        outputFormat = stream->getFormat();
+        outputChannelCount = stream->getChannelCount();
+        convertOutput = outputFormat != oboe::AudioFormat::I16 || outputChannelCount != 2;
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
@@ -107,12 +193,13 @@ std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool
 }
 
 void Audio::logStreamState() {
-    LOGI("Audio stream opened: api=%s perf=%s sharing=%s format=%s rate=%d burst=%d bufferSize=%d bufferCapacity=%d fifoMs=%.1f",
+    LOGI("Audio stream opened: api=%s perf=%s sharing=%s format=%s rate=%d channels=%d burst=%d bufferSize=%d bufferCapacity=%d fifoMs=%.1f",
          oboe::convertToText(stream->getAudioApi()),
          oboe::convertToText(stream->getPerformanceMode()),
          oboe::convertToText(stream->getSharingMode()),
          oboe::convertToText(stream->getFormat()),
          stream->getSampleRate(),
+         stream->getChannelCount(),
          stream->getFramesPerBurst(),
          stream->getBufferSizeInFrames(),
          stream->getBufferCapacityInFrames(),
@@ -221,6 +308,14 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
     fifoBuffer->readNow(temporaryAudioBuffer.get(), currentFramesToSubmit * 2);
 
     auto outputArray = reinterpret_cast<int16_t *>(audioData);
+    if (convertOutput) {
+        const int32_t sampleCount = numFrames * 2;
+        if (sampleCount > conversionBufferCapacity) {
+            conversionBuffer = std::unique_ptr<int16_t[]>(new int16_t[sampleCount]);
+            conversionBufferCapacity = sampleCount;
+        }
+        outputArray = conversionBuffer.get();
+    }
 
     if (stretchActive) {
         if (std::abs(playbackSpeed - lastStretchTempo) > 1e-6) {
@@ -229,7 +324,6 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
         }
 
         const int32_t sampleCount = currentFramesToSubmit * 2;
-        constexpr float kInt16ToFloat = 1.0f / 32768.0f;
         for (int32_t i = 0; i < sampleCount; ++i) {
             stretchInputBuffer[i] = temporaryAudioBuffer[i] * kInt16ToFloat;
         }
@@ -268,6 +362,10 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
             else if (s < -32768.0f) s = -32768.0f;
             outputArray[i] = (int16_t) std::lrintf(s);
         }
+    }
+
+    if (convertOutput) {
+        writeConvertedOutput(outputArray, audioData, numFrames);
     }
 
     latencyTuner->tune();
@@ -309,6 +407,26 @@ double Audio::computeDynamicBufferConversionFactor(double dt) {
     LOGD("Audio speed adjustments (p: %f) (i: %f)", proportionalAdjustment, integralAdjustment);
 
     return 1.0 - (finalAdjustment);
+}
+
+void Audio::writeConvertedOutput(const int16_t *stereo, void *audioData, int32_t numFrames) {
+    const bool mono = outputChannelCount == 1;
+    const int32_t sampleCount = mono ? numFrames : numFrames * 2;
+    if (outputFormat == oboe::AudioFormat::Float) {
+        auto out = static_cast<float *>(audioData);
+        for (int32_t i = 0; i < sampleCount; ++i) {
+            out[i] = mono
+                ? (stereo[i * 2] + stereo[i * 2 + 1]) * (0.5f * kInt16ToFloat)
+                : stereo[i] * kInt16ToFloat;
+        }
+    } else {
+        auto out = static_cast<int16_t *>(audioData);
+        for (int32_t i = 0; i < sampleCount; ++i) {
+            out[i] = mono
+                ? (int16_t) ((stereo[i * 2] + stereo[i * 2 + 1]) / 2)
+                : stereo[i];
+        }
+    }
 }
 
 int32_t Audio::roundToEven(int32_t x) {

@@ -69,6 +69,7 @@ private:
     std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(bool preferLowLatencyAudio, int audioBufferFrames);
     void logStreamState();
     double computeMaximumLatency() const;
+    void writeConvertedOutput(const int16_t *stereo, void *audioData, int32_t numFrames);
 
 private:
     const double kp = 0.006;
@@ -100,6 +101,12 @@ private:
     int32_t statsLogIntervalFrames = 0;
 
     std::unique_ptr<AudioLatencySettings> audioLatencySettings;
+
+    oboe::AudioFormat outputFormat = oboe::AudioFormat::I16;
+    int32_t outputChannelCount = 2;
+    bool convertOutput = false;
+    std::unique_ptr<int16_t[]> conversionBuffer = nullptr;
+    int32_t conversionBufferCapacity = 0;
 
     // SoundTouch time-stretcher: preserves pitch when playbackSpeed != 1.0.
     // Activated only when pitchPreservationEnabled is set AND the tempo actually
