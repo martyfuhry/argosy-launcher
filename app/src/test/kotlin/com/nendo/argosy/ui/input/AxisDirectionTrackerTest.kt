@@ -8,7 +8,7 @@ class AxisDirectionTrackerTest {
 
     private fun edgesForX(vararg samples: Float): List<GamepadEvent> {
         val tracker = AxisDirectionTracker()
-        return samples.mapNotNull { tracker.update(it, 0f) }
+        return samples.asList().mapNotNull { tracker.update(it, 0f) }
     }
 
     @Test
