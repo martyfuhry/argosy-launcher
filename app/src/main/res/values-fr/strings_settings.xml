@@ -2368,6 +2368,18 @@
     <string name="settings_libretro_def_auto_restore_state_subtitle">S\'applique uniquement aux jeux en mode Casual</string>
     <string name="settings_libretro_def_hw_core_save_states_title">États de sauvegarde Dolphin et Flycast</string>
     <string name="settings_libretro_def_hw_core_save_states_subtitle">Expérimental ; ces cores peuvent afficher un écran noir ou échouer à reprendre. Prend effet au prochain lancement, jeux en mode Casual uniquement</string>
+    <string name="settings_libretro_def_gb_color_style_title">Style de couleur</string>
+    <string name="settings_libretro_def_gb_color_style_option_original">Original (vert)</string>
+    <string name="settings_libretro_def_gb_color_style_option_gbc">Palette Game Boy Color</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb">Super Game Boy avec cadre</string>
+    <string name="settings_libretro_def_gb_color_style_option_sgb_noframe">Super Game Boy, sans cadre</string>
+    <string name="settings_libretro_def_gb_color_style_option_custom">Personnalisé (options du core)</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_original">Quatre nuances de vert, comme sur la première Game Boy. Les jeux réservés à la Game Boy Color ne démarrent pas.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_gbc">La palette qu\'une Game Boy Color attribue à chaque jeu. Les jeux sans préréglage reçoivent ses couleurs par défaut.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb">La palette et le cadre d\'écran d\'une Super Game Boy. Gambatte affiche la palette sans cadre. Les jeux réservés à la Game Boy Color ne démarrent pas.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_sgb_noframe">La palette d\'une Super Game Boy, sans le cadre d\'écran. Les jeux réservés à la Game Boy Color ne démarrent pas.</string>
+    <string name="settings_libretro_def_gb_color_style_subtitle_custom">Laisse les options du core décider. Réglez le modèle et la palette dans Options du core.</string>
+    <string name="settings_libretro_gb_color_style_preview_varies_caption">Varie selon le jeu</string>
 
     <string name="settings_libretro_def_shader_option_none">Aucun</string>
     <string name="settings_libretro_def_shader_option_custom">Personnalisé</string>
