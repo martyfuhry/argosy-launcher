@@ -31,6 +31,7 @@ import com.nendo.argosy.data.remote.romm.RomMState
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
 import com.nendo.argosy.util.AppPaths
+import com.nendo.argosy.util.parseTimestamp as parseTimestampMillis
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -1405,23 +1406,16 @@ class StateCacheManager @Inject constructor(
         val match = Regex("""\[(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})]""").find(fileName) ?: return null
         return try {
             java.time.LocalDateTime.parse(match.groupValues[1], UPLOAD_TIMESTAMP_FORMAT)
-                .atZone(java.time.ZoneId.systemDefault()).toInstant()
+                .atZone(java.time.ZoneOffset.UTC).toInstant()
         } catch (e: Exception) {
             null
         }
     }
 
     fun parseTimestamp(timestamp: String): Instant? {
-        return try {
-            ZonedDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME).toInstant()
-        } catch (e: Exception) {
-            try {
-                Instant.parse(timestamp)
-            } catch (e2: Exception) {
-                Log.w(TAG, "Failed to parse timestamp: $timestamp")
-                null
-            }
-        }
+        val millis = parseTimestampMillis(timestamp)
+        if (millis == null) Log.w(TAG, "Failed to parse timestamp: $timestamp")
+        return millis?.let(Instant::ofEpochMilli)
     }
 
     fun buildUploadFileName(state: StateCacheEntity, romBaseName: String): String {
