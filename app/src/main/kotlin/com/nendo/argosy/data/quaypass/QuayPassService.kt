@@ -270,7 +270,11 @@ class QuayPassService @Inject constructor(
             },
             onDeviceGone = { deviceKey -> orchestrator.onServerDeviceGone(deviceKey) }
         ).also { it.start() }
-        advertiser = QuayPassAdvertiser(application).also { it.start() }
+        advertiser = QuayPassAdvertiser(
+            application = application,
+            scope = scope,
+            isExchangeActive = { exchangeMutex.isLocked || gattServer?.hasConnectedPeers == true }
+        ).also { it.start() }
         scanner = QuayPassScanner(application).also { it.start() }
 
         scope.launch { refreshOurBytes() }
