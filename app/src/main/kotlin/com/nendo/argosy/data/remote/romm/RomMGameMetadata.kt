@@ -3,6 +3,7 @@ package com.nendo.argosy.data.remote.romm
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.util.SearchNormalizer
+import com.nendo.argosy.util.parseTimestamp
 import java.time.Instant
 import java.time.ZoneOffset
 
@@ -101,3 +102,10 @@ private fun remoteIdentityTrusted(platformSlug: String): Boolean =
     PlatformDefinitions.getCanonicalSlug(platformSlug) != SWITCH_SLUG
 
 private const val SWITCH_SLUG = "switch"
+
+/**
+ * The added time of a newly inserted game: the server's creation time, with [now] as the
+ * fallback for a rom that carries none.
+ */
+internal fun resolveAddedAt(serverCreatedAt: String?, now: Instant): Instant =
+    serverCreatedAt?.let(::parseTimestamp)?.let(Instant::ofEpochMilli) ?: now
