@@ -80,6 +80,9 @@ class LibretroSettingsRepository @Inject constructor(
     suspend fun setBuiltinLowLatencyAudio(enabled: Boolean) =
         builtinPrefs.setBuiltinLowLatencyAudio(enabled)
 
+    suspend fun setBuiltinAudioBufferFrames(frames: Int) =
+        builtinPrefs.setBuiltinAudioBufferFrames(frames)
+
     suspend fun setBuiltinForceSoftwareTiming(enabled: Boolean) =
         builtinPrefs.setBuiltinForceSoftwareTiming(enabled)
 

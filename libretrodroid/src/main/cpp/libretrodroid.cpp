@@ -455,6 +455,7 @@ void LibretroDroid::create(
     const ShaderManager::Config& shaderConfig,
     float refreshRate,
     bool lowLatencyAudio,
+    int audioBufferFrames,
     bool forceSoftwareTiming,
     bool enableMicrophone,
     bool duplicateFrames,
@@ -495,6 +496,7 @@ void LibretroDroid::create(
     core->retro_init();
 
     preferLowLatencyAudio = lowLatencyAudio;
+    this->audioBufferFrames = audioBufferFrames;
     this->forceSoftwareTiming = forceSoftwareTiming;
 
     // HW accelerated cores are only supported on opengles 3.
@@ -1202,7 +1204,8 @@ void LibretroDroid::afterGameLoad() {
     audio = std::make_unique<Audio>(
         (int32_t) std::lround(inputSampleRate),
         system_av_info.timing.fps,
-        preferLowLatencyAudio
+        preferLowLatencyAudio,
+        audioBufferFrames
     );
     audio->setPitchPreservation(pitchPreservationEnabled);
     audio->setOutputVolume(audioVolume);

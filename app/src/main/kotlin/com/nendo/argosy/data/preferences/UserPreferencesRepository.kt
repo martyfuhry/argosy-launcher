@@ -540,6 +540,7 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setBuiltinPortraitPosition(value: String) = builtinPrefs.setBuiltinPortraitPosition(value)
     suspend fun setBuiltinSkipDuplicateFrames(enabled: Boolean) = builtinPrefs.setBuiltinSkipDuplicateFrames(enabled)
     suspend fun setBuiltinLowLatencyAudio(enabled: Boolean) = builtinPrefs.setBuiltinLowLatencyAudio(enabled)
+    suspend fun setBuiltinAudioBufferFrames(frames: Int) = builtinPrefs.setBuiltinAudioBufferFrames(frames)
     suspend fun setBuiltinForceSoftwareTiming(enabled: Boolean) = builtinPrefs.setBuiltinForceSoftwareTiming(enabled)
     suspend fun setBuiltinRumbleEnabled(enabled: Boolean) = builtinPrefs.setBuiltinRumbleEnabled(enabled)
     suspend fun setBuiltinBlackFrameInsertion(enabled: Boolean) = builtinPrefs.setBuiltinBlackFrameInsertion(enabled)
@@ -628,6 +629,7 @@ data class BuiltinEmulatorSettings(
     val portraitPosition: String = "Auto",
     val skipDuplicateFrames: Boolean = false,
     val lowLatencyAudio: Boolean = true,
+    val audioBufferFrames: Int = 0,
     val audioVolume: Int = 100,
     val forceSoftwareTiming: Boolean = false,
     val rumbleEnabled: Boolean = true,
@@ -709,6 +711,9 @@ data class BuiltinEmulatorSettings(
 
     val audioVolumeDisplay: String
         get() = "${audioVolume}%"
+
+    val audioBufferFramesDisplay: String
+        get() = audioBufferFrames.toString()
 
     val fastForwardSpeedDisplay: String
         get() = "${fastForwardSpeed}x"

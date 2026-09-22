@@ -986,6 +986,7 @@ class LibretroActivity : ComponentActivity() {
                 skipDuplicateFrames = if (coreName == "dolphin") false else settings.skipDuplicateFrames
                 timingFollowsGeometry = coreName == "dolphin"
                 preferLowLatencyAudio = settings.lowLatencyAudio
+                audioBufferFrames = settings.audioBufferFrames
                 forceSoftwareTiming = settings.forceSoftwareTiming
                 rumbleEventsEnabled = settings.rumbleEnabled
                 variables = coreVariablesFromIntent()

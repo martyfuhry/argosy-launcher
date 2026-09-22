@@ -4141,3 +4141,9 @@ object Migration_202_203 : Migration(202, 203) {
         db.execSQL("PRAGMA foreign_keys=ON")
     }
 }
+
+object Migration_203_204 : Migration(203, 204) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `audioBufferFrames` INTEGER DEFAULT NULL")
+    }
+}
