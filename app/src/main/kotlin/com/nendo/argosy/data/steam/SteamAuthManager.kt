@@ -250,7 +250,7 @@ class SteamAuthManager @Inject constructor(
                 lastClientId = session.clientID
 
                 _qrAuthState.value = QrAuthState.WaitingForScan(session.challengeUrl)
-                Log.d(TAG, "QR challenge URL: ${session.challengeUrl}")
+                Log.d(TAG, "QR challenge ready")
 
                 startAuthPolling(session)
             } catch (e: Exception) {
