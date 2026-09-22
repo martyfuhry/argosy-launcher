@@ -11,7 +11,11 @@ class CoreOptionResolver @Inject constructor(
     private val coreOptionOverrideDao: CoreOptionOverrideDao,
     private val gameCoreOptionOverrideDao: GameCoreOptionOverrideDao
 ) {
-    suspend fun resolveVariables(coreId: String, gameId: Long? = null): Array<Variable> {
+    suspend fun resolveVariables(
+        coreId: String,
+        gameId: Long? = null,
+        platformOverrides: Map<String, String> = emptyMap()
+    ): Array<Variable> {
         val manifest = CoreOptionManifestRegistry.getManifest(coreId)
             ?: return emptyArray()
         pruneRetiredOverrides(coreId, manifest.options.map { it.key })
@@ -23,11 +27,14 @@ class CoreOptionResolver @Inject constructor(
 
         return manifest.options.mapNotNull { option ->
             val gameOverride = gameOverrides[option.key]
+            val platformOverride = platformOverrides[option.key]
             val globalOverride = globalOverrides[option.key]
             val hasArgosyOverride = option.defaultValue != option.coreDefault
             when {
                 gameOverride != null ->
                     Variable(key = option.key, value = option.resolveStored(gameOverride))
+                platformOverride != null ->
+                    Variable(key = option.key, value = option.resolveStored(platformOverride))
                 globalOverride != null ->
                     Variable(key = option.key, value = option.resolveStored(globalOverride))
                 hasArgosyOverride -> Variable(key = option.key, value = option.defaultValue)
