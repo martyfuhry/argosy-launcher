@@ -35,6 +35,7 @@ class EffectiveLibretroSettingsResolver @Inject constructor(
             overscanCrop = perPlatform?.overscanCrop ?: global.overscanCrop,
             skipDuplicateFrames = perPlatform?.skipDuplicateFrames ?: global.skipDuplicateFrames,
             lowLatencyAudio = perPlatform?.lowLatencyAudio ?: global.lowLatencyAudio,
+            audioBufferFrames = perPlatform?.audioBufferFrames ?: global.audioBufferFrames,
             audioVolume = perPlatform?.audioVolume ?: global.audioVolume,
             blackFrameInsertion = perPlatform?.blackFrameInsertion ?: global.blackFrameInsertion,
             framesEnabled = global.framesEnabled,
