@@ -98,6 +98,7 @@ public:
         const ShaderManager::Config& shaderConfig,
         float refreshRate,
         bool lowLatencyAudio,
+        int audioBufferFrames,
         bool forceSoftwareTiming,
         bool enableMicrophone,
         bool duplicateFrames,
@@ -235,6 +236,7 @@ private:
     bool pitchPreservationEnabled = false;
     float audioVolume = 1.0f;
     bool preferLowLatencyAudio = false;
+    int audioBufferFrames = 0;
     bool forceSoftwareTiming = false;
     bool rumbleEnabled = false;
 

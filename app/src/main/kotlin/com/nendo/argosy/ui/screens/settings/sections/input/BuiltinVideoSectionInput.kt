@@ -128,6 +128,7 @@ internal class BuiltinVideoSectionInput(
         LibretroSettingDef.OverscanCrop,
         LibretroSettingDef.FastForwardSpeed,
         LibretroSettingDef.AudioVolume,
+        LibretroSettingDef.AudioBufferFrames,
         LibretroSettingDef.RewindSpeed,
         LibretroSettingDef.RewindBufferDuration -> {
             viewModel.requestEnumPicker(setting.key)
@@ -277,6 +278,7 @@ internal class BuiltinVideoSectionInput(
         LibretroSettingDef.OverscanCrop -> { viewModel.cycleBuiltinOverscanCrop(direction); InputResult.HANDLED }
         LibretroSettingDef.FastForwardSpeed -> { viewModel.cycleBuiltinFastForwardSpeed(direction); InputResult.HANDLED }
         LibretroSettingDef.AudioVolume -> { viewModel.cycleBuiltinAudioVolume(direction); InputResult.HANDLED }
+        LibretroSettingDef.AudioBufferFrames -> { viewModel.cycleBuiltinAudioBufferFrames(direction); InputResult.HANDLED }
         LibretroSettingDef.RewindSpeed -> { viewModel.cycleBuiltinRewindSpeed(direction); InputResult.HANDLED }
         LibretroSettingDef.RewindBufferDuration -> { viewModel.cycleBuiltinRewindBufferDuration(direction); InputResult.HANDLED }
         else -> InputResult.UNHANDLED
