@@ -1,5 +1,6 @@
 package com.nendo.argosy.ui.screens.savesync
 
+import com.nendo.argosy.data.local.entity.SaveSyncEntity
 import com.nendo.argosy.data.sync.SyncDirection
 import java.time.Instant
 
@@ -102,12 +103,8 @@ data class InProgressRow(
     override val key: String get() = "progress:$gameId:$direction"
 }
 
-data class GameSaveRow(
+data class SaveSlotEntry(
     val saveSyncId: Long,
-    val gameId: Long,
-    val title: String,
-    val platformDisplayName: String,
-    val coverPath: String?,
     val channelName: String?,
     val channelDisplay: String,
     val syncStatus: String,
@@ -116,8 +113,32 @@ data class GameSaveRow(
     val serverUpdatedAt: Instant?,
     val lastSyncDeviceName: String?,
     val isLastSyncThisDevice: Boolean,
-    val isJustSynced: Boolean,
-    val hasConflict: Boolean
+    val isJustSynced: Boolean
+) {
+    val savedAt: Instant?
+        get() = when (syncStatus) {
+            SaveSyncEntity.STATUS_SYNCED, SaveSyncEntity.STATUS_SERVER_NEWER ->
+                serverUpdatedAt ?: localUpdatedAt
+            SaveSyncEntity.STATUS_LOCAL_NEWER, SaveSyncEntity.STATUS_PENDING_UPLOAD ->
+                localUpdatedAt ?: serverUpdatedAt
+            else -> listOfNotNull(serverUpdatedAt, localUpdatedAt).maxOrNull()
+        }
+}
+
+/**
+ * One game and every save slot synced for it. A slot in conflict is not listed here; it stands as
+ * its own [AttentionRow] until it is resolved, then joins the rest.
+ */
+data class GameSaveRow(
+    val gameId: Long,
+    val title: String,
+    val platformDisplayName: String,
+    val coverPath: String?,
+    val slots: List<SaveSlotEntry>
 ) : SaveSyncRow {
-    override val key: String get() = "game:$saveSyncId"
+    override val key: String get() = "game:$gameId"
+
+    val lastSyncedAt: Instant? get() = slots.mapNotNull { it.lastSyncedAt }.maxOrNull()
+
+    val isJustSynced: Boolean get() = slots.any { it.isJustSynced }
 }

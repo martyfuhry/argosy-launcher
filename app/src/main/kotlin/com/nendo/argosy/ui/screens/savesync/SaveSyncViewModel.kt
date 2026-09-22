@@ -222,14 +222,21 @@ class SaveSyncViewModel @Inject constructor(
         val gameRows = saveRows
             .groupBy { it.gameId to it.channelName }
             .map { (_, rows) -> rows.maxByOrNull { it.lastSyncedAt ?: Instant.MIN }!! }
-            .mapNotNull { entity ->
-                val game = gameById[entity.gameId] ?: return@mapNotNull null
-                buildGameSaveRow(entity, game, prefs.rommDeviceId)
-            }
+            .filterNot { it.isConflicted() }
             .groupBy { it.gameId }
-            .toList()
-            .sortedByDescending { (_, rows) -> rows.maxOfOrNull { it.lastSyncedAt ?: Instant.MIN } ?: Instant.MIN }
-            .flatMap { (_, rows) -> rows.sortedByDescending { it.lastSyncedAt ?: Instant.MIN } }
+            .mapNotNull { (gameId, entities) ->
+                val game = gameById[gameId] ?: return@mapNotNull null
+                GameSaveRow(
+                    gameId = gameId,
+                    title = game.title,
+                    platformDisplayName = game.platformSlug,
+                    coverPath = game.coverPath,
+                    slots = entities
+                        .map { buildSaveSlotEntry(it, game, prefs.rommDeviceId) }
+                        .sortedByDescending { it.lastSyncedAt ?: Instant.MIN }
+                )
+            }
+            .sortedByDescending { it.lastSyncedAt ?: Instant.MIN }
 
         val rows = attentionRows + inProgressRows + gameRows
         val resolvedFocus = resolveFocusKey(focusedKey, rows)
@@ -295,7 +302,7 @@ class SaveSyncViewModel @Inject constructor(
         override fun onConfirm(): InputResult {
             when (val row = uiState.value.focusedRow) {
                 is AttentionRow -> resolveAttention(row.conflictId, uiState.value.attentionAction.toResolution())
-                is GameSaveRow -> if (!row.hasConflict) onNavigateToGame(row.gameId)
+                is GameSaveRow -> onNavigateToGame(row.gameId)
                 is InProgressRow, null -> Unit
             }
             return InputResult.HANDLED
@@ -449,22 +456,20 @@ class SaveSyncViewModel @Inject constructor(
         )
     }
 
-    private fun buildGameSaveRow(
+    private fun SaveSyncEntity.isConflicted(): Boolean =
+        syncStatus == SaveSyncEntity.STATUS_CONFLICT ||
+            syncStatus == SaveSyncEntity.STATUS_NEEDS_HARDCORE_RESOLUTION
+
+    private fun buildSaveSlotEntry(
         entity: SaveSyncEntity,
         game: GameEntity,
         thisDeviceId: String?
-    ): GameSaveRow {
+    ): SaveSlotEntry {
         val isThisDevice = entity.lastSyncDeviceId != null && entity.lastSyncDeviceId == thisDeviceId
         val justSynced = entity.lastSyncedAt
             ?.isAfter(Instant.now().minus(JUST_SYNCED_THRESHOLD_MINUTES, ChronoUnit.MINUTES)) == true
-        val hasConflict = entity.syncStatus == SaveSyncEntity.STATUS_CONFLICT ||
-            entity.syncStatus == SaveSyncEntity.STATUS_NEEDS_HARDCORE_RESOLUTION
-        return GameSaveRow(
+        return SaveSlotEntry(
             saveSyncId = entity.id,
-            gameId = entity.gameId,
-            title = game.title,
-            platformDisplayName = game.platformSlug,
-            coverPath = game.coverPath,
             channelName = entity.channelName,
             channelDisplay = effectiveChannelLabel(entity.channelName, game),
             syncStatus = entity.syncStatus,
@@ -473,8 +478,7 @@ class SaveSyncViewModel @Inject constructor(
             serverUpdatedAt = entity.serverUpdatedAt,
             lastSyncDeviceName = entity.lastSyncDeviceName,
             isLastSyncThisDevice = isThisDevice,
-            isJustSynced = justSynced,
-            hasConflict = hasConflict
+            isJustSynced = justSynced
         )
     }
 

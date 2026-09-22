@@ -65,7 +65,6 @@
     <string name="savesync_progress_status_queued">В очереди</string>
 
     <string name="savesync_game_pill_just_synced">Только что синхронизировано</string>
-    <string name="savesync_game_pill_conflict">Конфликт</string>
     <string name="savesync_game_last_write_this_device">Последняя запись - это устройство</string>
     <string name="savesync_game_last_write_device">Последняя запись - %1$s</string>
     <string name="savesync_game_last_write_unknown">Последняя запись - неизвестное устройство</string>

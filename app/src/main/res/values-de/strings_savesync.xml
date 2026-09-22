@@ -57,7 +57,6 @@
     <string name="savesync_progress_status_queued">Wartend</string>
 
     <string name="savesync_game_pill_just_synced">Gerade synchronisiert</string>
-    <string name="savesync_game_pill_conflict">Konflikt</string>
     <string name="savesync_game_last_write_this_device">Letzte Änderung - dieses Gerät</string>
     <string name="savesync_game_last_write_device">Letzte Änderung - %1$s</string>
     <string name="savesync_game_last_write_unknown">Letzte Änderung - unbekanntes Gerät</string>

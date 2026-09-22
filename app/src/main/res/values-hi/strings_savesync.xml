@@ -59,7 +59,6 @@
     <string name="savesync_progress_status_queued">कतार में</string>
 
     <string name="savesync_game_pill_just_synced">अभी-अभी सिंक हुआ</string>
-    <string name="savesync_game_pill_conflict">कॉन्फ्लिक्ट</string>
     <string name="savesync_game_last_write_this_device">आखिरी राइट - यह डिवाइस</string>
     <string name="savesync_game_last_write_device">आखिरी राइट - %1$s</string>
     <string name="savesync_game_last_write_unknown">आखिरी राइट - अज्ञात डिवाइस</string>

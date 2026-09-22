@@ -62,7 +62,6 @@
     <string name="savesync_progress_status_queued">En cola</string>
 
     <string name="savesync_game_pill_just_synced">Sincronizada justo ahora</string>
-    <string name="savesync_game_pill_conflict">Conflicto</string>
     <string name="savesync_game_last_write_this_device">Última escritura - este dispositivo</string>
     <string name="savesync_game_last_write_device">Última escritura - %1$s</string>
     <string name="savesync_game_last_write_unknown">Última escritura - dispositivo desconocido</string>

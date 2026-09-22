@@ -183,8 +183,78 @@ class SaveSyncViewModelTest {
         assertEquals(1, state.gameRows.size)
         val row = state.gameRows.single()
         assertEquals("Tekken", row.title)
-        assertEquals("Retroid Pocket 5", row.lastSyncDeviceName)
+        assertEquals("Retroid Pocket 5", row.slots.single().lastSyncDeviceName)
         assertTrue(row.isJustSynced)
+    }
+
+    @Test
+    fun `every slot of one game lands in a single row`() = runTest(testDispatcher) {
+        val game = makeGame(id = 1L, title = "Chrono Trigger")
+        every { saveSyncDao.observeAll(any()) } returns flowOf(
+            listOf(
+                SaveSyncEntity(
+                    id = 100L,
+                    gameId = 1L,
+                    rommId = 1L,
+                    emulatorId = "snes9x",
+                    channelName = "Slot 1",
+                    syncStatus = SaveSyncEntity.STATUS_SYNCED,
+                    lastSyncedAt = Instant.now().minusSeconds(600)
+                ),
+                SaveSyncEntity(
+                    id = 101L,
+                    gameId = 1L,
+                    rommId = 1L,
+                    emulatorId = "snes9x",
+                    channelName = "Slot 2",
+                    syncStatus = SaveSyncEntity.STATUS_SYNCED,
+                    lastSyncedAt = Instant.now()
+                )
+            )
+        )
+        coEvery { gameDao.getByIds(listOf(1L)) } returns listOf(game)
+
+        val vm = build()
+        backgroundScope.launch { vm.uiState.collect {} }
+        advanceUntilIdle()
+        val row = vm.uiState.value.gameRows.single()
+
+        assertEquals(listOf("Slot 2", "Slot 1"), row.slots.map { it.channelDisplay })
+    }
+
+    @Test
+    fun `a slot in conflict is left to the attention section`() = runTest(testDispatcher) {
+        val game = makeGame(id = 1L, title = "Chrono Trigger")
+        every { saveSyncDao.observeAll(any()) } returns flowOf(
+            listOf(
+                SaveSyncEntity(
+                    id = 100L,
+                    gameId = 1L,
+                    rommId = 1L,
+                    emulatorId = "snes9x",
+                    channelName = "Slot 1",
+                    syncStatus = SaveSyncEntity.STATUS_SYNCED,
+                    lastSyncedAt = Instant.now()
+                ),
+                SaveSyncEntity(
+                    id = 101L,
+                    gameId = 1L,
+                    rommId = 1L,
+                    emulatorId = "snes9x",
+                    channelName = "Slot 2",
+                    syncStatus = SaveSyncEntity.STATUS_CONFLICT,
+                    lastSyncedAt = Instant.now()
+                )
+            )
+        )
+        coEvery { gameDao.getByIds(listOf(1L)) } returns listOf(game)
+
+        val vm = build()
+        backgroundScope.launch { vm.uiState.collect {} }
+        advanceUntilIdle()
+        val row = vm.uiState.value.gameRows.single()
+
+        assertEquals(listOf("Slot 1"), row.slots.map { it.channelDisplay })
     }
 
     @Test

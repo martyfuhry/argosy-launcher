@@ -72,7 +72,6 @@ import com.nendo.argosy.ui.screens.gamedetail.components.mapSaveSyncStatus
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.util.clickableNoFocus
-import com.nendo.argosy.data.local.entity.SaveSyncEntity
 import com.nendo.argosy.data.sync.SyncDirection
 import com.nendo.argosy.util.formatRelativeTimeVerbose
 
@@ -252,7 +251,7 @@ private fun buildFooterHints(state: SaveSyncUiState): List<Pair<InputButton, Str
                 add(InputButton.DPAD_HORIZONTAL to chooseLabel)
                 add(InputButton.A to confirmLabel)
             }
-            is GameSaveRow -> if (!focused.hasConflict) add(InputButton.A to openGameLabel)
+            is GameSaveRow -> add(InputButton.A to openGameLabel)
             else -> Unit
         }
         if (state.deviceCard.isConnected) {
@@ -605,12 +604,6 @@ private fun AttentionRowCard(
     selectedAction: AttentionAction,
     onActionClick: (AttentionAction) -> Unit
 ) {
-    android.util.Log.d(
-        "SaveSyncTime",
-        "attention conflictId=${row.conflictId} gameId=${row.gameId} title='${row.title}' " +
-            "channel='${row.channelName}' localTime=${row.localTime} serverTime=${row.serverTime} " +
-            "isLocalNewer=${row.isLocalNewer}"
-    )
     val borderColor = if (isFocused) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant
     Card(
         modifier = Modifier
@@ -814,10 +807,10 @@ private fun InProgressRowCard(row: InProgressRow, isFocused: Boolean) {
 
 @Composable
 private fun GameSaveRowCard(row: GameSaveRow, isFocused: Boolean) {
-    val borderColor = when {
-        isFocused && row.hasConflict -> MaterialTheme.colorScheme.error
-        isFocused -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.surfaceVariant
+    val borderColor = if (isFocused) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
     }
     Card(
         modifier = Modifier
@@ -844,10 +837,7 @@ private fun GameSaveRowCard(row: GameSaveRow, isFocused: Boolean) {
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
-                    if (row.hasConflict) {
-                        Spacer(modifier = Modifier.width(Dimens.spacingSm))
-                        ConflictPill()
-                    } else if (row.isJustSynced) {
+                    if (row.isJustSynced) {
                         Spacer(modifier = Modifier.width(Dimens.spacingSm))
                         JustSyncedPill()
                     }
@@ -857,43 +847,45 @@ private fun GameSaveRowCard(row: GameSaveRow, isFocused: Boolean) {
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-                val saveTime = when (row.syncStatus) {
-                    SaveSyncEntity.STATUS_SYNCED, SaveSyncEntity.STATUS_SERVER_NEWER ->
-                        row.serverUpdatedAt ?: row.localUpdatedAt
-                    SaveSyncEntity.STATUS_LOCAL_NEWER, SaveSyncEntity.STATUS_PENDING_UPLOAD ->
-                        row.localUpdatedAt ?: row.serverUpdatedAt
-                    else -> listOfNotNull(row.serverUpdatedAt, row.localUpdatedAt).maxOrNull()
+                row.slots.forEach { slot ->
+                    Spacer(modifier = Modifier.height(Dimens.spacingXs))
+                    SaveSlotLines(slot)
                 }
-                SaveStatusRow(
-                    status = SaveStatusInfo(
-                        status = mapSaveSyncStatus(row.syncStatus),
-                        channelName = row.channelDisplay,
-                        activeSaveTimestamp = saveTime?.toEpochMilli(),
-                        lastSyncTime = saveTime
-                    )
-                )
-                val deviceText = when {
-                    row.isLastSyncThisDevice ->
-                        stringResource(R.string.savesync_game_last_write_this_device)
-                    row.lastSyncDeviceName != null ->
-                        stringResource(R.string.savesync_game_last_write_device, row.lastSyncDeviceName)
-                    else -> stringResource(R.string.savesync_game_last_write_unknown)
-                }
-                val lastWriteText = saveTime?.let {
-                    stringResource(
-                        R.string.savesync_game_last_write_time,
-                        deviceText,
-                        formatRelativeTimeVerbose(LocalContext.current, it)
-                    )
-                } ?: deviceText
-                Text(
-                    text = lastWriteText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
+}
+
+@Composable
+private fun SaveSlotLines(slot: SaveSlotEntry) {
+    val savedAt = slot.savedAt
+    SaveStatusRow(
+        status = SaveStatusInfo(
+            status = mapSaveSyncStatus(slot.syncStatus),
+            channelName = slot.channelDisplay,
+            activeSaveTimestamp = savedAt?.toEpochMilli(),
+            lastSyncTime = savedAt
+        )
+    )
+    val deviceText = when {
+        slot.isLastSyncThisDevice ->
+            stringResource(R.string.savesync_game_last_write_this_device)
+        slot.lastSyncDeviceName != null ->
+            stringResource(R.string.savesync_game_last_write_device, slot.lastSyncDeviceName)
+        else -> stringResource(R.string.savesync_game_last_write_unknown)
+    }
+    val lastWriteText = savedAt?.let {
+        stringResource(
+            R.string.savesync_game_last_write_time,
+            deviceText,
+            formatRelativeTimeVerbose(LocalContext.current, it)
+        )
+    } ?: deviceText
+    Text(
+        text = lastWriteText,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @Composable
@@ -929,12 +921,6 @@ private fun CoverThumbnail(coverPath: String?, size: androidx.compose.ui.unit.Dp
 private fun JustSyncedPill() = Pill(
     text = stringResource(R.string.savesync_game_pill_just_synced),
     color = MaterialTheme.colorScheme.primary
-)
-
-@Composable
-private fun ConflictPill() = Pill(
-    text = stringResource(R.string.savesync_game_pill_conflict),
-    color = MaterialTheme.colorScheme.error
 )
 
 @Composable

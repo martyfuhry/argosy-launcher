@@ -148,9 +148,6 @@
     <!-- Badge on a game whose save was synced within the last half hour. Adjective phrase
          describing the save, not a command. -->
     <string name="savesync_game_pill_just_synced">Just synced</string>
-    <!-- Badge on a game whose local and server saves disagree. Noun, singular: a disagreement
-         between two copies of one save file. -->
-    <string name="savesync_game_pill_conflict">Conflict</string>
     <!-- Line under a game saying which machine last wrote its save, when that was this handheld.
          "Write" is a noun here, meaning the last time the save file was changed. -->
     <string name="savesync_game_last_write_this_device">Last write - this device</string>

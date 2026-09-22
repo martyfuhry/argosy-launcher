@@ -54,7 +54,6 @@
     <string name="savesync_progress_status_queued">排隊中</string>
 
     <string name="savesync_game_pill_just_synced">剛完成同步</string>
-    <string name="savesync_game_pill_conflict">衝突</string>
     <string name="savesync_game_last_write_this_device">最後寫入－此裝置</string>
     <string name="savesync_game_last_write_device">最後寫入－%1$s</string>
     <string name="savesync_game_last_write_unknown">最後寫入－未知裝置</string>

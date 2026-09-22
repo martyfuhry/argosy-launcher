@@ -62,7 +62,6 @@
     <string name="savesync_progress_status_queued">En file d\'attente</string>
 
     <string name="savesync_game_pill_just_synced">Synchronisé à l\'instant</string>
-    <string name="savesync_game_pill_conflict">Conflit</string>
     <string name="savesync_game_last_write_this_device">Dernière écriture - cet appareil</string>
     <string name="savesync_game_last_write_device">Dernière écriture - %1$s</string>
     <string name="savesync_game_last_write_unknown">Dernière écriture - appareil inconnu</string>
