@@ -375,7 +375,7 @@ class ArgosSocialService @Inject constructor(
                     if (payload != null) {
                         val code = payload.getString("code")
                         val url = payload.getString("url")
-                        Log.d(TAG, "Received friend code: $code, url: $url")
+                        Log.d(TAG, "Received friend code")
                         IncomingMessage.FriendCodeData(code, url)
                     } else {
                         Log.w(TAG, "FRIEND_CODE_DATA received but payload is null")

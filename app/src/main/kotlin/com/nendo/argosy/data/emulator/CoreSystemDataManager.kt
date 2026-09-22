@@ -3,6 +3,7 @@ package com.nendo.argosy.data.emulator
 import android.content.Context
 import com.nendo.argosy.BuildConfig
 import com.nendo.argosy.util.Logger
+import com.nendo.argosy.util.isInside
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -111,7 +112,7 @@ class CoreSystemDataManager @Inject constructor(
                     var entry = zip.nextEntry
                     while (entry != null) {
                         val outFile = File(destDir, entry.name)
-                        if (!outFile.canonicalPath.startsWith(destDir.canonicalPath)) {
+                        if (!outFile.isInside(destDir)) {
                             throw SecurityException("Zip entry outside target: ${entry.name}")
                         }
                         if (entry.isDirectory) {
