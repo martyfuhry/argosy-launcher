@@ -63,6 +63,7 @@ class GlobalLibretroSettingsAccessor(
         LibretroSettingDef.SkipDuplicateFrames -> state.skipDuplicateFrames.toString()
         LibretroSettingDef.LowLatencyAudio -> state.lowLatencyAudio.toString()
         LibretroSettingDef.AudioVolume -> state.audioVolume
+        LibretroSettingDef.AudioBufferFrames -> state.audioBufferFrames
         LibretroSettingDef.VSync -> state.vsync.toString()
         LibretroSettingDef.RewindSpeed -> state.rewindSpeed
         LibretroSettingDef.RewindBufferDuration -> state.rewindBufferDuration
@@ -156,6 +157,7 @@ class PlatformLibretroSettingsAccessor(
         LibretroSettingDef.SkipDuplicateFrames -> globalState.skipDuplicateFrames.toString()
         LibretroSettingDef.LowLatencyAudio -> globalState.lowLatencyAudio.toString()
         LibretroSettingDef.AudioVolume -> globalState.audioVolume
+        LibretroSettingDef.AudioBufferFrames -> globalState.audioBufferFrames
         LibretroSettingDef.VSync -> globalState.vsync.toString()
         LibretroSettingDef.RewindSpeed -> globalState.rewindSpeed
         LibretroSettingDef.RewindBufferDuration -> globalState.rewindBufferDuration
@@ -214,6 +216,7 @@ class PlatformLibretroSettingsAccessor(
             LibretroSettingDef.SkipDuplicateFrames -> ps.skipDuplicateFrames?.toString()
             LibretroSettingDef.LowLatencyAudio -> ps.lowLatencyAudio?.toString()
             LibretroSettingDef.AudioVolume -> ps.audioVolume?.let { "${it}%" }
+            LibretroSettingDef.AudioBufferFrames -> ps.audioBufferFrames?.toString()
             LibretroSettingDef.VSync -> ps.vsync?.toString()
             LibretroSettingDef.RewindSpeed -> ps.rewindSpeed?.let { "${it}x" }
             LibretroSettingDef.RewindBufferDuration -> ps.rewindBufferDuration?.let { "${it}s" }

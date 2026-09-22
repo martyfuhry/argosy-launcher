@@ -687,6 +687,18 @@ internal fun routeCycleBuiltinAudioVolume(vm: SettingsViewModel, direction: Int)
     }
 }
 
+internal fun routeCycleBuiltinAudioBufferFrames(vm: SettingsViewModel, direction: Int) {
+    val options = listOf(0, 2, 4, 6, 8)
+    val current = vm._uiState.value.builtinVideo.audioBufferFrames.toIntOrNull() ?: 0
+    val currentIndex = options.indexOf(current).coerceAtLeast(0)
+    val nextIndex = (currentIndex + direction + options.size) % options.size
+    val next = options[nextIndex]
+    vm._uiState.update { it.copy(builtinVideo = it.builtinVideo.copy(audioBufferFrames = next.toString())) }
+    vm.viewModelScope.launch {
+        vm.libretroSettingsRepo.setBuiltinAudioBufferFrames(next)
+    }
+}
+
 internal fun routeCycleBuiltinRewindSpeed(vm: SettingsViewModel, direction: Int) {
     val options = listOf(1, 2, 4)
     val currentDisplay = vm._uiState.value.builtinVideo.rewindSpeed
@@ -764,6 +776,7 @@ internal fun routeUpdatePlatformLibretroSetting(vm: SettingsViewModel, setting: 
             LibretroSettingDef.RewindEnabled -> current.copy(rewindEnabled = value?.toBooleanStrictOrNull())
             LibretroSettingDef.SkipDuplicateFrames -> current.copy(skipDuplicateFrames = value?.toBooleanStrictOrNull())
             LibretroSettingDef.LowLatencyAudio -> current.copy(lowLatencyAudio = value?.toBooleanStrictOrNull())
+            LibretroSettingDef.AudioBufferFrames -> current.copy(audioBufferFrames = value?.toIntOrNull())
             LibretroSettingDef.AudioVolume -> current.copy(audioVolume = value?.removeSuffix("%")?.toIntOrNull())
             LibretroSettingDef.VSync -> current.copy(vsync = value?.toBooleanStrictOrNull())
             LibretroSettingDef.RewindSpeed -> current.copy(rewindSpeed = value?.removeSuffix("x")?.toIntOrNull())
@@ -789,7 +802,7 @@ internal fun routeResetAllPlatformLibretroSettings(vm: SettingsViewModel) {
             shader = null, shaderChain = null, filter = null, aspectRatio = null, portraitPosition = null, rotation = null,
             overscanCrop = null, frame = null, blackFrameInsertion = null, fastForwardEnabled = null, fastForwardSpeed = null,
             rewindEnabled = null, rewindSpeed = null, rewindBufferDuration = null,
-            skipDuplicateFrames = null, lowLatencyAudio = null, audioVolume = null, vsync = null,
+            skipDuplicateFrames = null, lowLatencyAudio = null, audioBufferFrames = null, audioVolume = null, vsync = null,
             autoSaveState = null, autoRestoreState = null, hwCoreSaveStates = null
         )
         if (updated.hasAnyOverrides()) {
