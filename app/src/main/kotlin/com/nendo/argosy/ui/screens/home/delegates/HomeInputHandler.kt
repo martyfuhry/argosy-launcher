@@ -146,6 +146,11 @@ class HomeInputHandler(
         get() = com.nendo.argosy.DualScreenManagerHolder.instance
             ?.takeIf { it.focusPickerOpen.value }
 
+    private fun appOverlayOpen(): Boolean {
+        val state = actions.uiState.value
+        return state.appBarMenu != null || state.appDrawer != null
+    }
+
     override fun onUp(): InputResult {
         if (actions.uiState.value.appBarMenu != null) {
             actions.moveAppBarAppMenu(-1)
@@ -603,6 +608,7 @@ class HomeInputHandler(
     }
 
     override fun onMenu(): InputResult {
+        if (appOverlayOpen()) return InputResult.HANDLED
         val state = actions.uiState.value
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (state.showAddToCollectionModal) {
@@ -625,6 +631,7 @@ class HomeInputHandler(
      * is what keeps the actions on a controller when a second screen claims the press.
      */
     override fun onSelect(): InputResult {
+        if (appOverlayOpen()) return InputResult.HANDLED
         val state = actions.uiState.value
         if (state.showAddToCollectionModal) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
@@ -657,6 +664,7 @@ class HomeInputHandler(
      */
     override fun onLongConfirm(): InputResult {
         val state = actions.uiState.value
+        if (state.appBarMenu != null) return InputResult.HANDLED
         if (state.appDrawer != null) {
             return if (actions.openAppBarAppMenu()) {
                 InputResult.handled(SoundType.OPEN_MODAL)
@@ -700,6 +708,7 @@ class HomeInputHandler(
      * back out, which is what the media half was missing.
      */
     override fun onSecondaryAction(): InputResult {
+        if (appOverlayOpen()) return InputResult.HANDLED
         val state = actions.uiState.value
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (state.showTilePicker) {
@@ -734,6 +743,7 @@ class HomeInputHandler(
     }
 
     override fun onPrevTrigger(): InputResult {
+        if (appOverlayOpen()) return InputResult.handled(SoundType.BOUNDARY)
         val state = actions.uiState.value
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (!state.showTilePicker) return InputResult.UNHANDLED
@@ -742,6 +752,7 @@ class HomeInputHandler(
     }
 
     override fun onNextTrigger(): InputResult {
+        if (appOverlayOpen()) return InputResult.handled(SoundType.BOUNDARY)
         val state = actions.uiState.value
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
         if (!state.showTilePicker) return InputResult.UNHANDLED
@@ -750,6 +761,7 @@ class HomeInputHandler(
     }
 
     override fun onPrevSection(): InputResult {
+        if (appOverlayOpen()) return InputResult.handled(SoundType.BOUNDARY)
         val state = actions.uiState.value
         if (state.showAddToCollectionModal || state.showGameMenu) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
@@ -766,6 +778,7 @@ class HomeInputHandler(
     }
 
     override fun onNextSection(): InputResult {
+        if (appOverlayOpen()) return InputResult.handled(SoundType.BOUNDARY)
         val state = actions.uiState.value
         if (state.showAddToCollectionModal || state.showGameMenu) return InputResult.HANDLED
         if (state.customGrid.mediaSetup != null || state.customGrid.featureSetup != null) return InputResult.HANDLED
@@ -782,6 +795,7 @@ class HomeInputHandler(
     }
 
     override fun onContextMenu(): InputResult {
+        if (appOverlayOpen()) return InputResult.HANDLED
         val state = actions.uiState.value
         if (state.customGrid.engagedTileId != null) {
             actions.openEngagedFullscreen()
