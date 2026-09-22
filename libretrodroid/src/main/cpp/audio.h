@@ -39,7 +39,7 @@ private:
     const AudioLatencySettings LOW_LATENCY_SETTINGS { 4, true };
 
 public:
-    Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio);
+    Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio, int audioBufferFrames);
     ~Audio() override;
 
     void start();
@@ -66,7 +66,8 @@ private:
     double computeDynamicBufferConversionFactor(double dt);
     int32_t computeAudioBufferSize();
     bool initializeStream();
-    std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(bool preferLowLatencyAudio);
+    std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(bool preferLowLatencyAudio, int audioBufferFrames);
+    void logStreamState();
     double computeMaximumLatency() const;
 
 private:
@@ -94,6 +95,9 @@ private:
     double playbackSpeed = 1.0;
 
     float outputVolume = 1.0f;
+
+    int32_t framesSinceStatsLog = 0;
+    int32_t statsLogIntervalFrames = 0;
 
     std::unique_ptr<AudioLatencySettings> audioLatencySettings;
 
