@@ -34,7 +34,7 @@ class InputFeedbackPlayer(
             GamepadEvent.PrevTrigger, GamepadEvent.NextTrigger -> {
                 val override = latchBoundary(result.soundOverride)
                 if (override != SoundType.SILENT) {
-                    hapticManager?.vibrate(HapticPattern.FOCUS_CHANGE)
+                    hapticManager?.vibrate(HapticPattern.SECTION_CHANGE)
                 }
                 soundManager?.play(override ?: SoundType.SECTION_CHANGE)
             }
