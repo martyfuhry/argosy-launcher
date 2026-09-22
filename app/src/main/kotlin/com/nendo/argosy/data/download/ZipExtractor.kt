@@ -866,5 +866,6 @@ object ZipExtractor {
             .replace(Regex("\\s+"), " ")
             .trim()
             .take(200)
+            .let(FileNames::entryName)
     }
 }
