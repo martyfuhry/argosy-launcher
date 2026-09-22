@@ -25,6 +25,7 @@ import com.nendo.argosy.data.sync.platform.SaveContext
 import com.nendo.argosy.data.sync.platform.SwitchSaveHandler
 import com.nendo.argosy.data.sync.platform.UnitSaveHandler
 import com.nendo.argosy.data.titledb.TitleDbRepository
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SaveDebugLogger
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -430,7 +431,7 @@ class SaveDownloader @Inject constructor(
                     Logger.error(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Insufficient cache disk space for zip")
                     return@withContext SaveSyncResult.Error("Insufficient disk space")
                 }
-                tempZipFile = File(context.cacheDir, serverSave.fileName)
+                tempZipFile = File(context.cacheDir, FileNames.sanitize(serverSave.fileName))
                 val body = response.body()
                 if (body == null) {
                     Logger.error(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Response body is null")
@@ -887,7 +888,7 @@ class SaveDownloader @Inject constructor(
                 }
                 return@withContext true
             } else if (isFolderBased) {
-                tempZipFile = File(context.cacheDir, serverSave.fileName)
+                tempZipFile = File(context.cacheDir, FileNames.sanitize(serverSave.fileName))
                 val body = response.body()
                 if (body == null) {
                     Logger.error(TAG, "downloadSaveById: response body is null for folder save")
