@@ -432,6 +432,18 @@ class SaveSyncRepository @Inject constructor(
     suspend fun markUserSelectedRestorePoint(gameId: Long, emulatorId: String, channelName: String?) =
         entityManager.markUserSelectedRestorePoint(gameId, emulatorId, channelName)
 
+    /**
+     * Whether the player pointed this channel at a restore point that has not been played yet.
+     * The channel resolves as the pre-launch decision does: no name is the autosave slot.
+     */
+    suspend fun hasUserSelectedRestorePoint(gameId: Long, emulatorId: String, channelName: String?): Boolean =
+        saveSyncDao.getByGameEmulatorAndChannel(
+            gameId,
+            emulatorId,
+            channelName ?: SaveSyncApiClient.AUTOSAVE_SLOT_NAME,
+            syncPreferencesRepository.getRommUserId()
+        )?.userSelectedRestorePoint == true
+
     suspend fun clearUserSelectedRestorePointForGame(gameId: Long) =
         entityManager.clearUserSelectedRestorePointForGame(gameId)
 

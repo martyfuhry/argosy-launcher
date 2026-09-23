@@ -178,6 +178,7 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         val localBySlot = repaired.groupBy { it.slotNumber to liveChannelKey(it.channelName) }
 
         var downloadedCount = 0
+        var restorePointSelected: Boolean? = null
 
         for (serverState in newestPerSlot(serverStates)) {
             val parsed = stateCacheManager.parseStateFileName(serverState.fileName)
@@ -217,7 +218,28 @@ class PreLaunchStateSyncUseCase @Inject constructor(
                 }
             }
 
-            if (shouldDownload) {
+            val current = linked?.takeIf { !shouldDownload && !hasUnsentChanges(it) }
+            val cachedFileMissing = current != null && stateCacheManager.getCacheFile(current) == null
+            if (cachedFileMissing) {
+                Log.w(TAG, "Slot $slotNumber is synced but its cached file is gone, downloading ${serverState.fileName} again")
+            }
+
+            if (current != null && !cachedFileMissing && belongsToChannel(parsed.channelName, channelName)) {
+                val selected = restorePointSelected
+                    ?: saveSyncRepository.hasUserSelectedRestorePoint(gameId, emulatorId, channelName)
+                        .also { restorePointSelected = it }
+                placeCachedIfLiveStale(
+                    current,
+                    selected,
+                    game.localPath,
+                    game.platformSlug,
+                    emulatorId,
+                    coreId,
+                    coreVersion
+                )
+            }
+
+            if (shouldDownload || cachedFileMissing) {
                 val result = stateCacheManager.downloadStateFromRomM(
                     rommStateId = serverState.id,
                     fileName = serverState.fileName,
@@ -242,7 +264,7 @@ class PreLaunchStateSyncUseCase @Inject constructor(
                             )
                             continue
                         }
-                        materializeToLiveDir(
+                        materializeDownloaded(
                             serverState.id,
                             game.localPath,
                             game.platformSlug,
@@ -293,7 +315,7 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         stateCacheManager.parseStateFileTimestamp(serverState.fileName)
             ?: stateCacheManager.parseTimestamp(serverState.updatedAt)
 
-    private suspend fun materializeToLiveDir(
+    private suspend fun materializeDownloaded(
         rommStateId: Long,
         romPath: String?,
         platformSlug: String,
@@ -301,14 +323,53 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         coreId: String?,
         coreVersion: String?
     ) {
-        if (romPath == null) {
-            Log.w(TAG, "Cannot restore downloaded state to live dir: game has no local path")
-            return
-        }
-
         val cached = stateCacheManager.getByRommSaveId(rommStateId)
         if (cached == null) {
             Log.w(TAG, "Downloaded state $rommStateId not found in cache, cannot restore to live dir")
+            return
+        }
+        placeInLiveDir(cached, "downloaded", romPath, platformSlug, emulatorId, coreId, coreVersion)
+    }
+
+    /**
+     * Brings a state that is already cached and current back into the live slot when the slot is
+     * empty or holds something older. A live file the player wrote after the cache was taken, or a
+     * slot the player emptied by choosing a restore point, is left as it is.
+     */
+    private suspend fun placeCachedIfLiveStale(
+        cached: StateCacheEntity,
+        restorePointSelected: Boolean,
+        romPath: String?,
+        platformSlug: String,
+        emulatorId: String,
+        coreId: String?,
+        coreVersion: String?
+    ) {
+        if (romPath == null) return
+        val live = restoreStateUseCase.liveFile(cached, emulatorId, platformSlug, romPath, coreId) ?: return
+        if (live.exists()) {
+            if (live.lastModified() >= cached.cachedAt.toEpochMilli()) return
+            if (stateCacheManager.hasSameContent(cached, live)) return
+        }
+        if (restorePointSelected) {
+            Log.d(TAG, "Slot ${cached.slotNumber} left empty: a restore point is selected for this launch")
+            return
+        }
+        Log.d(TAG, "Slot ${cached.slotNumber} is cached but not live, placing it")
+        placeInLiveDir(cached, "cached", romPath, platformSlug, emulatorId, coreId, coreVersion)
+    }
+
+    private suspend fun placeInLiveDir(
+        cached: StateCacheEntity,
+        origin: String,
+        romPath: String?,
+        platformSlug: String,
+        emulatorId: String,
+        coreId: String?,
+        coreVersion: String?
+    ) {
+        if (romPath == null) {
+            Log.w(TAG, "Cannot restore $origin state to live dir: game has no local path")
             return
         }
 
@@ -321,11 +382,11 @@ class PreLaunchStateSyncUseCase @Inject constructor(
             currentCoreVersion = coreVersion
         )) {
             is RestoreStateResult.Success ->
-                Log.d(TAG, "Restored downloaded state slot ${cached.slotNumber} to live dir")
+                Log.d(TAG, "Restored $origin state slot ${cached.slotNumber} to live dir")
             is RestoreStateResult.VersionMismatch ->
-                Log.w(TAG, "Downloaded state slot ${cached.slotNumber} left in cache: core version mismatch")
+                Log.w(TAG, "$origin state slot ${cached.slotNumber} left in cache: core version mismatch")
             else ->
-                Log.w(TAG, "Could not restore downloaded state slot ${cached.slotNumber} to live dir: $restore")
+                Log.w(TAG, "Could not restore $origin state slot ${cached.slotNumber} to live dir: $restore")
         }
     }
 }
