@@ -199,8 +199,6 @@
     <string name="settings_displays_dual_screen_subtitle">将副屏用作伴侣屏幕</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">此系统不允许在副屏上运行伴侣应用；请关闭后重新打开以重试</string>
 
-    <string name="settings_displays_pause_docked_title">接电视时暂停</string>
-    <string name="settings_displays_pause_docked_subtitle">连接电视期间关闭第二块屏幕，拔掉后重新开启</string>
     <string name="settings_displays_display_roles_title">操作屏幕</string>
     <string name="settings_displays_display_roles_subtitle">菜单打开的那块屏幕；另一块显示你正在看的内容</string>
     <string name="settings_displays_display_roles_auto">自动</string>

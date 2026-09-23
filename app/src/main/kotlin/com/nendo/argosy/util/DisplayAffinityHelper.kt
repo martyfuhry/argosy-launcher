@@ -49,15 +49,6 @@ class DisplayAffinityHelper @Inject constructor(
     val hasSecondaryDisplay: Boolean
         get() = dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay
 
-    /**
-     * Whether a television or monitor is attached, wherever it sits in the display list. A
-     * two-panel handheld keeps a built-in screen at every position [secondaryDisplayType] looks
-     * at, so only this answers for a dock.
-     */
-    val hasExternalDisplay: Boolean
-        get() = screenCatalog.attachedScreens()
-            .any { !it.builtIn && it.displayId in attachedIds }
-
     val secondaryDisplayType: SecondaryDisplayType
         get() {
             val secondary = physicalDisplays.getOrNull(1) ?: return SecondaryDisplayType.NONE

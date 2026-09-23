@@ -435,10 +435,6 @@
     <!-- Second line of that row on a device whose firmware refuses to host the second screen. -->
     <string name="settings_displays_dual_screen_subtitle_unsupported">This system does not allow a companion app on the secondary display; toggle off and on to retry</string>
 
-    <!-- Row title. Verb phrase: what happens to the second screen while a television is plugged in. -->
-    <string name="settings_displays_pause_docked_title">Pause While Docked</string>
-    <!-- Second line of that row. -->
-    <string name="settings_displays_pause_docked_subtitle">Turn the second screen off while a television is connected, and back on when it is unplugged</string>
 
     <!-- Row title. Noun phrase: the screen the controller drives. -->
     <string name="settings_displays_display_roles_title">Control Screen</string>

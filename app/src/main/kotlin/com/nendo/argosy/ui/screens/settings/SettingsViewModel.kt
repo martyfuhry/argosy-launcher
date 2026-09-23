@@ -1372,8 +1372,6 @@ class SettingsViewModel @Inject constructor(
 
     fun setDualScreenEnabled(enabled: Boolean) = routeSetDualScreenEnabled(this, enabled)
 
-    fun setPauseDualScreenWhileDocked(pause: Boolean) =
-        routeSetPauseDualScreenWhileDocked(this, pause)
 
     fun cycleDisplayRoleOverride(direction: Int = 1) = routeCycleDisplayRoleOverride(this, direction)
 

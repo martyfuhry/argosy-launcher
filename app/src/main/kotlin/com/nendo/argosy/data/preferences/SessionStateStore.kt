@@ -173,13 +173,6 @@ class SessionStateStore(context: Context) {
 
     fun isRolesSwapped(): Boolean = prefs.getBoolean(KEY_ROLES_SWAPPED, false)
 
-    fun setPauseDualScreenWhileDocked(pause: Boolean) {
-        prefs.edit().putBoolean(KEY_PAUSE_DS_WHILE_DOCKED, pause).commit()
-    }
-
-    fun pauseDualScreenWhileDocked(): Boolean =
-        prefs.getBoolean(KEY_PAUSE_DS_WHILE_DOCKED, true)
-
     fun setWizardActive(active: Boolean) {
         prefs.edit().putBoolean(KEY_WIZARD_ACTIVE, active).apply()
     }
@@ -268,7 +261,6 @@ class SessionStateStore(context: Context) {
         private const val KEY_DISPLAY_ROLE_OVERRIDE = "display_role_override"
         private const val KEY_DUAL_SCREEN_INPUT_FOCUS = "dual_screen_input_focus"
         private const val KEY_ROLES_SWAPPED = "roles_swapped"
-        private const val KEY_PAUSE_DS_WHILE_DOCKED = "pause_ds_while_docked"
         private const val KEY_SESSION_START_TIME = "session_start_time"
         private const val KEY_EMULATOR_PACKAGE = "emulator_package"
         private const val KEY_EMULATOR_DISPLAY_ID = "emulator_display_id"

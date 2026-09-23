@@ -215,8 +215,6 @@
     <string name="settings_displays_dual_screen_subtitle">Usar la pantalla secundaria como pantalla complementaria</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">Este sistema no permite una aplicación complementaria en la pantalla secundaria; desactiva y vuelve a activar para reintentarlo</string>
 
-    <string name="settings_displays_pause_docked_title">Pausar con televisor</string>
-    <string name="settings_displays_pause_docked_subtitle">Apaga la segunda pantalla mientras hay un televisor conectado y la vuelve a encender al desconectarlo</string>
     <string name="settings_displays_display_roles_title">Pantalla de control</string>
     <string name="settings_displays_display_roles_subtitle">La pantalla donde se abren los menús; la otra muestra lo que estás mirando</string>
     <string name="settings_displays_display_roles_auto">Auto</string>

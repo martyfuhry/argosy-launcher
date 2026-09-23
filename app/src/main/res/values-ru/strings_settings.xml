@@ -207,8 +207,6 @@
     <string name="settings_displays_dual_screen_subtitle">Использовать дополнительный экран как компаньон</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">Эта система не позволяет запускать приложение-компаньон на дополнительном экране; выключите и включите ещё раз, чтобы повторить попытку</string>
 
-    <string name="settings_displays_pause_docked_title">Пауза при подключении ТВ</string>
-    <string name="settings_displays_pause_docked_subtitle">Отключает второй экран, пока подключён телевизор, и включает обратно после отсоединения</string>
     <string name="settings_displays_display_roles_title">Экран управления</string>
     <string name="settings_displays_display_roles_subtitle">Экран, на котором открываются меню; второй показывает то, что вы смотрите</string>
     <string name="settings_displays_display_roles_auto">Авто</string>

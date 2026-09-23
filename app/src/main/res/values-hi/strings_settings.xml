@@ -202,8 +202,6 @@
     <string name="settings_displays_dual_screen_subtitle">सेकेंडरी डिस्प्ले को कम्पैनियन स्क्रीन के रूप में उपयोग करें</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">यह सिस्टम सेकेंडरी डिस्प्ले पर कम्पैनियन ऐप की अनुमति नहीं देता; फिर से कोशिश करने के लिए बंद करके चालू करें</string>
 
-    <string name="settings_displays_pause_docked_title">टीवी लगने पर रोकें</string>
-    <string name="settings_displays_pause_docked_subtitle">टीवी जुड़े रहने तक दूसरी स्क्रीन बंद रखता है, और हटाते ही फिर चालू कर देता है</string>
     <string name="settings_displays_display_roles_title">कंट्रोल स्क्रीन</string>
     <string name="settings_displays_display_roles_subtitle">वह स्क्रीन जिस पर मेन्यू खुलते हैं; दूसरी वह दिखाती है जो आप देख रहे हैं</string>
     <string name="settings_displays_display_roles_auto">ऑटो</string>

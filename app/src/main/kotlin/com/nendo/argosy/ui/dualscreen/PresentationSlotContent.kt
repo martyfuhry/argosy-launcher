@@ -67,7 +67,7 @@ private val IN_GAME_APP_BAR_HEIGHT =
     com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionAppBarHeight.dp
 
 @Composable
-fun PresentationSlotContent(slot: PresentationSlot) {
+fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = true) {
     val density = LocalDensity.current
     val hints = com.nendo.argosy.DualScreenManagerHolder.instance
         ?.controlHints?.collectAsState()?.value.orEmpty()
@@ -122,7 +122,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     .align(Alignment.TopEnd)
                     .padding(Dimens.spacingLg)
             )
-            if (hints.isNotEmpty()) {
+            if (showControlHints && hints.isNotEmpty()) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)

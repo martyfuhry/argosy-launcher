@@ -79,9 +79,28 @@ class ScreenCatalog @Inject constructor(
 
         private fun Display.stableKey(size: Point): String {
             uniqueIdOrNull()?.let { return it }
-            val short = minOf(size.x, size.y)
-            val long = maxOf(size.x, size.y)
-            return "display:$displayId:${short}x$long"
+            return fallbackScreenKey(displayId, name, size.x, size.y, isBuiltIn())
+        }
+
+        /**
+         * A screen's key when the platform withholds its unique id. A built-in panel keeps its
+         * display id, which never changes; an external one is named by its name and size, since
+         * Android hands it a new display id on every hotplug.
+         */
+        internal fun fallbackScreenKey(
+            displayId: Int,
+            name: String?,
+            widthPx: Int,
+            heightPx: Int,
+            builtIn: Boolean
+        ): String {
+            val short = minOf(widthPx, heightPx)
+            val long = maxOf(widthPx, heightPx)
+            return if (builtIn) {
+                "display:$displayId:${short}x$long"
+            } else {
+                "external:${name.orEmpty().ifBlank { "screen" }}:${short}x$long"
+            }
         }
 
         private fun Display.isBuiltIn(): Boolean {

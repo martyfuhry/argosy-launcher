@@ -199,7 +199,6 @@ class UserPreferencesRepository @Inject constructor(
             builtinLibretroEnabled = builtinEnabled,
             appDisplayTargets = app.appDisplayTargets,
             dualScreenEnabled = display.dualScreenEnabled,
-            pauseDualScreenWhileDocked = display.pauseDualScreenWhileDocked,
             displayRoleOverride = display.displayRoleOverride,
             dualScreenInputFocus = display.dualScreenInputFocus,
             screenLayouts = display.screenLayouts,
@@ -331,8 +330,6 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setScreenDimmerTimeoutMinutes(minutes: Int) = displayPrefs.setScreenDimmerTimeoutMinutes(minutes)
     suspend fun setScreenDimmerLevel(level: Int) = displayPrefs.setScreenDimmerLevel(level)
     suspend fun setDualScreenEnabled(enabled: Boolean) = displayPrefs.setDualScreenEnabled(enabled)
-    suspend fun setPauseDualScreenWhileDocked(pause: Boolean) =
-        displayPrefs.setPauseDualScreenWhileDocked(pause)
     suspend fun setDisplayRoleOverride(override: DisplayRoleOverride) = displayPrefs.setDisplayRoleOverride(override)
     suspend fun setScreenLayouts(layouts: ScreenLayouts) = displayPrefs.setScreenLayouts(layouts)
     suspend fun setDualScreenInputFocus(focus: DualScreenInputFocus) = displayPrefs.setDualScreenInputFocus(focus)
@@ -849,7 +846,6 @@ data class UserPreferences(
     val builtinLibretroEnabled: Boolean = true,
     val appDisplayTargets: Map<String, String> = emptyMap(),
     val dualScreenEnabled: Boolean = false,
-    val pauseDualScreenWhileDocked: Boolean = true,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,
     val dualScreenInputFocus: DualScreenInputFocus = DualScreenInputFocus.AUTO,
     val screenLayouts: ScreenLayouts = ScreenLayouts(),

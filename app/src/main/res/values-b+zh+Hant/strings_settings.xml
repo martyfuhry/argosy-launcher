@@ -186,8 +186,6 @@
     <string name="settings_displays_dual_screen_subtitle">將第二螢幕作為隨附螢幕使用</string>
     <string name="settings_displays_dual_screen_subtitle_unsupported">此系統不允許在第二螢幕上執行隨附應用程式，請關閉再重新開啟以重試</string>
 
-    <string name="settings_displays_pause_docked_title">接電視時暫停</string>
-    <string name="settings_displays_pause_docked_subtitle">連接電視期間關閉第二個螢幕，拔除後再次開啟</string>
     <string name="settings_displays_display_roles_title">操作螢幕</string>
     <string name="settings_displays_display_roles_subtitle">選單開啟的那個螢幕；另一個顯示你正在看的內容</string>
     <string name="settings_displays_display_roles_auto">自動</string>
