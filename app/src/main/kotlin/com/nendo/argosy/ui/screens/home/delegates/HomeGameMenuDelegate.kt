@@ -33,7 +33,7 @@ private const val MENU_INDEX_MAX_REMOTE = 4
 
 sealed class GameMenuAction {
     data class Play(val gameId: Long, val needsInstall: Boolean, val isDownloaded: Boolean) : GameMenuAction()
-    data class PlayOnDisplay(val gameId: Long, val displayId: Int) : GameMenuAction()
+    data class PlayOnDisplay(val gameId: Long, val displayId: Int, val isAndroidApp: Boolean) : GameMenuAction()
     data class ToggleFavorite(val gameId: Long) : GameMenuAction()
     data class ViewDetails(val gameId: Long) : GameMenuAction()
     data class AddToCollection(val gameId: Long) : GameMenuAction()
@@ -118,7 +118,8 @@ class HomeGameMenuDelegate @Inject constructor(
         if (focusIndex in playOnDisplayRange) {
             return GameMenuAction.PlayOnDisplay(
                 game.id,
-                playDisplays[focusIndex - playOnDisplayRange.first]
+                playDisplays[focusIndex - playOnDisplayRange.first],
+                game.isAndroidApp
             )
         }
         val favoriteIdx = currentIdx++

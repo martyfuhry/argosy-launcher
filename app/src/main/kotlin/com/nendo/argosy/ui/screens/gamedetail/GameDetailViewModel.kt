@@ -111,6 +111,7 @@ class GameDetailViewModel @Inject constructor(
     private val modalResetSignal: ModalResetSignal,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
     private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val appLaunchScreenSettings: com.nendo.argosy.ui.screens.common.AppLaunchScreenSettings,
     val pickerModalDelegate: PickerModalDelegate,
     private val achievementDelegate: AchievementDelegate,
     private val downloadDelegate: DownloadDelegate,
@@ -550,6 +551,15 @@ class GameDetailViewModel @Inject constructor(
 
             val isSteamGame = game.isSteamGame
             val isAndroidApp = game.isAndroidApp
+            val appLaunchScreenCount = if (isAndroidApp) appLaunchScreenSettings.choices().size else 0
+            val appLaunchScreenDisplayId =
+                if (isAndroidApp) appLaunchScreenSettings.storedChoice(gameId)?.displayId else null
+            _uiState.update {
+                it.copy(
+                    appLaunchScreenCount = appLaunchScreenCount,
+                    appLaunchScreenDisplayId = appLaunchScreenDisplayId
+                )
+            }
             val steamLauncherName = if (isSteamGame) {
                 game.steamLauncher?.let { SteamLaunchers.getByPackage(it)?.displayName }
             } else null
@@ -1179,6 +1189,10 @@ class GameDetailViewModel @Inject constructor(
         val targets = if (opening) launchDisplayTargets() else emptyList()
         _uiState.update { it.copy(launchDisplayNumbers = targets.map { target -> target.second }) }
         moreOptionsDelegate.toggleMoreOptions()
+        if (opening) {
+            val remembered = _uiState.value.appLaunchScreenDisplayId
+            moreOptionsDelegate.setLaunchDisplayIndex(targets.indexOfFirst { it.first == remembered })
+        }
         val dsm = com.nendo.argosy.DualScreenManagerHolder.instance
         if (opening && targets.size > 1) {
             dsm?.showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
@@ -1217,19 +1231,48 @@ class GameDetailViewModel @Inject constructor(
         moreOptionsDelegate.cycleLaunchDisplay(delta, _uiState.value.launchDisplayNumbers.size)
     }
 
-    private fun launchOnSelectedDisplay() {
-        val displayId = launchDisplayTargets()
-            .getOrNull(_uiState.value.launchDisplayIndex)
-            ?.first ?: return
+    private fun openLaunchScreenPicker() {
+        val options = launchDisplayTargets().map { (displayId, number) ->
+            com.nendo.argosy.ui.screens.gamedetail.delegates.LaunchScreenOption(displayId, number)
+        }
+        if (options.isEmpty()) return
+        val focusIndex = _uiState.value.launchDisplayIndex
         toggleMoreOptions()
+        pickerModalDelegate.showLaunchScreenPicker(options, focusIndex)
+        com.nendo.argosy.DualScreenManagerHolder.instance
+            ?.showScreenNumbers(com.nendo.argosy.hardware.DisplayBadgeSize.SMALL)
+    }
+
+    fun dismissLaunchScreenPicker() {
+        pickerModalDelegate.dismissLaunchScreenPicker()
+        com.nendo.argosy.DualScreenManagerHolder.instance?.hideScreenNumbers()
+    }
+
+    private fun confirmLaunchScreenSelection() {
+        pickerModalDelegate.state.value.focusedLaunchScreen?.let { launchOnDisplay(it.displayId) }
+    }
+
+    /**
+     * Starts the game on [displayId]. An Android app also keeps the choice as its launch screen,
+     * so the home rows and the library send it there from then on.
+     */
+    fun launchOnDisplay(displayId: Int) {
+        dismissLaunchScreenPicker()
+        val isAndroidApp = _uiState.value.game?.isAndroidApp == true
         val callbacks = makeLaunchCallbacks(overrideDisplayId = displayId)
-        gameLaunchDelegate.launchGame(
-            scope = viewModelScope,
-            gameId = currentGameId,
-            origin = pendingLaunchOrigin,
-            onLaunch = callbacks.onLaunch,
-            onLaunchFailed = { callbacks.onLaunchFailed() }
-        )
+        viewModelScope.launch {
+            if (isAndroidApp) {
+                appLaunchScreenSettings.store(currentGameId, displayId)
+                _uiState.update { it.copy(appLaunchScreenDisplayId = displayId) }
+            }
+            gameLaunchDelegate.launchGame(
+                scope = viewModelScope,
+                gameId = currentGameId,
+                origin = pendingLaunchOrigin,
+                onLaunch = callbacks.onLaunch,
+                onLaunchFailed = { callbacks.onLaunchFailed() }
+            )
+        }
     }
 
     fun moveOptionsFocus(delta: Int) {
@@ -1243,7 +1286,7 @@ class GameDetailViewModel @Inject constructor(
     ) {
         val isAndroidApp = _uiState.value.game?.isAndroidApp == true
         when (action) {
-            MoreOptionAction.LaunchOnDisplay -> launchOnSelectedDisplay()
+            MoreOptionAction.LaunchOnDisplay -> openLaunchScreenPicker()
             MoreOptionAction.ManageSaves -> showSaveCacheDialog()
             MoreOptionAction.PlatformSettings -> {
                 toggleMoreOptions()
@@ -1540,6 +1583,14 @@ class GameDetailViewModel @Inject constructor(
         viewModelScope.launch { perGameSettingsDelegate.cycleDisplayTarget(currentGameId, direction) }
     }
 
+    fun cyclePerGameLaunchScreen(direction: Int) {
+        viewModelScope.launch {
+            perGameSettingsDelegate.cycleLaunchScreen(currentGameId, direction)
+            val chosen = perGameSettingsDelegate.state.value.launchScreen?.displayId
+            _uiState.update { it.copy(appLaunchScreenDisplayId = chosen) }
+        }
+    }
+
     fun cyclePerGameExtension(direction: Int) {
         viewModelScope.launch { perGameSettingsDelegate.cycleExtension(currentGameId, direction) }
     }
@@ -1575,6 +1626,7 @@ class GameDetailViewModel @Inject constructor(
             }
             PerGameSettingsRow.MEMCARD -> openPerGameMemcardPicker()
             PerGameSettingsRow.DISPLAY_TARGET -> cyclePerGameDisplayTarget(1)
+            PerGameSettingsRow.LAUNCH_SCREEN -> cyclePerGameLaunchScreen(1)
             PerGameSettingsRow.EXTENSION -> cyclePerGameExtension(1)
             PerGameSettingsRow.PLATFORM_SETTINGS -> {
                 dismissPerGameSettings()
@@ -1589,6 +1641,7 @@ class GameDetailViewModel @Inject constructor(
         when (st.focusedRow) {
             PerGameSettingsRow.SAVE_PATH -> perGameSettingsDelegate.movePathButton(-direction)
             PerGameSettingsRow.DISPLAY_TARGET -> cyclePerGameDisplayTarget(direction)
+            PerGameSettingsRow.LAUNCH_SCREEN -> cyclePerGameLaunchScreen(direction)
             PerGameSettingsRow.EXTENSION -> cyclePerGameExtension(direction)
             else -> {}
         }
@@ -1928,8 +1981,11 @@ class GameDetailViewModel @Inject constructor(
             hasSocialAccount = state.hasSocialAccount,
             hasSaveSync = hasSaveSync,
             hasRelated = state.relatedGames.isNotEmpty(),
-            hasPerGameSettings = game != null && !game.isSteamGame && !game.isAndroidApp &&
-                state.downloadStatus == GameDownloadStatus.DOWNLOADED
+            hasPerGameSettings = perGameSettingsAvailable(
+                game = game,
+                downloadStatus = state.downloadStatus,
+                appLaunchScreenCount = state.appLaunchScreenCount
+            )
         )
     }
 
@@ -2292,6 +2348,7 @@ class GameDetailViewModel @Inject constructor(
                 pickerState.showFilePicker -> { moveFilePickerFocus(-1); InputResult.HANDLED }
                 pickerState.showCorePicker -> { moveCorePickerFocus(-1); InputResult.HANDLED }
                 pickerState.showDiscPicker -> { navigateDiscPicker(-1); InputResult.HANDLED }
+                pickerState.showLaunchScreenPicker -> { pickerModalDelegate.moveLaunchScreenFocus(-1); InputResult.HANDLED }
                 pickerState.showCoverPicker -> { moveCoverPickerFocus(-COVER_PICKER_COLUMNS); InputResult.HANDLED }
                 pickerState.showVariantPicker -> { pickerModalDelegate.moveVariantPickerFocus(-1); InputResult.HANDLED }
                 pickerState.showEmulatorPicker -> { moveEmulatorPickerFocus(-1); InputResult.HANDLED }
@@ -2325,6 +2382,7 @@ class GameDetailViewModel @Inject constructor(
                 pickerState.showFilePicker -> { moveFilePickerFocus(1); InputResult.HANDLED }
                 pickerState.showCorePicker -> { moveCorePickerFocus(1); InputResult.HANDLED }
                 pickerState.showDiscPicker -> { navigateDiscPicker(1); InputResult.HANDLED }
+                pickerState.showLaunchScreenPicker -> { pickerModalDelegate.moveLaunchScreenFocus(1); InputResult.HANDLED }
                 pickerState.showCoverPicker -> { moveCoverPickerFocus(COVER_PICKER_COLUMNS); InputResult.HANDLED }
                 pickerState.showVariantPicker -> { pickerModalDelegate.moveVariantPickerFocus(1); InputResult.HANDLED }
                 pickerState.showEmulatorPicker -> { moveEmulatorPickerFocus(1); InputResult.HANDLED }
@@ -2480,6 +2538,7 @@ class GameDetailViewModel @Inject constructor(
                 pickerState.showFilePicker -> activateFocusedFilePickerItem()
                 pickerState.showCorePicker -> confirmCoreSelection()
                 pickerState.showDiscPicker -> selectFocusedDisc()
+                pickerState.showLaunchScreenPicker -> confirmLaunchScreenSelection()
                 pickerState.showCoverPicker -> confirmFocusedCover()
                 pickerState.showVariantPicker -> confirmOrDownloadFocusedVariant()
                 pickerState.showEmulatorPicker -> confirmEmulatorSelection()
@@ -2522,6 +2581,7 @@ class GameDetailViewModel @Inject constructor(
                 pickerState.showFilePicker -> dismissFilePicker()
                 pickerState.showCorePicker -> dismissCorePicker()
                 pickerState.showDiscPicker -> dismissDiscPicker()
+                pickerState.showLaunchScreenPicker -> dismissLaunchScreenPicker()
                 pickerState.showCoverPicker -> dismissCoverPicker()
                 pickerState.showVariantPicker -> pickerModalDelegate.dismissVariantPicker()
                 pickerState.showEmulatorPicker -> dismissEmulatorPicker()

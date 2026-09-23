@@ -164,6 +164,18 @@ data class MoreOptionsContext(
 )
 
 /**
+ * Whether the game has per-game settings to show. An Android app has only its launch screen to
+ * set, which is a choice only while more than one screen can take it.
+ */
+fun perGameSettingsAvailable(
+    game: GameDetailUi?,
+    downloadStatus: GameDownloadStatus,
+    appLaunchScreenCount: Int
+): Boolean =
+    game != null && !game.isSteamGame && downloadStatus == GameDownloadStatus.DOWNLOADED &&
+        (!game.isAndroidApp || appLaunchScreenCount > 1)
+
+/**
  * The focusable option rows, in render order. Single source of truth: the modal renders
  * these and the delegate indexes into them, so order and visibility cannot drift apart.
  */
@@ -228,6 +240,8 @@ data class GameDetailUiState(
     val moreOptionsFocusIndex: Int = 0,
     val launchDisplayNumbers: List<Int> = emptyList(),
     val launchDisplayIndex: Int = 0,
+    val appLaunchScreenCount: Int = 0,
+    val appLaunchScreenDisplayId: Int? = null,
     val showPlayOptions: Boolean = false,
     val playOptionsFocusIndex: Int = 0,
     val hasCasualSaves: Boolean = false,

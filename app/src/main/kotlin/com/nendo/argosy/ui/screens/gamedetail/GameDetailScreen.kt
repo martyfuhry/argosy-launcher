@@ -86,6 +86,7 @@ import com.nendo.argosy.ui.components.MemcardPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.CorePickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.EmulatorPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.ExtractionFailedModal
+import com.nendo.argosy.ui.screens.gamedetail.modals.LaunchScreenPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.MissingDiscModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.StatusPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.SteamLauncherPickerModal
@@ -193,9 +194,11 @@ fun GameDetailScreen(
     val hasRelated by remember { derivedStateOf { uiState.relatedGames.isNotEmpty() } }
     val hasPerGameSettings by remember {
         derivedStateOf {
-            val g = uiState.game
-            g != null && !g.isSteamGame && !g.isAndroidApp &&
-                uiState.downloadStatus == GameDownloadStatus.DOWNLOADED
+            perGameSettingsAvailable(
+                game = uiState.game,
+                downloadStatus = uiState.downloadStatus,
+                appLaunchScreenCount = uiState.appLaunchScreenCount
+            )
         }
     }
 
@@ -519,8 +522,11 @@ private fun GameDetailContent(
         hasSocialAccount = uiState.hasSocialAccount,
         hasSaveSync = contentHasSaveSync,
         hasRelated = uiState.relatedGames.isNotEmpty(),
-        hasPerGameSettings = !game.isSteamGame && !game.isAndroidApp &&
-            uiState.downloadStatus == GameDownloadStatus.DOWNLOADED
+        hasPerGameSettings = perGameSettingsAvailable(
+            game = game,
+            downloadStatus = uiState.downloadStatus,
+            appLaunchScreenCount = uiState.appLaunchScreenCount
+        )
     )
 
     val menuDisplayState = GameDetailMenuState(
@@ -983,6 +989,7 @@ private fun GameDetailModals(
             onResetSavePath = viewModel::clearPerGameSavePath,
             onMemcardClick = viewModel::openPerGameMemcardPicker,
             onCycleDisplayTarget = viewModel::cyclePerGameDisplayTarget,
+            onCycleLaunchScreen = viewModel::cyclePerGameLaunchScreen,
             onCycleExtension = viewModel::cyclePerGameExtension,
             onPlatformSettings = {
                 viewModel.dismissPerGameSettings()
@@ -1169,6 +1176,20 @@ private fun GameDetailModals(
             focusIndex = pickerState.discPickerFocusIndex,
             onSelectDisc = viewModel.pickerModalDelegate::selectDisc,
             onDismiss = viewModel.pickerModalDelegate::dismissDiscPicker
+        )
+    }
+
+    AnimatedVisibility(
+        visible = pickerState.showLaunchScreenPicker,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        LaunchScreenPickerModal(
+            screens = pickerState.launchScreenOptions,
+            focusIndex = pickerState.launchScreenFocusIndex,
+            rememberedDisplayId = uiState.appLaunchScreenDisplayId,
+            onSelect = viewModel::launchOnDisplay,
+            onDismiss = viewModel::dismissLaunchScreenPicker
         )
     }
 
