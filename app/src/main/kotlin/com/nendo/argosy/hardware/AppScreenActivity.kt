@@ -68,7 +68,9 @@ class AppScreenActivity : ComponentActivity(), DualScreenManager.AppScreenHost {
                         .focusRequester(sink)
                         .focusable()
                 ) {
-                    PresentationSlotContent(PresentationSlot.Fallback)
+                    com.nendo.argosy.ui.components.ProvideStatusBarItems(dsm.preferencesRepository.userPreferences) {
+                        PresentationSlotContent(PresentationSlot.Fallback)
+                    }
                 }
             }
         }

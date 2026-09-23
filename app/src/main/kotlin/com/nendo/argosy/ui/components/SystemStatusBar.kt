@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -174,6 +175,26 @@ private fun NetworkCapabilities?.toNetworkLink(): NetworkLink {
 }
 
 val LocalStatusBarItems = androidx.compose.runtime.compositionLocalOf { StatusBarItems() }
+
+fun statusBarItemsOf(prefs: com.nendo.argosy.data.preferences.UserPreferences) = StatusBarItems(
+    clock = prefs.showStatusClock,
+    battery = prefs.showStatusBattery,
+    network = prefs.showStatusNetwork
+)
+
+/**
+ * Provides [LocalStatusBarItems] from [preferences] for a surface that renders outside ArgosyApp,
+ * so its status bar follows the Interface toggles as they change.
+ */
+@Composable
+fun ProvideStatusBarItems(
+    preferences: kotlinx.coroutines.flow.Flow<com.nendo.argosy.data.preferences.UserPreferences>,
+    content: @Composable () -> Unit
+) {
+    val prefs by preferences.collectAsState(initial = null)
+    val items = prefs?.let(::statusBarItemsOf) ?: StatusBarItems()
+    androidx.compose.runtime.CompositionLocalProvider(LocalStatusBarItems provides items, content = content)
+}
 
 /**
  * [scrim] backs the bar with a plate so it reads over artwork. Turn it off on a flat surface,

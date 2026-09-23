@@ -156,11 +156,7 @@ class SecondaryHomeActivity :
                     themeState.value = prefs.toThemeState()
                     customFonts.value = resolveCustomFonts(prefs.displayFontPath, prefs.bodyFontPath)
                     screenDimmerPrefs.value = prefs.toScreenDimmerPreferences()
-                    statusBarItems.value = com.nendo.argosy.ui.components.StatusBarItems(
-                        clock = prefs.showStatusClock,
-                        battery = prefs.showStatusBattery,
-                        network = prefs.showStatusNetwork
-                    )
+                    statusBarItems.value = com.nendo.argosy.ui.components.statusBarItemsOf(prefs)
                 }
             }
             LaunchedEffect(isInitialized) {
