@@ -98,6 +98,7 @@
     <string name="settings_shell_header_box_art">封面</string>
     <string name="settings_shell_header_controller_grip">手柄夹持</string>
     <string name="settings_shell_header_home_screen">主屏幕</string>
+    <string name="settings_shell_header_presentation">展示</string>
     <string name="settings_shell_header_library_view">库</string>
     <string name="settings_shell_header_displays">显示屏</string>
     <string name="settings_shell_header_screens">屏幕布局</string>

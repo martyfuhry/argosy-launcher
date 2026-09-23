@@ -78,6 +78,7 @@ import com.nendo.argosy.ui.screens.settings.components.ReleaseChangelogModal
 import com.nendo.argosy.ui.screens.settings.components.SoundPickerPopup
 import com.nendo.argosy.ui.screens.settings.delegates.BuiltinNavigationTarget
 import com.nendo.argosy.ui.screens.settings.sections.AboutSection
+import com.nendo.argosy.ui.screens.settings.sections.PresentationSection
 import com.nendo.argosy.ui.screens.settings.sections.AccountsSection
 import com.nendo.argosy.ui.screens.settings.sections.BiosSection
 import com.nendo.argosy.ui.screens.settings.sections.BiosDownloadFailureModal
@@ -659,6 +660,7 @@ fun SettingsScreen(
                     SettingsSection.BOX_ART -> BoxArtSection(uiState, viewModel)
                     SettingsSection.CONTROLLER_GRIP -> ControllerGripSection(uiState, viewModel)
                     SettingsSection.HOME_SCREEN -> HomeScreenSection(uiState, viewModel)
+                    SettingsSection.PRESENTATION -> PresentationSection(uiState, viewModel)
                     SettingsSection.LIBRARY_VIEW -> LibrarySection(uiState, viewModel)
                     SettingsSection.DISPLAYS -> DisplaysSection(uiState, viewModel)
                     SettingsSection.SCREENS -> ScreensSection(uiState, viewModel)
@@ -1453,6 +1455,7 @@ private fun settingsSectionTitle(uiState: SettingsUiState): String = when (uiSta
     SettingsSection.BOX_ART -> stringResource(R.string.settings_shell_header_box_art)
     SettingsSection.CONTROLLER_GRIP -> stringResource(R.string.settings_shell_header_controller_grip)
     SettingsSection.HOME_SCREEN -> stringResource(R.string.settings_shell_header_home_screen)
+    SettingsSection.PRESENTATION -> stringResource(R.string.settings_shell_header_presentation)
     SettingsSection.LIBRARY_VIEW -> stringResource(R.string.settings_shell_header_library_view)
     SettingsSection.DISPLAYS -> stringResource(R.string.settings_shell_header_displays)
     SettingsSection.SCREENS -> stringResource(R.string.settings_shell_header_screens)

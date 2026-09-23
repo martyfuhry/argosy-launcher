@@ -910,6 +910,11 @@ class DualScreenManager(
      * fallback once every publisher has released. Screens publish while they are on screen and
      * release when they leave, so the surface follows navigation without either side tracking it.
      */
+    private val _presentationStyle =
+        MutableStateFlow(com.nendo.argosy.domain.model.PresentationStyle())
+    val presentationStyle: StateFlow<com.nendo.argosy.domain.model.PresentationStyle> =
+        _presentationStyle
+
     fun presentSlot(
         owner: com.nendo.argosy.ui.dualscreen.SlotOwner,
         slot: com.nendo.argosy.ui.dualscreen.PresentationSlot
@@ -1179,6 +1184,7 @@ class DualScreenManager(
         scope.launch {
             preferencesRepository.userPreferences.collect { prefs ->
                 menuWrapMode = prefs.menuWrapMode
+                _presentationStyle.value = prefs.presentationStyle
             }
         }
         observeActiveAccount()

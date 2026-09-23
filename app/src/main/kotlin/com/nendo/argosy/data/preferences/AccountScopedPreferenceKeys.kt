@@ -122,6 +122,7 @@ object AccountScopedPreferenceKeys {
         "custom_background_path",
         "home_background_mode",
         "home_layout_config",
+        "presentation_style",
         "use_accent_color_footer",
         "installed_only_home",
         "video_wallpaper_enabled",

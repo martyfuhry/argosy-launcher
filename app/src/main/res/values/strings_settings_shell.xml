@@ -149,6 +149,7 @@
     <string name="settings_shell_header_box_art">BOX ART</string>
     <string name="settings_shell_header_controller_grip">CONTROLLER GRIP</string>
     <string name="settings_shell_header_home_screen">HOME SCREEN</string>
+    <string name="settings_shell_header_presentation">PRESENTATION</string>
     <string name="settings_shell_header_library_view">LIBRARY</string>
     <string name="settings_shell_header_displays">DISPLAYS</string>
     <string name="settings_shell_header_screens">SCREEN LAYOUT</string>

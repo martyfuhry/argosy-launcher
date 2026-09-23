@@ -66,6 +66,8 @@ data class DisplayPreferences(
     val homeBackgroundMode: HomeBackgroundMode = HomeBackgroundMode.GAME_ART,
     val homeLayout: com.nendo.argosy.domain.model.HomeLayoutSettings =
         com.nendo.argosy.domain.model.HomeLayoutSettings(),
+    val presentationStyle: com.nendo.argosy.domain.model.PresentationStyle =
+        com.nendo.argosy.domain.model.PresentationStyle(),
     val useAccentColorFooter: Boolean = false,
     val compactFooter: Boolean = false,
     val boxArtShape: BoxArtShape = BoxArtShape.STANDARD,
@@ -159,6 +161,7 @@ class DisplayPreferencesRepository @Inject constructor(
         val CUSTOM_BACKGROUND_PATH = stringPreferencesKey("custom_background_path")
         val HOME_BACKGROUND_MODE = stringPreferencesKey("home_background_mode")
         val HOME_LAYOUT_CONFIG = stringPreferencesKey("home_layout_config")
+        val PRESENTATION_STYLE = stringPreferencesKey("presentation_style")
         val USE_ACCENT_COLOR_FOOTER = booleanPreferencesKey("use_accent_color_footer")
         val COMPACT_FOOTER = booleanPreferencesKey("compact_footer")
         val GRIP_AUTO_CONTROLLERS = stringPreferencesKey("grip_auto_controllers")
@@ -253,6 +256,9 @@ class DisplayPreferencesRepository @Inject constructor(
             homeBackgroundMode = HomeBackgroundMode.fromString(prefs[Keys.HOME_BACKGROUND_MODE]),
             homeLayout = com.nendo.argosy.domain.model.HomeLayoutSettings.fromJson(
                 prefs[Keys.HOME_LAYOUT_CONFIG]
+            ),
+            presentationStyle = com.nendo.argosy.domain.model.PresentationStyle.fromJson(
+                prefs[Keys.PRESENTATION_STYLE]
             ),
             useAccentColorFooter = prefs[Keys.USE_ACCENT_COLOR_FOOTER] ?: false,
             compactFooter = prefs[Keys.COMPACT_FOOTER] ?: false,
@@ -485,6 +491,10 @@ class DisplayPreferencesRepository @Inject constructor(
 
     suspend fun setHomeLayout(settings: com.nendo.argosy.domain.model.HomeLayoutSettings) {
         dataStore.edit { it[Keys.HOME_LAYOUT_CONFIG] = settings.toJson() }
+    }
+
+    suspend fun setPresentationStyle(style: com.nendo.argosy.domain.model.PresentationStyle) {
+        dataStore.edit { it[Keys.PRESENTATION_STYLE] = style.toJson() }
     }
 
     suspend fun setUseAccentColorFooter(use: Boolean) {

@@ -105,6 +105,7 @@
     <string name="settings_shell_header_box_art">ОБЛОЖКИ</string>
     <string name="settings_shell_header_controller_grip">ХВАТ КОНТРОЛЛЕРА</string>
     <string name="settings_shell_header_home_screen">ГЛАВНЫЙ ЭКРАН</string>
+    <string name="settings_shell_header_presentation">ПРЕЗЕНТАЦИЯ</string>
     <string name="settings_shell_header_library_view">БИБЛИОТЕКА</string>
     <string name="settings_shell_header_displays">ЭКРАНЫ</string>
     <string name="settings_shell_header_screens">РАСПОЛОЖЕНИЕ ЭКРАНОВ</string>

@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.ui.common.GradientColorExtractor
+import com.nendo.argosy.ui.common.toHomeGameUi
+import com.nendo.argosy.data.local.entity.getDisplayName
+import com.nendo.argosy.ui.screens.home.toCompanionDetail
 import com.nendo.argosy.data.cache.ImageCacheManager
 import com.nendo.argosy.data.cache.ImageCacheProgress
 import com.nendo.argosy.data.emulator.BuiltinCoreResolver
@@ -148,7 +151,8 @@ class SettingsViewModel @Inject constructor(
     private val playStatsRepo: com.nendo.argosy.data.repository.PlayStatsRepository,
     private val biosRepository: com.nendo.argosy.data.repository.BiosRepository,
     private val savePathValidator: com.nendo.argosy.data.emulator.SavePathValidator,
-    internal val jellyfinConnectionManager: JellyfinConnectionManager
+    internal val jellyfinConnectionManager: JellyfinConnectionManager,
+    private val downloadFileStatusRepository: com.nendo.argosy.data.repository.DownloadFileStatusRepository
 ) : ViewModel() {
 
     private var jellyfinSignInJob: Job? = null
@@ -156,6 +160,17 @@ class SettingsViewModel @Inject constructor(
 
     suspend fun ambientShowcaseCovers(): List<String> =
         ambientCovers ?: gameRepository.showcaseCovers(null).also { ambientCovers = it }
+
+    /**
+     * The most recently played game, drawn the way home presents a focused game, so the
+     * presentation settings can be judged against a real game.
+     */
+    suspend fun presentationSample(): com.nendo.argosy.ui.dualscreen.CompanionDetail? {
+        val game = gameRepository.getRecentlyPlayed(limit = 1).firstOrNull() ?: return null
+        val platformName = platformRepository.getById(game.platformId)?.getDisplayName()
+        return game.toHomeGameUi(downloadFileStatusRepository, platformDisplayName = platformName)
+            .toCompanionDetail()
+    }
 
     internal val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -1062,6 +1077,8 @@ class SettingsViewModel @Inject constructor(
     fun setHomeBackgroundMode(mode: HomeBackgroundMode) = displayDelegate.setHomeBackgroundMode(viewModelScope, mode)
     fun setHomeLayout(settings: com.nendo.argosy.domain.model.HomeLayoutSettings) =
         displayDelegate.setHomeLayout(viewModelScope, settings)
+    fun setPresentationStyle(style: com.nendo.argosy.domain.model.PresentationStyle) =
+        displayDelegate.setPresentationStyle(viewModelScope, style)
     fun cycleHomeBackgroundMode(direction: Int = 1) = displayDelegate.cycleHomeBackgroundMode(viewModelScope, direction)
     fun setUseAccentColorFooter(use: Boolean) = displayDelegate.setUseAccentColorFooter(viewModelScope, use)
     fun setCompactFooter(enabled: Boolean) = displayDelegate.setCompactFooter(viewModelScope, enabled)
@@ -1090,6 +1107,7 @@ class SettingsViewModel @Inject constructor(
     fun navigateToHomeScreen() = routeNavigateToHomeScreen(this)
     fun navigateToAmbientLed() = routeNavigateToAmbientLed(this)
     fun navigateToScreens() = routeNavigateToScreens(this)
+    fun navigateToPresentation() = routeNavigateToPresentation(this)
     fun focusScreen(index: Int) = routeFocusScreen(this, index)
     fun openScreenRoleModal() = routeOpenScreenRoleModal(this)
     fun closeScreenRoleModal() = routeCloseScreenRoleModal(this)

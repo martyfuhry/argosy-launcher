@@ -167,6 +167,10 @@ internal fun routeNavigateToHomeScreen(vm: SettingsViewModel) {
     routePushSection(vm, SettingsSection.HOME_SCREEN)
 }
 
+internal fun routeNavigateToPresentation(vm: SettingsViewModel) {
+    routePushSection(vm, SettingsSection.PRESENTATION)
+}
+
 internal fun routeNavigateToLibraryView(vm: SettingsViewModel) {
     routePushSection(vm, SettingsSection.LIBRARY_VIEW)
 }

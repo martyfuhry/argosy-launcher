@@ -184,9 +184,6 @@
     <string name="home_media_season_local_partial">%1$d из %2$d на этом устройстве</string>
     <string name="home_media_download_size_gigabytes">%1$.1f GB</string>
 
-    <string name="home_companion_fact_developer">Разработчик</string>
-    <string name="home_companion_fact_genre">Жанр</string>
-    <string name="home_companion_fact_released">Выход</string>
     <string name="home_grid_tile_ra_points_label">Очки</string>
     <string name="home_grid_tile_ra_unlocks_label">Достижения</string>
 </resources>

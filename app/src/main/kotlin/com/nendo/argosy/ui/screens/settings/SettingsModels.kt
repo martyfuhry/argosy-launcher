@@ -109,6 +109,7 @@ enum class SettingsSection {
     BOX_ART,
     CONTROLLER_GRIP,
     HOME_SCREEN,
+    PRESENTATION,
     LIBRARY_VIEW,
     DISPLAYS,
     SCREENS,
@@ -252,6 +253,8 @@ data class DisplayState(
     val homeBackgroundMode: HomeBackgroundMode = HomeBackgroundMode.GAME_ART,
     val homeLayout: com.nendo.argosy.domain.model.HomeLayoutSettings =
         com.nendo.argosy.domain.model.HomeLayoutSettings(),
+    val presentationStyle: com.nendo.argosy.domain.model.PresentationStyle =
+        com.nendo.argosy.domain.model.PresentationStyle(),
     val boxArtCapableGames: Int = 0,
     val useAccentColorFooter: Boolean = false,
     val compactFooter: Boolean = false,

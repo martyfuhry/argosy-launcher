@@ -7,8 +7,6 @@ import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.components.APP_BAR_DRAWER_INDEX
 import com.nendo.argosy.ui.components.InputButton
-import com.nendo.argosy.ui.dualscreen.CompanionDetail
-import com.nendo.argosy.ui.dualscreen.CompanionFact
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -523,41 +521,7 @@ class HomeViewModel @Inject constructor(
         if (!isDescribing) return
         DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
-            game?.let {
-                CompanionDetail(
-                    title = it.title,
-                    subtitle = it.platformDisplayName,
-                    artUrl = it.coverPath,
-                    backdropUrl = it.backgroundPath,
-                    isGameTitle = true,
-                    facts = buildList {
-                        it.developer?.let { developer ->
-                            add(
-                                CompanionFact(
-                                    context.getString(R.string.home_companion_fact_developer),
-                                    developer
-                                )
-                            )
-                        }
-                        it.releaseYear?.let { year ->
-                            add(
-                                CompanionFact(
-                                    context.getString(R.string.home_companion_fact_released),
-                                    year.toString()
-                                )
-                            )
-                        }
-                        it.genre?.let { genre ->
-                            add(
-                                CompanionFact(
-                                    context.getString(R.string.home_companion_fact_genre),
-                                    genre
-                                )
-                            )
-                        }
-                    }
-                )
-            }
+            game?.toCompanionDetail()
         )
     }
 

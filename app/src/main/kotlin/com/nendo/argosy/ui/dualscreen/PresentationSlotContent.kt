@@ -81,10 +81,16 @@ fun PresentationSlotContent(slot: PresentationSlot) {
             is PresentationSlot.PlayShare -> PlayShareSlot(slot)
             is PresentationSlot.GameHero -> GameHeroSlot(slot)
             is PresentationSlot.Breakdown -> BreakdownSlot(slot)
-            is PresentationSlot.Detail -> CompanionDetailScreen(
-                detail = slot.detail,
-                modifier = Modifier.fillMaxSize()
-            )
+            is PresentationSlot.Detail -> {
+                val style = com.nendo.argosy.DualScreenManagerHolder.instance
+                    ?.presentationStyle?.collectAsState()?.value
+                    ?: com.nendo.argosy.domain.model.PresentationStyle()
+                CompanionDetailScreen(
+                    detail = slot.detail,
+                    style = style,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             is PresentationSlot.PlatformShowcase -> PlatformShowcaseContent(slot)
             is PresentationSlot.InGame -> {
                 val manager = com.nendo.argosy.DualScreenManagerHolder.instance

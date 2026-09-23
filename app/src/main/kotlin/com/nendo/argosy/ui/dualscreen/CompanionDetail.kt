@@ -23,7 +23,25 @@ data class CompanionDetail(
     val artUrl: String? = null,
     val backdropUrl: String? = null,
     val facts: List<CompanionFact> = emptyList(),
-    val isGameTitle: Boolean = false
+    val isGameTitle: Boolean = false,
+    val spineUrl: String? = null,
+    val stats: CompanionGameStats? = null
+)
+
+/**
+ * A focused game's values, kept typed so the presentation style decides which appear and the
+ * renderer formats them. Zero counts and null values mean the game has no such value.
+ */
+data class CompanionGameStats(
+    val developer: String? = null,
+    val releaseYear: Int? = null,
+    val genre: String? = null,
+    val communityRating: Float? = null,
+    val userRating: Int = 0,
+    val playTimeMinutes: Int = 0,
+    val timeToBeatMainSec: Int? = null,
+    val achievementCount: Int = 0,
+    val earnedAchievementCount: Int = 0
 )
 
 data class CompanionFact(

@@ -401,16 +401,6 @@
          "GB" is the unit symbol. -->
     <string name="home_media_download_size_gigabytes">%1$.1f GB</string>
 
-    <!-- Label of a fact on the second screen while the home grid is being browsed. Noun, the studio
-         that made the focused game. Its value is a company name and is not translated. -->
-    <string name="home_companion_fact_developer">Developer</string>
-    <!-- Label of a fact on the second screen while the home grid is being browsed. Verb used as a
-         noun label, the year the focused game came out. Its value is a four-digit year. -->
-    <string name="home_companion_fact_released">Released</string>
-    <!-- Label of a fact on the second screen while the home grid is being browsed. Noun, the genre
-         of the focused game. -->
-    <string name="home_companion_fact_genre">Genre</string>
-
     <!-- Stat label beside a RetroAchievements point total on the second screen. Noun. -->
     <string name="home_grid_tile_ra_points_label">Points</string>
     <!-- Stat label beside how many achievements have been earned. Noun. -->

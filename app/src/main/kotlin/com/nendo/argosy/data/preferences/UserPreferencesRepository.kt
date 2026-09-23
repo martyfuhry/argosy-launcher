@@ -111,6 +111,7 @@ class UserPreferencesRepository @Inject constructor(
             customBackgroundPath = display.customBackgroundPath,
             homeBackgroundMode = display.homeBackgroundMode,
             homeLayout = display.homeLayout,
+            presentationStyle = display.presentationStyle,
             useAccentColorFooter = display.useAccentColorFooter,
             compactFooter = display.compactFooter,
             hiddenApps = app.hiddenApps,
@@ -286,6 +287,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setHomeBackgroundMode(mode: HomeBackgroundMode) = displayPrefs.setHomeBackgroundMode(mode)
     suspend fun setHomeLayout(settings: com.nendo.argosy.domain.model.HomeLayoutSettings) =
         displayPrefs.setHomeLayout(settings)
+    suspend fun setPresentationStyle(style: com.nendo.argosy.domain.model.PresentationStyle) =
+        displayPrefs.setPresentationStyle(style)
     suspend fun setUseAccentColorFooter(use: Boolean) = displayPrefs.setUseAccentColorFooter(use)
     suspend fun setCompactFooter(enabled: Boolean) = displayPrefs.setCompactFooter(enabled)
     suspend fun setGripAutoControllers(
@@ -781,6 +784,8 @@ data class UserPreferences(
     val homeBackgroundMode: HomeBackgroundMode = HomeBackgroundMode.GAME_ART,
     val homeLayout: com.nendo.argosy.domain.model.HomeLayoutSettings =
         com.nendo.argosy.domain.model.HomeLayoutSettings(),
+    val presentationStyle: com.nendo.argosy.domain.model.PresentationStyle =
+        com.nendo.argosy.domain.model.PresentationStyle(),
     val useAccentColorFooter: Boolean = false,
     val compactFooter: Boolean = false,
     val fileLoggingEnabled: Boolean = false,

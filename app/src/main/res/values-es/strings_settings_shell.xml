@@ -105,6 +105,7 @@
     <string name="settings_shell_header_box_art">CARÁTULA</string>
     <string name="settings_shell_header_controller_grip">AGARRE DEL MANDO</string>
     <string name="settings_shell_header_home_screen">PANTALLA DE INICIO</string>
+    <string name="settings_shell_header_presentation">PRESENTACIÓN</string>
     <string name="settings_shell_header_library_view">BIBLIOTECA</string>
     <string name="settings_shell_header_displays">PANTALLAS</string>
     <string name="settings_shell_header_screens">DISPOSICIÓN DE PANTALLAS</string>

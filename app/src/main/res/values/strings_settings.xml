@@ -456,6 +456,41 @@
     <string name="settings_displays_screens_title">Screen Layout</string>
     <!-- Second line of that row. -->
     <string name="settings_displays_screens_subtitle">Give each attached screen a job</string>
+    <!-- Row opening the settings for how the second screen draws the game focused on the first. -->
+    <string name="settings_displays_presentation_title">Presentation</string>
+    <!-- Second line of that row. -->
+    <string name="settings_displays_presentation_subtitle">How the other screen shows the focused game</string>
+
+    <!-- Section headers in the presentation settings. -->
+    <string name="settings_presentation_section_background">Background</string>
+    <string name="settings_presentation_section_artwork">Artwork</string>
+    <string name="settings_presentation_section_stats">Stats</string>
+    <!-- Row choosing the shade laid over the game's background art so its text stays readable. -->
+    <string name="settings_presentation_scrim_title">Shade</string>
+    <!-- Values of that row. The shade fades from light to dark, is even, blurs the art, or is absent. -->
+    <string name="settings_presentation_scrim_gradient">Gradient</string>
+    <string name="settings_presentation_scrim_solid">Solid</string>
+    <string name="settings_presentation_scrim_blur">Blur</string>
+    <string name="settings_presentation_scrim_none">None</string>
+    <!-- Row setting how dark that shade is at its darkest, in percent. -->
+    <string name="settings_presentation_scrim_strength_title">Shade Strength</string>
+    <!-- Row choosing the artwork drawn beside the game's details. -->
+    <string name="settings_presentation_art_title">Cover Art</string>
+    <!-- Values of that row: the flat cover, the cover drawn as a 3D box, or the title alone. -->
+    <string name="settings_presentation_art_cover">Cover</string>
+    <string name="settings_presentation_art_box_3d">3D Box</string>
+    <string name="settings_presentation_art_title_only">Title Only</string>
+    <!-- Toggles for which facts about the focused game appear. -->
+    <string name="settings_presentation_stat_developer">Developer</string>
+    <string name="settings_presentation_stat_release_year">Release Year</string>
+    <string name="settings_presentation_stat_genre">Genre</string>
+    <string name="settings_presentation_stat_community_rating">Community Rating</string>
+    <string name="settings_presentation_stat_user_rating">Your Rating</string>
+    <string name="settings_presentation_stat_play_time">Play Time</string>
+    <string name="settings_presentation_stat_time_to_beat">Time to Beat</string>
+    <string name="settings_presentation_stat_achievements">Achievements</string>
+    <!-- Toggle for the friends who are playing the focused game now or played it recently. -->
+    <string name="settings_presentation_stat_friends">Friends Playing</string>
 
     <!-- Line above the map of screens, telling the player how to change one. -->
     <string name="settings_screens_intro">Each screen is drawn where it sits on the device. Pick one to change what it does.</string>

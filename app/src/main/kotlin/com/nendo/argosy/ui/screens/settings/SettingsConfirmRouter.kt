@@ -9,6 +9,10 @@ import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.core.emulator.LibretroSettingDef
 import com.nendo.argosy.libretro.frame.FrameRegistry
 import com.nendo.argosy.ui.screens.settings.sections.AboutItem
+import com.nendo.argosy.ui.screens.settings.sections.PresentationItem
+import com.nendo.argosy.ui.screens.settings.sections.presentationItemAtFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.presentationMaxFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.withStat
 import com.nendo.argosy.ui.screens.settings.sections.AmbientLedItem
 import com.nendo.argosy.ui.screens.settings.sections.ambientLedItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.ambientLedMaxFocusIndex
@@ -270,6 +274,7 @@ internal fun routeConfirm(vm: SettingsViewModel): InputResult {
         SettingsSection.INTERFACE -> routeInterfaceConfirm(vm, state)
         SettingsSection.CONTROLLER_GRIP -> routeControllerGripConfirm(vm, state)
         SettingsSection.HOME_SCREEN -> routeHomeScreenConfirm(vm, state)
+        SettingsSection.PRESENTATION -> routePresentationConfirm(vm, state)
         SettingsSection.LIBRARY_VIEW -> routeLibraryViewConfirm(vm, state)
         SettingsSection.BOX_ART -> routeBoxArtConfirm(vm, state)
         SettingsSection.DISPLAYS -> routeDisplaysConfirm(vm, state)
@@ -727,10 +732,26 @@ private fun routeDisplaysConfirm(vm: SettingsViewModel, state: SettingsUiState):
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
         DisplaysItem.ScreenLayout -> vm.navigateToScreens()
+        DisplaysItem.Presentation -> vm.navigateToPresentation()
         DisplaysItem.AmbientLedSettings -> vm.navigateToAmbientLed()
         else -> {}
     }
     return InputResult.HANDLED
+}
+
+private fun routePresentationConfirm(vm: SettingsViewModel, state: SettingsUiState): InputResult {
+    val style = state.display.presentationStyle
+    return when (val item = presentationItemAtFocusIndex(state.focusedIndex, style)) {
+        PresentationItem.Scrim, PresentationItem.Art -> {
+            vm.requestEnumPicker(item.key)
+            InputResult.handled(SoundType.OPEN_MODAL)
+        }
+        is PresentationItem.Stat -> {
+            vm.setPresentationStyle(style.withStat(item.stat, !style.shows(item.stat)))
+            InputResult.handled(SoundType.TOGGLE)
+        }
+        else -> InputResult.HANDLED
+    }
 }
 
 private fun routeAudioConfirm(vm: SettingsViewModel, state: SettingsUiState): InputResult {
@@ -1319,6 +1340,7 @@ private fun computeMaxFocusIndex(
     SettingsSection.INTERFACE -> interfaceMaxFocusIndex(InterfaceLayoutState.from(state))
     SettingsSection.CONTROLLER_GRIP -> controllerGripMaxFocusIndex(state.display)
     SettingsSection.HOME_SCREEN -> homeScreenMaxFocusIndex(state.display)
+    SettingsSection.PRESENTATION -> presentationMaxFocusIndex(state.display.presentationStyle)
     SettingsSection.LIBRARY_VIEW -> libraryMaxFocusIndex(LibraryLayoutState.from(state))
     SettingsSection.BOX_ART -> boxArtMaxFocusIndex(state.display)
     SettingsSection.DISPLAYS -> displaysMaxFocusIndex(DisplaysLayoutState.from(state))

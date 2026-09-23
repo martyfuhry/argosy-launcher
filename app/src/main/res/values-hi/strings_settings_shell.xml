@@ -98,6 +98,7 @@
     <string name="settings_shell_header_box_art">बॉक्स आर्ट</string>
     <string name="settings_shell_header_controller_grip">कंट्रोलर ग्रिप</string>
     <string name="settings_shell_header_home_screen">होम स्क्रीन</string>
+    <string name="settings_shell_header_presentation">प्रस्तुति</string>
     <string name="settings_shell_header_library_view">लाइब्रेरी</string>
     <string name="settings_shell_header_displays">डिस्प्ले</string>
     <string name="settings_shell_header_screens">स्क्रीन व्यवस्था</string>

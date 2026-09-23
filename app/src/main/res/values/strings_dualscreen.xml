@@ -961,4 +961,19 @@
     <!-- Name of the slot holding the saves the emulator writes by itself, listed beside the user's
          own named slots. Noun phrase. -->
     <string name="dual_detail_save_slot_auto">Auto Save</string>
+
+    <!-- Labels of the facts shown about the focused game on the presentation screen. -->
+    <string name="dual_presentation_fact_developer">Developer</string>
+    <!-- The year the game came out. Its value is a four-digit year. -->
+    <string name="dual_presentation_fact_released">Released</string>
+    <string name="dual_presentation_fact_genre">Genre</string>
+    <!-- The community score. Its value is a percentage. -->
+    <string name="dual_presentation_fact_rating">Rating</string>
+    <!-- The player's own score out of ten. -->
+    <string name="dual_presentation_fact_user_rating">Your Rating</string>
+    <!-- How long the player has played. Past participle used as a label. -->
+    <string name="dual_presentation_fact_play_time">Played</string>
+    <string name="dual_presentation_fact_time_to_beat">Time to Beat</string>
+    <!-- Its value is achievements earned out of the total. -->
+    <string name="dual_presentation_fact_achievements">Achievements</string>
 </resources>

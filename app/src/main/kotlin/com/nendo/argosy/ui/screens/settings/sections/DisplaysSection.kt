@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Monitor
+import androidx.compose.material.icons.outlined.Slideshow
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -85,6 +86,13 @@ internal sealed class DisplaysItem(
         section = "displays",
         visibleWhen = { it.hasPhysicalSecondaryDisplay }
     )
+    data object Presentation : DisplaysItem(
+        key = "presentation",
+        section = "displays",
+        visibleWhen = {
+            it.dualScreenEnabled && it.hasSecondaryDisplay && !it.display.secondaryDisplayUnsupported
+        }
+    )
     data object AmbientLedSettings : DisplaysItem(
         key = "ambientLedSettings",
         section = "displays",
@@ -103,7 +111,8 @@ internal sealed class DisplaysItem(
                 ScreenSafetyHeader,
                 ScreenDimmer, DimAfter, DimLevel,
                 DisplaysSpacer, DisplaysHeader,
-                DualScreenEnabled, PauseWhileDocked, DisplayRoles, ScreenLayout, AmbientLedSettings
+                DualScreenEnabled, PauseWhileDocked, DisplayRoles, ScreenLayout, Presentation,
+                AmbientLedSettings
             )
     }
 }
@@ -274,6 +283,14 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 subtitle = stringResource(R.string.settings_displays_screens_subtitle),
                 isFocused = isFocused(item),
                 onClick = { openFrom(item) { viewModel.navigateToScreens() } }
+            )
+
+            DisplaysItem.Presentation -> NavigationPreference(
+                icon = Icons.Outlined.Slideshow,
+                title = stringResource(R.string.settings_displays_presentation_title),
+                subtitle = stringResource(R.string.settings_displays_presentation_subtitle),
+                isFocused = isFocused(item),
+                onClick = { openFrom(item) { viewModel.navigateToPresentation() } }
             )
 
             DisplaysItem.AmbientLedSettings -> NavigationPreference(

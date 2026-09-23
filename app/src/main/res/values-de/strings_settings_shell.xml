@@ -105,6 +105,7 @@
     <string name="settings_shell_header_box_art">COVER</string>
     <string name="settings_shell_header_controller_grip">CONTROLLER-GRIFF</string>
     <string name="settings_shell_header_home_screen">STARTBILDSCHIRM</string>
+    <string name="settings_shell_header_presentation">PRÄSENTATION</string>
     <string name="settings_shell_header_library_view">BIBLIOTHEK</string>
     <string name="settings_shell_header_displays">BILDSCHIRME</string>
     <string name="settings_shell_header_screens">BILDSCHIRMANORDNUNG</string>

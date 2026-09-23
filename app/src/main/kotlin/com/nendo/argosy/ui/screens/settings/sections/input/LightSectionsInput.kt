@@ -9,6 +9,9 @@ import com.nendo.argosy.ui.screens.settings.SettingsSection
 import com.nendo.argosy.ui.screens.settings.SettingsViewModel
 import com.nendo.argosy.ui.screens.settings.components.rommConfigIndices
 import com.nendo.argosy.ui.screens.settings.sections.AboutItem
+import com.nendo.argosy.ui.screens.settings.sections.adjustPresentationItem
+import com.nendo.argosy.ui.screens.settings.sections.presentationItemAtFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.presentationSections
 import com.nendo.argosy.ui.screens.settings.sections.BiosItem
 import com.nendo.argosy.ui.screens.settings.sections.BuiltinEmulatorItem
 import com.nendo.argosy.ui.screens.settings.sections.NavigationItem
@@ -86,6 +89,7 @@ internal class LightSectionsInput(
             SettingsSection.SAVES -> handleSavesLeftRight(direction)
             SettingsSection.CONTROLLER_GRIP -> handleControllerGripLeftRight(direction)
             SettingsSection.HOME_SCREEN -> handleHomeScreenLeftRight(direction)
+            SettingsSection.PRESENTATION -> handlePresentationLeftRight(direction)
             SettingsSection.LIBRARY_VIEW -> handleLibraryViewLeftRight(direction)
             SettingsSection.NAVIGATION -> handleNavigationLeftRight(direction)
             SettingsSection.SYNC_SETTINGS -> handleSyncSettingsLeftRight(direction)
@@ -171,6 +175,15 @@ internal class LightSectionsInput(
             }
             else -> InputResult.UNHANDLED
         }
+    }
+
+    private fun handlePresentationLeftRight(direction: Int): InputResult {
+        val style = viewModel.uiState.value.display.presentationStyle
+        val item = presentationItemAtFocusIndex(viewModel.uiState.value.focusedIndex, style)
+            ?: return InputResult.UNHANDLED
+        val adjusted = adjustPresentationItem(style, item, direction) ?: return InputResult.UNHANDLED
+        viewModel.setPresentationStyle(adjusted)
+        return InputResult.HANDLED
     }
 
     private fun handleHomeScreenLeftRight(direction: Int): InputResult {
@@ -347,6 +360,7 @@ internal class LightSectionsInput(
         val sections = when (state.currentSection) {
             SettingsSection.CONTROLLER_GRIP -> controllerGripSections(state.display)
             SettingsSection.HOME_SCREEN -> homeScreenSections(state.display)
+            SettingsSection.PRESENTATION -> presentationSections(state.display.presentationStyle)
             SettingsSection.LIBRARY_VIEW -> librarySections(LibraryLayoutState.from(state))
             SettingsSection.BIOS -> biosSections(state.bios.platformGroups, state.bios.expandedPlatformIndex)
             SettingsSection.ROMM -> rommSections(buildRomMItemsFromState(state))

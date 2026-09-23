@@ -105,6 +105,7 @@
     <string name="settings_shell_header_box_art">BOÎTIER</string>
     <string name="settings_shell_header_controller_grip">PRISE EN MAIN DE LA MANETTE</string>
     <string name="settings_shell_header_home_screen">ÉCRAN D\'ACCUEIL</string>
+    <string name="settings_shell_header_presentation">PRÉSENTATION</string>
     <string name="settings_shell_header_library_view">BIBLIOTHÈQUE</string>
     <string name="settings_shell_header_displays">ÉCRANS</string>
     <string name="settings_shell_header_screens">DISPOSITION DES ÉCRANS</string>
