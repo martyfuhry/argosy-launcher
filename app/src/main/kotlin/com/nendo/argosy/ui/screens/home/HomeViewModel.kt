@@ -409,13 +409,15 @@ class HomeViewModel @Inject constructor(
         }
         viewModelScope.launch {
             var previousGameId: Long? = null
+            var previousGame: HomeGameUi? = null
             var previousFriends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList()
             _uiState.collect { state ->
                 val focusedGame = state.focusedGame
                 publishTileShowcase(state)
                 val friends = state.friendsFor(focusedGame)
                 val sameGame = focusedGame?.id == previousGameId
-                if (sameGame && friends == previousFriends) return@collect
+                if (focusedGame == previousGame && friends == previousFriends) return@collect
+                previousGame = focusedGame
                 previousFriends = friends
                 publishCompanionDetail(focusedGame)
                 if (sameGame) return@collect
@@ -565,7 +567,7 @@ class HomeViewModel @Inject constructor(
                     newState
                 }
             }
-            refreshFeatureTiles()
+            refreshTileGamesAndFeatures()
         }
     }
 
@@ -1078,17 +1080,14 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    /**
-     * Re-reads the feature tiles without rebuilding the grid, so a finished session reaches the
-     * continue tile and the achievement tally the moment it lands rather than on the next time the
-     * tile list happens to change. The continue game is resolved again even when it is the same
-     * game, because its play time is part of what the tile draws.
-     */
-    private fun refreshFeatureTiles() {
+    private fun refreshTileGamesAndFeatures() {
         viewModelScope.launch {
             val feature = featureTileContent(shownTiles(storedTiles))
             val resolved = libraryDelegate.resolveTileGames(
-                listOfNotNull(feature.continueGameId, feature.raSummary?.groundGameId).distinct()
+                (
+                    _uiState.value.tileGames.keys +
+                        listOfNotNull(feature.continueGameId, feature.raSummary?.groundGameId)
+                ).distinct()
             )
             val gradients = gradientExtractionDelegate.gradients.value
             customGrid.setRaTile(feature.raSummary.toGridStatus())
@@ -2069,7 +2068,7 @@ class HomeViewModel @Inject constructor(
     fun onResume() {
         gameLaunchDelegate.handleSessionEnd(viewModelScope)
         libraryDelegate.invalidateRecentGamesCache()
-        refreshFeatureTiles()
+        refreshTileGamesAndFeatures()
         mediaDelegate.refresh(viewModelScope)
         viewModelScope.launch { refreshCurrentRowInternal() }
         syncDelegate.refreshFavoritesIfConnected(viewModelScope) {
