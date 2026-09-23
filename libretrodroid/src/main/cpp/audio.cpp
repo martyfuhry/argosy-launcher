@@ -36,6 +36,8 @@ namespace {
 
     constexpr float kInt16ToFloat = 1.0f / 32768.0f;
 
+    constexpr int kMinimalBufferFrames = 2;
+
     std::string readAudioProperty(const char *suffix) {
         char name[PROP_NAME_MAX];
         snprintf(name, sizeof(name), "debug.argosy.audio.%s", suffix);
@@ -128,6 +130,7 @@ Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio,
 
     contentRefreshRate = refreshRate;
     inputSampleRate = sampleRate;
+    pinBufferToSingleBurst = audioBufferFrames == kMinimalBufferFrames;
     audioLatencySettings = findBestLatencySettings(preferLowLatencyAudio, audioBufferFrames);
     initializeStream();
 }
@@ -164,6 +167,13 @@ bool Audio::initializeStream() {
             ? 1000.0 * framesPerBurst / streamSampleRate
             : 0.0;
         const double effectiveMs = effectiveFifoMs(requestedMs, framesPerBurst, streamSampleRate);
+        if (pinBufferToSingleBurst) {
+            auto bufferSizeResult = stream->setBufferSizeInFrames(framesPerBurst);
+            LOGI("Audio stream buffer set to %d frames (%d requested, burst %d)",
+                 bufferSizeResult.value(),
+                 framesPerBurst,
+                 framesPerBurst);
+        }
         if (effectiveMs > requestedMs) {
             LOGI("Audio buffer raised from %.1f ms to %.1f ms to cover a %.1f ms burst",
                  requestedMs, effectiveMs, burstMs);
@@ -177,7 +187,11 @@ bool Audio::initializeStream() {
         convertOutput = outputFormat != oboe::AudioFormat::I16 || outputChannelCount != 2;
         fifoBuffer = std::make_unique<oboe::FifoBuffer>(2, audioBufferSize);
         temporaryAudioBuffer = std::unique_ptr<int16_t[]>(new int16_t[audioBufferSize]);
-        latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
+        if (pinBufferToSingleBurst) {
+            latencyTuner = nullptr;
+        } else {
+            latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
+        }
         statsLogIntervalFrames = stream->getSampleRate() * 2;
         framesSinceStatsLog = 0;
         logStreamState(effectiveMs);
@@ -400,16 +414,28 @@ oboe::DataCallbackResult Audio::onAudioReady(oboe::AudioStream *oboeStream, void
         writeConvertedOutput(outputArray, audioData, numFrames);
     }
 
-    latencyTuner->tune();
+    if (latencyTuner != nullptr) {
+        latencyTuner->tune();
+    }
 
     framesSinceStatsLog += numFrames;
     if (framesSinceStatsLog >= statsLogIntervalFrames) {
         framesSinceStatsLog = 0;
         double fifoFillMs = 500.0 * fifoBuffer->getFullFramesAvailable() / inputSampleRate;
         auto latency = oboeStream->calculateLatencyMillis();
-        LOGI("Audio stats: fifoFillMs=%.1f streamLatencyMs=%.1f",
-             fifoFillMs,
-             latency ? latency.value() : -1.0);
+        auto xRunCount = oboeStream->getXRunCount();
+        if (xRunCount) {
+            LOGI("Audio stats: fifoFillMs=%.1f streamLatencyMs=%.1f bufferFrames=%d xruns=%d",
+                 fifoFillMs,
+                 latency ? latency.value() : -1.0,
+                 oboeStream->getBufferSizeInFrames(),
+                 xRunCount.value());
+        } else {
+            LOGI("Audio stats: fifoFillMs=%.1f streamLatencyMs=%.1f bufferFrames=%d",
+                 fifoFillMs,
+                 latency ? latency.value() : -1.0,
+                 oboeStream->getBufferSizeInFrames());
+        }
     }
 
     return oboe::DataCallbackResult::Continue;
