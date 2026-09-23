@@ -497,6 +497,8 @@
     <string name="ui_home_layout_show_all_games">显示全部游戏</string>
     <string name="ui_home_layout_show_all_games_subtitle">滚动浏览平台的完整游戏库，而不是在“查看全部”处停止</string>
     <string name="ui_home_layout_carousel_box_art">3D立体封面</string>
+    <string name="ui_home_layout_spotlight_box_art">3D立体封面</string>
+    <string name="ui_home_layout_spotlight_platform_badge">平台徽标</string>
     <string name="ui_home_layout_auto_grid_box_art">3D立体封面</string>
     <string name="ui_home_layout_custom_grid_lanes">横向格数</string>
     <string name="ui_home_layout_custom_grid_auto_add">添加新下载</string>
@@ -516,6 +518,7 @@
     <string name="ui_home_layout_auto_add_auto">自动</string>
     <string name="ui_home_layout_auto_add_prompt">先询问</string>
     <string name="ui_home_layout_kind_carousel">轮播</string>
+    <string name="ui_home_layout_kind_spotlight">聚焦</string>
     <string name="ui_home_layout_kind_auto_grid">自动网格</string>
     <string name="ui_home_layout_kind_custom_grid">自定义网格</string>
     <string name="ui_home_layout_alignment_top">顶部</string>

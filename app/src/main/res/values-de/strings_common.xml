@@ -517,6 +517,8 @@
     <string name="ui_home_layout_show_all_games">Alle Spiele anzeigen</string>
     <string name="ui_home_layout_show_all_games_subtitle">Durch die gesamte Bibliothek einer Plattform scrollen, statt bei \"Alle anzeigen\" zu stoppen</string>
     <string name="ui_home_layout_carousel_box_art">3D-Box-Art</string>
+    <string name="ui_home_layout_spotlight_box_art">3D-Box-Art</string>
+    <string name="ui_home_layout_spotlight_platform_badge">Plattform-Badge</string>
     <string name="ui_home_layout_auto_grid_box_art">3D-Box-Art</string>
     <string name="ui_home_layout_custom_grid_lanes">Zellen (Breite)</string>
     <string name="ui_home_layout_custom_grid_auto_add">Neue Downloads hinzufügen</string>
@@ -536,6 +538,7 @@
     <string name="ui_home_layout_auto_add_auto">Automatisch</string>
     <string name="ui_home_layout_auto_add_prompt">Vorher fragen</string>
     <string name="ui_home_layout_kind_carousel">Karussell</string>
+    <string name="ui_home_layout_kind_spotlight">Spotlight</string>
     <string name="ui_home_layout_kind_auto_grid">Automatisches Raster</string>
     <string name="ui_home_layout_kind_custom_grid">Eigenes Raster</string>
     <string name="ui_home_layout_alignment_top">Oben</string>

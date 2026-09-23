@@ -2,7 +2,15 @@ package com.nendo.argosy.domain.model
 
 import org.json.JSONObject
 
-enum class HomeLayoutKind { CAROUSEL, AUTO_GRID, CUSTOM_GRID }
+enum class HomeLayoutKind { CAROUSEL, SPOTLIGHT, AUTO_GRID, CUSTOM_GRID }
+
+/**
+ * Whether the layout pages through home's rows one at a time, so the row header, the per-row
+ * contents and the backdrop behind the focused game all apply to it. The grids answer no: one lays
+ * every game out at once and the other is curated by hand.
+ */
+val HomeLayoutKind.browsesRows: Boolean
+    get() = this == HomeLayoutKind.CAROUSEL || this == HomeLayoutKind.SPOTLIGHT
 
 enum class HomeRowAlignment { TOP, CENTER, BOTTOM }
 
@@ -42,6 +50,17 @@ data class CarouselConfig(
 }
 
 const val MIN_RESTING_SCALE = 0.5f
+
+/**
+ * One game at a time. The neighbours are not drawn, so the carousel's spacing and scaling settings
+ * have nothing to act on here; what is left is how the one game is drawn.
+ */
+data class SpotlightConfig(
+    val showPlatformBadge: Boolean = true,
+    val useBoxArt: Boolean = false
+) : HomeLayoutConfig {
+    override val kind: HomeLayoutKind get() = HomeLayoutKind.SPOTLIGHT
+}
 
 /**
  * [laneCount] counts the lanes across the axis you are not scrolling along, so it reads as columns
@@ -121,6 +140,7 @@ data class HomeRailSettings(
 data class HomeLayoutSettings(
     val selected: HomeLayoutKind = HomeLayoutKind.CAROUSEL,
     val carousel: CarouselConfig = CarouselConfig(),
+    val spotlight: SpotlightConfig = SpotlightConfig(),
     val autoGrid: AutoGridConfig = AutoGridConfig(),
     val customGrid: CustomGridConfig = CustomGridConfig(),
     val rails: HomeRailSettings = HomeRailSettings()
@@ -128,6 +148,7 @@ data class HomeLayoutSettings(
     val active: HomeLayoutConfig
         get() = when (selected) {
             HomeLayoutKind.CAROUSEL -> carousel
+            HomeLayoutKind.SPOTLIGHT -> spotlight
             HomeLayoutKind.AUTO_GRID -> autoGrid
             HomeLayoutKind.CUSTOM_GRID -> customGrid
         }
@@ -147,6 +168,13 @@ data class HomeLayoutSettings(
                 put(KEY_NEIGHBOUR_PUSH, carousel.neighbourPush)
                 put(KEY_PLATFORM_BADGE, carousel.showPlatformBadge)
                 put(KEY_USE_BOX_ART, carousel.useBoxArt)
+            }
+        )
+        put(
+            KEY_SPOTLIGHT,
+            JSONObject().apply {
+                put(KEY_PLATFORM_BADGE, spotlight.showPlatformBadge)
+                put(KEY_USE_BOX_ART, spotlight.useBoxArt)
             }
         )
         put(
@@ -183,6 +211,7 @@ data class HomeLayoutSettings(
     companion object {
         private const val KEY_SELECTED = "selected"
         private const val KEY_CAROUSEL = "carousel"
+        private const val KEY_SPOTLIGHT = "spotlight"
         private const val KEY_AUTO_GRID = "autoGrid"
         private const val KEY_CUSTOM_GRID = "customGrid"
         private const val KEY_ROW_ALIGNMENT = "rowAlignment"
@@ -216,6 +245,7 @@ data class HomeLayoutSettings(
             val root = runCatching { JSONObject(raw) }.getOrNull() ?: return HomeLayoutSettings()
             val defaults = HomeLayoutSettings()
             val carousel = root.optJSONObject(KEY_CAROUSEL)
+            val spotlight = root.optJSONObject(KEY_SPOTLIGHT)
             val autoGrid = root.optJSONObject(KEY_AUTO_GRID)
             val customGrid = root.optJSONObject(KEY_CUSTOM_GRID)
             val rails = root.optJSONObject(KEY_RAILS)
@@ -241,6 +271,14 @@ data class HomeLayoutSettings(
                         ?: defaults.carousel.showPlatformBadge,
                     useBoxArt = carousel?.optBoolean(KEY_USE_BOX_ART, defaults.carousel.useBoxArt)
                         ?: defaults.carousel.useBoxArt
+                ),
+                spotlight = SpotlightConfig(
+                    showPlatformBadge = spotlight?.optBoolean(
+                        KEY_PLATFORM_BADGE,
+                        defaults.spotlight.showPlatformBadge
+                    ) ?: defaults.spotlight.showPlatformBadge,
+                    useBoxArt = spotlight?.optBoolean(KEY_USE_BOX_ART, defaults.spotlight.useBoxArt)
+                        ?: defaults.spotlight.useBoxArt
                 ),
                 autoGrid = AutoGridConfig(
                     scrollAxis = enumOrDefault(

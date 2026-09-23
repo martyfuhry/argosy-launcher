@@ -42,27 +42,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.InstallMobile
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tv
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import com.nendo.argosy.ui.common.AlwaysCrossfadeFactory
 import com.nendo.argosy.ui.common.backgroundBlurDp
 import com.nendo.argosy.ui.common.rememberFileImageModel
+import com.nendo.argosy.ui.components.GameStatBadges
 import com.nendo.argosy.ui.components.GameTitle
+import com.nendo.argosy.ui.components.SpotlightStage
+import com.nendo.argosy.domain.model.browsesRows
 import com.nendo.argosy.ui.components.SectionBreadcrumb
 import com.nendo.argosy.ui.icons.InputIcons
 import androidx.compose.runtime.Composable
@@ -89,7 +87,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.lerp
 import com.nendo.argosy.data.preferences.HomeBackgroundMode
-import com.nendo.argosy.ui.theme.ALauncherColors
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.theme.backdrop.BackdropRole
 import com.nendo.argosy.ui.theme.backdrop.LocalSurfaceBackdrop
@@ -163,7 +160,6 @@ import com.nendo.argosy.ui.theme.LocalUiScale
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.theme.Motion
 import com.nendo.argosy.ui.theme.generated.ColorTokens
-import com.nendo.argosy.util.formatTimeToBeat
 import kotlinx.coroutines.launch
 
 @Composable
@@ -191,6 +187,7 @@ fun HomeScreen(
     val gridState = rememberLazyGridState()
     val isAutoGrid = uiState.layoutKind == HomeLayoutKind.AUTO_GRID
     val isCustomGrid = uiState.layoutKind == HomeLayoutKind.CUSTOM_GRID
+    val isSpotlight = uiState.layoutKind == HomeLayoutKind.SPOTLIGHT
     val scope = rememberCoroutineScope()
     var isProgrammaticScroll by remember { mutableStateOf(false) }
     var skipNextProgrammaticScroll by remember { mutableStateOf(false) }
@@ -542,7 +539,7 @@ fun HomeScreen(
     val overlayBaseColor = if (isDarkTheme) Color.Black else Color.White
 
     val backdropEnabled = LocalSurfaceBackdrop.current.enabled
-    val isGridLayout = uiState.layoutKind != HomeLayoutKind.CAROUSEL
+    val isGridLayout = !uiState.layoutKind.browsesRows
     val showArtLayer = !isGridLayout &&
         (!backdropEnabled || uiState.homeBackgroundMode == HomeBackgroundMode.GAME_ART)
 
@@ -731,7 +728,7 @@ fun HomeScreen(
                 0.dp
             }
             val railHeight = when {
-                isAutoGrid || isCustomGrid ->
+                isAutoGrid || isCustomGrid || isSpotlight ->
                     (maxHeight - headerBlockHeight - Dimens.footerHeight - Dimens.spacingLg)
                         .coerceAtLeast(Dimens.spacingXl)
                 infoAtBottom ->
@@ -853,6 +850,56 @@ fun HomeScreen(
                                 isPinnedLoading = pinId != null && pinId in uiState.pinnedGamesLoading,
                                 onSync = { viewModel.syncFromRomm() }
                             )
+                        }
+                        isSpotlight -> {
+                            val spotlightItems = rememberHomeCarouselItems(
+                                items = uiState.currentItems,
+                                rowKey = uiState.currentRow.toString(),
+                                repairedCoverPaths = uiState.repairedCoverPaths
+                            )
+                            AnimatedContent(
+                                targetState = SpotlightRow(
+                                    rowKey = uiState.currentRow.toString(),
+                                    items = spotlightItems,
+                                    focusedIndex = uiState.focusedGameIndex
+                                ),
+                                contentKey = { it.rowKey },
+                                transitionSpec = {
+                                    fadeIn(tween(Motion.durationPage, easing = Motion.argosyEase)) togetherWith
+                                        fadeOut(tween(Motion.durationPage, easing = Motion.argosyEase))
+                                },
+                                label = "spotlight-row",
+                                modifier = Modifier.fillMaxSize()
+                            ) { row ->
+                                SpotlightStage(
+                                    items = row.items,
+                                    focusedIndex = row.focusedIndex,
+                                    onStep = { delta ->
+                                        if (delta > 0) viewModel.nextGame() else viewModel.previousGame()
+                                    },
+                                    onItemTap = { index -> viewModel.handleItemTap(index, onGameSelect) },
+                                    onItemLongPress = viewModel::handleItemLongPress,
+                                    showPlatformBadge = uiState.spotlightConfig.showPlatformBadge &&
+                                        uiState.currentRow !is HomeRow.Platform &&
+                                        uiState.currentRow != HomeRow.Steam &&
+                                        uiState.currentRow != HomeRow.Android,
+                                    useBoxArt = uiState.spotlightConfig.useBoxArt,
+                                    downloadIndicatorFor = { item ->
+                                        when (item) {
+                                            is CarouselItem.Game ->
+                                                downloadIndicators.value[item.game.id]
+                                                    ?: GameDownloadIndicator.NONE
+                                            is CarouselItem.Media ->
+                                                mediaDownloadProgress.value.indicatorFor(item.media)
+                                            else -> GameDownloadIndicator.NONE
+                                        }
+                                    },
+                                    onCoverLoadFailed = viewModel::repairCoverImage,
+                                    onCoverLoaded = viewModel::extractGradientForGame,
+                                    onPosterLoaded = viewModel::extractGradientForMedia,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                         isAutoGrid -> {
                             HomeAutoGrid(
@@ -1137,7 +1184,7 @@ fun HomeScreen(
                 }
             }
 
-            if (!isAutoGrid && !isCustomGrid && !uiState.isMediaRow) {
+            if (!isAutoGrid && !isCustomGrid && !isSpotlight && !uiState.isMediaRow) {
             val gameInfoWidth by animateFloatAsState(
                 targetValue = 1f,
                 animationSpec = tween(500),
@@ -1835,107 +1882,19 @@ private fun GameInfo(
             }
         }
     ) {
-        val timeToBeat = formatTimeToBeat(LocalContext.current, timeToBeatMainSec)
-        val hasBadges = rating != null || userRating > 0 || userDifficulty > 0 || achievementCount > 0 || timeToBeat != null
-        if (hasBadges) {
-            if (!isSplit) Spacer(modifier = Modifier.height(Dimens.spacingXs))
-            Row(
-                modifier = Modifier.graphicsLayer { alpha = metadataAlpha },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Dimens.radiusLg)
-            ) {
-                if (rating != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Public,
-                            contentDescription = null,
-                            tint = textColorOverride ?: MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(Dimens.iconXs)
-                        )
-                        Text(
-                            text = "${rating.toInt()}%",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = subtitleColor
-                        )
-                    }
-                }
-                if (userRating > 0) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = textColorOverride ?: ALauncherColors.StarGold,
-                            modifier = Modifier.size(Dimens.iconXs)
-                        )
-                        Text(
-                            text = "$userRating/10",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = subtitleColor
-                        )
-                    }
-                }
-                if (userDifficulty > 0) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Whatshot,
-                            contentDescription = null,
-                            tint = textColorOverride ?: ALauncherColors.DifficultyRed,
-                            modifier = Modifier.size(Dimens.iconXs)
-                        )
-                        Text(
-                            text = "$userDifficulty/10",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = subtitleColor
-                        )
-                    }
-                }
-                if (achievementCount > 0) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.EmojiEvents,
-                            contentDescription = null,
-                            tint = textColorOverride ?: ALauncherColors.TrophyAmber,
-                            modifier = Modifier.size(Dimens.iconXs)
-                        )
-                        Text(
-                            text = "$earnedAchievementCount/$achievementCount",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = subtitleColor
-                        )
-                    }
-                }
-                if (timeToBeat != null) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = textColorOverride ?: subtitleColor,
-                            modifier = Modifier.size(Dimens.iconXs)
-                        )
-                        Text(
-                            text = timeToBeat,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = subtitleColor
-                        )
-                    }
-                }
-            }
-        }
+        GameStatBadges(
+            rating = rating,
+            userRating = userRating,
+            userDifficulty = userDifficulty,
+            achievementCount = achievementCount,
+            earnedAchievementCount = earnedAchievementCount,
+            timeToBeatMainSec = timeToBeatMainSec,
+            textColor = subtitleColor,
+            tintOverride = textColorOverride,
+            modifier = Modifier
+                .padding(top = if (isSplit) 0.dp else Dimens.spacingXs)
+                .graphicsLayer { alpha = metadataAlpha }
+        )
     }
 }
 
@@ -2003,6 +1962,12 @@ private fun rememberCarouselCardSize(
     coverAspectRatio = LocalBoxArtStyle.current.aspectRatio,
     restingScale = config.restingScale,
     minCardHeight = Dimens.gameCardHeight * HERO_MIN_CARD_SCALE
+)
+
+private data class SpotlightRow(
+    val rowKey: String,
+    val items: List<CarouselItem>,
+    val focusedIndex: Int
 )
 
 @Composable

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.nendo.argosy.R
 import com.nendo.argosy.data.preferences.HomeBackgroundMode
 import com.nendo.argosy.domain.model.HomeLayoutKind
+import com.nendo.argosy.domain.model.browsesRows
 import com.nendo.argosy.ui.components.ActionPreference
 import com.nendo.argosy.ui.components.CyclePreference
 import com.nendo.argosy.ui.components.HomeLayoutPreview
@@ -75,17 +76,17 @@ internal sealed class HomeScreenItem(
     data object VideoWallpaper : HomeScreenItem(
         key = "videoWallpaper",
         section = "video",
-        visibleWhen = { drawsBackgroundArt(it) }
+        visibleWhen = { playsVideoWallpaper(it) }
     )
     data object VideoDelay : HomeScreenItem(
         key = "videoDelay",
         section = "video",
-        visibleWhen = { it.videoWallpaperEnabled && drawsBackgroundArt(it) }
+        visibleWhen = { it.videoWallpaperEnabled && playsVideoWallpaper(it) }
     )
     data object VideoMuted : HomeScreenItem(
         key = "videoMuted",
         section = "video",
-        visibleWhen = { it.videoWallpaperEnabled && drawsBackgroundArt(it) }
+        visibleWhen = { it.videoWallpaperEnabled && playsVideoWallpaper(it) }
     )
 
     data object LayoutPreview : HomeScreenItem("layoutPreview", "layout")
@@ -127,11 +128,10 @@ internal sealed class HomeScreenItem(
                 (!state.surfaceBackdrop.enabled ||
                     state.homeBackgroundMode == HomeBackgroundMode.GAME_ART)
 
-        /**
-         * A grid fills the screen with covers, so nothing is drawn behind it and every row that
-         * tunes a backdrop would be a setting with no effect. Only the carousel has room for art.
-         */
         private fun drawsBackgroundArt(state: DisplayState): Boolean =
+            state.homeLayout.selected.browsesRows
+
+        private fun playsVideoWallpaper(state: DisplayState): Boolean =
             state.homeLayout.selected == HomeLayoutKind.CAROUSEL
 
         private val BackgroundHeader =

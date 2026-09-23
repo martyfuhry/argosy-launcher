@@ -55,7 +55,7 @@ enum class ViewAllCardStyle { OUTLINE_GRID, ACCENT_COUNT }
 @Composable
 fun ViewAllCard(
     isFocused: Boolean,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     style: ViewAllCardStyle = ViewAllCardStyle.OUTLINE_GRID,
     tapMode: CarouselTapMode = CarouselTapMode.CLICK,
@@ -68,9 +68,10 @@ fun ViewAllCard(
         animationSpec = spring(stiffness = VIEW_ALL_OUTLINE_SCALE_STIFFNESS),
         label = "viewAllScale"
     )
-    val tapModifier = when (tapMode) {
-        CarouselTapMode.CLICK -> Modifier.clickableNoFocus(onClick = onClick)
-        CarouselTapMode.TOUCH -> Modifier.touchOnly(onClick)
+    val tapModifier = when {
+        onClick == null -> Modifier
+        tapMode == CarouselTapMode.CLICK -> Modifier.clickableNoFocus(onClick = onClick)
+        else -> Modifier.touchOnly(onClick)
     }
     val scaledModifier = modifier.graphicsLayer {
         scaleX = scale

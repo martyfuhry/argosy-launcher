@@ -529,6 +529,8 @@
     <string name="ui_home_layout_show_all_games">Mostrar todos los juegos</string>
     <string name="ui_home_layout_show_all_games_subtitle">Desplázate por toda la biblioteca de una plataforma en lugar de detenerte en Ver todo</string>
     <string name="ui_home_layout_carousel_box_art">Caja 3D</string>
+    <string name="ui_home_layout_spotlight_box_art">Caja 3D</string>
+    <string name="ui_home_layout_spotlight_platform_badge">Insignia de plataforma</string>
     <string name="ui_home_layout_auto_grid_box_art">Caja 3D</string>
     <string name="ui_home_layout_custom_grid_lanes">Celdas de ancho</string>
     <string name="ui_home_layout_custom_grid_auto_add">Agregar descargas nuevas</string>
@@ -548,6 +550,7 @@
     <string name="ui_home_layout_auto_add_auto">Automáticamente</string>
     <string name="ui_home_layout_auto_add_prompt">Preguntar siempre</string>
     <string name="ui_home_layout_kind_carousel">Carrusel</string>
+    <string name="ui_home_layout_kind_spotlight">Destacado</string>
     <string name="ui_home_layout_kind_auto_grid">Cuadrícula automática</string>
     <string name="ui_home_layout_kind_custom_grid">Cuadrícula personalizada</string>
     <string name="ui_home_layout_alignment_top">Arriba</string>

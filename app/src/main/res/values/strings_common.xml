@@ -1047,6 +1047,8 @@
     <!-- Settings row on the carousel: whether covers draw as 3D boxes. "3D" is the shape, not a
          word to translate. -->
     <string name="ui_home_layout_carousel_box_art">3D Box Art</string>
+    <string name="ui_home_layout_spotlight_box_art">3D Box Art</string>
+    <string name="ui_home_layout_spotlight_platform_badge">Platform Badge</string>
     <!-- The same row on the automatic grid. -->
     <string name="ui_home_layout_auto_grid_box_art">3D Box Art</string>
     <!-- Settings row: how many cells the curated grid is wide. Noun phrase. -->
@@ -1087,6 +1089,8 @@
     <string name="ui_home_layout_auto_add_prompt">Ask First</string>
     <!-- Name of the home layout that lays games out in scrolling rows. Noun. -->
     <string name="ui_home_layout_kind_carousel">Carousel</string>
+    <!-- Home layout that shows one game at a time, large and centred -->
+    <string name="ui_home_layout_kind_spotlight">Spotlight</string>
     <!-- Name of the home layout that fills a grid by itself. Noun phrase. -->
     <string name="ui_home_layout_kind_auto_grid">Auto Grid</string>
     <!-- Name of the home layout the reader arranges themselves. Noun phrase. -->

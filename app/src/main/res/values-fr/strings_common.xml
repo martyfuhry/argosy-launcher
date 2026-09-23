@@ -540,6 +540,8 @@
     <string name="ui_home_layout_show_all_games">Afficher tous les jeux</string>
     <string name="ui_home_layout_show_all_games_subtitle">Faire défiler toute la bibliothèque d\'une plateforme au lieu de s\'arrêter sur Tout afficher</string>
     <string name="ui_home_layout_carousel_box_art">Boîtier 3D</string>
+    <string name="ui_home_layout_spotlight_box_art">Boîtier 3D</string>
+    <string name="ui_home_layout_spotlight_platform_badge">Badge de plateforme</string>
     <string name="ui_home_layout_auto_grid_box_art">Boîtier 3D</string>
     <string name="ui_home_layout_custom_grid_lanes">Cellules en largeur</string>
     <string name="ui_home_layout_custom_grid_auto_add">Ajouter les nouveaux téléchargements</string>
@@ -559,6 +561,7 @@
     <string name="ui_home_layout_auto_add_auto">Automatiquement</string>
     <string name="ui_home_layout_auto_add_prompt">Demander à chaque fois</string>
     <string name="ui_home_layout_kind_carousel">Carrousel</string>
+    <string name="ui_home_layout_kind_spotlight">À la une</string>
     <string name="ui_home_layout_kind_auto_grid">Grille automatique</string>
     <string name="ui_home_layout_kind_custom_grid">Grille personnalisée</string>
     <string name="ui_home_layout_alignment_top">Haut</string>
