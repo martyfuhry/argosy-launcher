@@ -24,7 +24,7 @@ class AxisDirectionTracker(
             else -> null
         }
         direction = next
-        return if (next != null && next != previous) next else null
+        return next
     }
 
     fun reset() {
