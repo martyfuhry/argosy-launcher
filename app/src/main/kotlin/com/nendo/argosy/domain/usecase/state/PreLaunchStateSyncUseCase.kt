@@ -8,6 +8,7 @@ import com.nendo.argosy.data.local.dao.EmulatorConfigDao
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.entity.StateCacheEntity
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
+import com.nendo.argosy.data.repository.SaveSyncApiClient
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import com.nendo.argosy.data.repository.StateCacheManager
 import com.nendo.argosy.data.remote.romm.RomMState
@@ -24,6 +25,41 @@ internal data class ReconciledState(
 )
 
 /**
+ * The channel a state is filed under for a launch. A launch without a channel, a state without
+ * one, and the literal autosave slot are the one autosave channel, as they are for saves. Other
+ * names compare without case because the server round-trips them through a file name.
+ */
+internal fun liveChannelKey(channelName: String?): String {
+    val name = channelName.orEmpty().lowercase()
+    return when (name) {
+        "",
+        SaveSyncApiClient.AUTOSAVE_SLOT_NAME.lowercase(),
+        SaveSyncApiClient.DEFAULT_SAVE_NAME.lowercase() -> SaveSyncApiClient.AUTOSAVE_SLOT_NAME
+        else -> name
+    }
+}
+
+/**
+ * Whether a downloaded state belongs in the live directory for this launch. The live directory
+ * holds one channel at a time and its file names carry no channel, so loading another channel's
+ * slot there overwrites the active one.
+ */
+internal fun belongsToChannel(stateChannel: String?, activeChannel: String?): Boolean =
+    liveChannelKey(stateChannel) == liveChannelKey(activeChannel)
+
+/**
+ * The cached row a server state is measured against when none is linked to it by id: a row with
+ * unsent changes, else the newest.
+ */
+internal fun localForSlot(candidates: List<StateCacheEntity>): StateCacheEntity? =
+    candidates.firstOrNull { hasUnsentChanges(it) } ?: candidates.maxByOrNull { it.cachedAt }
+
+internal fun hasUnsentChanges(state: StateCacheEntity): Boolean =
+    state.rommSaveId == null ||
+        state.syncStatus == StateCacheEntity.STATUS_PENDING_UPLOAD ||
+        state.syncStatus == StateCacheEntity.STATUS_LOCAL_NEWER
+
+/**
  * Drops links to server states that are no longer on the server. A rom's own state list is the
  * authority on which ids are live, so an id missing from it can never be repaired by retrying:
  * downloads stay blocked and uploads keep failing against a dead object.
@@ -31,15 +67,6 @@ internal data class ReconciledState(
  * A dropped row keeps its cached file and is queued to be re-created, so the slot is never
  * resolved by discarding what the player has locally.
  */
-/**
- * Whether a downloaded state belongs in the live directory for this launch. The live directory
- * holds one channel at a time and its file names carry no channel, so loading another channel's
- * slot there overwrites the active one. Null and empty both mean the default channel, and the
- * comparison ignores case because the server round-trips the name through a file name.
- */
-internal fun belongsToChannel(stateChannel: String?, activeChannel: String?): Boolean =
-    stateChannel.orEmpty().equals(activeChannel.orEmpty(), ignoreCase = true)
-
 internal fun reconcileDeadServerLinks(
     localStates: List<StateCacheEntity>,
     liveServerIds: Set<Long>
@@ -148,7 +175,7 @@ class PreLaunchStateSyncUseCase @Inject constructor(
 
         val repaired = reconciled.map { it.state }
         val localByRommId = repaired.filter { it.rommSaveId != null }.associateBy { it.rommSaveId }
-        val localBySlot = repaired.associateBy { it.slotNumber to it.channelName }
+        val localBySlot = repaired.groupBy { it.slotNumber to liveChannelKey(it.channelName) }
 
         var downloadedCount = 0
 
@@ -156,7 +183,8 @@ class PreLaunchStateSyncUseCase @Inject constructor(
             val parsed = stateCacheManager.parseStateFileName(serverState.fileName)
             val slotNumber = parsed.slotNumber
             val linked = localByRommId[serverState.id]
-            val localState = linked ?: localBySlot[slotNumber to parsed.channelName]
+            val localState = linked
+                ?: localBySlot[slotNumber to liveChannelKey(parsed.channelName)]?.let(::localForSlot)
             val serverUpdatedAt = stateCacheManager.parseTimestamp(serverState.updatedAt)
 
             val shouldDownload = when {
@@ -164,9 +192,7 @@ class PreLaunchStateSyncUseCase @Inject constructor(
                     Log.d(TAG, "Server state ${serverState.fileName} (slot $slotNumber) not cached locally")
                     true
                 }
-                localState.rommSaveId == null ||
-                    localState.syncStatus == StateCacheEntity.STATUS_PENDING_UPLOAD ||
-                    localState.syncStatus == StateCacheEntity.STATUS_LOCAL_NEWER -> {
+                hasUnsentChanges(localState) -> {
                     Log.d(TAG, "Slot $slotNumber has unsent local changes, keeping local over ${serverState.fileName}")
                     false
                 }
@@ -211,8 +237,8 @@ class PreLaunchStateSyncUseCase @Inject constructor(
                             Log.d(
                                 TAG,
                                 "Cached ${serverState.fileName} for channel " +
-                                    "${parsed.channelName ?: "default"} without loading it; " +
-                                    "${channelName ?: "default"} is active"
+                                    "${liveChannelKey(parsed.channelName)} without loading it; " +
+                                    "${liveChannelKey(channelName)} is active"
                             )
                             continue
                         }
@@ -257,7 +283,7 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         serverStates
             .groupBy {
                 val parsed = stateCacheManager.parseStateFileName(it.fileName)
-                parsed.slotNumber to parsed.channelName
+                parsed.slotNumber to liveChannelKey(parsed.channelName)
             }
             .map { (_, candidates) ->
                 candidates.maxByOrNull { writtenAt(it) ?: Instant.MIN } ?: candidates.first()
