@@ -125,7 +125,7 @@ class SiblingSplitRepair @Inject constructor(
 
             val ownLaunchPath = ownDownloadedLaunchTarget(game.id, path)
             if (ownLaunchPath != null) {
-                gameDao.updateLocalPath(game.id, ownLaunchPath, game.source, game.fileOrigin, game.addedAt)
+                gameDao.updateLocalPath(game.id, ownLaunchPath, game.source, game.fileOrigin)
             } else {
                 gameDao.clearLocalPath(game.id)
             }
@@ -149,7 +149,7 @@ class SiblingSplitRepair @Inject constructor(
                 if (game.localPath == path) {
                     val ownLaunchPath = ownDownloadedLaunchTarget(game.id, path)
                     if (ownLaunchPath != null) {
-                        gameDao.updateLocalPath(game.id, ownLaunchPath, game.source, game.fileOrigin, game.addedAt)
+                        gameDao.updateLocalPath(game.id, ownLaunchPath, game.source, game.fileOrigin)
                     } else {
                         gameDao.clearLocalPath(game.id)
                     }
