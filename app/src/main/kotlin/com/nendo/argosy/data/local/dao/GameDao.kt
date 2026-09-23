@@ -515,9 +515,9 @@ interface GameDao {
     suspend fun setSteamLauncher(gameId: Long, launcherPackage: String?)
 
     /**
-     * Every caller states where the file came from: a download completion writes its download
-     * origin, a scan writes ADOPTED, and a repair that re-points the same content passes the
-     * row's current origin through. The added time stays as the library sync set it.
+     * Every caller states where the file came from: a scan writes ADOPTED, and a repair that
+     * re-points the same content passes the row's current origin through. The added time stays
+     * as the library sync set it; a download completion goes through [markDownloaded] instead.
      */
     @Query("UPDATE games SET localPath = :path, fileOrigin = :fileOrigin, source = :source WHERE id = :gameId")
     suspend fun updateLocalPath(
@@ -525,6 +525,19 @@ interface GameDao {
         path: String?,
         source: GameSource,
         fileOrigin: FileOrigin
+    )
+
+    /**
+     * Points a game at the file a download just finished writing and restamps its added time,
+     * so the game counts as newly added.
+     */
+    @Query("UPDATE games SET localPath = :path, fileOrigin = :fileOrigin, source = :source, addedAt = :addedAt WHERE id = :gameId")
+    suspend fun markDownloaded(
+        gameId: Long,
+        path: String,
+        source: GameSource,
+        fileOrigin: FileOrigin,
+        addedAt: Instant = Instant.now()
     )
 
     /**
