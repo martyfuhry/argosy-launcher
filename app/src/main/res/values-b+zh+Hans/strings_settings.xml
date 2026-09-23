@@ -209,8 +209,11 @@
 
     <string name="settings_displays_screens_title">屏幕布局</string>
     <string name="settings_displays_screens_subtitle">为每块已连接的屏幕分配用途</string>
-    <string name="settings_displays_presentation_title">展示</string>
-    <string name="settings_displays_presentation_subtitle">另一块屏幕如何展示选中的游戏</string>
+    <string name="settings_interface_presentation_title">展示</string>
+    <string name="settings_interface_presentation_subtitle">另一块屏幕如何展示选中的游戏</string>
+    <string name="settings_interface_section_general">常规</string>
+    <string name="settings_interface_section_screens">屏幕</string>
+    <string name="settings_interface_section_status_bar">状态栏</string>
     <string name="settings_presentation_layout_title">布局</string>
     <string name="settings_presentation_layout_cinematic">影院</string>
     <string name="settings_presentation_layout_journal">日志</string>
@@ -234,6 +237,7 @@
     <string name="settings_presentation_stat_genre">类型</string>
     <string name="settings_presentation_stat_community_rating">社区评分</string>
     <string name="settings_presentation_stat_user_rating">我的评分</string>
+    <string name="settings_presentation_stat_difficulty">难度</string>
     <string name="settings_presentation_stat_play_time">游玩时长</string>
     <string name="settings_presentation_stat_time_to_beat">通关时长</string>
     <string name="settings_presentation_stat_achievements">成就</string>

@@ -24,6 +24,7 @@ enum class PresentationStat {
     GENRE,
     COMMUNITY_RATING,
     USER_RATING,
+    DIFFICULTY,
     PLAY_TIME,
     TIME_TO_BEAT,
     ACHIEVEMENTS,

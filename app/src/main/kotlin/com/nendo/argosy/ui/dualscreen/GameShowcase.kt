@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sell
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -83,7 +84,7 @@ private const val SERIES_SCALE = 0.45f
 private const val PILL_ALPHA = 0.6f
 private const val DIVIDER_ALPHA = 0.25f
 private const val TRACK_ALPHA = 0.14f
-private const val CARD_ALPHA = 0.06f
+private const val JOURNAL_CARD_ALPHA = 0.72f
 
 /**
  * A focused game on the presentation screen, drawn in [style]'s layout.
@@ -227,7 +228,7 @@ private fun CinematicShowcase(
                 verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
             ) {
                 ShowcaseTitle(detail = detail)
-                ShowcaseRail(items = showcaseRailItems(detail, style, journey != null))
+                ShowcaseRail(rows = showcaseRailRows(detail, style, journey != null))
                 journey?.let { ShowcaseJourneyBar(journey = it) }
             }
         }
@@ -245,48 +246,134 @@ private fun JournalShowcase(
 ) {
     val theme = LocalArgosyTheme.current
     val stats = detail.stats
-    val journey = rememberJourney(stats, style)
-    val achievements = stats?.takeIf { style.shows(PresentationStat.ACHIEVEMENTS) && it.achievementCount > 0 }
+    val items = stats?.let { showcaseRailItems(it, style, journeyShown = true) }.orEmpty()
+    val facts = items.filter { it.first.railGroup == RailGroup.FACTS && it.first != PresentationStat.DEVELOPER }
+        .map { it.second }
+    val ratings = items.filter { it.first.railGroup == RailGroup.RATINGS }.map { it.second }
+    val developer = items.firstOrNull { it.first == PresentationStat.DEVELOPER }?.second?.text
+    val factRow = if (stats == null) detail.facts.map { RailItem(null, null, it.value) } else facts
     Column(
         modifier = Modifier
             .width(columnWidth)
             .fillMaxHeight()
-            .padding(start = gutter, top = Dimens.spacingXl, bottom = bottom),
+            .padding(start = gutter, top = Dimens.spacingXl, bottom = bottom + Dimens.spacingLg),
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
     ) {
         detail.subtitle?.let { ShowcaseSubtitle(it, detail.platformSlug) }
-        GameTitle(
-            title = detail.title,
-            titleStyle = MaterialTheme.typography.displayMedium,
-            titleColor = theme.textPrimary,
-            seriesScale = SERIES_SCALE,
-            maxLines = 2
-        )
-        ShowcaseRail(items = showcaseRailItems(detail, style, journey != null))
+        Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)) {
+            GameTitle(
+                title = detail.title,
+                titleStyle = MaterialTheme.typography.displayMedium,
+                titleColor = theme.textPrimary,
+                seriesScale = SERIES_SCALE,
+                maxLines = 2
+            )
+            developer?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = theme.textDim,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        if (factRow.isNotEmpty()) {
+            ShowcaseRailRow(factRow, textStyle = MaterialTheme.typography.titleSmall, textColor = theme.textDim)
+        }
+        Box(modifier = Modifier.weight(1f))
+        if (ratings.isNotEmpty()) ShowcaseRailRow(ratings)
+        stats?.let { JournalJourneyCard(stats = it, style = style) }
         if (friends.isNotEmpty()) {
             FriendsActivityBadge(friends = friends, textColor = theme.textPrimary)
         }
-        Box(modifier = Modifier.weight(1f))
-        if (journey != null || achievements != null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(Dimens.radiusLg))
-                    .background(theme.textPrimary.copy(alpha = CARD_ALPHA))
-                    .padding(Dimens.spacingMd),
-                verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
-            ) {
-                journey?.let { ShowcaseJourneyBar(journey = it) }
-                achievements?.let {
-                    ShowcaseProgressBar(
-                        fraction = it.earnedAchievementCount.toFloat() / it.achievementCount,
-                        color = ALauncherColors.TrophyAmber,
-                        label = "${it.earnedAchievementCount}/${it.achievementCount}",
-                        icon = Icons.Filled.EmojiEvents
+    }
+}
+
+@Composable
+private fun JournalJourneyCard(stats: CompanionGameStats, style: PresentationStyle) {
+    val theme = LocalArgosyTheme.current
+    val context = LocalContext.current
+    val played = stats.playTimeMinutes.takeIf { it > 0 && style.shows(PresentationStat.PLAY_TIME) }
+        ?.let { formatPlayTime(context, it) }
+    val mainStory = stats.timeToBeatMainSec?.takeIf { it > 0 && style.shows(PresentationStat.TIME_TO_BEAT) }
+    val mainStoryLabel = mainStory?.let { formatTimeToBeat(context, it) }
+    val fraction = if (mainStory != null) {
+        (stats.playTimeMinutes * SECONDS_PER_MINUTE / mainStory.toFloat()).coerceIn(0f, 1f)
+    } else {
+        null
+    }
+    val achievements = stats.takeIf { style.shows(PresentationStat.ACHIEVEMENTS) && it.achievementCount > 0 }
+    if (played == null && mainStoryLabel == null && achievements == null) return
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Dimens.radiusLg))
+            .background(theme.surfaceBase.copy(alpha = JOURNAL_CARD_ALPHA))
+            .padding(Dimens.spacingMd),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.dual_showcase_journey_header).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = theme.textDim,
+                modifier = Modifier.weight(1f)
+            )
+            fraction?.let {
+                Text(
+                    text = "${(it * PERCENT).toInt()}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = theme.focusAccent
+                )
+            }
+        }
+        fraction?.let { ShowcaseTrack(fraction = it, color = theme.focusAccent) }
+        if (played != null || mainStoryLabel != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = played?.let { stringResource(R.string.dual_showcase_played, it) }.orEmpty(),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = theme.textPrimary,
+                    modifier = Modifier.weight(1f)
+                )
+                mainStoryLabel?.let {
+                    Text(
+                        text = stringResource(R.string.dual_showcase_journey_main, it),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = theme.textDim
                     )
                 }
             }
         }
+        achievements?.let {
+            ShowcaseProgressBar(
+                fraction = it.earnedAchievementCount.toFloat() / it.achievementCount,
+                color = ALauncherColors.TrophyAmber,
+                label = "${it.earnedAchievementCount}/${it.achievementCount}",
+                icon = Icons.Filled.EmojiEvents
+            )
+        }
+    }
+}
+
+@Composable
+private fun ShowcaseTrack(fraction: Float, color: Color, modifier: Modifier = Modifier) {
+    val theme = LocalArgosyTheme.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(Dimens.spacingXs)
+            .clip(RoundedCornerShape(Dimens.radiusPill))
+            .background(theme.textPrimary.copy(alpha = TRACK_ALPHA))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(fraction)
+                .clip(RoundedCornerShape(Dimens.radiusPill))
+                .background(color)
+        )
     }
 }
 
@@ -376,13 +463,37 @@ private fun ShowcaseFriendsPill(friends: List<FriendActivity>, modifier: Modifie
 
 private data class RailItem(val icon: ImageVector?, val tint: Color?, val text: String)
 
+private enum class RailGroup { FACTS, RATINGS, PROGRESS }
+
+private val PresentationStat.railGroup: RailGroup
+    get() = when (this) {
+        PresentationStat.DEVELOPER, PresentationStat.RELEASE_YEAR, PresentationStat.PLAYERS,
+        PresentationStat.GENRE, PresentationStat.FRIENDS -> RailGroup.FACTS
+        PresentationStat.COMMUNITY_RATING, PresentationStat.USER_RATING,
+        PresentationStat.DIFFICULTY -> RailGroup.RATINGS
+        PresentationStat.PLAY_TIME, PresentationStat.TIME_TO_BEAT,
+        PresentationStat.ACHIEVEMENTS -> RailGroup.PROGRESS
+    }
+
 @Composable
-private fun showcaseRailItems(
+private fun showcaseRailRows(
     detail: CompanionDetail,
     style: PresentationStyle,
     journeyShown: Boolean
-): List<RailItem> {
-    val stats = detail.stats ?: return detail.facts.map { RailItem(null, null, it.value) }
+): List<List<RailItem>> {
+    val stats = detail.stats ?: return listOf(detail.facts.map { RailItem(null, null, it.value) })
+    val items = showcaseRailItems(stats, style, journeyShown)
+    return RailGroup.entries.mapNotNull { group ->
+        items.filter { it.first.railGroup == group }.map { it.second }.takeIf { it.isNotEmpty() }
+    }
+}
+
+@Composable
+private fun showcaseRailItems(
+    stats: CompanionGameStats,
+    style: PresentationStyle,
+    journeyShown: Boolean
+): List<Pair<PresentationStat, RailItem>> {
     val context = LocalContext.current
     val primary = MaterialTheme.colorScheme.primary
     val playedTemplate = stringResource(R.string.dual_showcase_played)
@@ -399,6 +510,8 @@ private fun showcaseRailItems(
                 stats.communityRating?.let { RailItem(Icons.Default.Public, primary, "${it.toInt()}%") }
             PresentationStat.USER_RATING -> stats.userRating.takeIf { it > 0 }
                 ?.let { RailItem(Icons.Default.Star, ALauncherColors.StarGold, "$it/10") }
+            PresentationStat.DIFFICULTY -> stats.userDifficulty.takeIf { it > 0 }
+                ?.let { RailItem(Icons.Default.Whatshot, ALauncherColors.DifficultyRed, "$it/10") }
             PresentationStat.PLAY_TIME -> stats.playTimeMinutes.takeIf { it > 0 && !journeyShown }
                 ?.let { RailItem(Icons.Default.SportsEsports, null, playedTemplate.format(formatPlayTime(context, it))) }
             PresentationStat.TIME_TO_BEAT -> formatTimeToBeat(context, stats.timeToBeatMainSec)
@@ -408,13 +521,24 @@ private fun showcaseRailItems(
                 it > 0 && style.layout != PresentationLayout.JOURNAL
             }?.let { RailItem(Icons.Filled.EmojiEvents, ALauncherColors.TrophyAmber, "${stats.earnedAchievementCount}/$it") }
             PresentationStat.FRIENDS -> null
-        }
+        }?.let { stat to it }
     }
 }
 
 @Composable
-private fun ShowcaseRail(items: List<RailItem>) {
-    if (items.isEmpty()) return
+private fun ShowcaseRail(rows: List<List<RailItem>>) {
+    if (rows.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)) {
+        rows.forEach { ShowcaseRailRow(it) }
+    }
+}
+
+@Composable
+private fun ShowcaseRailRow(
+    items: List<RailItem>,
+    textStyle: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleMedium,
+    textColor: Color = LocalArgosyTheme.current.textPrimary
+) {
     val theme = LocalArgosyTheme.current
     DividedFlow(
         count = items.size,
@@ -435,14 +559,14 @@ private fun ShowcaseRail(items: List<RailItem>) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = item.tint ?: theme.textPrimary,
+                    tint = item.tint ?: textColor,
                     modifier = Modifier.padding(end = Dimens.spacingXs).size(Dimens.iconSm)
                 )
             }
             Text(
                 text = item.text,
-                style = MaterialTheme.typography.titleMedium,
-                color = theme.textPrimary,
+                style = textStyle,
+                color = textColor,
                 maxLines = 1
             )
         }

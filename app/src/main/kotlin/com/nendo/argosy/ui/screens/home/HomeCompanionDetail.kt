@@ -20,6 +20,7 @@ fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): C
             genre = genre,
             communityRating = rating,
             userRating = userRating,
+            userDifficulty = userDifficulty,
             playTimeMinutes = playTimeMinutes,
             timeToBeatMainSec = timeToBeatMainSec,
             achievementCount = achievementCount,

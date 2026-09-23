@@ -967,4 +967,8 @@
     <string name="dual_showcase_progress_main">%1$s of %2$s main story</string>
     <!-- On the presentation screen, how long the player has played. %1$s is a duration such as "27h". -->
     <string name="dual_showcase_played">%1$s played</string>
+    <!-- Header of the progress card on the presentation screen's journal layout. -->
+    <string name="dual_showcase_journey_header">Your journey</string>
+    <!-- Right side of that card: how long the main story takes, e.g. "Main story 13h". -->
+    <string name="dual_showcase_journey_main">Main story %1$s</string>
 </resources>

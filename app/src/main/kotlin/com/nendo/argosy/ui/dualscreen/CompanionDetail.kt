@@ -40,6 +40,7 @@ data class CompanionGameStats(
     val genre: String? = null,
     val communityRating: Float? = null,
     val userRating: Int = 0,
+    val userDifficulty: Int = 0,
     val playTimeMinutes: Int = 0,
     val timeToBeatMainSec: Int? = null,
     val achievementCount: Int = 0,

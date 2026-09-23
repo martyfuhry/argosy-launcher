@@ -424,4 +424,6 @@
     <string name="dual_detail_option_write_review">撰寫評論</string>
     <string name="dual_showcase_progress_main">%1$s / 主線 %2$s</string>
     <string name="dual_showcase_played">已遊玩 %1$s</string>
+    <string name="dual_showcase_journey_header">你的旅程</string>
+    <string name="dual_showcase_journey_main">主線 %1$s</string>
 </resources>

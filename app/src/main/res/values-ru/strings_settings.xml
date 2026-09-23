@@ -217,8 +217,11 @@
 
     <string name="settings_displays_screens_title">Расположение экранов</string>
     <string name="settings_displays_screens_subtitle">Назначьте задачу каждому подключённому экрану</string>
-    <string name="settings_displays_presentation_title">Презентация</string>
-    <string name="settings_displays_presentation_subtitle">Как другой экран показывает выбранную игру</string>
+    <string name="settings_interface_presentation_title">Презентация</string>
+    <string name="settings_interface_presentation_subtitle">Как другой экран показывает выбранную игру</string>
+    <string name="settings_interface_section_general">Общие</string>
+    <string name="settings_interface_section_screens">Экраны</string>
+    <string name="settings_interface_section_status_bar">Строка состояния</string>
     <string name="settings_presentation_layout_title">Макет</string>
     <string name="settings_presentation_layout_cinematic">Кино</string>
     <string name="settings_presentation_layout_journal">Дневник</string>
@@ -242,6 +245,7 @@
     <string name="settings_presentation_stat_genre">Жанр</string>
     <string name="settings_presentation_stat_community_rating">Рейтинг сообщества</string>
     <string name="settings_presentation_stat_user_rating">Ваша оценка</string>
+    <string name="settings_presentation_stat_difficulty">Сложность</string>
     <string name="settings_presentation_stat_play_time">Время в игре</string>
     <string name="settings_presentation_stat_time_to_beat">Время прохождения</string>
     <string name="settings_presentation_stat_achievements">Достижения</string>

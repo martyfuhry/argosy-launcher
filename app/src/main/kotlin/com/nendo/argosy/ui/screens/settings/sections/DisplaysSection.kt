@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Monitor
-import androidx.compose.material.icons.outlined.Slideshow
 import androidx.compose.material.icons.outlined.WbTwilight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,14 +31,12 @@ import com.nendo.argosy.ui.theme.Dimens
 
 internal data class DisplaysLayoutState(
     val display: DisplayState,
-    val hasSecondaryDisplay: Boolean = false,
     val hasPhysicalSecondaryDisplay: Boolean = false,
     val dualScreenEnabled: Boolean = false
 ) {
     companion object {
         fun from(state: SettingsUiState) = DisplaysLayoutState(
             display = state.display,
-            hasSecondaryDisplay = state.display.hasSecondaryDisplay,
             hasPhysicalSecondaryDisplay = state.display.hasPhysicalSecondaryDisplay,
             dualScreenEnabled = state.display.dualScreenEnabled
         )
@@ -86,13 +83,6 @@ internal sealed class DisplaysItem(
         section = "displays",
         visibleWhen = { it.hasPhysicalSecondaryDisplay }
     )
-    data object Presentation : DisplaysItem(
-        key = "presentation",
-        section = "displays",
-        visibleWhen = {
-            it.dualScreenEnabled && it.hasSecondaryDisplay && !it.display.secondaryDisplayUnsupported
-        }
-    )
     data object AmbientLedSettings : DisplaysItem(
         key = "ambientLedSettings",
         section = "displays",
@@ -111,7 +101,7 @@ internal sealed class DisplaysItem(
                 ScreenSafetyHeader,
                 ScreenDimmer, DimAfter, DimLevel,
                 DisplaysSpacer, DisplaysHeader,
-                DualScreenEnabled, PauseWhileDocked, DisplayRoles, ScreenLayout, Presentation,
+                DualScreenEnabled, PauseWhileDocked, DisplayRoles, ScreenLayout,
                 AmbientLedSettings
             )
     }
@@ -155,14 +145,12 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
 
     val layoutState = remember(
         display.ambientLedAvailable,
-        display.hasSecondaryDisplay,
         display.hasPhysicalSecondaryDisplay,
         display.dualScreenEnabled,
         display.secondaryDisplayUnsupported
     ) {
         DisplaysLayoutState(
             display,
-            display.hasSecondaryDisplay,
             display.hasPhysicalSecondaryDisplay,
             display.dualScreenEnabled
         )
@@ -283,14 +271,6 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 subtitle = stringResource(R.string.settings_displays_screens_subtitle),
                 isFocused = isFocused(item),
                 onClick = { openFrom(item) { viewModel.navigateToScreens() } }
-            )
-
-            DisplaysItem.Presentation -> NavigationPreference(
-                icon = Icons.Outlined.Slideshow,
-                title = stringResource(R.string.settings_displays_presentation_title),
-                subtitle = stringResource(R.string.settings_displays_presentation_subtitle),
-                isFocused = isFocused(item),
-                onClick = { openFrom(item) { viewModel.navigateToPresentation() } }
             )
 
             DisplaysItem.AmbientLedSettings -> NavigationPreference(

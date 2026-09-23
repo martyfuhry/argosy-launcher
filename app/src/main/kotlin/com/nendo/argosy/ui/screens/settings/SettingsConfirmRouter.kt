@@ -709,6 +709,7 @@ private fun routeInterfaceConfirm(vm: SettingsViewModel, state: SettingsUiState)
         InterfaceItem.HomeScreen -> vm.navigateToHomeScreen()
         InterfaceItem.LibraryView -> vm.navigateToLibraryView()
         InterfaceItem.BoxArt -> vm.navigateToBoxArt()
+        InterfaceItem.Presentation -> vm.navigateToPresentation()
         else -> {}
     }
     return InputResult.HANDLED
@@ -731,7 +732,6 @@ private fun routeDisplaysConfirm(vm: SettingsViewModel, state: SettingsUiState):
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
         DisplaysItem.ScreenLayout -> vm.navigateToScreens()
-        DisplaysItem.Presentation -> vm.navigateToPresentation()
         DisplaysItem.AmbientLedSettings -> vm.navigateToAmbientLed()
         else -> {}
     }

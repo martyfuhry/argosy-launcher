@@ -457,9 +457,14 @@
     <!-- Second line of that row. -->
     <string name="settings_displays_screens_subtitle">Give each attached screen a job</string>
     <!-- Row opening the settings for how the second screen draws the game focused on the first. -->
-    <string name="settings_displays_presentation_title">Presentation</string>
+    <string name="settings_interface_presentation_title">Presentation</string>
     <!-- Second line of that row. -->
-    <string name="settings_displays_presentation_subtitle">How the other screen shows the focused game</string>
+    <string name="settings_interface_presentation_subtitle">How the other screen shows the focused game</string>
+    <!-- Section headers on the Interface settings screen: app-wide options, the screens that can be
+         customised, and the items shown in the top status bar. -->
+    <string name="settings_interface_section_general">General</string>
+    <string name="settings_interface_section_screens">Screens</string>
+    <string name="settings_interface_section_status_bar">Status Bar</string>
 
     <!-- Row choosing how the presentation screen arranges the focused game. -->
     <string name="settings_presentation_layout_title">Layout</string>
@@ -495,6 +500,8 @@
     <string name="settings_presentation_stat_genre">Genre</string>
     <string name="settings_presentation_stat_community_rating">Community Rating</string>
     <string name="settings_presentation_stat_user_rating">Your Rating</string>
+    <!-- Toggle for the difficulty the player gave the focused game. -->
+    <string name="settings_presentation_stat_difficulty">Difficulty</string>
     <string name="settings_presentation_stat_play_time">Play Time</string>
     <string name="settings_presentation_stat_time_to_beat">Time to Beat</string>
     <string name="settings_presentation_stat_achievements">Achievements</string>

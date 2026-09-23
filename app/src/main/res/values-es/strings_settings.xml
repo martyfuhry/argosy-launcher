@@ -225,8 +225,11 @@
 
     <string name="settings_displays_screens_title">Disposición de pantallas</string>
     <string name="settings_displays_screens_subtitle">Asigna una función a cada pantalla conectada</string>
-    <string name="settings_displays_presentation_title">Presentación</string>
-    <string name="settings_displays_presentation_subtitle">Cómo muestra la otra pantalla el juego seleccionado</string>
+    <string name="settings_interface_presentation_title">Presentación</string>
+    <string name="settings_interface_presentation_subtitle">Cómo muestra la otra pantalla el juego seleccionado</string>
+    <string name="settings_interface_section_general">General</string>
+    <string name="settings_interface_section_screens">Pantallas</string>
+    <string name="settings_interface_section_status_bar">Barra de estado</string>
     <string name="settings_presentation_layout_title">Diseño</string>
     <string name="settings_presentation_layout_cinematic">Cinemático</string>
     <string name="settings_presentation_layout_journal">Diario</string>
@@ -250,6 +253,7 @@
     <string name="settings_presentation_stat_genre">Género</string>
     <string name="settings_presentation_stat_community_rating">Valoración de la comunidad</string>
     <string name="settings_presentation_stat_user_rating">Tu valoración</string>
+    <string name="settings_presentation_stat_difficulty">Dificultad</string>
     <string name="settings_presentation_stat_play_time">Tiempo jugado</string>
     <string name="settings_presentation_stat_time_to_beat">Duración</string>
     <string name="settings_presentation_stat_achievements">Logros</string>

@@ -479,4 +479,6 @@
     <string name="dual_detail_option_write_review">Escribir una reseña</string>
     <string name="dual_showcase_progress_main">%1$s de %2$s de historia principal</string>
     <string name="dual_showcase_played">%1$s jugadas</string>
+    <string name="dual_showcase_journey_header">Tu progreso</string>
+    <string name="dual_showcase_journey_main">Historia principal %1$s</string>
 </resources>

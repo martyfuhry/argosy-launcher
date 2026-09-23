@@ -470,4 +470,6 @@
     <string name="dual_detail_option_write_review">समीक्षा लिखें</string>
     <string name="dual_showcase_progress_main">मुख्य कहानी के %2$s में से %1$s</string>
     <string name="dual_showcase_played">%1$s खेला</string>
+    <string name="dual_showcase_journey_header">आपकी यात्रा</string>
+    <string name="dual_showcase_journey_main">मुख्य कहानी %1$s</string>
 </resources>

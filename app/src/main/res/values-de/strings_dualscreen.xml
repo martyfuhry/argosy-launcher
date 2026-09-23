@@ -470,4 +470,6 @@
     <string name="dual_detail_option_write_review">Rezension schreiben</string>
     <string name="dual_showcase_progress_main">%1$s von %2$s Hauptstory</string>
     <string name="dual_showcase_played">%1$s gespielt</string>
+    <string name="dual_showcase_journey_header">Dein Fortschritt</string>
+    <string name="dual_showcase_journey_main">Hauptstory %1$s</string>
 </resources>

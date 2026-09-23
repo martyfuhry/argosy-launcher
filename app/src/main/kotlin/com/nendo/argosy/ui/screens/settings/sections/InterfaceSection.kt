@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.Gamepad
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.Slideshow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,23 +51,26 @@ internal sealed class InterfaceItem(
         else -> true
     }
 
-    class Header(
-        key: String,
-        section: String,
-        val title: String,
-        visibleWhen: (InterfaceLayoutState) -> Boolean = { true }
-    ) : InterfaceItem(key, section, visibleWhen)
+    class Header(key: String, section: String, val titleRes: Int) : InterfaceItem(key, section)
 
-    data object Language : InterfaceItem("language", "layout")
-    data object UiScale : InterfaceItem("uiScale", "layout")
-    data object CompactFooter : InterfaceItem("compactFooter", "layout")
-    data object StatusClock : InterfaceItem("statusClock", "layout")
-    data object StatusBattery : InterfaceItem("statusBattery", "layout")
-    data object StatusNetwork : InterfaceItem("statusNetwork", "layout")
-    data object ControllerGrip : InterfaceItem("controllerGrip", "layout")
-    data object HomeScreen : InterfaceItem("homeScreen", "layout")
-    data object LibraryView : InterfaceItem("libraryView", "layout")
-    data object BoxArt : InterfaceItem("boxArt", "layout")
+    data object Language : InterfaceItem("language", SECTION_GENERAL)
+    data object UiScale : InterfaceItem("uiScale", SECTION_GENERAL)
+    data object CompactFooter : InterfaceItem("compactFooter", SECTION_GENERAL)
+    data object ControllerGrip : InterfaceItem("controllerGrip", SECTION_GENERAL)
+    data object HomeScreen : InterfaceItem("homeScreen", SECTION_SCREENS)
+    data object LibraryView : InterfaceItem("libraryView", SECTION_SCREENS)
+    data object BoxArt : InterfaceItem("boxArt", SECTION_SCREENS)
+    data object Presentation : InterfaceItem(
+        key = "presentation",
+        section = SECTION_SCREENS,
+        visibleWhen = {
+            it.display.dualScreenEnabled && it.display.hasSecondaryDisplay &&
+                !it.display.secondaryDisplayUnsupported
+        }
+    )
+    data object StatusClock : InterfaceItem("statusClock", SECTION_STATUS_BAR)
+    data object StatusBattery : InterfaceItem("statusBattery", SECTION_STATUS_BAR)
+    data object StatusNetwork : InterfaceItem("statusNetwork", SECTION_STATUS_BAR)
 
     companion object {
         /**
@@ -77,11 +81,25 @@ internal sealed class InterfaceItem(
          */
         val ALL: List<InterfaceItem>
             get() = listOf(
-                Language, UiScale, CompactFooter,
-                StatusClock, StatusBattery, StatusNetwork, ControllerGrip,
-                HomeScreen, LibraryView, BoxArt
+                Header("generalHeader", SECTION_GENERAL, R.string.settings_interface_section_general),
+                Language, UiScale, CompactFooter, ControllerGrip,
+                Header("screensHeader", SECTION_SCREENS, R.string.settings_interface_section_screens),
+                HomeScreen, LibraryView, BoxArt, Presentation,
+                Header("statusBarHeader", SECTION_STATUS_BAR, R.string.settings_interface_section_status_bar),
+                StatusClock, StatusBattery, StatusNetwork
             )
     }
+}
+
+private const val SECTION_GENERAL = "general"
+private const val SECTION_SCREENS = "screens"
+private const val SECTION_STATUS_BAR = "statusBar"
+
+private fun interfaceSectionTitleRes(section: String): Int? = when (section) {
+    SECTION_GENERAL -> R.string.settings_interface_section_general
+    SECTION_SCREENS -> R.string.settings_interface_section_screens
+    SECTION_STATUS_BAR -> R.string.settings_interface_section_status_bar
+    else -> null
 }
 
 internal fun languageLabelRes(language: AppLanguage): Int = when (language) {
@@ -101,7 +119,7 @@ private val interfaceLayout = SettingsLayout<InterfaceItem, InterfaceLayoutState
     isFocusable = { it.isFocusable },
     visibleWhen = { item, state -> item.visibleWhen(state) },
     sectionOf = { it.section },
-    sectionTitleRes = { null }
+    sectionTitleRes = ::interfaceSectionTitleRes
 )
 
 internal fun interfaceMaxFocusIndex(state: InterfaceLayoutState): Int = interfaceLayout.maxFocusIndex(state)
@@ -131,8 +149,8 @@ fun InterfaceSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     val visibleItems = remember(layoutState) {
         interfaceLayout.visibleItems(layoutState)
     }
-    val sections = remember(layoutState) {
-        interfaceLayout.buildSections(layoutState)
+    val sections = remember(layoutState, context) {
+        interfaceLayout.buildSections(layoutState, context)
     }
 
     fun isFocused(item: InterfaceItem): Boolean =
@@ -159,7 +177,7 @@ fun InterfaceSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
     ) { item ->
             when (item) {
-                is InterfaceItem.Header -> InterfaceSectionHeader(item.title)
+                is InterfaceItem.Header -> InterfaceSectionHeader(stringResource(item.titleRes))
 
                 InterfaceItem.Language -> CyclePreference(
                     title = stringResource(R.string.settings_main_language_title),
@@ -248,6 +266,14 @@ fun InterfaceSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     subtitle = stringResource(R.string.settings_interface_box_art_subtitle),
                     isFocused = isFocused(item),
                     onClick = { openFrom(item) { viewModel.navigateToBoxArt() } }
+                )
+
+                InterfaceItem.Presentation -> NavigationPreference(
+                    icon = Icons.Outlined.Slideshow,
+                    title = stringResource(R.string.settings_interface_presentation_title),
+                    subtitle = stringResource(R.string.settings_interface_presentation_subtitle),
+                    isFocused = isFocused(item),
+                    onClick = { openFrom(item) { viewModel.navigateToPresentation() } }
                 )
 
             }

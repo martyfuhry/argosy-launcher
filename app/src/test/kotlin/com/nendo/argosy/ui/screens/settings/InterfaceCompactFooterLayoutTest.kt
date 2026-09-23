@@ -5,7 +5,9 @@ import com.nendo.argosy.ui.screens.settings.sections.InterfaceLayoutState
 import com.nendo.argosy.ui.screens.settings.sections.interfaceFocusIndexOf
 import com.nendo.argosy.ui.screens.settings.sections.interfaceItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.interfaceMaxFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.interfaceSections
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -50,6 +52,34 @@ class InterfaceCompactFooterLayoutTest {
             val index = interfaceFocusIndexOf(item, layoutState)
             assertEquals(item, interfaceItemAtFocusIndex(index, layoutState))
         }
+    }
+
+    @Test
+    fun `presentation shows only while dual screen has a second display`() {
+        val off = InterfaceLayoutState(display = DisplayState(dualScreenEnabled = false, hasSecondaryDisplay = true))
+        val noScreen = InterfaceLayoutState(display = DisplayState(dualScreenEnabled = true, hasSecondaryDisplay = false))
+        val on = InterfaceLayoutState(display = DisplayState(dualScreenEnabled = true, hasSecondaryDisplay = true))
+
+        assertFalse(InterfaceItem.Presentation.visibleWhen(off))
+        assertFalse(InterfaceItem.Presentation.visibleWhen(noScreen))
+        assertTrue(InterfaceItem.Presentation.visibleWhen(on))
+        val index = interfaceFocusIndexOf(InterfaceItem.Presentation, on)
+        assertEquals(InterfaceItem.Presentation, interfaceItemAtFocusIndex(index, on))
+    }
+
+    @Test
+    fun `the screen reads general, then screens, then the status bar`() {
+        val order = listOf(
+            InterfaceItem.Language,
+            InterfaceItem.ControllerGrip,
+            InterfaceItem.HomeScreen,
+            InterfaceItem.BoxArt,
+            InterfaceItem.StatusClock,
+            InterfaceItem.StatusNetwork
+        ).map { interfaceFocusIndexOf(it, layoutState) }
+
+        assertEquals(order.sorted(), order)
+        assertEquals(3, interfaceSections(layoutState).size)
     }
 
     @Test

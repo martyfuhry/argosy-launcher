@@ -45,6 +45,7 @@ internal val PRESENTATION_MENU_STATS: List<PresentationStat> = listOf(
     PresentationStat.GENRE,
     PresentationStat.COMMUNITY_RATING,
     PresentationStat.USER_RATING,
+    PresentationStat.DIFFICULTY,
     PresentationStat.PLAY_TIME,
     PresentationStat.TIME_TO_BEAT,
     PresentationStat.ACHIEVEMENTS,
@@ -169,6 +170,7 @@ internal fun presentationStatLabelRes(stat: PresentationStat): Int = when (stat)
     PresentationStat.GENRE -> R.string.settings_presentation_stat_genre
     PresentationStat.COMMUNITY_RATING -> R.string.settings_presentation_stat_community_rating
     PresentationStat.USER_RATING -> R.string.settings_presentation_stat_user_rating
+    PresentationStat.DIFFICULTY -> R.string.settings_presentation_stat_difficulty
     PresentationStat.PLAY_TIME -> R.string.settings_presentation_stat_play_time
     PresentationStat.TIME_TO_BEAT -> R.string.settings_presentation_stat_time_to_beat
     PresentationStat.ACHIEVEMENTS -> R.string.settings_presentation_stat_achievements
