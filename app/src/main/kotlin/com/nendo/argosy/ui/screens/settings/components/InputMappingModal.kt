@@ -365,7 +365,7 @@ fun InputMappingModal(
         val currentState = state
         when {
             boundAxis != null && event.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK) -> {
-                if (abs(event.getAxisValue(boundAxis)) < AxisDirectionTracker.DEFAULT_EXIT_THRESHOLD) {
+                if (abs(event.getAxisValue(boundAxis)) < AxisDirectionTracker.EXIT_THRESHOLD) {
                     boundAxisHeld = null
                 }
                 true
