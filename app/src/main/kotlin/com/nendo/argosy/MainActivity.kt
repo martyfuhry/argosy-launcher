@@ -496,6 +496,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        gamepadInputHandler.resetStickMotion()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         if (::screenCaptureManager.isInitialized) screenCaptureManager.stopCapture()
@@ -662,7 +667,7 @@ class MainActivity : ComponentActivity() {
             !sessionStateStore.isForeignAppOnSecondary() &&
             displayAffinityHelper.hasSecondaryDisplay
         ) {
-            reassertCompanionForwarding()
+            if (!isRepeat) reassertCompanionForwarding()
             return
         }
 
@@ -689,6 +694,7 @@ class MainActivity : ComponentActivity() {
                 gamepadInputHandler.blockInputFor(200)
             }
         } else {
+            gamepadInputHandler.resetStickMotion()
             if (::dualScreenManager.isInitialized &&
                 displayAffinityHelper.hasSecondaryDisplay &&
                 !dualScreenManager.isRolesSwapped.value
