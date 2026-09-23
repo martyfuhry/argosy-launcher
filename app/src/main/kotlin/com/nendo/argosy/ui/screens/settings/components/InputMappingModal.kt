@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.input.GamepadEvent
+import com.nendo.argosy.ui.input.InputDispatcher
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.LocalGamepadInputHandler
@@ -95,9 +96,14 @@ private sealed class InputMappingState {
     ) : InputMappingState()
 }
 
+/**
+ * [inputDispatcher] receives the app's stick and hat edges for the lists. It is null where the host
+ * leaves declined joystick samples to the framework, whose synthetic d-pad keys reach the key listener.
+ */
 @Composable
 fun InputMappingModal(
     controllers: List<ControllerInfo>,
+    inputDispatcher: InputDispatcher?,
     lockedPlatformIndex: Int? = null,
     onGetMapping: suspend (ControllerInfo, String?) -> ScopedMapping,
     onSaveMapping: suspend (ControllerInfo, Map<InputSource, Int>, String?, Boolean, String?) -> Unit,
@@ -301,73 +307,77 @@ fun InputMappingModal(
             }
         }
     }
-    ModalInputEffect(active = true, handler = stickHandler)
+    if (inputDispatcher != null) {
+        ModalInputEffect(active = true, handler = stickHandler, inputDispatcher = inputDispatcher)
+    }
 
-    DisposableEffect(state, gamepadInputHandler) {
-        val keyListener: (KeyEvent) -> Boolean = { event ->
-            val isBackKey = event.keyCode == KeyEvent.KEYCODE_BACK ||
-                gamepadInputHandler?.mapKeyToEvent(event.keyCode) == GamepadEvent.Back
-            if (suppressBackUntilRelease && isBackKey) {
-                if (event.action == KeyEvent.ACTION_UP) suppressBackUntilRelease = false
-                true
-            } else {
-            val device = event.device
-            when (val currentState = state) {
-                is InputMappingState.ControllerList,
-                is InputMappingState.PlatformMapping -> {
-                    if (event.action == KeyEvent.ACTION_DOWN) {
-                        gamepadInputHandler?.mapKeyToEvent(event.keyCode)?.let(navigate)
-                    }
-                }
-                is InputMappingState.Recording -> {
-                    val isGamepad = device != null && isGamepadDevice(device)
-                    val heldLongEnough = event.eventTime - event.downTime >= MIN_PRESS_MS
-                    when {
-                        event.keyCode == KeyEvent.KEYCODE_BACK -> {
-                            if (event.action == KeyEvent.ACTION_DOWN) {
-                                cancelHoldActive = false
-                                suppressBackUntilRelease = true
-                                leaveRecording(currentState, currentState.currentMapping)
-                            }
-                        }
-                        isBackKey -> {
-                            if (event.action == KeyEvent.ACTION_DOWN) {
-                                cancelHoldActive = true
-                            } else if (event.action == KeyEvent.ACTION_UP && cancelHoldActive) {
-                                cancelHoldActive = false
-                                if (isGamepad && heldLongEnough && isMappableButton(event.keyCode)) {
-                                    recordMapping(currentState, InputSource.Button(event.keyCode))
-                                }
-                            }
-                        }
-                        event.action == KeyEvent.ACTION_DOWN && isGamepad && isMappableButton(event.keyCode) -> {
-                            recordMapping(currentState, InputSource.Button(event.keyCode))
-                        }
-                    }
-                }
-            }
+    val keyListener: (KeyEvent) -> Boolean = { event ->
+        val isBackKey = event.keyCode == KeyEvent.KEYCODE_BACK ||
+            gamepadInputHandler?.mapKeyToEvent(event.keyCode) == GamepadEvent.Back
+        if (suppressBackUntilRelease && isBackKey) {
+            if (event.action == KeyEvent.ACTION_UP) suppressBackUntilRelease = false
             true
+        } else {
+        val device = event.device
+        when (val currentState = state) {
+            is InputMappingState.ControllerList,
+            is InputMappingState.PlatformMapping -> {
+                if (event.action == KeyEvent.ACTION_DOWN) {
+                    gamepadInputHandler?.mapKeyToEvent(event.keyCode)?.let(navigate)
+                }
             }
-        }
-
-        val motionListener: (MotionEvent) -> Boolean = { event ->
-            when (val currentState = state) {
-                is InputMappingState.Recording -> {
-                    val device = event.device
-                    if (device != null && isGamepadDevice(device)) {
-                        val analogInput = detectAnalogInput(event)
-                        if (analogInput != null) {
-                            recordMapping(currentState, analogInput)
+            is InputMappingState.Recording -> {
+                val isGamepad = device != null && isGamepadDevice(device)
+                val heldLongEnough = event.eventTime - event.downTime >= MIN_PRESS_MS
+                when {
+                    event.keyCode == KeyEvent.KEYCODE_BACK -> {
+                        if (event.action == KeyEvent.ACTION_DOWN) {
+                            cancelHoldActive = false
+                            suppressBackUntilRelease = true
+                            leaveRecording(currentState, currentState.currentMapping)
                         }
                     }
-                    true
+                    isBackKey -> {
+                        if (event.action == KeyEvent.ACTION_DOWN) {
+                            cancelHoldActive = true
+                        } else if (event.action == KeyEvent.ACTION_UP && cancelHoldActive) {
+                            cancelHoldActive = false
+                            if (isGamepad && heldLongEnough && isMappableButton(event.keyCode)) {
+                                recordMapping(currentState, InputSource.Button(event.keyCode))
+                            }
+                        }
+                    }
+                    event.action == KeyEvent.ACTION_DOWN && isGamepad && isMappableButton(event.keyCode) -> {
+                        recordMapping(currentState, InputSource.Button(event.keyCode))
+                    }
                 }
-                else -> false
             }
         }
+        true
+        }
+    }
 
-        gamepadInputHandler?.setRawKeyEventListener(keyListener)
-        gamepadInputHandler?.setRawMotionEventListener(motionListener)
+    val motionListener: (MotionEvent) -> Boolean = { event ->
+        when (val currentState = state) {
+            is InputMappingState.Recording -> {
+                val device = event.device
+                if (device != null && isGamepadDevice(device)) {
+                    val analogInput = detectAnalogInput(event)
+                    if (analogInput != null) {
+                        recordMapping(currentState, analogInput)
+                    }
+                }
+                true
+            }
+            else -> false
+        }
+    }
+
+    val currentKeyListener by rememberUpdatedState(keyListener)
+    val currentMotionListener by rememberUpdatedState(motionListener)
+    DisposableEffect(gamepadInputHandler) {
+        gamepadInputHandler?.setRawKeyEventListener { currentKeyListener(it) }
+        gamepadInputHandler?.setRawMotionEventListener { currentMotionListener(it) }
 
         onDispose {
             gamepadInputHandler?.setRawKeyEventListener(null)
