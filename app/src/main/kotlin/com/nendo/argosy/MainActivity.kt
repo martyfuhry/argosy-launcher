@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
@@ -632,7 +631,6 @@ class MainActivity : ComponentActivity() {
 
         if (gamepadInputHandler.processStickMotion(event, ::deliverStickEvent)) return true
         if (gamepadInputHandler.handleMotionEvent(event)) return true
-        if (event.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK)) return true
         return super.dispatchGenericMotionEvent(event)
     }
 
