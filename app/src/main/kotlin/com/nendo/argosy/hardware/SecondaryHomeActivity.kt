@@ -407,7 +407,6 @@ class SecondaryHomeActivity :
         }
         if (gamepadInputHandler.processStickMotion(event, ::deliverStickEvent)) return true
         if (gamepadInputHandler.handleMotionEvent(event)) return true
-        if (isJoystick) return true
         return super.dispatchGenericMotionEvent(event)
     }
 
