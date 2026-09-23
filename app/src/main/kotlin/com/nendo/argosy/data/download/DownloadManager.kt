@@ -872,7 +872,7 @@ class DownloadManager @Inject constructor(
         val current = game.localPath
         if (current == finalPath) return
         if (current != null && File(current).isFile && !isUnbootableHere(current, game.platformSlug)) return
-        gameDao.updateLocalPath(progress.gameId, finalPath, game.source, FileOrigin.ROMM_DOWNLOAD)
+        gameDao.markDownloaded(progress.gameId, finalPath, game.source, FileOrigin.ROMM_DOWNLOAD)
         Logger.info(
             TAG,
             "Base rom claimed launch target | game=${progress.gameTitle} path=$finalPath"
@@ -1416,7 +1416,7 @@ class DownloadManager @Inject constructor(
                 m3uManager.generateM3uIfComplete(progress.gameId)
             }
             else -> {
-                gameDao.updateLocalPath(progress.gameId, finalPath, GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD)
+                gameDao.markDownloaded(progress.gameId, finalPath, GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD)
                 if (progress.selectedFileIds != null) {
                     mapSelectedFilesToDisk(progress.gameId, progress.selectedFileIds, File(finalPath))
                 }
@@ -2156,7 +2156,7 @@ class DownloadManager @Inject constructor(
                     gameFileDao.updateLocalPath(queueEntry.gameFileId, finalPath, Instant.now())
                 }
                 else -> {
-                    gameDao.updateLocalPath(gameId, finalPath, GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD)
+                    gameDao.markDownloaded(gameId, finalPath, GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD)
                 }
             }
             downloadQueueDao.deleteByGameId(gameId)
