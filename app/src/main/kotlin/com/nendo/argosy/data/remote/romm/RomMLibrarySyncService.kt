@@ -782,25 +782,9 @@ class RomMLibrarySyncService @Inject constructor(
         }
         val existing = platformDao.getById(platformId)
         val platformDef = PlatformDefinitions.getBySlug(effectiveSlug)
-        val isSubPlatform = !effectiveSlug.equals(remote.slug, ignoreCase = true)
 
         val logoUrl = apiClient.buildMediaUrl(remote.logoUrl)
-        val derivedNames = if (isSubPlatform) {
-            PlatformDefinitions.getAliasDisplayName(effectiveSlug)
-                ?: PlatformDefinitions.deriveDisplayName(effectiveSlug)
-        } else {
-            PlatformDefinitions.getAliasDisplayName(remote.slug)
-                ?: PlatformDefinitions.deriveDisplayName(remote.slug)
-                ?: PlatformDefinitions.deriveDisplayName(remote.fsSlug)
-        }
-        val normalizedName = if (isSubPlatform) {
-            remote.customName?.takeIf { it.isNotBlank() }
-                ?: derivedNames?.first ?: platformDef?.name ?: remote.name
-        } else {
-            remote.customName?.takeIf { it.isNotBlank() }
-                ?: remote.displayName ?: derivedNames?.first ?: remote.name
-        }
-        val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
+        val (normalizedName, resolvedShortName) = remote.resolvePlatformNames(effectiveSlug)
         val entity = PlatformEntity(
             id = platformId,
             slug = effectiveSlug,
