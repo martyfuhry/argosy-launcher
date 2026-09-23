@@ -74,6 +74,9 @@ namespace {
 
         if (usage == "unset" || usage == "media") builder.setUsage(oboe::Usage::Media);
         else if (usage == "game") builder.setUsage(oboe::Usage::Game);
+        else if (usage == "voice") builder.setUsage(oboe::Usage::VoiceCommunication);
+        else if (usage == "sonification") builder.setUsage(oboe::Usage::AssistanceSonification);
+        else if (usage == "alarm") builder.setUsage(oboe::Usage::Alarm);
 
         if (format == "i16") builder.setFormat(oboe::AudioFormat::I16);
         else if (format == "float") builder.setFormat(oboe::AudioFormat::Float);
