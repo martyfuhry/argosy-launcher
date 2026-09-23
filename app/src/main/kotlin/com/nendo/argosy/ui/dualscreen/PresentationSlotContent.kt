@@ -183,6 +183,12 @@ private fun InGameAppBar(state: InGameAppBarState, modifier: Modifier = Modifier
             manager.focusDisplay(displayId)
             manager.closeFocusPicker()
         },
+        onSwapRoles = if (selectSwapsRoles()) {
+            { manager.swapRoles() }
+        } else {
+            null
+        },
+        swapEnabled = !manager.swappedIsGameActive.collectAsState().value,
         modifier = modifier
     )
 

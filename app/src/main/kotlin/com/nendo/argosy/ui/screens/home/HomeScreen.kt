@@ -1543,6 +1543,10 @@ fun HomeScreen(
                 com.nendo.argosy.ui.components.DisplayFocusTarget(screen.displayId, screen.number)
             }.orEmpty()
         }
+        val swapBlockedBySession by (
+            dsmForFocus?.swappedIsGameActive
+                ?: remember { kotlinx.coroutines.flow.MutableStateFlow(false) }
+            ).collectAsState()
         if (hasPresentationScreen && uiState.homeApps.isNotEmpty()) {
             com.nendo.argosy.ui.components.CompanionAppBar(
                 apps = uiState.homeApps,
@@ -1573,6 +1577,10 @@ fun HomeScreen(
                     dsmForFocus?.focusDisplay(displayId)
                     dsmForFocus?.closeFocusPicker()
                 },
+                onSwapRoles = dsmForFocus
+                    ?.takeIf { com.nendo.argosy.ui.dualscreen.selectSwapsRoles() }
+                    ?.let { { it.swapRoles() } },
+                swapEnabled = !swapBlockedBySession,
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }

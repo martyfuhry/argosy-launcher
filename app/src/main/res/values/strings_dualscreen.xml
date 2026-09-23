@@ -106,6 +106,9 @@
     <!-- Spoken description of the app bar's keyboard button, which raises or lowers the system
          keyboard for the other screen. Noun. -->
     <string name="dual_companion_app_bar_keyboard_description">Keyboard</string>
+    <!-- Spoken description of the app bar's swap button, which exchanges which screen drives the
+         menus and which one shows what is selected. Verb phrase. -->
+    <string name="dual_companion_app_bar_swap_description">Swap screens</string>
     <!-- Icon button that expands to list the screens input can be sent to -->
     <string name="dual_companion_app_bar_focus_description">Send input to a screen</string>
 

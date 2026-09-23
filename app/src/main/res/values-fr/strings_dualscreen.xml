@@ -43,6 +43,7 @@
     <string name="dual_companion_app_bar_media_to_library_description">Retour à la bibliothèque</string>
     <string name="dual_companion_app_bar_media_to_player_description">En cours de visionnage</string>
     <string name="dual_companion_app_bar_keyboard_description">Clavier</string>
+    <string name="dual_companion_app_bar_swap_description">Permuter les écrans</string>
     <string name="dual_companion_app_bar_focus_description">Envoyer les commandes vers un écran</string>
 
     <string name="dual_companion_drawer_title">Toutes les applications</string>

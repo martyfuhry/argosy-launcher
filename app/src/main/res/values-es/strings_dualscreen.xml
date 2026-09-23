@@ -43,6 +43,7 @@
     <string name="dual_companion_app_bar_media_to_library_description">Volver a la biblioteca</string>
     <string name="dual_companion_app_bar_media_to_player_description">Viendo ahora</string>
     <string name="dual_companion_app_bar_keyboard_description">Teclado</string>
+    <string name="dual_companion_app_bar_swap_description">Intercambiar pantallas</string>
     <string name="dual_companion_app_bar_focus_description">Enviar la entrada a una pantalla</string>
 
     <string name="dual_companion_drawer_title">Todas las apps</string>

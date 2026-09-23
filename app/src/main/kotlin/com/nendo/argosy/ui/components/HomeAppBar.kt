@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -83,7 +84,9 @@ fun CompanionAppBar(
     focusPickerOpen: Boolean = false,
     focusPickerIndex: Int = 0,
     onFocusPickerToggle: (() -> Unit)? = null,
-    onFocusDisplay: (Int) -> Unit = {}
+    onFocusDisplay: (Int) -> Unit = {},
+    onSwapRoles: (() -> Unit)? = null,
+    swapEnabled: Boolean = true
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
@@ -159,6 +162,12 @@ fun CompanionAppBar(
                 toggle = mediaToggle,
                 isFocused = focusedIndex == apps.size,
                 onClick = onMediaToggle
+            )
+        }
+        if (onSwapRoles != null) {
+            CompanionSwapScreensButton(
+                enabled = swapEnabled,
+                onClick = onSwapRoles
             )
         }
         if (onKeyboardToggle != null) {
@@ -327,6 +336,37 @@ private fun CompanionKeyboardButton(
                 imageVector = Icons.Default.Keyboard,
                 contentDescription = stringResource(R.string.dual_companion_app_bar_keyboard_description),
                 tint = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.size(Dimens.iconMd)
+            )
+        }
+        Spacer(modifier = Modifier.height(Dimens.spacingXs))
+    }
+}
+
+@Composable
+private fun CompanionSwapScreensButton(
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val contentAlpha = if (enabled) 0.7f else 0.25f
+    Column(
+        modifier = Modifier
+            .width(COMPANION_APP_BAR_SLOT_WIDTH)
+            .touchOnly { if (enabled) onClick() }
+            .padding(Dimens.spacingXs),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(Dimens.iconXl)
+                .clip(RoundedCornerShape(Dimens.radiusLg))
+                .background(Color.White.copy(alpha = if (enabled) 0.15f else 0.06f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_swap_screens),
+                contentDescription = stringResource(R.string.dual_companion_app_bar_swap_description),
+                tint = Color.White.copy(alpha = contentAlpha),
                 modifier = Modifier.size(Dimens.iconMd)
             )
         }
