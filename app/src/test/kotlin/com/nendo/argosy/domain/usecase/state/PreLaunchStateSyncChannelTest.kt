@@ -46,9 +46,11 @@ class PreLaunchStateSyncChannelTest {
     private lateinit var statesDir: File
     private lateinit var manager: StateCacheManager
     private lateinit var useCase: PreLaunchStateSyncUseCase
+    private lateinit var saveSyncRepository: SaveSyncRepository
 
     private val downloaded = mutableListOf<Long>()
     private val cachedRows = mutableMapOf<Long, StateCacheEntity>()
+    private val cacheFiles = mutableMapOf<Long, File>()
 
     @Before
     fun setUp() {
@@ -101,6 +103,10 @@ class PreLaunchStateSyncChannelTest {
             true
         }
         coEvery { manager.clearServerLink(any()) } returns Unit
+        every { manager.getCacheFile(any()) } answers { cacheFiles[firstArg<StateCacheEntity>().id] }
+        coEvery { manager.hasSameContent(any(), any()) } answers {
+            cacheFiles[firstArg<StateCacheEntity>().id]?.readText() == secondArg<File>().readText()
+        }
 
         val game = mockk<GameEntity> {
             every { id } returns GAME_ID
@@ -124,8 +130,9 @@ class PreLaunchStateSyncChannelTest {
         val preferencesRepository = mockk<UserPreferencesRepository> {
             every { userPreferences } returns MutableStateFlow(UserPreferences(saveSyncEnabled = true))
         }
-        val saveSyncRepository = mockk<SaveSyncRepository> {
+        saveSyncRepository = mockk<SaveSyncRepository> {
             every { getApi() } returns mockk<RomMApi>()
+            coEvery { hasUserSelectedRestorePoint(any(), any(), any()) } returns false
         }
 
         useCase = PreLaunchStateSyncUseCase(
@@ -188,6 +195,88 @@ class PreLaunchStateSyncChannelTest {
         assertEquals("102", liveAutoFile().readText())
     }
 
+    @Test
+    fun `a synced cached autosave whose live file is missing is placed on launch`() = runTest {
+        serverHas(serverState(id = 1L, fileName = "$ROM_BASE [2026-08-18_11-29-56].autosave.state.auto"))
+        val row = cachedRow(id = 2L, slotNumber = -1, channelName = "autosave", rommSaveId = 1L)
+        localHas(row)
+        cacheFileFor(row)
+
+        val result = useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = null)
+
+        assertEquals(PreLaunchStateSyncUseCase.Result.Ready, result)
+        assertTrue(downloaded.isEmpty())
+        assertEquals("2", liveAutoFile().readText())
+    }
+
+    @Test
+    fun `a synced row whose cached file is gone is downloaded again and placed`() = runTest {
+        serverHas(serverState(id = 1L, fileName = "$ROM_BASE [2026-08-18_11-29-56].autosave.state.auto"))
+        localHas(cachedRow(id = 2L, slotNumber = -1, channelName = "autosave", rommSaveId = 1L))
+
+        val result = useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = null)
+
+        assertEquals(PreLaunchStateSyncUseCase.Result.Downloaded(1), result)
+        assertEquals(listOf(1L), downloaded)
+        assertEquals("101", liveAutoFile().readText())
+    }
+
+    @Test
+    fun `a live autosave written after the cache was taken is left alone`() = runTest {
+        serverHas(serverState(id = 1L, fileName = "$ROM_BASE [2026-08-18_11-29-56].autosave.state.auto"))
+        val row = cachedRow(id = 2L, slotNumber = -1, channelName = "autosave", rommSaveId = 1L)
+        localHas(row)
+        cacheFileFor(row)
+        liveAutoFile().writeText("played since")
+
+        useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = null)
+
+        assertEquals("played since", liveAutoFile().readText())
+    }
+
+    @Test
+    fun `a live autosave older than the cache but with the same content is not rewritten`() = runTest {
+        serverHas(serverState(id = 1L, fileName = "$ROM_BASE [2026-08-18_11-29-56].autosave.state.auto"))
+        val row = cachedRow(id = 2L, slotNumber = -1, channelName = "autosave", rommSaveId = 1L)
+        localHas(row)
+        cacheFileFor(row)
+        liveAutoFile().writeText("cache 2")
+        liveAutoFile().setLastModified(0L)
+
+        useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = null)
+
+        assertEquals(0L, liveAutoFile().lastModified())
+    }
+
+    @Test
+    fun `a selected restore point keeps the auto slot empty`() = runTest {
+        serverHas(serverState(id = 1L, fileName = "$ROM_BASE [2026-08-18_11-29-56].autosave.state.auto"))
+        val row = cachedRow(id = 2L, slotNumber = -1, channelName = "autosave", rommSaveId = 1L)
+        localHas(row)
+        cacheFileFor(row)
+        coEvery { saveSyncRepository.hasUserSelectedRestorePoint(GAME_ID, EmulatorRegistry.BUILTIN_ID, any()) } returns true
+
+        useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = null)
+
+        assertFalse(liveAutoFile().exists())
+    }
+
+    @Test
+    fun `a cached autosave is not placed for a launch on a named channel`() = runTest {
+        serverHas(serverState(id = 1L, fileName = "$ROM_BASE [2026-08-18_11-29-56].autosave.state.auto"))
+        val row = cachedRow(id = 2L, slotNumber = -1, channelName = "autosave", rommSaveId = 1L)
+        localHas(row)
+        cacheFileFor(row)
+
+        useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = "Speedrun")
+
+        assertFalse(liveAutoFile().exists())
+    }
+
+    private fun cacheFileFor(row: StateCacheEntity) {
+        cacheFiles[row.id] = temp.newFile("cache-${row.id}").apply { writeText("cache ${row.id}") }
+    }
+
     private fun serverHas(vararg states: RomMState) {
         coEvery { manager.checkServerStates(ROMM_ID, any()) } returns states.toList()
     }
@@ -206,7 +295,7 @@ class PreLaunchStateSyncChannelTest {
         userId = 1L,
         emulator = "mgba",
         fileName = fileName,
-        updatedAt = "2026-09-22T00:00:00Z"
+        updatedAt = SERVER_UPDATED_AT
     )
 
     private fun cachedRow(
@@ -226,12 +315,14 @@ class PreLaunchStateSyncChannelTest {
         cachePath = "cached/$id",
         coreId = "mgba",
         rommSaveId = rommSaveId,
-        syncStatus = if (rommSaveId == null) StateCacheEntity.STATUS_PENDING_UPLOAD else StateCacheEntity.STATUS_SYNCED
+        syncStatus = if (rommSaveId == null) StateCacheEntity.STATUS_PENDING_UPLOAD else StateCacheEntity.STATUS_SYNCED,
+        serverUpdatedAt = if (rommSaveId == null) null else Instant.parse(SERVER_UPDATED_AT)
     )
 
     private companion object {
         const val GAME_ID = 407L
         const val ROMM_ID = 3267L
         const val ROM_BASE = "Mother 3 (English v1.3)"
+        const val SERVER_UPDATED_AT = "2026-09-22T00:00:00Z"
     }
 }
