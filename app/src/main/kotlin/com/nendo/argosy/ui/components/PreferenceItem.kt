@@ -67,6 +67,7 @@ import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.theme.LocalUiScale
 import com.nendo.argosy.ui.theme.Motion
+import com.nendo.argosy.ui.theme.readableAccent
 import com.nendo.argosy.ui.theme.generated.ColorTokens
 
 @Composable
@@ -774,17 +775,18 @@ fun HueSliderPreference(
     onHueChange: (Float?) -> Unit,
     saturation: Float = 0.7f,
     lightness: Float = 0.5f,
+    readableOnTheme: Boolean = false,
     defaultLabel: String = stringResource(R.string.ui_hue_slider_default)
 ) {
+    val isDarkTheme = LocalArgosyTheme.current.isDark
+    fun swatch(hue: Float): Color {
+        val raw = Color(ColorUtils.HSLToColor(floatArrayOf(hue, saturation, lightness)))
+        return if (readableOnTheme) readableAccent(raw, isDarkTheme) else raw
+    }
     val hueSteps = 36
-    val hueColors = (0..hueSteps).map { step ->
-        val hue = (step * 360f / hueSteps)
-        Color(ColorUtils.HSLToColor(floatArrayOf(hue, saturation, lightness)))
-    }
+    val hueColors = (0..hueSteps).map { step -> swatch(step * 360f / hueSteps) }
 
-    val currentColor = currentHue?.let {
-        Color(ColorUtils.HSLToColor(floatArrayOf(it, saturation, lightness)))
-    }
+    val currentColor = currentHue?.let(::swatch)
 
     Column(
         modifier = preferenceModifier(isFocused)

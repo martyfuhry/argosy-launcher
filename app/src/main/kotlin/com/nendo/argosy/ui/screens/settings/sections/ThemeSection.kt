@@ -151,6 +151,7 @@ fun ThemeSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 title = stringResource(R.string.settings_theme_accent_color_title),
                 currentHue = currentHue,
                 isFocused = isFocused(item),
+                readableOnTheme = true,
                 onHueChange = { hue ->
                     if (hue != null) {
                         viewModel.setPrimaryColor(hueToColorInt(hue))
@@ -164,6 +165,7 @@ fun ThemeSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 title = stringResource(R.string.settings_theme_secondary_color_title),
                 currentHue = secondaryHue,
                 isFocused = isFocused(item),
+                readableOnTheme = true,
                 onHueChange = { hue ->
                     if (hue != null) {
                         viewModel.setSecondaryColor(hueToColorInt(hue))

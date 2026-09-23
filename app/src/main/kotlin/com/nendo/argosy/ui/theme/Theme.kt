@@ -271,8 +271,9 @@ internal fun rememberArgosyPalette(
     }
     val defaultPrimary = if (BuildConfig.DEBUG) ColorTokens.Scheme.DebugOverrides.Dark.primary else ColorTokens.Scheme.Dark.primary
     val defaultPrimaryDark = if (BuildConfig.DEBUG) ColorTokens.Scheme.DebugOverrides.Light.primary else ColorTokens.Scheme.Light.primary
-    val rawPrimary = primaryOverride ?: themeState.primaryColor?.let { Color(it) }
-    val rawSecondary = themeState.secondaryColor?.let { Color(it) }
+    val rawPrimary = (primaryOverride ?: themeState.primaryColor?.let { Color(it) })
+        ?.let { readableAccent(it, isDarkTheme) }
+    val rawSecondary = themeState.secondaryColor?.let { readableAccent(Color(it), isDarkTheme) }
     val effectivePrimary = rawPrimary ?: if (isDarkTheme) defaultPrimary else defaultPrimaryDark
     val effectiveSecondary = rawSecondary ?: effectivePrimary
     return ArgosyPalette(
