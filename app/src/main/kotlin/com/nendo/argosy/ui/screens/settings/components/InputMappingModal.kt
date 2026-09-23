@@ -46,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.input.AxisDirectionTracker
 import com.nendo.argosy.ui.input.GamepadEvent
 import com.nendo.argosy.ui.input.InputDispatcher
 import com.nendo.argosy.ui.input.InputHandler
@@ -63,6 +64,7 @@ import com.nendo.argosy.ui.icons.InputIcons
 import com.nendo.argosy.ui.primitives.ArgosyProgressBar
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -132,6 +134,7 @@ fun InputMappingModal(
     var controllerFocusIndex by remember { mutableIntStateOf(0) }
     var cancelHoldActive by remember { mutableStateOf(false) }
     var suppressBackUntilRelease by remember { mutableStateOf(false) }
+    var boundAxisHeld by remember { mutableStateOf<Int?>(null) }
     val cancelProgress = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
 
@@ -358,12 +361,21 @@ fun InputMappingModal(
     }
 
     val motionListener: (MotionEvent) -> Boolean = { event ->
-        when (val currentState = state) {
-            is InputMappingState.Recording -> {
+        val boundAxis = boundAxisHeld
+        val currentState = state
+        when {
+            boundAxis != null && event.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK) -> {
+                if (abs(event.getAxisValue(boundAxis)) < AxisDirectionTracker.DEFAULT_EXIT_THRESHOLD) {
+                    boundAxisHeld = null
+                }
+                true
+            }
+            currentState is InputMappingState.Recording -> {
                 val device = event.device
                 if (device != null && isGamepadDevice(device)) {
                     val analogInput = detectAnalogInput(event)
                     if (analogInput != null) {
+                        boundAxisHeld = analogInput.axis
                         recordMapping(currentState, analogInput)
                     }
                 }
