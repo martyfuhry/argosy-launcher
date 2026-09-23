@@ -135,7 +135,9 @@ Audio::Audio(int32_t sampleRate, double refreshRate, bool preferLowLatencyAudio,
 bool Audio::initializeStream() {
     LOGI("Using low latency stream: %d", audioLatencySettings->useLowLatencyStream);
 
-    int32_t audioBufferSize = computeAudioBufferSize();
+    double requestedMs = computeMaximumLatency();
+    int32_t requestedBufferSize = computeAudioBufferSizeForLatency(requestedMs);
+    LOGI("Audio buffer requested: %.1f ms", requestedMs);
 
     oboe::AudioStreamBuilder builder;
     builder.setChannelCount(2);
@@ -149,13 +151,26 @@ bool Audio::initializeStream() {
         builder.setSharingMode(oboe::SharingMode::Exclusive);
         builder.setUsage(oboe::Usage::Game);
     } else {
-        builder.setFramesPerCallback(audioBufferSize / 10);
+        builder.setFramesPerCallback(requestedBufferSize / 10);
     }
 
     applyAudioOverrides(builder);
 
     oboe::Result result = builder.openManagedStream(stream);
     if (result == oboe::Result::OK) {
+        const int32_t framesPerBurst = stream->getFramesPerBurst();
+        const int32_t streamSampleRate = stream->getSampleRate();
+        const double burstMs = (framesPerBurst > 0 && streamSampleRate > 0)
+            ? 1000.0 * framesPerBurst / streamSampleRate
+            : 0.0;
+        const double effectiveMs = effectiveFifoMs(requestedMs, framesPerBurst, streamSampleRate);
+        if (effectiveMs > requestedMs) {
+            LOGI("Audio buffer raised from %.1f ms to %.1f ms to cover a %.1f ms burst",
+                 requestedMs, effectiveMs, burstMs);
+        }
+        const int32_t audioBufferSize = computeAudioBufferSizeForLatency(effectiveMs);
+        LOGI("Average audio latency set to: %f ms", effectiveMs * 0.5);
+
         baseConversionFactor = (double) inputSampleRate / stream->getSampleRate();
         outputFormat = stream->getFormat();
         outputChannelCount = stream->getChannelCount();
@@ -165,7 +180,7 @@ bool Audio::initializeStream() {
         latencyTuner = std::make_unique<oboe::LatencyTuner>(*stream);
         statsLogIntervalFrames = stream->getSampleRate() * 2;
         framesSinceStatsLog = 0;
-        logStreamState();
+        logStreamState(effectiveMs);
 
         // SoundTouch operates in stereo float and is configured for the emulator's
         // native sample rate. The final rate conversion to stream->getSampleRate()
@@ -203,7 +218,7 @@ std::unique_ptr<Audio::AudioLatencySettings> Audio::findBestLatencySettings(bool
     return std::make_unique<AudioLatencySettings>(settings);
 }
 
-void Audio::logStreamState() {
+void Audio::logStreamState(double effectiveMs) {
     LOGI("Audio stream opened: api=%s perf=%s sharing=%s format=%s rate=%d channels=%d burst=%d bufferSize=%d bufferCapacity=%d fifoMs=%.1f",
          oboe::convertToText(stream->getAudioApi()),
          oboe::convertToText(stream->getPerformanceMode()),
@@ -214,14 +229,20 @@ void Audio::logStreamState() {
          stream->getFramesPerBurst(),
          stream->getBufferSizeInFrames(),
          stream->getBufferCapacityInFrames(),
-         computeMaximumLatency());
+         effectiveMs);
 }
 
-int32_t Audio::computeAudioBufferSize() {
-    double maxLatency = computeMaximumLatency();
-    LOGI("Average audio latency set to: %f ms", maxLatency * 0.5);
-    double sampleRateDivisor = 500.0 / maxLatency;
+int32_t Audio::computeAudioBufferSizeForLatency(double latencyMs) const {
+    double sampleRateDivisor = 500.0 / latencyMs;
     return roundToEven(inputSampleRate / sampleRateDivisor);
+}
+
+double Audio::effectiveFifoMs(double requestedMs, int32_t framesPerBurst, int32_t sampleRate) {
+    if (framesPerBurst <= 0 || sampleRate <= 0) {
+        return requestedMs;
+    }
+    double burstMs = 1000.0 * framesPerBurst / sampleRate;
+    return std::max(requestedMs, 2.5 * burstMs);
 }
 
 double Audio::computeMaximumLatency() const {
