@@ -517,15 +517,14 @@ interface GameDao {
     /**
      * Every caller states where the file came from: a download completion writes its download
      * origin, a scan writes ADOPTED, and a repair that re-points the same content passes the
-     * row's current origin through.
+     * row's current origin through. The added time stays as the library sync set it.
      */
-    @Query("UPDATE games SET localPath = :path, fileOrigin = :fileOrigin, source = :source, addedAt = :addedAt WHERE id = :gameId")
+    @Query("UPDATE games SET localPath = :path, fileOrigin = :fileOrigin, source = :source WHERE id = :gameId")
     suspend fun updateLocalPath(
         gameId: Long,
         path: String?,
         source: GameSource,
-        fileOrigin: FileOrigin,
-        addedAt: Instant = Instant.now()
+        fileOrigin: FileOrigin
     )
 
     /**

@@ -58,4 +58,11 @@ class RomMAddedAtTest {
 
         assertEquals(existing, reconcileAddedAt(existing, "yesterday"))
     }
+
+    @Test
+    fun `a row stamped when its file was adopted returns to the server creation time`() {
+        val adoptedAt = Instant.parse("2026-09-22T23:47:32Z")
+
+        assertEquals(Instant.parse("2026-06-03T13:25:25Z"), reconcileAddedAt(adoptedAt, "2026-06-03T13:25:25"))
+    }
 }

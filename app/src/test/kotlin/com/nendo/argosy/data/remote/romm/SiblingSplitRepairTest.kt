@@ -103,12 +103,12 @@ class SiblingSplitRepairTest {
         assertEquals(1, outcome.pathsHandedOver)
         coVerify {
             gameDao.updateLocalPath(
-                2L, "/roms/gb/Blue (Germany).gb", GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD, any()
+                2L, "/roms/gb/Blue (Germany).gb", GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD
             )
         }
         coVerify {
             gameDao.updateLocalPath(
-                1L, "/roms/gb/Blue (USA).gb", merged.source, FileOrigin.ROMM_DOWNLOAD, mergedAddedAt
+                1L, "/roms/gb/Blue (USA).gb", merged.source, FileOrigin.ROMM_DOWNLOAD
             )
         }
         coVerify(exactly = 0) { gameDao.clearLocalPath(any()) }
@@ -124,7 +124,7 @@ class SiblingSplitRepairTest {
         repair.repair()
 
         coVerify { gameDao.clearLocalPath(1L) }
-        coVerify(exactly = 0) { gameDao.updateLocalPath(1L, any(), any(), any(), any()) }
+        coVerify(exactly = 0) { gameDao.updateLocalPath(1L, any(), any(), any()) }
     }
 
     @Test
@@ -135,7 +135,7 @@ class SiblingSplitRepairTest {
 
         repair.repair()
 
-        coVerify(exactly = 0) { gameDao.updateLocalPath(2L, any(), any(), any(), any()) }
+        coVerify(exactly = 0) { gameDao.updateLocalPath(2L, any(), any(), any()) }
         coVerify { gameDao.clearLocalPath(1L) }
     }
 
@@ -193,7 +193,7 @@ class SiblingSplitRepairTest {
         val outcome = repair.repair()
 
         assertEquals(0, outcome.pathsHandedOver)
-        coVerify(exactly = 0) { gameDao.updateLocalPath(any(), any(), any(), any(), any()) }
+        coVerify(exactly = 0) { gameDao.updateLocalPath(any(), any(), any(), any()) }
         coVerify(exactly = 0) { gameDao.clearLocalPath(any()) }
     }
 
