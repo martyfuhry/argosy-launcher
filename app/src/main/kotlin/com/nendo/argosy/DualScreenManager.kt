@@ -905,16 +905,16 @@ class DualScreenManager(
             emptyList()
         )
 
-    /**
-     * What the presentation screen should show right now: the most recent published slot, or the
-     * fallback once every publisher has released. Screens publish while they are on screen and
-     * release when they leave, so the surface follows navigation without either side tracking it.
-     */
     private val _presentationStyle =
         MutableStateFlow(com.nendo.argosy.domain.model.PresentationStyle())
     val presentationStyle: StateFlow<com.nendo.argosy.domain.model.PresentationStyle> =
         _presentationStyle
 
+    /**
+     * What the presentation screen should show right now: the most recent published slot, or the
+     * fallback once every publisher has released. Screens publish while they are on screen and
+     * release when they leave, so the surface follows navigation without either side tracking it.
+     */
     fun presentSlot(
         owner: com.nendo.argosy.ui.dualscreen.SlotOwner,
         slot: com.nendo.argosy.ui.dualscreen.PresentationSlot
