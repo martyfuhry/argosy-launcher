@@ -468,13 +468,6 @@
     <string name="dual_detail_reviews_empty">अभी कोई समीक्षा नहीं</string>
     <string name="dual_detail_reviews_write_row">समीक्षा लिखें</string>
     <string name="dual_detail_option_write_review">समीक्षा लिखें</string>
-    <string name="dual_presentation_fact_developer">डेवलपर</string>
-    <string name="dual_presentation_fact_released">रिलीज़</string>
-    <string name="dual_presentation_fact_genre">शैली</string>
-    <string name="dual_presentation_fact_rating">रेटिंग</string>
-    <string name="dual_presentation_fact_user_rating">आपकी रेटिंग</string>
-    <string name="dual_presentation_fact_play_time">खेला</string>
-    <string name="dual_presentation_fact_time_to_beat">पूरा करने का समय</string>
-    <string name="dual_presentation_fact_achievements">उपलब्धियाँ</string>
-    <string name="dual_presentation_fact_friends">दोस्त</string>
+    <string name="dual_showcase_progress_main">मुख्य कहानी के %2$s में से %1$s</string>
+    <string name="dual_showcase_played">%1$s खेला</string>
 </resources>

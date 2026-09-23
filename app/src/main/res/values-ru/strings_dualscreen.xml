@@ -450,13 +450,6 @@
     <string name="dual_detail_reviews_empty">Отзывов пока нет</string>
     <string name="dual_detail_reviews_write_row">Написать отзыв</string>
     <string name="dual_detail_option_write_review">Написать отзыв</string>
-    <string name="dual_presentation_fact_developer">Разработчик</string>
-    <string name="dual_presentation_fact_released">Выход</string>
-    <string name="dual_presentation_fact_genre">Жанр</string>
-    <string name="dual_presentation_fact_rating">Рейтинг</string>
-    <string name="dual_presentation_fact_user_rating">Ваша оценка</string>
-    <string name="dual_presentation_fact_play_time">Сыграно</string>
-    <string name="dual_presentation_fact_time_to_beat">Прохождение</string>
-    <string name="dual_presentation_fact_achievements">Достижения</string>
-    <string name="dual_presentation_fact_friends">Друзья</string>
+    <string name="dual_showcase_progress_main">%1$s из %2$s основного сюжета</string>
+    <string name="dual_showcase_played">Сыграно %1$s</string>
 </resources>

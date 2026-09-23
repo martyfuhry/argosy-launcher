@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -67,6 +68,11 @@ private val IN_GAME_APP_BAR_HEIGHT =
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot) {
+    val density = LocalDensity.current
+    val hints = com.nendo.argosy.DualScreenManagerHolder.instance
+        ?.controlHints?.collectAsState()?.value.orEmpty()
+    var measuredHintsHeight by remember { mutableStateOf(0.dp) }
+    val hintsHeight = if (hints.isEmpty()) 0.dp else measuredHintsHeight
     Box(modifier = Modifier.fillMaxSize().surfaceBackdrop(BackdropRole.WALLPAPER)) {
         when (slot) {
             PresentationSlot.Fallback -> Unit
@@ -88,6 +94,7 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                 CompanionDetailScreen(
                     detail = slot.detail,
                     style = style,
+                    bottomInset = hintsHeight,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -115,18 +122,16 @@ fun PresentationSlotContent(slot: PresentationSlot) {
                     .align(Alignment.TopEnd)
                     .padding(Dimens.spacingLg)
             )
-            RelayedControlHints(modifier = Modifier.align(Alignment.BottomCenter))
+            if (hints.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .onSizeChanged { measuredHintsHeight = with(density) { it.height.toDp() } }
+                ) {
+                    FooterBar(hints = hints.map { it.button to it.label })
+                }
+            }
         }
-    }
-}
-
-@Composable
-private fun RelayedControlHints(modifier: Modifier = Modifier) {
-    val manager = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
-    val hints by manager.controlHints.collectAsState()
-    if (hints.isEmpty()) return
-    Box(modifier = modifier) {
-        FooterBar(hints = hints.map { it.button to it.label })
     }
 }
 

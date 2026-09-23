@@ -468,13 +468,6 @@
     <string name="dual_detail_reviews_empty">Noch keine Rezensionen</string>
     <string name="dual_detail_reviews_write_row">Rezension schreiben</string>
     <string name="dual_detail_option_write_review">Rezension schreiben</string>
-    <string name="dual_presentation_fact_developer">Entwickler</string>
-    <string name="dual_presentation_fact_released">Erschienen</string>
-    <string name="dual_presentation_fact_genre">Genre</string>
-    <string name="dual_presentation_fact_rating">Bewertung</string>
-    <string name="dual_presentation_fact_user_rating">Deine Bewertung</string>
-    <string name="dual_presentation_fact_play_time">Gespielt</string>
-    <string name="dual_presentation_fact_time_to_beat">Spielzeit</string>
-    <string name="dual_presentation_fact_achievements">Erfolge</string>
-    <string name="dual_presentation_fact_friends">Freunde</string>
+    <string name="dual_showcase_progress_main">%1$s von %2$s Hauptstory</string>
+    <string name="dual_showcase_played">%1$s gespielt</string>
 </resources>

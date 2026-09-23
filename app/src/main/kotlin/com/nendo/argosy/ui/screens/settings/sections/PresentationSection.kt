@@ -21,6 +21,7 @@ import com.nendo.argosy.domain.model.PRESENTATION_SCRIM_MAX
 import com.nendo.argosy.domain.model.PRESENTATION_SCRIM_MIN
 import com.nendo.argosy.domain.model.PRESENTATION_SCRIM_STEP
 import com.nendo.argosy.domain.model.PresentationArt
+import com.nendo.argosy.domain.model.PresentationLayout
 import com.nendo.argosy.domain.model.PresentationScrim
 import com.nendo.argosy.domain.model.PresentationStat
 import com.nendo.argosy.domain.model.PresentationStyle
@@ -40,6 +41,7 @@ import com.nendo.argosy.ui.theme.Dimens
 internal val PRESENTATION_MENU_STATS: List<PresentationStat> = listOf(
     PresentationStat.DEVELOPER,
     PresentationStat.RELEASE_YEAR,
+    PresentationStat.PLAYERS,
     PresentationStat.GENRE,
     PresentationStat.COMMUNITY_RATING,
     PresentationStat.USER_RATING,
@@ -58,19 +60,28 @@ internal sealed class PresentationItem(
 
     class Header(key: String, section: String, val titleRes: Int) : PresentationItem(key, section)
 
+    data object Layout : PresentationItem("presentationLayout", "layout")
     data object Scrim : PresentationItem("presentationScrim", "background")
     data object ScrimStrength : PresentationItem(
         key = "presentationScrimStrength",
         section = "background",
         visibleWhen = { it.scrim != PresentationScrim.NONE }
     )
-    data object Art : PresentationItem("presentationArt", "artwork")
-    data class Stat(val stat: PresentationStat) :
-        PresentationItem("presentationStat_${stat.name}", "stats")
+    data object Art : PresentationItem(
+        key = "presentationArt",
+        section = "artwork",
+        visibleWhen = { it.layout == PresentationLayout.CINEMATIC }
+    )
+    data class Stat(val stat: PresentationStat) : PresentationItem(
+        key = "presentationStat_${stat.name}",
+        section = "stats",
+        visibleWhen = { it.layout != PresentationLayout.LOGO }
+    )
 
     companion object {
         val ALL: List<PresentationItem>
             get() = listOf(
+            Layout,
             Header("backgroundHeader", "background", R.string.settings_presentation_section_background),
             Scrim,
             ScrimStrength,
@@ -104,6 +115,9 @@ internal fun presentationItemAtFocusIndex(index: Int, style: PresentationStyle):
 
 internal fun presentationSections(style: PresentationStyle) = presentationLayout.buildSections(style)
 
+internal fun presentationVisibleItems(style: PresentationStyle): List<PresentationItem> =
+    presentationLayout.visibleItems(style)
+
 /**
  * Left/right on [item]: enums wrap, the strength steps and clamps, and a stat follows the house rule
  * that left is off and right is on. Null when [item] takes no adjustment.
@@ -113,6 +127,7 @@ internal fun adjustPresentationItem(
     item: PresentationItem,
     direction: Int
 ): PresentationStyle? = when (item) {
+    PresentationItem.Layout -> style.copy(layout = cycleEnum(style.layout, direction))
     PresentationItem.Scrim -> style.copy(scrim = cycleEnum(style.scrim, direction))
     PresentationItem.ScrimStrength -> style.copy(
         scrimStrength = (style.scrimStrength + direction * PRESENTATION_SCRIM_STEP)
@@ -123,12 +138,15 @@ internal fun adjustPresentationItem(
     is PresentationItem.Header -> null
 }
 
-internal fun PresentationStyle.withStat(stat: PresentationStat, shown: Boolean): PresentationStyle =
-    copy(stats = if (shown) stats + stat else stats - stat)
-
 private inline fun <reified T : Enum<T>> cycleEnum(current: T, direction: Int): T {
     val values = enumValues<T>()
     return values[(current.ordinal + direction).mod(values.size)]
+}
+
+internal fun presentationLayoutLabelRes(layout: PresentationLayout): Int = when (layout) {
+    PresentationLayout.CINEMATIC -> R.string.settings_presentation_layout_cinematic
+    PresentationLayout.JOURNAL -> R.string.settings_presentation_layout_journal
+    PresentationLayout.LOGO -> R.string.settings_presentation_layout_logo
 }
 
 internal fun presentationScrimLabelRes(scrim: PresentationScrim): Int = when (scrim) {
@@ -147,6 +165,7 @@ internal fun presentationArtLabelRes(art: PresentationArt): Int = when (art) {
 internal fun presentationStatLabelRes(stat: PresentationStat): Int = when (stat) {
     PresentationStat.DEVELOPER -> R.string.settings_presentation_stat_developer
     PresentationStat.RELEASE_YEAR -> R.string.settings_presentation_stat_release_year
+    PresentationStat.PLAYERS -> R.string.settings_presentation_stat_players
     PresentationStat.GENRE -> R.string.settings_presentation_stat_genre
     PresentationStat.COMMUNITY_RATING -> R.string.settings_presentation_stat_community_rating
     PresentationStat.USER_RATING -> R.string.settings_presentation_stat_user_rating
@@ -173,7 +192,7 @@ fun PresentationSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
         )
     }
 
-    val visibleItems = remember(style) { presentationLayout.visibleItems(style) }
+    val visibleItems = remember(style) { presentationVisibleItems(style) }
     val sections = remember(style, context) { presentationLayout.buildSections(style, context) }
 
     fun isFocused(item: PresentationItem): Boolean =
@@ -203,6 +222,27 @@ fun PresentationSection(uiState: SettingsUiState, viewModel: SettingsViewModel) 
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(vertical = Dimens.spacingXs)
+            )
+
+            PresentationItem.Layout -> CyclePreference(
+                title = stringResource(R.string.settings_presentation_layout_title),
+                value = stringResource(presentationLayoutLabelRes(style.layout)),
+                isFocused = isFocused(item),
+                onClick = {
+                    focus(item)
+                    adjustPresentationItem(style, item, 1)?.let(viewModel::setPresentationStyle)
+                },
+                onPrev = {
+                    focus(item)
+                    adjustPresentationItem(style, item, -1)?.let(viewModel::setPresentationStyle)
+                },
+                options = remember(context) {
+                    PresentationLayout.entries.map { context.getString(presentationLayoutLabelRes(it)) }
+                },
+                onSelect = { index ->
+                    viewModel.setPresentationStyle(style.copy(layout = PresentationLayout.entries[index]))
+                },
+                pickerRequestToken = pickerToken(item)
             )
 
             PresentationItem.Scrim -> CyclePreference(

@@ -422,13 +422,6 @@
     <string name="dual_detail_reviews_empty">尚無評論</string>
     <string name="dual_detail_reviews_write_row">撰寫評論</string>
     <string name="dual_detail_option_write_review">撰寫評論</string>
-    <string name="dual_presentation_fact_developer">開發商</string>
-    <string name="dual_presentation_fact_released">發行日期</string>
-    <string name="dual_presentation_fact_genre">類型</string>
-    <string name="dual_presentation_fact_rating">評分</string>
-    <string name="dual_presentation_fact_user_rating">我的評分</string>
-    <string name="dual_presentation_fact_play_time">已遊玩</string>
-    <string name="dual_presentation_fact_time_to_beat">通關時長</string>
-    <string name="dual_presentation_fact_achievements">成就</string>
-    <string name="dual_presentation_fact_friends">好友</string>
+    <string name="dual_showcase_progress_main">%1$s / 主線 %2$s</string>
+    <string name="dual_showcase_played">已遊玩 %1$s</string>
 </resources>

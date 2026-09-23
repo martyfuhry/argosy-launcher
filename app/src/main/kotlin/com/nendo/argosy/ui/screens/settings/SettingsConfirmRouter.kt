@@ -12,7 +12,6 @@ import com.nendo.argosy.ui.screens.settings.sections.AboutItem
 import com.nendo.argosy.ui.screens.settings.sections.PresentationItem
 import com.nendo.argosy.ui.screens.settings.sections.presentationItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.presentationMaxFocusIndex
-import com.nendo.argosy.ui.screens.settings.sections.withStat
 import com.nendo.argosy.ui.screens.settings.sections.AmbientLedItem
 import com.nendo.argosy.ui.screens.settings.sections.ambientLedItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.ambientLedMaxFocusIndex
@@ -742,7 +741,7 @@ private fun routeDisplaysConfirm(vm: SettingsViewModel, state: SettingsUiState):
 private fun routePresentationConfirm(vm: SettingsViewModel, state: SettingsUiState): InputResult {
     val style = state.display.presentationStyle
     return when (val item = presentationItemAtFocusIndex(state.focusedIndex, style)) {
-        PresentationItem.Scrim, PresentationItem.Art -> {
+        PresentationItem.Layout, PresentationItem.Scrim, PresentationItem.Art -> {
             vm.requestEnumPicker(item.key)
             InputResult.handled(SoundType.OPEN_MODAL)
         }

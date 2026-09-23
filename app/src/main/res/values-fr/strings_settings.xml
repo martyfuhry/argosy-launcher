@@ -217,6 +217,10 @@
     <string name="settings_displays_screens_subtitle">Attribuez un rôle à chaque écran connecté</string>
     <string name="settings_displays_presentation_title">Présentation</string>
     <string name="settings_displays_presentation_subtitle">Comment l\'autre écran affiche le jeu sélectionné</string>
+    <string name="settings_presentation_layout_title">Disposition</string>
+    <string name="settings_presentation_layout_cinematic">Cinéma</string>
+    <string name="settings_presentation_layout_journal">Journal</string>
+    <string name="settings_presentation_layout_logo">Logo seul</string>
     <string name="settings_presentation_section_background">Arrière-plan</string>
     <string name="settings_presentation_section_artwork">Illustrations</string>
     <string name="settings_presentation_section_stats">Infos</string>
@@ -232,6 +236,7 @@
     <string name="settings_presentation_art_title_only">Titre seul</string>
     <string name="settings_presentation_stat_developer">Développeur</string>
     <string name="settings_presentation_stat_release_year">Année de sortie</string>
+    <string name="settings_presentation_stat_players">Joueurs</string>
     <string name="settings_presentation_stat_genre">Genre</string>
     <string name="settings_presentation_stat_community_rating">Note de la communauté</string>
     <string name="settings_presentation_stat_user_rating">Votre note</string>

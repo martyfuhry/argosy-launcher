@@ -227,6 +227,10 @@
     <string name="settings_displays_screens_subtitle">Asigna una función a cada pantalla conectada</string>
     <string name="settings_displays_presentation_title">Presentación</string>
     <string name="settings_displays_presentation_subtitle">Cómo muestra la otra pantalla el juego seleccionado</string>
+    <string name="settings_presentation_layout_title">Diseño</string>
+    <string name="settings_presentation_layout_cinematic">Cinemático</string>
+    <string name="settings_presentation_layout_journal">Diario</string>
+    <string name="settings_presentation_layout_logo">Solo logotipo</string>
     <string name="settings_presentation_section_background">Fondo</string>
     <string name="settings_presentation_section_artwork">Arte</string>
     <string name="settings_presentation_section_stats">Datos</string>
@@ -242,6 +246,7 @@
     <string name="settings_presentation_art_title_only">Solo el título</string>
     <string name="settings_presentation_stat_developer">Desarrollador</string>
     <string name="settings_presentation_stat_release_year">Año de lanzamiento</string>
+    <string name="settings_presentation_stat_players">Jugadores</string>
     <string name="settings_presentation_stat_genre">Género</string>
     <string name="settings_presentation_stat_community_rating">Valoración de la comunidad</string>
     <string name="settings_presentation_stat_user_rating">Tu valoración</string>

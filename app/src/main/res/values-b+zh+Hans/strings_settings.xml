@@ -211,6 +211,10 @@
     <string name="settings_displays_screens_subtitle">为每块已连接的屏幕分配用途</string>
     <string name="settings_displays_presentation_title">展示</string>
     <string name="settings_displays_presentation_subtitle">另一块屏幕如何展示选中的游戏</string>
+    <string name="settings_presentation_layout_title">布局</string>
+    <string name="settings_presentation_layout_cinematic">影院</string>
+    <string name="settings_presentation_layout_journal">日志</string>
+    <string name="settings_presentation_layout_logo">仅标志</string>
     <string name="settings_presentation_section_background">背景</string>
     <string name="settings_presentation_section_artwork">封面图</string>
     <string name="settings_presentation_section_stats">信息</string>
@@ -226,6 +230,7 @@
     <string name="settings_presentation_art_title_only">仅标题</string>
     <string name="settings_presentation_stat_developer">开发商</string>
     <string name="settings_presentation_stat_release_year">发行年份</string>
+    <string name="settings_presentation_stat_players">玩家人数</string>
     <string name="settings_presentation_stat_genre">类型</string>
     <string name="settings_presentation_stat_community_rating">社区评分</string>
     <string name="settings_presentation_stat_user_rating">我的评分</string>

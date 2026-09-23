@@ -224,6 +224,10 @@
     <string name="settings_displays_screens_subtitle">Jedem angeschlossenen Bildschirm eine Aufgabe geben</string>
     <string name="settings_displays_presentation_title">Präsentation</string>
     <string name="settings_displays_presentation_subtitle">Wie der andere Bildschirm das gewählte Spiel zeigt</string>
+    <string name="settings_presentation_layout_title">Layout</string>
+    <string name="settings_presentation_layout_cinematic">Kino</string>
+    <string name="settings_presentation_layout_journal">Journal</string>
+    <string name="settings_presentation_layout_logo">Nur Logo</string>
     <string name="settings_presentation_section_background">Hintergrund</string>
     <string name="settings_presentation_section_artwork">Bildmaterial</string>
     <string name="settings_presentation_section_stats">Werte</string>
@@ -239,6 +243,7 @@
     <string name="settings_presentation_art_title_only">Nur Titel</string>
     <string name="settings_presentation_stat_developer">Entwickler</string>
     <string name="settings_presentation_stat_release_year">Erscheinungsjahr</string>
+    <string name="settings_presentation_stat_players">Spieler</string>
     <string name="settings_presentation_stat_genre">Genre</string>
     <string name="settings_presentation_stat_community_rating">Community-Bewertung</string>
     <string name="settings_presentation_stat_user_rating">Deine Bewertung</string>

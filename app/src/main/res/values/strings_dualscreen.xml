@@ -962,20 +962,9 @@
          own named slots. Noun phrase. -->
     <string name="dual_detail_save_slot_auto">Auto Save</string>
 
-    <!-- Labels of the facts shown about the focused game on the presentation screen. -->
-    <string name="dual_presentation_fact_developer">Developer</string>
-    <!-- The year the game came out. Its value is a four-digit year. -->
-    <string name="dual_presentation_fact_released">Released</string>
-    <string name="dual_presentation_fact_genre">Genre</string>
-    <!-- The community score. Its value is a percentage. -->
-    <string name="dual_presentation_fact_rating">Rating</string>
-    <!-- The player's own score out of ten. -->
-    <string name="dual_presentation_fact_user_rating">Your Rating</string>
-    <!-- How long the player has played. Past participle used as a label. -->
-    <string name="dual_presentation_fact_play_time">Played</string>
-    <string name="dual_presentation_fact_time_to_beat">Time to Beat</string>
-    <!-- Its value is achievements earned out of the total. -->
-    <string name="dual_presentation_fact_achievements">Achievements</string>
-    <!-- Its value names friends playing the game now or recently, then a count of the rest. -->
-    <string name="dual_presentation_fact_friends">Friends</string>
+    <!-- Beside a progress bar on the presentation screen. %1$s is how long the player has played,
+         %2$s how long the main story takes, both durations such as "27h". -->
+    <string name="dual_showcase_progress_main">%1$s of %2$s main story</string>
+    <!-- On the presentation screen, how long the player has played. %1$s is a duration such as "27h". -->
+    <string name="dual_showcase_played">%1$s played</string>
 </resources>

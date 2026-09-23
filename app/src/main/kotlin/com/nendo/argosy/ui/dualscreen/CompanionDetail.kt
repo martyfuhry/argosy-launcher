@@ -19,6 +19,7 @@ package com.nendo.argosy.ui.dualscreen
 data class CompanionDetail(
     val title: String,
     val subtitle: String? = null,
+    val platformSlug: String? = null,
     val overview: String? = null,
     val artUrl: String? = null,
     val backdropUrl: String? = null,
@@ -35,6 +36,7 @@ data class CompanionDetail(
 data class CompanionGameStats(
     val developer: String? = null,
     val releaseYear: Int? = null,
+    val players: String? = null,
     val genre: String? = null,
     val communityRating: Float? = null,
     val userRating: Int = 0,
@@ -42,12 +44,7 @@ data class CompanionGameStats(
     val timeToBeatMainSec: Int? = null,
     val achievementCount: Int = 0,
     val earnedAchievementCount: Int = 0,
-    val friends: List<CompanionFriend> = emptyList()
-)
-
-data class CompanionFriend(
-    val name: String,
-    val playingNow: Boolean
+    val friends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList()
 )
 
 data class CompanionFact(

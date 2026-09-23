@@ -1,0 +1,572 @@
+package com.nendo.argosy.ui.dualscreen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Sell
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import coil.compose.AsyncImage
+import com.nendo.argosy.R
+import com.nendo.argosy.data.social.FriendActivity
+import com.nendo.argosy.domain.model.PresentationArt
+import com.nendo.argosy.domain.model.PresentationLayout
+import com.nendo.argosy.domain.model.PresentationScrim
+import com.nendo.argosy.domain.model.PresentationStat
+import com.nendo.argosy.domain.model.PresentationStyle
+import com.nendo.argosy.ui.common.playerCountGlyph
+import com.nendo.argosy.ui.common.rememberFileImageModel
+import com.nendo.argosy.ui.components.Box3dCover
+import com.nendo.argosy.ui.components.GameTitle
+import com.nendo.argosy.ui.components.PlatformIconAssets
+import com.nendo.argosy.ui.components.friends.FriendsActivityBadge
+import com.nendo.argosy.ui.theme.ALauncherColors
+import com.nendo.argosy.ui.theme.Dimens
+import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.Motion
+import com.nendo.argosy.util.formatPlayTime
+import com.nendo.argosy.util.formatTimeToBeat
+
+private const val PERCENT = 100f
+private const val DEFAULT_STRENGTH = 90f
+private const val CINEMATIC_TOP_ALPHA = 0.35f
+private const val CINEMATIC_BOTTOM_ALPHA = 0.96f
+private const val CINEMATIC_CLEAR_STOP = 0.3f
+private const val CINEMATIC_SHADE_RAMP = 0.2f
+private const val CINEMATIC_SHADE_ALPHA = 0.8f
+private const val JOURNAL_LEFT_ALPHA = 0.96f
+private const val JOURNAL_MID_ALPHA = 0.86f
+private const val JOURNAL_RIGHT_ALPHA = 0.15f
+private const val JOURNAL_MID_STOP = 0.42f
+private const val JOURNAL_CLEAR_STOP = 0.8f
+private const val LOGO_TOP_ALPHA = 0.1f
+private const val LOGO_BOTTOM_ALPHA = 0.7f
+private const val CINEMATIC_COVER_HEIGHT_SHARE = 0.36f
+private const val JOURNAL_COLUMN_WIDTH_SHARE = 0.56f
+private const val SERIES_SCALE = 0.45f
+private const val PILL_ALPHA = 0.6f
+private const val DIVIDER_ALPHA = 0.25f
+private const val TRACK_ALPHA = 0.14f
+private const val CARD_ALPHA = 0.06f
+
+/**
+ * A focused game on the presentation screen, drawn in [style]'s layout.
+ *
+ * @param bottomInset the height of whatever the host draws over the bottom edge, such as relayed
+ *   control hints; content stays above it.
+ */
+@Composable
+fun GameShowcase(
+    detail: CompanionDetail,
+    style: PresentationStyle,
+    bottomInset: Dp,
+    modifier: Modifier = Modifier
+) {
+    val contentBottom = bottomInset + Dimens.spacingMd
+    val theme = LocalArgosyTheme.current
+    val friends = detail.stats?.friends.orEmpty().takeIf { style.shows(PresentationStat.FRIENDS) }.orEmpty()
+    BoxWithConstraints(modifier = modifier.fillMaxSize().background(theme.surfaceBase)) {
+        val gutter = maxWidth * GUTTER_SHARE
+        val coverHeight = maxHeight * CINEMATIC_COVER_HEIGHT_SHARE
+        val shadeStart = ((maxHeight - contentBottom - coverHeight) / maxHeight)
+            .coerceIn(CINEMATIC_CLEAR_STOP, 1f)
+        (detail.backdropUrl ?: detail.artUrl)?.let { backdrop ->
+            AsyncImage(
+                model = rememberFileImageModel(backdrop),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .then(if (style.scrim == PresentationScrim.BLUR) Modifier.blur(Motion.blurRadiusDrawer) else Modifier)
+            )
+        }
+        ShowcaseScrim(style = style, color = theme.surfaceBase, shadeStart = shadeStart)
+
+        when (style.layout) {
+            PresentationLayout.LOGO -> LogoShowcase(detail = detail, gutter = gutter, bottom = contentBottom)
+            PresentationLayout.CINEMATIC -> CinematicShowcase(
+                detail = detail,
+                style = style,
+                friends = friends,
+                gutter = gutter,
+                bottom = contentBottom,
+                coverHeight = coverHeight
+            )
+            PresentationLayout.JOURNAL -> JournalShowcase(
+                detail = detail,
+                style = style,
+                friends = friends,
+                gutter = gutter,
+                bottom = contentBottom,
+                columnWidth = maxWidth * JOURNAL_COLUMN_WIDTH_SHARE
+            )
+        }
+    }
+}
+
+private const val GUTTER_SHARE = 0.0375f
+
+@Composable
+private fun ShowcaseScrim(style: PresentationStyle, color: Color, shadeStart: Float) {
+    val strength = style.scrimStrength / PERCENT
+    val scale = style.scrimStrength / DEFAULT_STRENGTH
+    fun tone(alpha: Float) = color.copy(alpha = (alpha * scale).coerceIn(0f, 1f))
+    val brush = when (style.scrim) {
+        PresentationScrim.NONE -> return
+        PresentationScrim.SOLID, PresentationScrim.BLUR -> SolidColor(color.copy(alpha = strength))
+        PresentationScrim.GRADIENT -> when (style.layout) {
+            PresentationLayout.CINEMATIC -> Brush.verticalGradient(
+                0f to tone(CINEMATIC_TOP_ALPHA),
+                CINEMATIC_CLEAR_STOP to tone(0f),
+                shadeStart to tone(0f),
+                (shadeStart + CINEMATIC_SHADE_RAMP).coerceAtMost(1f) to tone(CINEMATIC_SHADE_ALPHA),
+                1f to tone(CINEMATIC_BOTTOM_ALPHA)
+            )
+            PresentationLayout.JOURNAL -> Brush.horizontalGradient(
+                0f to tone(JOURNAL_LEFT_ALPHA),
+                JOURNAL_MID_STOP to tone(JOURNAL_MID_ALPHA),
+                JOURNAL_CLEAR_STOP to tone(JOURNAL_RIGHT_ALPHA),
+                1f to tone(JOURNAL_RIGHT_ALPHA)
+            )
+            PresentationLayout.LOGO -> Brush.verticalGradient(
+                0f to tone(LOGO_TOP_ALPHA),
+                1f to tone(LOGO_BOTTOM_ALPHA)
+            )
+        }
+    }
+    Box(modifier = Modifier.fillMaxSize().background(brush))
+}
+
+@Composable
+private fun LogoShowcase(detail: CompanionDetail, gutter: Dp, bottom: Dp) {
+    val theme = LocalArgosyTheme.current
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(start = gutter, end = gutter, top = bottom, bottom = bottom),
+        contentAlignment = Alignment.Center
+    ) {
+        GameTitle(
+            title = detail.title,
+            titleStyle = MaterialTheme.typography.displayLarge,
+            titleColor = theme.textPrimary,
+            seriesScale = SERIES_SCALE,
+            maxLines = 2,
+            textAlign = TextAlign.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        )
+    }
+}
+
+@Composable
+private fun CinematicShowcase(
+    detail: CompanionDetail,
+    style: PresentationStyle,
+    friends: List<FriendActivity>,
+    gutter: Dp,
+    bottom: Dp,
+    coverHeight: Dp
+) {
+    val journey = rememberJourney(detail.stats, style)
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (friends.isNotEmpty()) {
+            ShowcaseFriendsPill(
+                friends = friends,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = gutter, top = Dimens.spacingLg)
+            )
+        }
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(start = gutter, end = gutter, bottom = bottom),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.spacingXl),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            ShowcaseCover(detail = detail, art = style.art, height = coverHeight)
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
+            ) {
+                ShowcaseTitle(detail = detail)
+                ShowcaseRail(items = showcaseRailItems(detail, style, journey != null))
+                journey?.let { ShowcaseJourneyBar(journey = it) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun JournalShowcase(
+    detail: CompanionDetail,
+    style: PresentationStyle,
+    friends: List<FriendActivity>,
+    gutter: Dp,
+    bottom: Dp,
+    columnWidth: Dp
+) {
+    val theme = LocalArgosyTheme.current
+    val stats = detail.stats
+    val journey = rememberJourney(stats, style)
+    val achievements = stats?.takeIf { style.shows(PresentationStat.ACHIEVEMENTS) && it.achievementCount > 0 }
+    Column(
+        modifier = Modifier
+            .width(columnWidth)
+            .fillMaxHeight()
+            .padding(start = gutter, top = Dimens.spacingXl, bottom = bottom),
+        verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
+    ) {
+        detail.subtitle?.let { ShowcaseSubtitle(it, detail.platformSlug) }
+        GameTitle(
+            title = detail.title,
+            titleStyle = MaterialTheme.typography.displayMedium,
+            titleColor = theme.textPrimary,
+            seriesScale = SERIES_SCALE,
+            maxLines = 2
+        )
+        ShowcaseRail(items = showcaseRailItems(detail, style, journey != null))
+        if (friends.isNotEmpty()) {
+            FriendsActivityBadge(friends = friends, textColor = theme.textPrimary)
+        }
+        Box(modifier = Modifier.weight(1f))
+        if (journey != null || achievements != null) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(Dimens.radiusLg))
+                    .background(theme.textPrimary.copy(alpha = CARD_ALPHA))
+                    .padding(Dimens.spacingMd),
+                verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
+            ) {
+                journey?.let { ShowcaseJourneyBar(journey = it) }
+                achievements?.let {
+                    ShowcaseProgressBar(
+                        fraction = it.earnedAchievementCount.toFloat() / it.achievementCount,
+                        color = ALauncherColors.TrophyAmber,
+                        label = "${it.earnedAchievementCount}/${it.achievementCount}",
+                        icon = Icons.Filled.EmojiEvents
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShowcaseTitle(detail: CompanionDetail) {
+    val theme = LocalArgosyTheme.current
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)) {
+        detail.subtitle?.let { ShowcaseSubtitle(it, detail.platformSlug) }
+        GameTitle(
+            title = detail.title,
+            titleStyle = MaterialTheme.typography.displayMedium,
+            titleColor = theme.textPrimary,
+            seriesScale = SERIES_SCALE,
+            maxLines = 2
+        )
+    }
+}
+
+@Composable
+private fun ShowcaseSubtitle(subtitle: String, platformSlug: String?) {
+    val theme = LocalArgosyTheme.current
+    val context = LocalContext.current
+    val iconUri = platformSlug?.let { slug -> remember(slug) { PlatformIconAssets.resolveAssetUri(context, slug) } }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm),
+        modifier = Modifier
+            .clip(RoundedCornerShape(Dimens.radiusPill))
+            .background(theme.surfaceBase.copy(alpha = PILL_ALPHA))
+            .padding(horizontal = Dimens.spacingMd, vertical = Dimens.spacingXs)
+    ) {
+        iconUri?.let { uri ->
+            AsyncImage(
+                model = uri,
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(Dimens.iconSm)
+            )
+        }
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.labelLarge,
+            color = theme.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+@Composable
+private fun ShowcaseCover(detail: CompanionDetail, art: PresentationArt, height: Dp) {
+    val artUrl = detail.artUrl ?: return
+    if (art == PresentationArt.TITLE) return
+    val localSpine = detail.spineUrl
+        ?.takeIf { art == PresentationArt.BOX_3D && artUrl.startsWith("/") && it.startsWith("/") }
+    if (localSpine != null) {
+        Box3dCover(
+            frontPath = artUrl,
+            spinePath = localSpine,
+            isInteractive = false,
+            modifier = Modifier.height(height)
+        )
+        return
+    }
+    AsyncImage(
+        model = rememberFileImageModel(artUrl),
+        contentDescription = null,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier
+            .height(height)
+            .clip(RoundedCornerShape(Dimens.radiusSm))
+    )
+}
+
+@Composable
+private fun ShowcaseFriendsPill(friends: List<FriendActivity>, modifier: Modifier = Modifier) {
+    val theme = LocalArgosyTheme.current
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(Dimens.radiusPill))
+            .background(theme.surfaceBase.copy(alpha = PILL_ALPHA))
+            .padding(horizontal = Dimens.spacingMd, vertical = Dimens.spacingXs)
+    ) {
+        FriendsActivityBadge(friends = friends, textColor = theme.textPrimary)
+    }
+}
+
+private data class RailItem(val icon: ImageVector?, val tint: Color?, val text: String)
+
+@Composable
+private fun showcaseRailItems(
+    detail: CompanionDetail,
+    style: PresentationStyle,
+    journeyShown: Boolean
+): List<RailItem> {
+    val stats = detail.stats ?: return detail.facts.map { RailItem(null, null, it.value) }
+    val context = LocalContext.current
+    val primary = MaterialTheme.colorScheme.primary
+    val playedTemplate = stringResource(R.string.dual_showcase_played)
+    return PresentationStat.entries.filter { style.shows(it) }.mapNotNull { stat ->
+        when (stat) {
+            PresentationStat.DEVELOPER -> stats.developer?.let { RailItem(null, null, it) }
+            PresentationStat.RELEASE_YEAR ->
+                stats.releaseYear?.let { RailItem(Icons.Default.CalendarToday, null, it.toString()) }
+            PresentationStat.PLAYERS ->
+                stats.players?.takeIf { it.isNotBlank() }?.let { RailItem(playerCountGlyph(it), null, it) }
+            PresentationStat.GENRE -> stats.genre?.split(",")?.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
+                ?.let { RailItem(Icons.Default.Sell, null, it) }
+            PresentationStat.COMMUNITY_RATING ->
+                stats.communityRating?.let { RailItem(Icons.Default.Public, primary, "${it.toInt()}%") }
+            PresentationStat.USER_RATING -> stats.userRating.takeIf { it > 0 }
+                ?.let { RailItem(Icons.Default.Star, ALauncherColors.StarGold, "$it/10") }
+            PresentationStat.PLAY_TIME -> stats.playTimeMinutes.takeIf { it > 0 && !journeyShown }
+                ?.let { RailItem(Icons.Default.SportsEsports, null, playedTemplate.format(formatPlayTime(context, it))) }
+            PresentationStat.TIME_TO_BEAT -> formatTimeToBeat(context, stats.timeToBeatMainSec)
+                ?.takeIf { !journeyShown }
+                ?.let { RailItem(Icons.Default.Schedule, null, it) }
+            PresentationStat.ACHIEVEMENTS -> stats.achievementCount.takeIf {
+                it > 0 && style.layout != PresentationLayout.JOURNAL
+            }?.let { RailItem(Icons.Filled.EmojiEvents, ALauncherColors.TrophyAmber, "${stats.earnedAchievementCount}/$it") }
+            PresentationStat.FRIENDS -> null
+        }
+    }
+}
+
+@Composable
+private fun ShowcaseRail(items: List<RailItem>) {
+    if (items.isEmpty()) return
+    val theme = LocalArgosyTheme.current
+    DividedFlow(
+        count = items.size,
+        lineSpacing = Dimens.spacingXs,
+        divider = {
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = Dimens.spacingMd)
+                    .width(Dimens.borderThin)
+                    .height(Dimens.iconSm)
+                    .background(theme.textPrimary.copy(alpha = DIVIDER_ALPHA))
+            )
+        }
+    ) { index ->
+        val item = items[index]
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            item.icon?.let { icon ->
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = item.tint ?: theme.textPrimary,
+                    modifier = Modifier.padding(end = Dimens.spacingXs).size(Dimens.iconSm)
+                )
+            }
+            Text(
+                text = item.text,
+                style = MaterialTheme.typography.titleMedium,
+                color = theme.textPrimary,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun DividedFlow(
+    count: Int,
+    lineSpacing: Dp,
+    divider: @Composable () -> Unit,
+    item: @Composable (Int) -> Unit
+) {
+    Layout(
+        contents = listOf(
+            { repeat(count) { item(it) } },
+            { repeat((count - 1).coerceAtLeast(0)) { divider() } }
+        )
+    ) { (itemMeasurables, dividerMeasurables), constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val items = itemMeasurables.map { it.measure(loose) }
+        val dividers = dividerMeasurables.map { it.measure(loose) }
+        val spacing = lineSpacing.roundToPx()
+
+        val lines = mutableListOf(mutableListOf(0))
+        var lineWidth = items.firstOrNull()?.width ?: 0
+        for (index in 1 until items.size) {
+            val joined = lineWidth + dividers[index - 1].width + items[index].width
+            if (joined <= constraints.maxWidth) {
+                lines.last() += index
+                lineWidth = joined
+            } else {
+                lines += mutableListOf(index)
+                lineWidth = items[index].width
+            }
+        }
+        val lineHeights = lines.map { line -> line.maxOf { items[it].height } }
+        val width = if (items.isEmpty()) 0 else lines.maxOf { line ->
+            line.sumOf { items[it].width } + line.drop(1).sumOf { dividers[it - 1].width }
+        }.coerceAtMost(constraints.maxWidth)
+        val height = lineHeights.sum() + spacing * (lines.size - 1).coerceAtLeast(0)
+
+        layout(width, height) {
+            var y = 0
+            lines.forEachIndexed { lineIndex, line ->
+                val lineHeight = lineHeights[lineIndex]
+                var x = 0
+                line.forEachIndexed { position, index ->
+                    if (position > 0) {
+                        val gap = dividers[index - 1]
+                        gap.place(x, y + (lineHeight - gap.height) / 2)
+                        x += gap.width
+                    }
+                    items[index].place(x, y + (lineHeight - items[index].height) / 2)
+                    x += items[index].width
+                }
+                y += lineHeight + spacing
+            }
+        }
+    }
+}
+
+private data class Journey(val fraction: Float, val played: String, val mainStory: String)
+
+@Composable
+private fun rememberJourney(stats: CompanionGameStats?, style: PresentationStyle): Journey? {
+    stats ?: return null
+    if (!style.shows(PresentationStat.PLAY_TIME) || !style.shows(PresentationStat.TIME_TO_BEAT)) return null
+    val mainSec = stats.timeToBeatMainSec?.takeIf { it > 0 } ?: return null
+    if (stats.playTimeMinutes <= 0) return null
+    val context = LocalContext.current
+    val mainStory = formatTimeToBeat(context, mainSec) ?: return null
+    return Journey(
+        fraction = (stats.playTimeMinutes * SECONDS_PER_MINUTE / mainSec.toFloat()).coerceIn(0f, 1f),
+        played = formatPlayTime(context, stats.playTimeMinutes),
+        mainStory = mainStory
+    )
+}
+
+private const val SECONDS_PER_MINUTE = 60f
+
+@Composable
+private fun ShowcaseJourneyBar(journey: Journey) {
+    ShowcaseProgressBar(
+        fraction = journey.fraction,
+        color = LocalArgosyTheme.current.focusAccent,
+        label = stringResource(R.string.dual_showcase_progress_main, journey.played, journey.mainStory),
+        icon = Icons.Default.SportsEsports
+    )
+}
+
+@Composable
+private fun ShowcaseProgressBar(fraction: Float, color: Color, label: String, icon: ImageVector) {
+    val theme = LocalArgosyTheme.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(Dimens.iconSm)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(Dimens.spacingXs)
+                .clip(RoundedCornerShape(Dimens.radiusPill))
+                .background(theme.textPrimary.copy(alpha = TRACK_ALPHA))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction)
+                    .clip(RoundedCornerShape(Dimens.radiusPill))
+                    .background(color)
+            )
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = theme.textDim,
+            maxLines = 1
+        )
+    }
+}

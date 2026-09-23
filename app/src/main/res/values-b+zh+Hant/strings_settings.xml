@@ -198,6 +198,10 @@
     <string name="settings_displays_screens_subtitle">為每片已連接的螢幕指派用途</string>
     <string name="settings_displays_presentation_title">展示</string>
     <string name="settings_displays_presentation_subtitle">另一片螢幕如何展示選取的遊戲</string>
+    <string name="settings_presentation_layout_title">版面</string>
+    <string name="settings_presentation_layout_cinematic">影院</string>
+    <string name="settings_presentation_layout_journal">日誌</string>
+    <string name="settings_presentation_layout_logo">僅標誌</string>
     <string name="settings_presentation_section_background">背景</string>
     <string name="settings_presentation_section_artwork">封面圖</string>
     <string name="settings_presentation_section_stats">資訊</string>
@@ -213,6 +217,7 @@
     <string name="settings_presentation_art_title_only">僅標題</string>
     <string name="settings_presentation_stat_developer">開發商</string>
     <string name="settings_presentation_stat_release_year">發行年份</string>
+    <string name="settings_presentation_stat_players">玩家人數</string>
     <string name="settings_presentation_stat_genre">類型</string>
     <string name="settings_presentation_stat_community_rating">社群評分</string>
     <string name="settings_presentation_stat_user_rating">我的評分</string>

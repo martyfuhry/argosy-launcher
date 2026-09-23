@@ -2,13 +2,13 @@ package com.nendo.argosy.ui.screens.home
 
 import com.nendo.argosy.data.social.FriendActivity
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
-import com.nendo.argosy.ui.dualscreen.CompanionFriend
 import com.nendo.argosy.ui.dualscreen.CompanionGameStats
 
 fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): CompanionDetail =
     CompanionDetail(
         title = title,
         subtitle = platformDisplayName,
+        platformSlug = platformSlug,
         artUrl = coverPath,
         backdropUrl = backgroundPath,
         isGameTitle = true,
@@ -16,6 +16,7 @@ fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): C
         stats = CompanionGameStats(
             developer = developer,
             releaseYear = releaseYear,
+            players = players,
             genre = genre,
             communityRating = rating,
             userRating = userRating,
@@ -23,6 +24,6 @@ fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): C
             timeToBeatMainSec = timeToBeatMainSec,
             achievementCount = achievementCount,
             earnedAchievementCount = earnedAchievementCount,
-            friends = friends.map { CompanionFriend(name = it.displayName, playingNow = it.playingNow) }
+            friends = friends
         )
     )

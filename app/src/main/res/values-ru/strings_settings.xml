@@ -219,6 +219,10 @@
     <string name="settings_displays_screens_subtitle">Назначьте задачу каждому подключённому экрану</string>
     <string name="settings_displays_presentation_title">Презентация</string>
     <string name="settings_displays_presentation_subtitle">Как другой экран показывает выбранную игру</string>
+    <string name="settings_presentation_layout_title">Макет</string>
+    <string name="settings_presentation_layout_cinematic">Кино</string>
+    <string name="settings_presentation_layout_journal">Дневник</string>
+    <string name="settings_presentation_layout_logo">Только логотип</string>
     <string name="settings_presentation_section_background">Фон</string>
     <string name="settings_presentation_section_artwork">Обложка</string>
     <string name="settings_presentation_section_stats">Сведения</string>
@@ -234,6 +238,7 @@
     <string name="settings_presentation_art_title_only">Только название</string>
     <string name="settings_presentation_stat_developer">Разработчик</string>
     <string name="settings_presentation_stat_release_year">Год выхода</string>
+    <string name="settings_presentation_stat_players">Игроки</string>
     <string name="settings_presentation_stat_genre">Жанр</string>
     <string name="settings_presentation_stat_community_rating">Рейтинг сообщества</string>
     <string name="settings_presentation_stat_user_rating">Ваша оценка</string>

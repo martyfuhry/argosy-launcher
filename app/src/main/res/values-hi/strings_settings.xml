@@ -214,6 +214,10 @@
     <string name="settings_displays_screens_subtitle">हर जुड़ी स्क्रीन को एक काम सौंपें</string>
     <string name="settings_displays_presentation_title">प्रस्तुति</string>
     <string name="settings_displays_presentation_subtitle">दूसरी स्क्रीन चुने गए गेम को कैसे दिखाए</string>
+    <string name="settings_presentation_layout_title">लेआउट</string>
+    <string name="settings_presentation_layout_cinematic">सिनेमैटिक</string>
+    <string name="settings_presentation_layout_journal">जर्नल</string>
+    <string name="settings_presentation_layout_logo">केवल लोगो</string>
     <string name="settings_presentation_section_background">पृष्ठभूमि</string>
     <string name="settings_presentation_section_artwork">आर्टवर्क</string>
     <string name="settings_presentation_section_stats">आँकड़े</string>
@@ -229,6 +233,7 @@
     <string name="settings_presentation_art_title_only">केवल शीर्षक</string>
     <string name="settings_presentation_stat_developer">डेवलपर</string>
     <string name="settings_presentation_stat_release_year">रिलीज़ वर्ष</string>
+    <string name="settings_presentation_stat_players">खिलाड़ी</string>
     <string name="settings_presentation_stat_genre">शैली</string>
     <string name="settings_presentation_stat_community_rating">समुदाय रेटिंग</string>
     <string name="settings_presentation_stat_user_rating">आपकी रेटिंग</string>

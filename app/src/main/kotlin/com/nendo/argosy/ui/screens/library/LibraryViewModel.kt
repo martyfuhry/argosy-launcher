@@ -887,6 +887,7 @@ class LibraryViewModel @Inject constructor(
                 CompanionDetail(
                     title = it.title,
                     subtitle = it.platformDisplayName,
+                    platformSlug = it.platformSlug,
                     artUrl = it.coverPath,
                     isGameTitle = true,
                     facts = buildList {
