@@ -60,6 +60,7 @@ enum class HomeLayoutSettingField {
     CUSTOM_GRID_EMPTY_SLOTS,
     CUSTOM_GRID_PERSIST_PAGES,
     CUSTOM_GRID_AUTO_FIT,
+    CUSTOM_GRID_MATCH_SCREENS,
     RAIL_MEDIA_LIBRARIES,
     RAIL_CONTINUE_WATCHING,
     RAIL_NEXT_UP
@@ -106,6 +107,7 @@ fun homeLayoutFieldsFor(kind: HomeLayoutKind): List<HomeLayoutSettingField> = wh
         HomeLayoutSettingField.CUSTOM_GRID_LANES,
         HomeLayoutSettingField.CUSTOM_GRID_EMPTY_SLOTS,
         HomeLayoutSettingField.CUSTOM_GRID_AUTO_FIT,
+        HomeLayoutSettingField.CUSTOM_GRID_MATCH_SCREENS,
         HomeLayoutSettingField.CUSTOM_GRID_PERSIST_PAGES,
         HomeLayoutSettingField.CUSTOM_GRID_AUTO_ADD
     )
@@ -163,6 +165,8 @@ fun adjustHomeLayoutField(
             settings.copy(customGrid = settings.customGrid.copy(persistBlankPages = direction > 0))
         HomeLayoutSettingField.CUSTOM_GRID_AUTO_FIT ->
             settings.copy(customGrid = settings.customGrid.copy(autoFit = direction > 0))
+        HomeLayoutSettingField.CUSTOM_GRID_MATCH_SCREENS ->
+            settings.copy(customGrid = settings.customGrid.copy(matchOtherScreen = direction > 0))
         HomeLayoutSettingField.RAIL_MEDIA_LIBRARIES ->
             settings.copy(rails = settings.rails.copy(showLibraries = direction > 0))
         HomeLayoutSettingField.RAIL_CONTINUE_WATCHING ->
@@ -207,6 +211,12 @@ fun toggleHomeLayoutField(settings: HomeLayoutSettings, field: HomeLayoutSetting
             )
         HomeLayoutSettingField.CUSTOM_GRID_AUTO_FIT ->
             settings.copy(customGrid = settings.customGrid.copy(autoFit = !settings.customGrid.autoFit))
+        HomeLayoutSettingField.CUSTOM_GRID_MATCH_SCREENS ->
+            settings.copy(
+                customGrid = settings.customGrid.copy(
+                    matchOtherScreen = !settings.customGrid.matchOtherScreen
+                )
+            )
         HomeLayoutSettingField.RAIL_MEDIA_LIBRARIES ->
             settings.copy(rails = settings.rails.copy(showLibraries = !settings.rails.showLibraries))
         HomeLayoutSettingField.RAIL_CONTINUE_WATCHING ->
@@ -428,6 +438,13 @@ fun HomeLayoutSettingRow(
             title = stringResource(R.string.ui_home_layout_custom_grid_auto_fit),
             subtitle = stringResource(R.string.ui_home_layout_custom_grid_auto_fit_subtitle),
             isEnabled = settings.customGrid.autoFit,
+            isFocused = isFocused,
+            onToggle = { onToggle() }
+        )
+        HomeLayoutSettingField.CUSTOM_GRID_MATCH_SCREENS -> SwitchPreference(
+            title = stringResource(R.string.ui_home_layout_custom_grid_match_screens),
+            subtitle = stringResource(R.string.ui_home_layout_custom_grid_match_screens_subtitle),
+            isEnabled = settings.customGrid.matchOtherScreen,
             isFocused = isFocused,
             onToggle = { onToggle() }
         )

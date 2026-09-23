@@ -90,9 +90,9 @@
     <string name="home_footer_grid_finished">Finished</string>
     <!-- Footer hint on a random game tile: pick a different game. -->
     <string name="home_footer_grid_reroll">Re-roll</string>
-    <!-- Footer hint on the curated grid. Noun, plural: opens the menu of actions for the tile
-         under the cursor. -->
-    <string name="home_footer_grid_options">Options</string>
+    <!-- Footer hint on the curated grid on a two-screen device. Verb: moves the home screen and
+         the game presentation to the other display. -->
+    <string name="home_footer_grid_swap_screens">Swap Screens</string>
 
     <!-- Footer hint on a row of films and episodes, grid layout. Noun: the shoulder buttons move
          between the home screen's rows. -->

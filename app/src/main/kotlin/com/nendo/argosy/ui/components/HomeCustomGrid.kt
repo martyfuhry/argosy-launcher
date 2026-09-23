@@ -102,7 +102,12 @@ data class CustomGridMetrics(
     val offsetYPx: Float
 )
 
-fun customGridMetrics(size: IntSize, laneCount: Int, gapPx: Float): CustomGridMetrics {
+fun customGridMetrics(
+    size: IntSize,
+    laneCount: Int,
+    gapPx: Float,
+    maxColumns: Int? = null
+): CustomGridMetrics {
     val lanes = laneCount.coerceAtLeast(1)
     if (size.width <= 0 || size.height <= 0) {
         return CustomGridMetrics(lanes, lanes, 0f, gapPx, 0f, 0f)
@@ -114,7 +119,11 @@ fun customGridMetrics(size: IntSize, laneCount: Int, gapPx: Float): CustomGridMe
     val cell = ((shortEdge - gapPx * (lanes - 1)) / (lanes + overhangLanes)).coerceAtLeast(1f)
     val longOverhang = cell * overhangLanes
     val alongLanes = (((longEdge - longOverhang + gapPx) / (cell + gapPx)).toInt()).coerceAtLeast(1)
-    val columns = if (widthIsShort) lanes else alongLanes
+    val columns = if (widthIsShort) {
+        lanes
+    } else {
+        maxColumns?.let { alongLanes.coerceAtMost(it.coerceAtLeast(1)) } ?: alongLanes
+    }
     val rows = if (widthIsShort) alongLanes else lanes
     val gridWidth = columns * cell + gapPx * (columns - 1)
     val gridHeight = rows * cell + gapPx * (rows - 1)
@@ -126,6 +135,28 @@ fun customGridMetrics(size: IntSize, laneCount: Int, gapPx: Float): CustomGridMe
         offsetXPx = ((size.width - gridWidth) / 2f).coerceAtLeast(0f),
         offsetYPx = ((size.height - gridHeight) / 2f).coerceAtLeast(0f)
     )
+}
+
+/**
+ * The column count the grid gets on [peerScreen], taking [ownScreen] minus [ownGrid] as the chrome
+ * both screens share. Sizes are in dp. Null when either grid is taller than it is wide.
+ */
+fun matchedGridColumns(
+    ownScreen: androidx.compose.ui.unit.DpSize,
+    ownGrid: androidx.compose.ui.unit.DpSize,
+    peerScreen: androidx.compose.ui.unit.DpSize,
+    laneCount: Int,
+    gap: Dp
+): Int? {
+    if (ownGrid.width <= ownGrid.height) return null
+    val peerWidth = peerScreen.width - (ownScreen.width - ownGrid.width)
+    val peerHeight = peerScreen.height - (ownScreen.height - ownGrid.height)
+    if (peerWidth <= 0.dp || peerHeight <= 0.dp || peerWidth <= peerHeight) return null
+    return customGridMetrics(
+        IntSize(peerWidth.value.toInt(), peerHeight.value.toInt()),
+        laneCount,
+        gap.value
+    ).columns
 }
 
 /**
@@ -225,9 +256,11 @@ fun HomeCustomGridPage(
     playbackPositions: Map<String, Long> = emptyMap(),
     onPlaybackPosition: (String, Long) -> Unit = { _, _ -> },
     onTakeAudio: () -> Unit = {},
-    onReleaseAudio: () -> Unit = {}
+    onReleaseAudio: () -> Unit = {},
+    peerScreen: androidx.compose.ui.unit.DpSize? = null
 ) {
     val density = LocalDensity.current
+    val rootView = androidx.compose.ui.platform.LocalView.current.rootView
     var measured by remember { mutableStateOf(IntSize.Zero) }
     var dragOffset by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
     val gap = Dimens.spacingSm
@@ -238,7 +271,18 @@ fun HomeCustomGridPage(
             .onSizeChanged { measured = it }
     ) {
         if (measured.width <= 0 || measured.height <= 0) return@Box
-        val metrics = customGridMetrics(measured, laneCount, gapPx)
+        val columnCap = peerScreen?.let { peer ->
+            with(density) {
+                matchedGridColumns(
+                    ownScreen = androidx.compose.ui.unit.DpSize(rootView.width.toDp(), rootView.height.toDp()),
+                    ownGrid = androidx.compose.ui.unit.DpSize(measured.width.toDp(), measured.height.toDp()),
+                    peerScreen = peer,
+                    laneCount = laneCount,
+                    gap = gap
+                )
+            }
+        }
+        val metrics = customGridMetrics(measured, laneCount, gapPx, columnCap)
         LaunchedEffect(metrics.columns, metrics.rows) {
             onShapeResolved(metrics.columns, metrics.rows)
         }

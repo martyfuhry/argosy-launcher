@@ -55,7 +55,8 @@ fun CustomGridSurface(
     downloadIndicatorFor: (Long) -> GameDownloadIndicator = { GameDownloadIndicator.NONE },
     onCoverLoadFailed: ((Long, String) -> Unit)? = null,
     onCoverLoaded: ((Long, android.graphics.Bitmap) -> Unit)? = null,
-    onPosterLoaded: ((String, android.graphics.Bitmap) -> Unit)? = null
+    onPosterLoaded: ((String, android.graphics.Bitmap) -> Unit)? = null,
+    peerScreen: androidx.compose.ui.unit.DpSize? = null
 ) {
     val swipeThresholdPx = with(LocalDensity.current) {
         ComponentDefaults.CustomGrid.swipePageThresholdDp.dp.toPx()
@@ -125,6 +126,7 @@ fun CustomGridSurface(
                     onPlaybackPosition = onPlaybackPosition,
                     onTakeAudio = onTakeAudio,
                     onReleaseAudio = onReleaseAudio,
+                    peerScreen = peerScreen,
                     editModeLabel = state.editLabelRes?.let { stringResource(it) },
                     overlappedTileIds = state.overlappedTileIds,
                     editingTileId = state.editingTileId,

@@ -782,6 +782,9 @@ fun HomeScreen(
                                 state = uiState.customGrid,
                                 contentFor = { tile -> uiState.tileContentFor(tile, context) },
                                 laneCount = uiState.customGridConfig.laneCount,
+                                peerScreen = com.nendo.argosy.ui.dualscreen.rememberShowcaseScreenSize(
+                                    uiState.customGridConfig.matchOtherScreen
+                                ),
                                 showCursor = !uiState.appBarFocused,
                                 onCellTap = { cell ->
                                     val grid = uiState.customGrid
@@ -931,7 +934,9 @@ fun HomeScreen(
                     val gridPageLabel = stringResource(R.string.home_footer_grid_page)
                     val gridFinishedLabel = stringResource(R.string.home_footer_grid_finished)
                     val gridRerollLabel = stringResource(R.string.home_footer_grid_reroll)
-                    val gridOptionsLabel = stringResource(R.string.home_footer_grid_options)
+                    val gridSwapScreensLabel = stringResource(R.string.home_footer_grid_swap_screens)
+                    val gridDetailsLabel = stringResource(R.string.home_footer_game_details)
+                    val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
                     val engagedFullscreenLabel =
                         stringResource(R.string.home_footer_grid_engaged_fullscreen)
                     val engagedIsMedia = grid.engagedTile?.target is
@@ -1017,10 +1022,24 @@ fun HomeScreen(
                                 if (feature?.kind == com.nendo.argosy.domain.model.FeatureTileKind.RANDOM_GAME) {
                                     add(InputButton.Y to gridRerollLabel)
                                 }
-                                add(InputButton.SELECT to gridOptionsLabel)
+                                if (grid.focusedGameId != null) {
+                                    add(InputButton.X to gridDetailsLabel)
+                                }
+                                if (selectSwapsRoles) {
+                                    add(InputButton.SELECT to gridSwapScreensLabel)
+                                }
                             }
                         },
-                        variant = FooterVariant.SUBTLE
+                        variant = FooterVariant.SUBTLE,
+                        onHintClick = { button ->
+                            when (button) {
+                                InputButton.A -> inputHandler.onConfirm()
+                                InputButton.Y -> inputHandler.onSecondaryAction()
+                                InputButton.X -> inputHandler.onContextMenu()
+                                InputButton.SELECT -> com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                                else -> Unit
+                            }
+                        }
                     )
                     FooterSpacer()
                 } else if (uiState.isMediaRow || uiState.focusedMedia != null) {

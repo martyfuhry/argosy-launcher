@@ -514,6 +514,8 @@
     <string name="ui_home_layout_custom_grid_persist_pages_subtitle">即使頁面沒有內容，仍會保留該頁面</string>
     <string name="ui_home_layout_custom_grid_auto_fit">自動調整格子</string>
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">放置項目時自動移動或縮小相關圖塊，而不是拒絕放置</string>
+    <string name="ui_home_layout_custom_grid_match_screens">兩片螢幕保持一致</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">兩片螢幕使用相同欄數，在較寬的螢幕上置中顯示</string>
     <string name="ui_home_layout_rail_libraries">媒體庫</string>
     <string name="ui_home_layout_rail_libraries_subtitle">為媒體伺服器上的每個媒體庫顯示一列</string>
     <string name="ui_home_layout_rail_continue_watching">繼續觀看</string>

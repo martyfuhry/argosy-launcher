@@ -549,6 +549,8 @@
     <string name="ui_home_layout_custom_grid_persist_pages_subtitle">Une page ajoutée reste même si elle ne contient rien</string>
     <string name="ui_home_layout_custom_grid_auto_fit">Ajustement auto des cellules</string>
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">Déplace ou réduit les tuiles sur lesquelles un placement arrive, au lieu de le refuser</string>
+    <string name="ui_home_layout_custom_grid_match_screens">Harmoniser les deux écrans</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">Garde les mêmes colonnes sur les deux écrans et centre la grille sur le plus large</string>
     <string name="ui_home_layout_rail_libraries">Bibliothèques multimédias</string>
     <string name="ui_home_layout_rail_libraries_subtitle">Une ligne pour chaque bibliothèque de votre serveur multimédia</string>
     <string name="ui_home_layout_rail_continue_watching">Continuer à regarder</string>

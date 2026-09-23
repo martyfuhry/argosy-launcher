@@ -104,6 +104,9 @@ internal sealed class HomeScreenItem(
         visibleWhen = {
             if (field in homeRailFields()) {
                 it.homeLayout.selected != HomeLayoutKind.CUSTOM_GRID
+            } else if (field == HomeLayoutSettingField.CUSTOM_GRID_MATCH_SCREENS) {
+                it.homeLayout.selected == HomeLayoutKind.CUSTOM_GRID &&
+                    it.dualScreenEnabled && it.hasSecondaryDisplay
             } else {
                 field in homeLayoutFieldsFor(it.homeLayout.selected)
             }

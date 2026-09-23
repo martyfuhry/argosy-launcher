@@ -1065,6 +1065,10 @@
     <string name="ui_home_layout_custom_grid_auto_fit">Auto-fit Cells</string>
     <!-- Second line under that row. -->
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">Move or shrink tiles a placement lands on, instead of refusing it</string>
+    <!-- Custom grid toggle on two-screen devices: keep the same number of grid columns on both
+         screens, centring the grid on the wider one. -->
+    <string name="ui_home_layout_custom_grid_match_screens">Match Both Screens</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">Keep the same columns on either screen and centre the grid on the wider one</string>
     <!-- Settings row: whether the home screen shows a row per media library. Noun, plural. -->
     <string name="ui_home_layout_rail_libraries">Media Libraries</string>
     <!-- Second line under that row. -->

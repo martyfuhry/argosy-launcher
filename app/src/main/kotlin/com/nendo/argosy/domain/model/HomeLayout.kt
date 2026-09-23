@@ -76,7 +76,8 @@ data class CustomGridConfig(
     val showEmptySlots: Boolean = true,
     val persistBlankPages: Boolean = false,
     val autoFit: Boolean = true,
-    val pageCount: Int = 0
+    val pageCount: Int = 0,
+    val matchOtherScreen: Boolean = true
 ) : HomeLayoutConfig {
     override val kind: HomeLayoutKind get() = HomeLayoutKind.CUSTOM_GRID
 }
@@ -168,6 +169,7 @@ data class HomeLayoutSettings(
                 put(KEY_PERSIST_PAGES, customGrid.persistBlankPages)
                 put(KEY_AUTO_FIT, customGrid.autoFit)
                 put(KEY_PAGE_COUNT, customGrid.pageCount)
+                put(KEY_MATCH_OTHER_SCREEN, customGrid.matchOtherScreen)
             }
         )
         put(
@@ -201,6 +203,7 @@ data class HomeLayoutSettings(
         private const val KEY_PERSIST_PAGES = "persistBlankPages"
         private const val KEY_AUTO_FIT = "autoFit"
         private const val KEY_PAGE_COUNT = "pageCount"
+        private const val KEY_MATCH_OTHER_SCREEN = "matchOtherScreen"
         private const val KEY_RAILS = "rails"
         private const val KEY_CONTINUE_WATCHING = "showContinueWatching"
         private const val KEY_NEXT_UP = "showNextUp"
@@ -276,7 +279,11 @@ data class HomeLayoutSettings(
                     autoFit = customGrid?.optBoolean(KEY_AUTO_FIT, defaults.customGrid.autoFit)
                         ?: defaults.customGrid.autoFit,
                     pageCount = customGrid?.optInt(KEY_PAGE_COUNT, defaults.customGrid.pageCount)
-                        ?.coerceAtLeast(0) ?: defaults.customGrid.pageCount
+                        ?.coerceAtLeast(0) ?: defaults.customGrid.pageCount,
+                    matchOtherScreen = customGrid?.optBoolean(
+                        KEY_MATCH_OTHER_SCREEN,
+                        defaults.customGrid.matchOtherScreen
+                    ) ?: defaults.customGrid.matchOtherScreen
                 ),
                 rails = HomeRailSettings(
                     showContinueWatching = rails?.optBoolean(

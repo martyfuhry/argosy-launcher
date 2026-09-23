@@ -526,6 +526,8 @@
     <string name="ui_home_layout_custom_grid_persist_pages_subtitle">Eine hinzugefügte Seite bleibt bestehen, auch wenn sie leer ist</string>
     <string name="ui_home_layout_custom_grid_auto_fit">Zellen automatisch anpassen</string>
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">Verschiebt oder verkleinert Kacheln, auf die platziert wird, statt die Platzierung abzulehnen</string>
+    <string name="ui_home_layout_custom_grid_match_screens">Beide Bildschirme angleichen</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">Gleiche Spaltenzahl auf beiden Bildschirmen, auf dem breiteren zentriert</string>
     <string name="ui_home_layout_rail_libraries">Medienbibliotheken</string>
     <string name="ui_home_layout_rail_libraries_subtitle">Eine Zeile für jede Bibliothek auf Ihrem Medienserver</string>
     <string name="ui_home_layout_rail_continue_watching">Weiterschauen</string>

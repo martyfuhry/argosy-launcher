@@ -542,6 +542,8 @@
     <string name="ui_home_layout_custom_grid_persist_pages_subtitle">Добавленная страница остаётся, даже если на ней ничего нет</string>
     <string name="ui_home_layout_custom_grid_auto_fit">Автоподбор ячеек</string>
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">Сдвигать или уменьшать плитки, на которые попадает размещение, вместо отказа</string>
+    <string name="ui_home_layout_custom_grid_match_screens">Одинаково на обоих экранах</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">Одинаковое число столбцов на обоих экранах, сетка по центру на более широком</string>
     <string name="ui_home_layout_rail_libraries">Медиатеки</string>
     <string name="ui_home_layout_rail_libraries_subtitle">Ряд для каждой библиотеки на вашем медиасервере</string>
     <string name="ui_home_layout_rail_continue_watching">Продолжить просмотр</string>

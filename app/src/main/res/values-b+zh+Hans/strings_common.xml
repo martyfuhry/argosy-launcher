@@ -506,6 +506,8 @@
     <string name="ui_home_layout_custom_grid_persist_pages_subtitle">新增的页面即使为空也会保留</string>
     <string name="ui_home_layout_custom_grid_auto_fit">自动适配格子</string>
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">放置内容时移动或缩小占用的磁贴，而不是拒绝放置</string>
+    <string name="ui_home_layout_custom_grid_match_screens">两块屏幕保持一致</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">两块屏幕使用相同列数，在较宽的屏幕上居中显示</string>
     <string name="ui_home_layout_rail_libraries">媒体库</string>
     <string name="ui_home_layout_rail_libraries_subtitle">媒体服务器上每个库对应一行</string>
     <string name="ui_home_layout_rail_continue_watching">继续观看</string>

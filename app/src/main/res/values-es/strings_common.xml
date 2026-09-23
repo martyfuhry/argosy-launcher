@@ -538,6 +538,8 @@
     <string name="ui_home_layout_custom_grid_persist_pages_subtitle">Una página agregada permanece aunque no contenga nada</string>
     <string name="ui_home_layout_custom_grid_auto_fit">Ajuste automático de celdas</string>
     <string name="ui_home_layout_custom_grid_auto_fit_subtitle">Mueve o reduce los mosaicos donde cae una colocación, en lugar de rechazarla</string>
+    <string name="ui_home_layout_custom_grid_match_screens">Igualar ambas pantallas</string>
+    <string name="ui_home_layout_custom_grid_match_screens_subtitle">Mantiene las mismas columnas en ambas pantallas y centra la cuadrícula en la más ancha</string>
     <string name="ui_home_layout_rail_libraries">Bibliotecas multimedia</string>
     <string name="ui_home_layout_rail_libraries_subtitle">Una fila para cada biblioteca de tu servidor multimedia</string>
     <string name="ui_home_layout_rail_continue_watching">Continuar viendo</string>

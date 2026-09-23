@@ -32,7 +32,7 @@
     <string name="home_footer_grid_page">Seite</string>
     <string name="home_footer_grid_finished">Durchgespielt</string>
     <string name="home_footer_grid_reroll">Neu würfeln</string>
-    <string name="home_footer_grid_options">Optionen</string>
+    <string name="home_footer_grid_swap_screens">Bildschirme tauschen</string>
 
     <string name="home_footer_media_section">Abschnitt</string>
     <string name="home_footer_media_refresh">Aktualisieren</string>
