@@ -333,28 +333,12 @@ class RomMApiClient @Inject constructor(
                 val platforms = response.body() ?: emptyList()
                 val entities = platforms.map { remote ->
                     val effectiveSlug = PlatformDefinitions.resolveImportSlug(remote.slug, remote.displayName ?: remote.name, remote.fsSlug)
-                    val isSubPlatform = !effectiveSlug.equals(remote.slug, ignoreCase = true)
                     val existing = platformDao.getById(remote.id)
                         ?: platformDao.getBySlugAndFsSlug(remote.slug, remote.fsSlug)
                         ?: platformDao.getBySlug(remote.slug)
                     val platformDef = PlatformDefinitions.getBySlug(effectiveSlug)
                     val logoUrl = buildMediaUrl(remote.logoUrl)
-                    val derivedNames = if (isSubPlatform) {
-                        PlatformDefinitions.getAliasDisplayName(effectiveSlug)
-                            ?: PlatformDefinitions.deriveDisplayName(effectiveSlug)
-                    } else {
-                        PlatformDefinitions.getAliasDisplayName(remote.slug)
-                            ?: PlatformDefinitions.deriveDisplayName(remote.slug)
-                            ?: PlatformDefinitions.deriveDisplayName(remote.fsSlug)
-                    }
-                    val normalizedName = if (isSubPlatform) {
-                        remote.customName?.takeIf { it.isNotBlank() }
-                            ?: derivedNames?.first ?: platformDef?.name ?: remote.name
-                    } else {
-                        remote.customName?.takeIf { it.isNotBlank() }
-                            ?: remote.displayName ?: derivedNames?.first ?: remote.name
-                    }
-                    val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
+                    val (normalizedName, resolvedShortName) = remote.resolvePlatformNames(effectiveSlug)
                     PlatformEntity(
                         id = remote.id,
                         slug = effectiveSlug,
