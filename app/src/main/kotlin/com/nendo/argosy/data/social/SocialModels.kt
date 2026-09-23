@@ -130,6 +130,14 @@ data class PresenceGameInfo(
 )
 
 /**
+ * One game a user played inside the server's ranking window. [lastPlayed] is an RFC 3339 instant.
+ */
+data class ActiveGameRow(
+    val igdbId: Int,
+    val lastPlayed: String? = null
+)
+
+/**
  * A friend's tie to one game: playing it right now, or [lastPlayedAtMillis] when they last did.
  */
 data class FriendActivity(
@@ -227,6 +235,8 @@ object MessageTypes {
     const val LIBRARY_SYNCED = "library_synced"
     const val SYNC_PLAY_SESSIONS = "sync_play_sessions"
     const val PLAY_SESSIONS_SYNCED = "play_sessions_synced"
+    const val GET_ACTIVE_GAMES = "get_active_games"
+    const val ACTIVE_GAMES_DATA = "active_games_data"
     const val SET_QUAYPASS_AVATAR = "set_quaypass_avatar"
     const val SET_QUAYPASS_MESSAGE = "set_quaypass_message"
     const val REPORT_QUAYPASS_ENCOUNTER = "report_quaypass_encounter"

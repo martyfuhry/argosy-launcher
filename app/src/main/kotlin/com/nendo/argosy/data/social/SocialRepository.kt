@@ -47,8 +47,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -93,13 +93,35 @@ class SocialRepository @Inject constructor(
     private val _friends = MutableStateFlow<List<Friend>>(emptyList())
     val friends: StateFlow<List<Friend>> = _friends.asStateFlow()
 
+    private val _recentPlaysByFriend = MutableStateFlow<Map<String, List<ActiveGameRow>>>(emptyMap())
+    private var recentPlaysFetchedAtMillis = 0L
+
     /**
-     * Friends tied to each game, keyed by the game's IGDB id. The one source every surface that
-     * names friends beside a game reads from.
+     * Friends tied to each game, keyed by the game's IGDB id: playing it now, or played it inside
+     * the recent-play window. The one source every surface that names friends beside a game reads.
      */
-    val friendsActivity: StateFlow<Map<Int, List<FriendActivity>>> = _friends
-        .map(::liveFriendActivity)
-        .stateIn(scope, SharingStarted.Eagerly, emptyMap())
+    val friendsActivity: StateFlow<Map<Int, List<FriendActivity>>> =
+        combine(_friends, _recentPlaysByFriend) { friends, plays ->
+            mergeFriendActivity(
+                live = liveFriendActivity(friends),
+                recent = recentFriendActivity(friends, plays, System.currentTimeMillis())
+            )
+        }.stateIn(scope, SharingStarted.Eagerly, emptyMap())
+
+    private fun refreshRecentFriendPlays() {
+        scope.launch {
+            val now = System.currentTimeMillis()
+            if (now - recentPlaysFetchedAtMillis < RECENT_PLAYS_REFRESH_MILLIS) return@launch
+            recentPlaysFetchedAtMillis = now
+            val fetched = _friends.value
+                .filter { it.isAccepted }
+                .mapNotNull { friend ->
+                    socialService.requestActiveGames(friend.id)?.let { friend.id to it }
+                }
+            Log.d(TAG, "Recent friend plays: ${fetched.sumOf { it.second.size }} rows from ${fetched.size} friends")
+            _recentPlaysByFriend.update { it + fetched }
+        }
+    }
 
     private val _quayPassCheckins = MutableStateFlow<List<QuayPassCheckin>>(emptyList())
     val quayPassCheckins: StateFlow<List<QuayPassCheckin>> = _quayPassCheckins.asStateFlow()
@@ -381,6 +403,7 @@ class SocialRepository @Inject constructor(
                         Log.d(TAG, "Received initial friends: ${message.friends.size}")
                         _friends.value = message.friends.sortedWith(friendComparator)
                         hasCompletedInitialSync = true
+                        refreshRecentFriendPlays()
                     }
                     is ArgosSocialService.IncomingMessage.SharedCollections -> {
                         Log.d(TAG, "Received shared collections: ${message.collections.size}")
@@ -702,6 +725,8 @@ class SocialRepository @Inject constructor(
 
     private fun clearSocialData() {
         _friends.value = emptyList()
+        _recentPlaysByFriend.value = emptyMap()
+        recentPlaysFetchedAtMillis = 0L
         _friendCode.value = null
         _sharedCollections.value = emptyList()
         _savedCollections.value = emptyList()
@@ -1614,6 +1639,7 @@ class SocialRepository @Inject constructor(
         private const val THUMB_HEIGHT = 192
         private const val THUMB_QUALITY = 80
         private const val TAG = "SocialRepository"
+        private val RECENT_PLAYS_REFRESH_MILLIS = java.util.concurrent.TimeUnit.MINUTES.toMillis(10)
         private const val FEED_PAGE_SIZE = 10
         private const val NOTIFICATIONS_PAGE_SIZE = 20
         private const val NOTIFICATIONS_MAX_CACHE = 100

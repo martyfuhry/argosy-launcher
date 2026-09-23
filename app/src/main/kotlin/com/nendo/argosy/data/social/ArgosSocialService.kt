@@ -7,9 +7,16 @@ import android.util.Log
 import com.nendo.argosy.BuildConfig
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -58,6 +65,28 @@ class ArgosSocialService @Inject constructor(
 
     private val _playSessionSyncResult = MutableSharedFlow<List<SessionSyncResult>>(replay = 1)
     val playSessionSyncResult: SharedFlow<List<SessionSyncResult>> = _playSessionSyncResult.asSharedFlow()
+
+    private val activeGamesReplies = MutableSharedFlow<List<ActiveGameRow>>(extraBufferCapacity = 1)
+    private val activeGamesLock = Mutex()
+
+    /**
+     * What [userId] played inside the server's 30-day window, filtered by that user's privacy.
+     * The reply does not name the user it answers, so requests go one at a time. Null when the
+     * request cannot be sent or no reply arrives in time.
+     */
+    suspend fun requestActiveGames(userId: String): List<ActiveGameRow>? = activeGamesLock.withLock {
+        withTimeoutOrNull(ACTIVE_GAMES_TIMEOUT_MS) {
+            coroutineScope {
+                val reply = async(start = CoroutineStart.UNDISPATCHED) { activeGamesReplies.first() }
+                if (send(MessageTypes.GET_ACTIVE_GAMES, mapOf("user_id" to userId, "period" to "weekly"))) {
+                    reply.await()
+                } else {
+                    reply.cancel()
+                    null
+                }
+            }
+        }
+    }
 
     private var webSocket: WebSocket? = null
     private var sessionToken: String? = null
@@ -585,6 +614,24 @@ class ArgosSocialService @Inject constructor(
                         Log.d(TAG, "Sync achievement unlocks result: ${ids.size} accepted")
                         _syncAchievementResult.tryEmit(ids)
                     }
+                    null
+                }
+
+                MessageTypes.ACTIVE_GAMES_DATA -> {
+                    val games = payload?.optJSONArray("games")
+                    val rows = if (games == null) {
+                        emptyList()
+                    } else {
+                        (0 until games.length()).mapNotNull { i ->
+                            val row = games.optJSONObject(i) ?: return@mapNotNull null
+                            val igdbId = row.optInt("igdb_id", 0).takeIf { it > 0 } ?: return@mapNotNull null
+                            ActiveGameRow(
+                                igdbId = igdbId,
+                                lastPlayed = row.optString("last_played", "").takeIf { it.isNotEmpty() }
+                            )
+                        }
+                    }
+                    activeGamesReplies.tryEmit(rows)
                     null
                 }
 
@@ -1923,5 +1970,6 @@ class ArgosSocialService @Inject constructor(
         private const val WS_URL = BuildConfig.SOCIAL_API_URL
         private const val HEARTBEAT_INTERVAL_MS = 30_000L
         private const val PONG_TIMEOUT_MS = 10_000L
+        private const val ACTIVE_GAMES_TIMEOUT_MS = 8_000L
     }
 }

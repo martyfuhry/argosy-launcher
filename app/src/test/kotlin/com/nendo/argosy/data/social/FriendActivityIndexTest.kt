@@ -59,6 +59,63 @@ class FriendActivityIndexTest {
         assertTrue(index.isEmpty())
     }
 
+    private val now = java.time.Instant.parse("2026-09-23T12:00:00Z").toEpochMilli()
+
+    private fun daysAgo(days: Long): String =
+        java.time.Instant.ofEpochMilli(now).minus(java.time.Duration.ofDays(days)).toString()
+
+    @Test
+    fun `plays inside fourteen days count and older ones do not`() {
+        val alex = friend("alex", PresenceStatus.OFFLINE, igdbId = null)
+        val recent = recentFriendActivity(
+            friends = listOf(alex),
+            playsByFriendId = mapOf(
+                "alex" to listOf(
+                    ActiveGameRow(igdbId = 1, lastPlayed = daysAgo(2)),
+                    ActiveGameRow(igdbId = 2, lastPlayed = daysAgo(14)),
+                    ActiveGameRow(igdbId = 3, lastPlayed = daysAgo(15)),
+                    ActiveGameRow(igdbId = 4, lastPlayed = null)
+                )
+            ),
+            nowMillis = now
+        )
+
+        assertEquals(setOf(1, 2), recent.keys)
+        assertTrue(recent.values.flatten().none { it.playingNow })
+    }
+
+    @Test
+    fun `plays of someone no longer a friend are dropped`() {
+        val recent = recentFriendActivity(
+            friends = listOf(friend("alex", PresenceStatus.OFFLINE, igdbId = null, status = "pending")),
+            playsByFriendId = mapOf("alex" to listOf(ActiveGameRow(igdbId = 1, lastPlayed = daysAgo(1)))),
+            nowMillis = now
+        )
+
+        assertTrue(recent.isEmpty())
+    }
+
+    @Test
+    fun `a friend playing now is listed once, ahead of recent players ordered newest first`() {
+        val alex = friend("alex", PresenceStatus.IN_GAME, igdbId = 9)
+        val sam = friend("sam", PresenceStatus.OFFLINE, igdbId = null)
+        val kim = friend("kim", PresenceStatus.OFFLINE, igdbId = null)
+        val friends = listOf(alex, sam, kim)
+        val plays = mapOf(
+            "alex" to listOf(ActiveGameRow(igdbId = 9, lastPlayed = daysAgo(1))),
+            "sam" to listOf(ActiveGameRow(igdbId = 9, lastPlayed = daysAgo(5))),
+            "kim" to listOf(ActiveGameRow(igdbId = 9, lastPlayed = daysAgo(2)))
+        )
+
+        val merged = mergeFriendActivity(
+            live = liveFriendActivity(friends),
+            recent = recentFriendActivity(friends, plays, now)
+        )
+
+        assertEquals(listOf("alex", "kim", "sam"), merged[9]?.map { it.friendId })
+        assertEquals(listOf(true, false, false), merged[9]?.map { it.playingNow })
+    }
+
     @Test
     fun `pending requests are not friends yet`() {
         val index = liveFriendActivity(

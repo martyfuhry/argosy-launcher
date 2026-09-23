@@ -21,6 +21,7 @@ import com.nendo.argosy.ui.theme.Dimens
 
 private const val MAX_STACKED_AVATARS = 3
 private const val AVATAR_OVERLAP_SHARE = 0.35f
+private const val FRIENDS_LINE_MAX_LINES = 2
 
 /**
  * Stacked avatars and one line naming the friends tied to a game. Friends playing now lead; a game
@@ -62,7 +63,7 @@ fun FriendsActivityBadge(
             text = friendsActivityLine(shown, playingNow = playing.isNotEmpty()),
             style = MaterialTheme.typography.labelMedium,
             color = textColor,
-            maxLines = 1,
+            maxLines = FRIENDS_LINE_MAX_LINES,
             overflow = TextOverflow.Ellipsis
         )
     }
