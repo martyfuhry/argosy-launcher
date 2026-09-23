@@ -93,6 +93,7 @@ data class HomeGameUi(
     val backgroundPath: String?,
     val boxBackPath: String? = null,
     val boxSpinePath: String? = null,
+    val logoPath: String? = null,
     val developer: String?,
     val releaseYear: Int?,
     val genre: String?,

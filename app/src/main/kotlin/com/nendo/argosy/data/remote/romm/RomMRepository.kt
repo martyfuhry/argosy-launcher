@@ -246,6 +246,8 @@ class RomMRepository @Inject constructor(
     suspend fun refreshGameData(gameId: Long): RomMResult<Unit> =
         userPropertyService.refreshGameData(gameId)
 
+    suspend fun fetchLogo(gameId: Long): String? = userPropertyService.fetchLogo(gameId)
+
     suspend fun ensureSoundtrackFiles(gameId: Long): Boolean =
         userPropertyService.ensureSoundtrackFiles(gameId)
 

@@ -27,11 +27,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -183,17 +188,54 @@ private fun LogoShowcase(detail: CompanionDetail, gutter: Dp, bottom: Dp) {
             .padding(start = gutter, end = gutter, top = bottom, bottom = bottom),
         contentAlignment = Alignment.Center
     ) {
-        GameTitle(
-            title = detail.title,
-            titleStyle = MaterialTheme.typography.displayLarge,
-            titleColor = theme.textPrimary,
-            seriesScale = SERIES_SCALE,
-            maxLines = 2,
-            textAlign = TextAlign.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        )
+        var logoFailed by remember(detail.logoUrl) { mutableStateOf(false) }
+        val logo = detail.logoUrl?.takeIf { !logoFailed }
+        if (logo != null) {
+            val glow = theme.surfaceBase
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawBehind {
+                        val brush = Brush.radialGradient(
+                            0f to glow.copy(alpha = LOGO_GLOW_ALPHA),
+                            LOGO_GLOW_HOLD to glow.copy(alpha = LOGO_GLOW_ALPHA * LOGO_GLOW_HOLD_FADE),
+                            1f to Color.Transparent,
+                            center = center,
+                            radius = size.height / 2f
+                        )
+                        scale(scaleX = size.width / size.height, scaleY = 1f, pivot = center) {
+                            drawCircle(brush = brush, radius = size.height / 2f, center = center)
+                        }
+                    }
+            )
+            AsyncImage(
+                model = rememberFileImageModel(logo),
+                contentDescription = detail.title,
+                contentScale = ContentScale.Fit,
+                onError = { logoFailed = true },
+                modifier = Modifier
+                    .fillMaxWidth(LOGO_WIDTH_SHARE)
+                    .fillMaxHeight(LOGO_HEIGHT_SHARE)
+            )
+        } else {
+            GameTitle(
+                title = detail.title,
+                titleStyle = MaterialTheme.typography.displayLarge,
+                titleColor = theme.textPrimary,
+                seriesScale = SERIES_SCALE,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            )
+        }
     }
 }
+
+private const val LOGO_WIDTH_SHARE = 0.6f
+private const val LOGO_HEIGHT_SHARE = 0.5f
+private const val LOGO_GLOW_ALPHA = 0.75f
+private const val LOGO_GLOW_HOLD = 0.5f
+private const val LOGO_GLOW_HOLD_FADE = 0.7f
 
 @Composable
 private fun CinematicShowcase(

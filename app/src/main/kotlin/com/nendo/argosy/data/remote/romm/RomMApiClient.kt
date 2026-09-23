@@ -51,6 +51,13 @@ class RomMApiClient @Inject constructor(
         buildResourceUrl(rom.ssMetadata?.box2dBackPath)
     ).distinct()
 
+    /**
+     * The game's clear logo candidates in preference order: the copy RomM stored from
+     * ScreenScraper, then LaunchBox's.
+     */
+    fun buildLogoUrls(rom: RomMRom): List<String> =
+        (listOfNotNull(buildResourceUrl(rom.ssMetadata?.logoPath)) + rom.clearLogoUrls).distinct()
+
     fun isVersionAtLeast(minVersion: String): Boolean =
         connectionManager.isVersionAtLeast(minVersion)
 

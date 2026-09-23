@@ -3654,3 +3654,9 @@ object Migration_193_194 : Migration(193, 194) {
         db.execSQL("ALTER TABLE games ADD COLUMN hasFileOnDisk INTEGER NOT NULL DEFAULT 1")
     }
 }
+
+object Migration_194_195 : Migration(194, 195) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE games ADD COLUMN logoPath TEXT")
+    }
+}

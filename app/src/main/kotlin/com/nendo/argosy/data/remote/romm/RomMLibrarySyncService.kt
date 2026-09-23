@@ -984,6 +984,15 @@ class RomMLibrarySyncService @Inject constructor(
             }
             else -> null
         }
+        val logoUrls = apiClient.buildLogoUrls(rom)
+        val cachedLogo = when {
+            !contentChanged && existing?.logoPath?.startsWith("/") == true -> existing.logoPath
+            logoUrls.isNotEmpty() -> {
+                imageCacheManager.queueBoxFaceCache(logoUrls, rom.id, rom.name, ImageCacheManager.BoxFace.LOGO)
+                logoUrls.first()
+            }
+            else -> null
+        }
 
         val isSiblingBasedMultiDisc = rom.hasDiscSiblings && !rom.isFolderMultiDisc
         val shouldBeMultiDisc = isSiblingBasedMultiDisc
@@ -1026,6 +1035,7 @@ class RomMLibrarySyncService @Inject constructor(
             backgroundPath = cachedBackground,
             boxBackPath = cachedBoxBack,
             boxSpinePath = cachedBoxSpine,
+            logoPath = cachedLogo,
             screenshotPaths = screenshotUrls.joinToString(","),
             userRating = localDataSource?.userRating ?: 0,
             userDifficulty = localDataSource?.userDifficulty ?: 0,

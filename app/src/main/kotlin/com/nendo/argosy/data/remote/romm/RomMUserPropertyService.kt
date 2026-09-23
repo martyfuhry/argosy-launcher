@@ -161,6 +161,33 @@ class RomMUserPropertyService @Inject constructor(
         }
     }
 
+    /**
+     * Fetches and caches the clear logo for a game that has none, leaving the rest of the row alone.
+     * Returns the stored logo path, local once cached, or null when RomM offers no logo.
+     */
+    suspend fun fetchLogo(gameId: Long): String? {
+        val currentApi = api ?: return null
+        val game = gameDao.getById(gameId) ?: return null
+        game.logoPath?.let { return it }
+        val rommId = game.rommId ?: return null
+        val rom = runCatching { currentApi.getRom(rommId) }.getOrNull()
+            ?.takeIf { it.isSuccessful }?.body() ?: return null
+        val logoUrls = apiClient.buildLogoUrls(rom)
+        if (logoUrls.isEmpty()) return null
+        val cached = imageCacheManager.cacheGameImagesNow(
+            rommId = rommId,
+            gameTitle = rom.name,
+            coverUrls = emptyList(),
+            backgroundUrls = emptyList(),
+            boxBackUrl = null,
+            boxSpineUrl = null,
+            logoUrls = logoUrls
+        )
+        val path = cached.logoPath ?: logoUrls.first()
+        gameDao.updateLogoPath(gameId, path)
+        return path
+    }
+
     suspend fun refreshGameData(gameId: Long): RomMResult<Unit> {
         val currentApi = api ?: return RomMResult.Error("Not connected")
         val game = gameDao.getById(gameId) ?: return RomMResult.Error("Game not found")
@@ -192,6 +219,7 @@ class RomMUserPropertyService @Inject constructor(
             val boxSpineUrl = if (boxArtEnabled) {
                 apiClient.buildResourceUrl(rom.ssMetadata?.box2dSidePath)
             } else null
+            val logoUrls = apiClient.buildLogoUrls(rom)
 
             val cached = imageCacheManager.cacheGameImagesNow(
                 rommId = rom.id,
@@ -199,7 +227,8 @@ class RomMUserPropertyService @Inject constructor(
                 coverUrls = coverUrls,
                 backgroundUrls = backgroundUrls,
                 boxBackUrl = boxBackUrl,
-                boxSpineUrl = boxSpineUrl
+                boxSpineUrl = boxSpineUrl,
+                logoUrls = logoUrls
             )
 
             val updatedGame = game.withRomMetadata(rom).copy(
@@ -208,6 +237,7 @@ class RomMUserPropertyService @Inject constructor(
                 screenshotPaths = screenshotUrls.joinToString(","),
                 boxBackPath = cached.boxBackPath ?: boxBackUrl ?: game.boxBackPath,
                 boxSpinePath = cached.boxSpinePath ?: boxSpineUrl ?: game.boxSpinePath,
+                logoPath = cached.logoPath ?: logoUrls.firstOrNull() ?: game.logoPath,
                 rommFileName = rom.fileName ?: game.rommFileName
             )
 

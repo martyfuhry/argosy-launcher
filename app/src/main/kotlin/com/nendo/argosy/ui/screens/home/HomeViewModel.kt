@@ -129,8 +129,11 @@ class HomeViewModel @Inject constructor(
         com.nendo.argosy.domain.usecase.collection.PrepareCollectionQueueUseCase,
     private val homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue,
     private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository,
-    private val socialRepository: com.nendo.argosy.data.social.SocialRepository
+    private val socialRepository: com.nendo.argosy.data.social.SocialRepository,
+    private val romMRepository: com.nendo.argosy.data.remote.romm.RomMRepository
 ) : ViewModel(), HomeInputActions {
+
+    private val logoAttempts = mutableSetOf<Long>()
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home", this)
     private val tileShowcaseOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home.tile", this)
@@ -422,6 +425,7 @@ class HomeViewModel @Inject constructor(
                 publishCompanionDetail(focusedGame)
                 if (sameGame) return@collect
                 previousGameId = focusedGame?.id
+                focusedGame?.let { backfillLogo(it) }
                 if (focusedGame != null) {
                     ambientLedManager.setContext(AmbientLedContext.GAME_HOVER)
                     if (ambientLedManager.coverArtEnabled) {
@@ -528,6 +532,36 @@ class HomeViewModel @Inject constructor(
                 )
             )
         )
+    }
+
+    private var logoPrefetch: kotlinx.coroutines.Job? = null
+
+    private fun backfillLogo(focused: HomeGameUi) {
+        val layout = DualScreenManagerHolder.instance?.presentationStyle?.value?.layout
+        if (layout != com.nendo.argosy.domain.model.PresentationLayout.LOGO) return
+        val state = _uiState.value
+        val onScreen = listOf(focused) + state.tileGames.values +
+            state.currentItems.filterIsInstance<HomeRowItem.Game>().map { it.game }
+        val pending = onScreen.filter { it.logoPath == null && it.id !in logoAttempts }
+            .distinctBy { it.id }
+        if (pending.isEmpty() || logoPrefetch?.isActive == true) return
+        pending.forEach { logoAttempts.add(it.id) }
+        logoPrefetch = viewModelScope.launch {
+            var fetched = false
+            pending.forEach { game ->
+                val path = romMRepository.fetchLogo(game.id)
+                if (path?.startsWith("/") == true) {
+                    fetched = true
+                    if (game.id == _uiState.value.focusedGame?.id) refreshLogoHolders()
+                }
+            }
+            if (fetched) refreshLogoHolders()
+        }
+    }
+
+    private suspend fun refreshLogoHolders() {
+        refreshTileGamesAndFeatures()
+        refreshCurrentRowInternal()
     }
 
     private fun publishCompanionDetail(game: HomeGameUi?) {

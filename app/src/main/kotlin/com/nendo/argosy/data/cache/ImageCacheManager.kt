@@ -55,13 +55,14 @@ data class ImageCacheRequest(
     ) : this(listOf(url), id, type, gameTitle, isSteam, gameId)
 }
 
-enum class ImageType { BACKGROUND, SCREENSHOT, COVER, BOX_BACK, BOX_SPINE }
+enum class ImageType { BACKGROUND, SCREENSHOT, COVER, BOX_BACK, BOX_SPINE, LOGO }
 
 data class CachedGameImages(
     val coverPath: String?,
     val backgroundPath: String?,
     val boxBackPath: String?,
-    val boxSpinePath: String?
+    val boxSpinePath: String?,
+    val logoPath: String?
 )
 
 data class ImageCacheProgress(
@@ -165,6 +166,8 @@ class ImageCacheManager @Inject constructor(
         private val DOCUMENT_CONTENT_TYPES = listOf("text/", "html", "json")
         private const val FALLBACK_PLATFORM = "_misc"
         private const val LOGOS_DIR = "_logos"
+        private const val BOX_FACE_MAX_WIDTH = 400
+        private const val LOGO_MAX_WIDTH = 1000
         private const val VALIDATION_MARKER = ".validated"
     }
 
@@ -575,7 +578,7 @@ class ImageCacheManager @Inject constructor(
             val slug = resolveRommPlatformSlug(rommId)
             val prefixes = listOf(
                 "cover_${rommId}_", "bg_${rommId}_", "ss_${rommId}_",
-                "box_back_${rommId}_", "box_spine_${rommId}_"
+                "box_back_${rommId}_", "box_spine_${rommId}_", "game_logo_${rommId}_"
             )
             val types = listOf("covers", "backgrounds", "screenshots")
             types.forEach { type ->
@@ -1095,7 +1098,7 @@ class ImageCacheManager @Inject constructor(
         }
     }
 
-    enum class BoxFace { BACK, SPINE }
+    enum class BoxFace { BACK, SPINE, LOGO }
 
     fun queueCoverCache(url: String, rommId: Long, gameTitle: String = "") =
         queueCoverCache(listOf(url), rommId, gameTitle)
@@ -1108,13 +1111,23 @@ class ImageCacheManager @Inject constructor(
         }
     }
 
-    fun queueBoxFaceCache(url: String, rommId: Long, gameTitle: String = "", face: BoxFace) {
+    fun queueBoxFaceCache(url: String, rommId: Long, gameTitle: String = "", face: BoxFace) =
+        queueBoxFaceCache(listOf(url), rommId, gameTitle, face)
+
+    fun queueBoxFaceCache(urls: List<String>, rommId: Long, gameTitle: String = "", face: BoxFace) {
+        if (urls.isEmpty()) return
         scope.launch {
-            val type = if (face == BoxFace.BACK) ImageType.BOX_BACK else ImageType.BOX_SPINE
-            coverQueue.send(ImageCacheRequest(url, rommId, type, gameTitle, isSteam = false))
+            coverQueue.send(ImageCacheRequest(urls, rommId, face.imageType, gameTitle, isSteam = false))
             startCoverProcessingIfNeeded()
         }
     }
+
+    private val BoxFace.imageType: ImageType
+        get() = when (this) {
+            BoxFace.BACK -> ImageType.BOX_BACK
+            BoxFace.SPINE -> ImageType.BOX_SPINE
+            BoxFace.LOGO -> ImageType.LOGO
+        }
 
     fun queueCoverCacheByGameId(url: String, gameId: Long) =
         queueCoverCacheByGameId(listOf(url), gameId)
@@ -1144,7 +1157,7 @@ class ImageCacheManager @Inject constructor(
                         currentType = "cover"
                     )
                     when (request.type) {
-                        ImageType.BOX_BACK, ImageType.BOX_SPINE -> processBoxFaceRequest(request)
+                        ImageType.BOX_BACK, ImageType.BOX_SPINE, ImageType.LOGO -> processBoxFaceRequest(request)
                         else -> processCoverRequest(request)
                     }
                 } catch (e: Exception) {
@@ -1253,15 +1266,23 @@ class ImageCacheManager @Inject constructor(
 
     private suspend fun processBoxFaceRequest(request: ImageCacheRequest) {
         val game = gameDao.getByRommId(request.id) ?: return
-        val isBack = request.type == ImageType.BOX_BACK
-        val currentDbPath = if (isBack) game.boxBackPath else game.boxSpinePath
+        val currentDbPath = boxFacePath(game, request.type)
         if (currentDbPath != null && currentDbPath.startsWith("/") && File(currentDbPath).exists()) {
             return
         }
-        val prefix = if (isBack) "box_back_${request.id}" else "box_spine_${request.id}"
+        val prefix = when (request.type) {
+            ImageType.BOX_BACK -> "box_back_${request.id}"
+            ImageType.LOGO -> "game_logo_${request.id}"
+            else -> "box_spine_${request.id}"
+        }
+        val maxWidth = if (request.type == ImageType.LOGO) LOGO_MAX_WIDTH else BOX_FACE_MAX_WIDTH
         val slug = resolveRommPlatformSlug(request.id)
         val coverDir = platformDir(slug, "covers")
-        val kind = if (isBack) "box back" else "box spine"
+        val kind = when (request.type) {
+            ImageType.BOX_BACK -> "box back"
+            ImageType.LOGO -> "logo"
+            else -> "box spine"
+        }
         val idLabel = "rommId ${request.id}"
 
         for ((index, url) in request.urls.withIndex()) {
@@ -1272,13 +1293,13 @@ class ImageCacheManager @Inject constructor(
 
             if (existingFile != null) {
                 if (isValidImageFile(existingFile)) {
-                    updateGameBoxFace(request.id, isBack, existingFile.absolutePath)
+                    updateGameBoxFace(request.id, request.type, existingFile.absolutePath)
                     return
                 }
                 existingFile.delete()
             }
 
-            val bitmap = downloadAndResize(url, 400)
+            val bitmap = downloadAndResize(url, maxWidth)
             if (bitmap == null) {
                 logCandidateRejected(kind, idLabel, index, request.urls.size, url, "no decodable image")
                 continue
@@ -1291,19 +1312,29 @@ class ImageCacheManager @Inject constructor(
             }
 
             Log.d(TAG, "Cached box face ${cachedFile.name} for $idLabel")
-            updateGameBoxFace(request.id, isBack, cachedFile.absolutePath)
+            updateGameBoxFace(request.id, request.type, cachedFile.absolutePath)
             return
         }
 
         logAllCandidatesRejected(kind, idLabel, request)
     }
 
-    private suspend fun updateGameBoxFace(rommId: Long, isBack: Boolean, localPath: String) {
+    private fun boxFacePath(game: com.nendo.argosy.data.local.entity.GameEntity, type: ImageType): String? =
+        when (type) {
+            ImageType.BOX_BACK -> game.boxBackPath
+            ImageType.LOGO -> game.logoPath
+            else -> game.boxSpinePath
+        }
+
+    private suspend fun updateGameBoxFace(rommId: Long, type: ImageType, localPath: String) {
         val game = gameDao.getByRommId(rommId) ?: return
-        val current = if (isBack) game.boxBackPath else game.boxSpinePath
+        val current = boxFacePath(game, type)
         if (current?.startsWith("/") == true && File(current).exists()) return
-        if (isBack) gameDao.updateBoxBackPath(game.id, localPath)
-        else gameDao.updateBoxSpinePath(game.id, localPath)
+        when (type) {
+            ImageType.BOX_BACK -> gameDao.updateBoxBackPath(game.id, localPath)
+            ImageType.LOGO -> gameDao.updateLogoPath(game.id, localPath)
+            else -> gameDao.updateBoxSpinePath(game.id, localPath)
+        }
     }
 
     /**
@@ -1318,7 +1349,8 @@ class ImageCacheManager @Inject constructor(
         coverUrls: List<String>,
         backgroundUrls: List<String>,
         boxBackUrl: String?,
-        boxSpineUrl: String?
+        boxSpineUrl: String?,
+        logoUrls: List<String> = emptyList()
     ): CachedGameImages = withContext(Dispatchers.IO) {
         if (coverUrls.isNotEmpty()) {
             processCoverRequest(ImageCacheRequest(coverUrls, rommId, ImageType.COVER, gameTitle, isSteam = false))
@@ -1328,13 +1360,17 @@ class ImageCacheManager @Inject constructor(
         }
         boxBackUrl?.let { processBoxFaceRequest(ImageCacheRequest(it, rommId, ImageType.BOX_BACK, gameTitle, isSteam = false)) }
         boxSpineUrl?.let { processBoxFaceRequest(ImageCacheRequest(it, rommId, ImageType.BOX_SPINE, gameTitle, isSteam = false)) }
+        if (logoUrls.isNotEmpty()) {
+            processBoxFaceRequest(ImageCacheRequest(logoUrls, rommId, ImageType.LOGO, gameTitle, isSteam = false))
+        }
 
         val game = gameDao.getByRommId(rommId)
         CachedGameImages(
             coverPath = game?.coverPath,
             backgroundPath = game?.backgroundPath,
             boxBackPath = game?.boxBackPath,
-            boxSpinePath = game?.boxSpinePath
+            boxSpinePath = game?.boxSpinePath,
+            logoPath = game?.logoPath
         )
     }
 
@@ -1351,6 +1387,9 @@ class ImageCacheManager @Inject constructor(
                 }
                 game.boxSpinePath?.takeIf { it.startsWith("http") }?.let {
                     queueBoxFaceCache(it, rommId, game.title, BoxFace.SPINE)
+                }
+                game.logoPath?.takeIf { it.startsWith("http") }?.let {
+                    queueBoxFaceCache(it, rommId, game.title, BoxFace.LOGO)
                 }
             }
         }

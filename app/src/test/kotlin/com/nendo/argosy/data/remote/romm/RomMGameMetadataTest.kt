@@ -128,6 +128,7 @@ class RomMGameMetadataTest {
         assertNull("cover is resolved to a cached file or a url by the caller", result.coverPath)
         assertNull("box art is resolved by the caller", result.boxBackPath)
         assertNull(result.boxSpinePath)
+        assertNull(result.logoPath)
     }
 
     @Test

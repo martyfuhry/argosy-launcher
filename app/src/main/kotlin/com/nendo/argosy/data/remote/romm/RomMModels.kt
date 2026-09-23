@@ -138,6 +138,17 @@ data class RomMRom(
             ?.map { it.url }
             ?: emptyList()
 
+    /**
+     * LaunchBox "Clear Logo" images reachable over http(s). A local-LaunchBox server hands out
+     * `launchbox-file://` urls the client cannot fetch, so those are left out.
+     */
+    val clearLogoUrls: List<String>
+        get() = launchboxMetadata?.images
+            ?.filter { it.type.equals("Clear Logo", ignoreCase = true) }
+            ?.map { it.url }
+            ?.filter { it.startsWith("http://") || it.startsWith("https://") }
+            ?: emptyList()
+
     val discNumber: Int?
         get() = tags?.firstOrNull { DISC_TAG_REGEX.matches(it) }
             ?.let { DISC_NUMBER_REGEX.find(it)?.value?.toIntOrNull() }
@@ -320,7 +331,8 @@ data class RomMLaunchboxMetadata(
 data class RomMSsMetadata(
     @Json(name = "box2d_path") val box2dPath: String? = null,
     @Json(name = "box2d_back_path") val box2dBackPath: String? = null,
-    @Json(name = "box2d_side_path") val box2dSidePath: String? = null
+    @Json(name = "box2d_side_path") val box2dSidePath: String? = null,
+    @Json(name = "logo_path") val logoPath: String? = null
 )
 
 @JsonClass(generateAdapter = true)
