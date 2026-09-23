@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -68,23 +67,49 @@ class GamepadInputHandlerTest {
         scheduler.advanceTimeBy(150)
         assertEquals(3, delivered.size)
 
-        assertFalse(process(sample()))
+        process(sample())
         scheduler.advanceTimeBy(1000)
         assertEquals(3, delivered.size)
     }
 
     @Test
-    fun `a registered raw motion listener sees a hat sample instead of the trackers`() {
+    fun `a raw motion listener sees a hat press before the trackers and its decline leaves one edge`() {
         val seen = mutableListOf<MotionEvent>()
         handler.setRawMotionEventListener { seen += it; false }
 
         val hatPress = sample(hatX = 1f)
-        assertFalse(process(hatPress))
-        assertFalse(handler.handleMotionEvent(hatPress))
+        assertTrue(process(hatPress))
+
+        assertEquals(listOf(hatPress), seen)
+        assertEquals(listOf(GamepadEvent.Right to false), delivered)
+    }
+
+    @Test
+    fun `a sample the raw motion listener consumes leaves no edge and no repeat`() {
+        val seen = mutableListOf<MotionEvent>()
+        handler.setRawMotionEventListener { seen += it; true }
+
+        val hatPress = sample(hatX = 1f)
+        assertTrue(process(hatPress))
         scheduler.advanceTimeBy(1000)
 
         assertEquals(listOf(hatPress), seen)
         assertTrue(delivered.isEmpty())
+    }
+
+    @Test
+    fun `a consumed sample cancels the repeat of a direction still held`() {
+        var consuming = false
+        handler.setRawMotionEventListener { consuming }
+        process(sample(hatX = 1f))
+        scheduler.advanceTimeBy(401)
+        assertEquals(listOf(GamepadEvent.Right to false, GamepadEvent.Right to true), delivered)
+
+        consuming = true
+        process(sample(hatX = 1f))
+        scheduler.advanceTimeBy(1000)
+
+        assertEquals(2, delivered.size)
     }
 
     @Test
