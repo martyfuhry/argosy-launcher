@@ -116,16 +116,17 @@ fun StickyCollapsedHeader(
 @Composable
 fun ExpandedHeader(
     game: GameDetailUi,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    friends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList()
 ) {
     val aspectRatioClass = LocalUiScale.current.aspectRatioClass
     val isWideDisplay = aspectRatioClass == AspectRatioClass.WIDE ||
         aspectRatioClass == AspectRatioClass.ULTRA_WIDE
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         if (isWideDisplay) {
-            LandscapeExpandedHeader(game = game)
+            LandscapeExpandedHeader(game = game, friends = friends)
         } else {
-            PortraitExpandedHeader(game = game, maxWidth = maxWidth)
+            PortraitExpandedHeader(game = game, friends = friends, maxWidth = maxWidth)
         }
     }
 }
@@ -133,6 +134,7 @@ fun ExpandedHeader(
 @Composable
 private fun LandscapeExpandedHeader(
     game: GameDetailUi,
+    friends: List<com.nendo.argosy.data.social.FriendActivity>,
     modifier: Modifier = Modifier
 ) {
     val boxArtStyle = LocalBoxArtStyle.current
@@ -165,7 +167,7 @@ private fun LandscapeExpandedHeader(
         }
 
         Column(modifier = Modifier.weight(1f)) {
-            TitleSection(game = game)
+            TitleSection(game = game, friends = friends)
             Spacer(modifier = Modifier.height(Dimens.spacingSm))
             RatingsRow(game = game)
             Spacer(modifier = Modifier.height(Dimens.spacingSm))
@@ -177,6 +179,7 @@ private fun LandscapeExpandedHeader(
 @Composable
 private fun PortraitExpandedHeader(
     game: GameDetailUi,
+    friends: List<com.nendo.argosy.data.social.FriendActivity>,
     maxWidth: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier
 ) {
@@ -193,7 +196,7 @@ private fun PortraitExpandedHeader(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
     ) {
-        TitleSection(game = game)
+        TitleSection(game = game, friends = friends)
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -247,6 +250,7 @@ private fun CoverArtImage(
 @Composable
 private fun TitleSection(
     game: GameDetailUi,
+    friends: List<com.nendo.argosy.data.social.FriendActivity>,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -337,6 +341,11 @@ private fun TitleSection(
                     }
                 }
             }
+        }
+
+        if (friends.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(Dimens.spacingSm))
+            com.nendo.argosy.ui.components.friends.FriendsActivityBadge(friends = friends)
         }
     }
 }

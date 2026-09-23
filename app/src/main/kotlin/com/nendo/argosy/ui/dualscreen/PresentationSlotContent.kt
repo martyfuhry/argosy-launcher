@@ -261,6 +261,7 @@ private fun GameHeroSlot(slot: PresentationSlot.GameHero) {
         )
         com.nendo.argosy.ui.screens.gamedetail.components.ExpandedHeader(
             game = slot.game,
+            friends = slot.friends,
             modifier = Modifier.align(Alignment.Center).padding(Dimens.spacingXl)
         )
     }

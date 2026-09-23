@@ -42,7 +42,9 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import com.nendo.argosy.data.social.FriendActivity
 import com.nendo.argosy.ui.common.coverSizeWithin
+import com.nendo.argosy.ui.components.friends.FriendsActivityBadge
 import com.nendo.argosy.ui.common.rememberCoverAspectRatio
 import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
 import com.nendo.argosy.ui.theme.Dimens
@@ -101,6 +103,7 @@ fun SpotlightStage(
     useBoxArt: Boolean = false,
     showFocusVisuals: Boolean = true,
     downloadIndicatorFor: (CarouselItem) -> GameDownloadIndicator = { GameDownloadIndicator.NONE },
+    friendsFor: (CarouselItem) -> List<FriendActivity> = { emptyList() },
     onItemLongPress: ((Int) -> Unit)? = null,
     onCoverLoadFailed: ((Long, String) -> Unit)? = null,
     onCoverLoaded: ((Long, Bitmap) -> Unit)? = null,
@@ -175,6 +178,7 @@ fun SpotlightStage(
                 val indicator by remember(item) { derivedStateOf { indicatorFor(item) } }
                 SpotlightSlot(
                     item = item,
+                    friends = friendsFor(item),
                     isFocused = isFocused,
                     showFocusVisuals = showFocusVisuals,
                     geometry = geometry,
@@ -234,6 +238,7 @@ private fun rememberSpotlightGeometry(maxWidth: Dp, maxHeight: Dp): SpotlightGeo
 @Composable
 private fun SpotlightSlot(
     item: CarouselItem,
+    friends: List<FriendActivity>,
     isFocused: Boolean,
     showFocusVisuals: Boolean,
     geometry: SpotlightGeometry,
@@ -263,7 +268,11 @@ private fun SpotlightSlot(
                 .padding(horizontal = Dimens.spacingXl),
             contentAlignment = Alignment.BottomCenter
         ) {
-            SpotlightDetails(item = item, statsInline = !geometry.statsBesideCover)
+            SpotlightDetails(
+                item = item,
+                friends = friends,
+                statsInline = !geometry.statsBesideCover
+            )
         }
         Spacer(modifier = Modifier.height(Dimens.spacingMd))
         Row(
@@ -290,16 +299,21 @@ private fun SpotlightSlot(
             ) {
                 val game = (item as? CarouselItem.Game)?.game
                 if (game != null && geometry.statsBesideCover) {
-                    GameStatBadges(
-                        rating = game.rating,
-                        userRating = game.userRating,
-                        userDifficulty = game.userDifficulty,
-                        achievementCount = game.achievementCount,
-                        earnedAchievementCount = game.earnedAchievementCount,
-                        timeToBeatMainSec = game.timeToBeatMainSec,
-                        stacked = true,
-                        modifier = Modifier.padding(start = Dimens.spacingLg)
-                    )
+                    Column(
+                        modifier = Modifier.padding(start = Dimens.spacingLg),
+                        verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+                    ) {
+                        FriendsActivityBadge(friends = friends)
+                        GameStatBadges(
+                            rating = game.rating,
+                            userRating = game.userRating,
+                            userDifficulty = game.userDifficulty,
+                            achievementCount = game.achievementCount,
+                            earnedAchievementCount = game.earnedAchievementCount,
+                            timeToBeatMainSec = game.timeToBeatMainSec,
+                            stacked = true
+                        )
+                    }
                 }
             }
         }
@@ -307,7 +321,11 @@ private fun SpotlightSlot(
 }
 
 @Composable
-private fun SpotlightDetails(item: CarouselItem, statsInline: Boolean) {
+private fun SpotlightDetails(
+    item: CarouselItem,
+    friends: List<FriendActivity>,
+    statsInline: Boolean
+) {
     val (title, subtitle) = when (item) {
         is CarouselItem.Game -> item.game.title to item.game.developer
         is CarouselItem.Media -> item.media.title to item.media.subtitle
@@ -334,6 +352,7 @@ private fun SpotlightDetails(item: CarouselItem, statsInline: Boolean) {
         }
         val game = (item as? CarouselItem.Game)?.game
         if (statsInline && game != null) {
+            FriendsActivityBadge(friends = friends, modifier = Modifier.padding(top = Dimens.spacingXs))
             GameStatBadges(
                 rating = game.rating,
                 userRating = game.userRating,

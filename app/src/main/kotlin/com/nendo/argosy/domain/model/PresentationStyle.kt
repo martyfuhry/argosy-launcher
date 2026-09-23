@@ -52,7 +52,8 @@ data class PresentationStyle(
         val DEFAULT_STATS: Set<PresentationStat> = setOf(
             PresentationStat.DEVELOPER,
             PresentationStat.RELEASE_YEAR,
-            PresentationStat.GENRE
+            PresentationStat.GENRE,
+            PresentationStat.FRIENDS
         )
 
         private const val KEY_SCRIM = "scrim"

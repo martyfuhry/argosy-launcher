@@ -427,6 +427,18 @@ class GameDetailViewModel @Inject constructor(
 
         viewModelScope.launch {
             combine(
+                socialRepository.friendsActivity,
+                _uiState.map { it.game?.igdbId }.distinctUntilChanged()
+            ) { activity, igdbId ->
+                igdbId?.let { activity[it.toInt()] }.orEmpty()
+            }.distinctUntilChanged().collect { friends ->
+                _uiState.update { it.copy(friendsActivity = friends) }
+                publishCompanionDetail(_uiState.value.game)
+            }
+        }
+
+        viewModelScope.launch {
+            combine(
                 socialRepository.reviewSummaries,
                 _uiState.map { it.game?.igdbId }.distinctUntilChanged()
             ) { summaries, igdbId ->
@@ -2416,7 +2428,10 @@ class GameDetailViewModel @Inject constructor(
         } else {
             dsm.presentSlot(
                 companionOwner,
-                com.nendo.argosy.ui.dualscreen.PresentationSlot.GameHero(game)
+                com.nendo.argosy.ui.dualscreen.PresentationSlot.GameHero(
+                    game,
+                    _uiState.value.friendsActivity
+                )
             )
         }
     }

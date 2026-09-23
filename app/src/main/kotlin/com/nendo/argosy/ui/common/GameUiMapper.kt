@@ -76,6 +76,7 @@ suspend fun GameEntity.toHomeGameUi(
         description = description,
         status = status,
         titleId = displayTitleId,
+        igdbId = igdbId,
         timeToBeatMainSec = timeToBeatMainSec,
         timeToBeatExtraSec = timeToBeatExtraSec,
         timeToBeatCompletionistSec = timeToBeatCompletionistSec,

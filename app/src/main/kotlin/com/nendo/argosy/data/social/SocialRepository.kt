@@ -46,7 +46,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -89,6 +92,14 @@ class SocialRepository @Inject constructor(
 
     private val _friends = MutableStateFlow<List<Friend>>(emptyList())
     val friends: StateFlow<List<Friend>> = _friends.asStateFlow()
+
+    /**
+     * Friends tied to each game, keyed by the game's IGDB id. The one source every surface that
+     * names friends beside a game reads from.
+     */
+    val friendsActivity: StateFlow<Map<Int, List<FriendActivity>>> = _friends
+        .map(::liveFriendActivity)
+        .stateIn(scope, SharingStarted.Eagerly, emptyMap())
 
     private val _quayPassCheckins = MutableStateFlow<List<QuayPassCheckin>>(emptyList())
     val quayPassCheckins: StateFlow<List<QuayPassCheckin>> = _quayPassCheckins.asStateFlow()

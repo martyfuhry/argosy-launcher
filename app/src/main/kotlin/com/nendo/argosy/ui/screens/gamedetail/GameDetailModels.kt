@@ -311,6 +311,7 @@ data class GameDetailUiState(
     val showAchievementList: Boolean = false,
     val achievementListFocusIndex: Int = 0,
     val reviewSummary: com.nendo.argosy.data.social.ReviewSummary? = null,
+    val friendsActivity: List<com.nendo.argosy.data.social.FriendActivity> = emptyList(),
     val reviewPage: com.nendo.argosy.data.social.GameReviewsPage? = null,
     val showReviewList: Boolean = false,
     val reviewListFocusIndex: Int = 0,

@@ -976,4 +976,6 @@
     <string name="dual_presentation_fact_time_to_beat">Time to Beat</string>
     <!-- Its value is achievements earned out of the total. -->
     <string name="dual_presentation_fact_achievements">Achievements</string>
+    <!-- Its value names friends playing the game now or recently, then a count of the rest. -->
+    <string name="dual_presentation_fact_friends">Friends</string>
 </resources>

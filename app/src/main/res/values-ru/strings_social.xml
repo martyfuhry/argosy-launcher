@@ -339,4 +339,18 @@
     <string name="social_eventdetail_desc_doodle">Новый рисунок</string>
     <string name="social_eventdetail_desc_discussion_shared_post">Новая публикация</string>
     <string name="social_eventdetail_desc_discussion_truncated">%1$s...</string>
+    <string name="social_friends_activity_playing_one">%1$s сейчас играет</string>
+    <plurals name="social_friends_activity_playing_more">
+        <item quantity="one">%1$s и ещё %2$d сейчас играют</item>
+        <item quantity="few">%1$s и ещё %2$d сейчас играют</item>
+        <item quantity="many">%1$s и ещё %2$d сейчас играют</item>
+        <item quantity="other">%1$s и ещё %2$d сейчас играют</item>
+    </plurals>
+    <string name="social_friends_activity_recent_one">%1$s недавно играл(а)</string>
+    <plurals name="social_friends_activity_recent_more">
+        <item quantity="one">%1$s и ещё %2$d недавно играли</item>
+        <item quantity="few">%1$s и ещё %2$d недавно играли</item>
+        <item quantity="many">%1$s и ещё %2$d недавно играли</item>
+        <item quantity="other">%1$s и ещё %2$d недавно играли</item>
+    </plurals>
 </resources>

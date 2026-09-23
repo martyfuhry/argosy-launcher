@@ -278,20 +278,26 @@ class ArgosSocialService @Inject constructor(
                         val netplayJson = payload.optJSONObject("netplay_session")
                         Log.d(TAG, "PRESENCE_UPDATE: user=${payload.optString("user_id")} hasNetplay=${netplayJson != null} keys=${payload.names()}")
                         val netplay = parseNetplaySession(netplayJson)
+                        val igdbId = parseGameIgdbId(payload)
                         val gameFromPayload = payload.optJSONObject("game")?.let { gameJson ->
                             PresenceGameInfo(
                                 title = gameJson.getString("title"),
                                 coverThumb = gameJson.optString("cover_thumb", null),
-                                netplaySession = netplay
+                                netplaySession = netplay,
+                                igdbId = igdbId
                             )
                         }
-                        val gameInfo = gameFromPayload ?: if (netplay != null) {
-                            PresenceGameInfo(
+                        val gameTitle = payload.optString("game_title", "").takeIf { it.isNotEmpty() }
+                        val gameInfo = gameFromPayload ?: when {
+                            netplay != null -> PresenceGameInfo(
                                 title = netplay.gameTitle,
                                 coverThumb = null,
-                                netplaySession = netplay
+                                netplaySession = netplay,
+                                igdbId = igdbId
                             )
-                        } else null
+                            gameTitle != null -> PresenceGameInfo(title = gameTitle, igdbId = igdbId)
+                            else -> null
+                        }
                         val update = PresenceUpdate(
                             userId = payload.getString("user_id"),
                             status = payload.getString("status"),
@@ -1476,6 +1482,9 @@ class ArgosSocialService @Inject constructor(
 
     fun isConnected(): Boolean = _connectionState.value == ConnectionState.Connected
 
+    private fun parseGameIgdbId(presence: JSONObject): Int? =
+        presence.optInt("game_igdb_id", 0).takeIf { it > 0 }
+
     private fun parseFriendsList(array: org.json.JSONArray?): List<Friend> {
         if (array == null) return emptyList()
         return (0 until array.length()).mapNotNull { i ->
@@ -1492,7 +1501,8 @@ class ArgosSocialService @Inject constructor(
                     PresenceGameInfo(
                         title = gameTitle ?: netplay?.gameTitle ?: "",
                         coverThumb = null,
-                        netplaySession = netplay
+                        netplaySession = netplay,
+                        igdbId = presenceObj?.let(::parseGameIgdbId)
                     )
                 } else null
 

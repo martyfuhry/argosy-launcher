@@ -339,4 +339,14 @@
     <string name="social_eventdetail_desc_doodle">एक डूडल शेयर किया</string>
     <string name="social_eventdetail_desc_discussion_shared_post">एक पोस्ट शेयर की</string>
     <string name="social_eventdetail_desc_discussion_truncated">%1$s...</string>
+    <string name="social_friends_activity_playing_one">%1$s खेल रहे हैं</string>
+    <plurals name="social_friends_activity_playing_more">
+        <item quantity="one">%1$s और %2$d अन्य खेल रहे हैं</item>
+        <item quantity="other">%1$s और %2$d अन्य खेल रहे हैं</item>
+    </plurals>
+    <string name="social_friends_activity_recent_one">%1$s ने हाल ही में खेला</string>
+    <plurals name="social_friends_activity_recent_more">
+        <item quantity="one">%1$s और %2$d अन्य ने हाल ही में खेला</item>
+        <item quantity="other">%1$s और %2$d अन्य ने हाल ही में खेला</item>
+    </plurals>
 </resources>

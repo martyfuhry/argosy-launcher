@@ -328,4 +328,16 @@
     <string name="social_eventdetail_desc_doodle">compartió un dibujo</string>
     <string name="social_eventdetail_desc_discussion_shared_post">compartió una publicación</string>
     <string name="social_eventdetail_desc_discussion_truncated">%1$s...</string>
+    <string name="social_friends_activity_playing_one">%1$s está jugando</string>
+    <plurals name="social_friends_activity_playing_more">
+        <item quantity="one">%1$s y %2$d persona más están jugando</item>
+        <item quantity="many">%1$s y %2$d personas más están jugando</item>
+        <item quantity="other">%1$s y %2$d personas más están jugando</item>
+    </plurals>
+    <string name="social_friends_activity_recent_one">%1$s jugó hace poco</string>
+    <plurals name="social_friends_activity_recent_more">
+        <item quantity="one">%1$s y %2$d persona más jugaron hace poco</item>
+        <item quantity="many">%1$s y %2$d personas más jugaron hace poco</item>
+        <item quantity="other">%1$s y %2$d personas más jugaron hace poco</item>
+    </plurals>
 </resources>

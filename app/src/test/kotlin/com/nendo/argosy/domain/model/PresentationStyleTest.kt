@@ -24,7 +24,12 @@ class PresentationStyleTest {
         assertEquals(PresentationScrim.GRADIENT, style.scrim)
         assertEquals(PresentationArt.COVER, style.art)
         assertEquals(
-            setOf(PresentationStat.DEVELOPER, PresentationStat.RELEASE_YEAR, PresentationStat.GENRE),
+            setOf(
+                PresentationStat.DEVELOPER,
+                PresentationStat.RELEASE_YEAR,
+                PresentationStat.GENRE,
+                PresentationStat.FRIENDS
+            ),
             style.stats
         )
     }

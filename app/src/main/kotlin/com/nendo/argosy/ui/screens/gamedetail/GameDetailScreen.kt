@@ -778,7 +778,7 @@ private fun GameDetailContent(
                                     .padding(start = Dimens.spacingMd, top = Dimens.spacingXl, end = Dimens.spacingXl, bottom = Dimens.spacingXl)
                             ) {
                                 if (!heroOnOtherScreen) {
-                                    ExpandedHeader(game = game)
+                                    ExpandedHeader(game = game, friends = uiState.friendsActivity)
                                     Spacer(modifier = Modifier.height(Dimens.spacingXl))
                                 }
 

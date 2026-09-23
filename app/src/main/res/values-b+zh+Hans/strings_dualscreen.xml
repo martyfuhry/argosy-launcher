@@ -430,4 +430,5 @@
     <string name="dual_presentation_fact_play_time">已玩</string>
     <string name="dual_presentation_fact_time_to_beat">通关时长</string>
     <string name="dual_presentation_fact_achievements">成就</string>
+    <string name="dual_presentation_fact_friends">好友</string>
 </resources>

@@ -410,4 +410,21 @@
     <string name="social_eventdetail_desc_doodle">shared a doodle</string>
     <string name="social_eventdetail_desc_discussion_shared_post">shared a post</string>
     <string name="social_eventdetail_desc_discussion_truncated">%1$s...</string>
+
+    <!-- Beside a game: one friend is playing it right now. %1$s is the friend's name. -->
+    <string name="social_friends_activity_playing_one">%1$s is playing</string>
+    <!-- Beside a game: several friends are playing it right now. %1$s is the first friend's name,
+         %2$d how many others are playing too. -->
+    <plurals name="social_friends_activity_playing_more">
+        <item quantity="one">%1$s and %2$d other are playing</item>
+        <item quantity="other">%1$s and %2$d others are playing</item>
+    </plurals>
+    <!-- Beside a game: one friend played it in the last two weeks. %1$s is the friend's name. -->
+    <string name="social_friends_activity_recent_one">%1$s played recently</string>
+    <!-- Beside a game: several friends played it in the last two weeks. %1$s is the first friend's
+         name, %2$d how many others did too. -->
+    <plurals name="social_friends_activity_recent_more">
+        <item quantity="one">%1$s and %2$d other played recently</item>
+        <item quantity="other">%1$s and %2$d others played recently</item>
+    </plurals>
 </resources>

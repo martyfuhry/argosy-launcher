@@ -123,6 +123,7 @@ data class HomeGameUi(
     val description: String? = null,
     val status: String? = null,
     val titleId: String? = null,
+    val igdbId: Long? = null,
     val timeToBeatMainSec: Int? = null,
     val timeToBeatExtraSec: Int? = null,
     val timeToBeatCompletionistSec: Int? = null,
@@ -313,6 +314,7 @@ data class HomeUiState(
         com.nendo.argosy.domain.model.CarouselConfig(),
     val spotlightConfig: com.nendo.argosy.domain.model.SpotlightConfig =
         com.nendo.argosy.domain.model.SpotlightConfig(),
+    val friendsActivity: Map<Int, List<com.nendo.argosy.data.social.FriendActivity>> = emptyMap(),
     val autoGridConfig: com.nendo.argosy.domain.model.AutoGridConfig =
         com.nendo.argosy.domain.model.AutoGridConfig(),
     val layoutKind: com.nendo.argosy.domain.model.HomeLayoutKind =
@@ -473,6 +475,9 @@ data class HomeUiState(
      * any merged order would be invented here and would shuffle on every refresh. Games lead because
      * the row was theirs, and an existing shelf should not move when titles start appearing after it.
      */
+    fun friendsFor(game: HomeGameUi?): List<com.nendo.argosy.data.social.FriendActivity> =
+        game?.igdbId?.let { friendsActivity[it.toInt()] }.orEmpty()
+
     val currentItems: List<HomeRowItem>
         get() = when (currentRow) {
             HomeRow.Favorites -> {

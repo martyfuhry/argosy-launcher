@@ -125,7 +125,20 @@ data class GameInfo(
 data class PresenceGameInfo(
     val title: String,
     @Json(name = "cover_thumb") val coverThumb: String? = null,
-    @Json(name = "netplay_session") val netplaySession: NetplaySession? = null
+    @Json(name = "netplay_session") val netplaySession: NetplaySession? = null,
+    @Json(name = "game_igdb_id") val igdbId: Int? = null
+)
+
+/**
+ * A friend's tie to one game: playing it right now, or [lastPlayedAtMillis] when they last did.
+ */
+data class FriendActivity(
+    val friendId: String,
+    val displayName: String,
+    val avatarColor: String,
+    val quayPassAvatar: String?,
+    val playingNow: Boolean,
+    val lastPlayedAtMillis: Long? = null
 )
 
 /**

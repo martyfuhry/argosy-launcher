@@ -128,7 +128,8 @@ class HomeViewModel @Inject constructor(
     private val prepareCollectionQueueUseCase:
         com.nendo.argosy.domain.usecase.collection.PrepareCollectionQueueUseCase,
     private val homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue,
-    private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
+    private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository,
+    private val socialRepository: com.nendo.argosy.data.social.SocialRepository
 ) : ViewModel(), HomeInputActions {
 
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home", this)
@@ -402,13 +403,23 @@ class HomeViewModel @Inject constructor(
 
     private fun observeFocusedGame() {
         viewModelScope.launch {
+            socialRepository.friendsActivity.collect { activity ->
+                _uiState.update { it.copy(friendsActivity = activity) }
+            }
+        }
+        viewModelScope.launch {
             var previousGameId: Long? = null
+            var previousFriends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList()
             _uiState.collect { state ->
                 val focusedGame = state.focusedGame
                 publishTileShowcase(state)
-                if (focusedGame?.id == previousGameId) return@collect
-                previousGameId = focusedGame?.id
+                val friends = state.friendsFor(focusedGame)
+                val sameGame = focusedGame?.id == previousGameId
+                if (sameGame && friends == previousFriends) return@collect
+                previousFriends = friends
                 publishCompanionDetail(focusedGame)
+                if (sameGame) return@collect
+                previousGameId = focusedGame?.id
                 if (focusedGame != null) {
                     ambientLedManager.setContext(AmbientLedContext.GAME_HOVER)
                     if (ambientLedManager.coverArtEnabled) {
@@ -521,7 +532,7 @@ class HomeViewModel @Inject constructor(
         if (!isDescribing) return
         DualScreenManagerHolder.instance?.setCompanionDetail(
             companionOwner,
-            game?.toCompanionDetail()
+            game?.toCompanionDetail(_uiState.value.friendsFor(game))
         )
     }
 

@@ -41,7 +41,13 @@ data class CompanionGameStats(
     val playTimeMinutes: Int = 0,
     val timeToBeatMainSec: Int? = null,
     val achievementCount: Int = 0,
-    val earnedAchievementCount: Int = 0
+    val earnedAchievementCount: Int = 0,
+    val friends: List<CompanionFriend> = emptyList()
+)
+
+data class CompanionFriend(
+    val name: String,
+    val playingNow: Boolean
 )
 
 data class CompanionFact(

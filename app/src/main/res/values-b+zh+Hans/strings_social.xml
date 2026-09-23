@@ -306,4 +306,12 @@
     <string name="social_eventdetail_desc_doodle">分享了一幅涂鸦</string>
     <string name="social_eventdetail_desc_discussion_shared_post">分享了一条动态</string>
     <string name="social_eventdetail_desc_discussion_truncated">%1$s...</string>
+    <string name="social_friends_activity_playing_one">%1$s 正在玩</string>
+    <plurals name="social_friends_activity_playing_more">
+        <item quantity="other">%1$s 和另外 %2$d 人正在玩</item>
+    </plurals>
+    <string name="social_friends_activity_recent_one">%1$s 最近玩过</string>
+    <plurals name="social_friends_activity_recent_more">
+        <item quantity="other">%1$s 和另外 %2$d 人最近玩过</item>
+    </plurals>
 </resources>

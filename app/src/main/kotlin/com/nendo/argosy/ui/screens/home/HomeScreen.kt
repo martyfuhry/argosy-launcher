@@ -884,6 +884,9 @@ fun HomeScreen(
                                         uiState.currentRow != HomeRow.Steam &&
                                         uiState.currentRow != HomeRow.Android,
                                     useBoxArt = uiState.spotlightConfig.useBoxArt,
+                                    friendsFor = { item ->
+                                        uiState.friendsFor((item as? CarouselItem.Game)?.game)
+                                    },
                                     downloadIndicatorFor = { item ->
                                         when (item) {
                                             is CarouselItem.Game ->
@@ -1237,6 +1240,7 @@ fun HomeScreen(
                 achievementCount = uiState.focusedGame?.achievementCount ?: 0,
                 earnedAchievementCount = uiState.focusedGame?.earnedAchievementCount ?: 0,
                 timeToBeatMainSec = uiState.focusedGame?.timeToBeatMainSec,
+                friends = uiState.friendsFor(uiState.focusedGame),
                 showMetadata = !uiState.isVideoPreviewActive,
                 textColorOverride = if (videoTextColor != Color.Unspecified) videoTextColor else null,
                 placement = if (
@@ -1841,6 +1845,7 @@ private fun GameInfo(
     achievementCount: Int,
     earnedAchievementCount: Int,
     timeToBeatMainSec: Int? = null,
+    friends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList(),
     showMetadata: Boolean = true,
     textColorOverride: Color? = null,
     placement: GameInfoPlacement = GameInfoPlacement.SPLIT,
@@ -1882,6 +1887,13 @@ private fun GameInfo(
             }
         }
     ) {
+        com.nendo.argosy.ui.components.friends.FriendsActivityBadge(
+            friends = friends,
+            textColor = subtitleColor,
+            modifier = Modifier
+                .padding(top = if (isSplit) 0.dp else Dimens.spacingXs)
+                .graphicsLayer { alpha = metadataAlpha }
+        )
         GameStatBadges(
             rating = rating,
             userRating = userRating,

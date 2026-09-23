@@ -45,7 +45,8 @@ internal val PRESENTATION_MENU_STATS: List<PresentationStat> = listOf(
     PresentationStat.USER_RATING,
     PresentationStat.PLAY_TIME,
     PresentationStat.TIME_TO_BEAT,
-    PresentationStat.ACHIEVEMENTS
+    PresentationStat.ACHIEVEMENTS,
+    PresentationStat.FRIENDS
 )
 
 internal sealed class PresentationItem(

@@ -485,4 +485,5 @@
     <string name="dual_presentation_fact_play_time">Joué</string>
     <string name="dual_presentation_fact_time_to_beat">Durée</string>
     <string name="dual_presentation_fact_achievements">Succès</string>
+    <string name="dual_presentation_fact_friends">Amis</string>
 </resources>

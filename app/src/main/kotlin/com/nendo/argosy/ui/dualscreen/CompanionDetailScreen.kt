@@ -280,7 +280,7 @@ internal fun presentationFacts(stats: CompanionGameStats, style: PresentationSty
             PresentationStat.TIME_TO_BEAT -> formatTimeToBeat(context, stats.timeToBeatMainSec)
             PresentationStat.ACHIEVEMENTS -> stats.achievementCount.takeIf { it > 0 }
                 ?.let { "${stats.earnedAchievementCount}/$it" }
-            PresentationStat.FRIENDS -> null
+            PresentationStat.FRIENDS -> friendsFactValue(stats.friends)
         }
         value?.let { CompanionFact(labels.getValue(stat), it) }
     }
@@ -296,8 +296,21 @@ private fun presentationFactLabel(stat: PresentationStat): String = when (stat) 
     PresentationStat.PLAY_TIME -> stringResource(R.string.dual_presentation_fact_play_time)
     PresentationStat.TIME_TO_BEAT -> stringResource(R.string.dual_presentation_fact_time_to_beat)
     PresentationStat.ACHIEVEMENTS -> stringResource(R.string.dual_presentation_fact_achievements)
-    PresentationStat.FRIENDS -> ""
+    PresentationStat.FRIENDS -> stringResource(R.string.dual_presentation_fact_friends)
 }
+
+/**
+ * Up to [FRIENDS_NAMED] names, friends playing now first, and a count of the rest.
+ */
+internal fun friendsFactValue(friends: List<CompanionFriend>): String? {
+    if (friends.isEmpty()) return null
+    val ordered = friends.sortedByDescending { it.playingNow }
+    val named = ordered.take(FRIENDS_NAMED).joinToString(", ") { it.name }
+    val rest = ordered.size - FRIENDS_NAMED
+    return if (rest > 0) "$named +$rest" else named
+}
+
+private const val FRIENDS_NAMED = 2
 
 /**
  * The art and the text share the row by weight rather than the art sizing itself.
