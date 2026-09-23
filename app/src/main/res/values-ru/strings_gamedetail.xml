@@ -160,6 +160,11 @@
 
     <string name="gamedetail_more_options_launch_on_display">Запустить на экране</string>
     <string name="gamedetail_more_options_launch_on_display_value">Экран %1$d</string>
+    <string name="gamedetail_launch_screen_picker_title">Экран запуска</string>
+    <string name="gamedetail_launch_screen_picker_option">Экран %1$d</string>
+    <string name="gamedetail_launch_screen_picker_footer_navigate">Навигация</string>
+    <string name="gamedetail_launch_screen_picker_footer_launch">Запустить</string>
+    <string name="gamedetail_launch_screen_picker_footer_cancel">Отмена</string>
     <string name="gamedetail_more_options_manage_saves">Управление кэшем сохранений</string>
     <string name="gamedetail_more_options_ratings_status">Оценки и статус</string>
     <string name="gamedetail_more_options_change_launcher">Сменить лаунчер</string>
@@ -314,6 +319,9 @@
     <string name="gamedetail_per_game_memcard_default_auto">Авто</string>
     <string name="gamedetail_per_game_display_target_label">Целевой экран</string>
     <string name="gamedetail_per_game_display_target_inherit">Наследовано (%1$s)</string>
+    <string name="gamedetail_per_game_launch_screen_label">Экран запуска</string>
+    <string name="gamedetail_per_game_launch_screen_value">Экран %1$d</string>
+    <string name="gamedetail_per_game_launch_screen_default">По умолчанию</string>
     <string name="gamedetail_per_game_extension_label">Расширение файла</string>
     <string name="gamedetail_per_game_extension_inherit">Наследовано (%1$s)</string>
     <string name="gamedetail_per_game_extension_inherit_auto">Авто</string>

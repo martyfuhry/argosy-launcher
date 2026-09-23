@@ -150,6 +150,11 @@
 
     <string name="gamedetail_more_options_launch_on_display">在螢幕上啟動</string>
     <string name="gamedetail_more_options_launch_on_display_value">螢幕 %1$d</string>
+    <string name="gamedetail_launch_screen_picker_title">啟動螢幕</string>
+    <string name="gamedetail_launch_screen_picker_option">螢幕 %1$d</string>
+    <string name="gamedetail_launch_screen_picker_footer_navigate">移動</string>
+    <string name="gamedetail_launch_screen_picker_footer_launch">啟動</string>
+    <string name="gamedetail_launch_screen_picker_footer_cancel">取消</string>
     <string name="gamedetail_more_options_manage_saves">管理已快取的存檔</string>
     <string name="gamedetail_more_options_ratings_status">評分與狀態</string>
     <string name="gamedetail_more_options_change_launcher">變更啟動程式</string>
@@ -301,6 +306,9 @@
     <string name="gamedetail_per_game_memcard_default_auto">自動</string>
     <string name="gamedetail_per_game_display_target_label">顯示目標</string>
     <string name="gamedetail_per_game_display_target_inherit">繼承（%1$s）</string>
+    <string name="gamedetail_per_game_launch_screen_label">啟動螢幕</string>
+    <string name="gamedetail_per_game_launch_screen_value">螢幕 %1$d</string>
+    <string name="gamedetail_per_game_launch_screen_default">預設</string>
     <string name="gamedetail_per_game_extension_label">副檔名</string>
     <string name="gamedetail_per_game_extension_inherit">繼承（%1$s）</string>
     <string name="gamedetail_per_game_extension_inherit_auto">自動</string>

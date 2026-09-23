@@ -177,6 +177,11 @@
 
     <string name="gamedetail_more_options_launch_on_display">स्क्रीन पर शुरू करें</string>
     <string name="gamedetail_more_options_launch_on_display_value">स्क्रीन %1$d</string>
+    <string name="gamedetail_launch_screen_picker_title">लॉन्च स्क्रीन</string>
+    <string name="gamedetail_launch_screen_picker_option">स्क्रीन %1$d</string>
+    <string name="gamedetail_launch_screen_picker_footer_navigate">नेविगेट</string>
+    <string name="gamedetail_launch_screen_picker_footer_launch">शुरू करें</string>
+    <string name="gamedetail_launch_screen_picker_footer_cancel">रद्द करें</string>
     <string name="gamedetail_more_options_manage_saves">कैश्ड सेव प्रबंधित करें</string>
     <string name="gamedetail_more_options_ratings_status">रेटिंग और स्थिति</string>
     <string name="gamedetail_more_options_change_launcher">लॉन्चर बदलें</string>
@@ -351,6 +356,9 @@
     <string name="gamedetail_per_game_memcard_default_auto">ऑटो</string>
     <string name="gamedetail_per_game_display_target_label">डिस्प्ले टार्गेट</string>
     <string name="gamedetail_per_game_display_target_inherit">इनहेरिट (%1$s)</string>
+    <string name="gamedetail_per_game_launch_screen_label">लॉन्च स्क्रीन</string>
+    <string name="gamedetail_per_game_launch_screen_value">स्क्रीन %1$d</string>
+    <string name="gamedetail_per_game_launch_screen_default">डिफ़ॉल्ट</string>
     <string name="gamedetail_per_game_extension_label">फ़ाइल एक्सटेंशन</string>
     <string name="gamedetail_per_game_extension_inherit">इनहेरिट (%1$s)</string>
     <string name="gamedetail_per_game_extension_inherit_auto">ऑटो</string>
