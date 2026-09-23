@@ -26,7 +26,7 @@ class FocusDirectorActivity : Activity() {
     companion object {
         fun launchOnDisplay(context: Context, displayId: Int) {
             val intent = Intent(context, FocusDirectorActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
             }
             val options = ActivityOptions.makeBasic()
                 .setLaunchDisplayId(displayId)
