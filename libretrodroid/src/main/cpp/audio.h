@@ -86,6 +86,7 @@ private:
     std::unique_ptr<oboe::LatencyTuner> latencyTuner = nullptr;
 
     bool startRequested = false;
+    bool pinBufferToSingleBurst = false;
     int32_t inputSampleRate;
     double contentRefreshRate = 60.0;
 
