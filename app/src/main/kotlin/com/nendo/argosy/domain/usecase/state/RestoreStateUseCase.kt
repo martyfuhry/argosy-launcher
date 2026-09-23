@@ -4,6 +4,7 @@ import com.nendo.argosy.data.emulator.ArchiveRomNaming
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.StatePathRegistry
 import com.nendo.argosy.data.emulator.VersionValidationResult
+import com.nendo.argosy.data.local.entity.StateCacheEntity
 import com.nendo.argosy.data.repository.StateCacheManager
 import java.io.File
 import javax.inject.Inject
@@ -73,13 +74,36 @@ class RestoreStateUseCase @Inject constructor(
             }
         }
 
+        val targetPath = liveFile(cache, emulatorId, platformId, romPath, currentCoreId)?.absolutePath
+            ?: return RestoreStateResult.Error(RestoreStateFailureReason.TargetPathUnresolved)
+
+        val success = stateCacheManager.restoreState(cacheId, targetPath)
+        return if (success) {
+            RestoreStateResult.Success
+        } else {
+            RestoreStateResult.Error(RestoreStateFailureReason.WriteFailed)
+        }
+    }
+
+    /**
+     * Where the emulator looks for [cache]'s slot for this rom, or null when the emulator has no
+     * state directory to resolve.
+     */
+    suspend fun liveFile(
+        cache: StateCacheEntity,
+        emulatorId: String,
+        platformId: String,
+        romPath: String,
+        currentCoreId: String? = null
+    ): File? {
+        val config = StatePathRegistry.getConfig(emulatorId) ?: return null
         val romFile = File(romPath)
         val romBaseName = if (emulatorId == EmulatorRegistry.BUILTIN_ID) {
             ArchiveRomNaming.liveBaseName(romFile, platformId)
         } else {
             romFile.nameWithoutExtension
         }
-        val targetPath = stateCacheManager.buildStateTargetPath(
+        return stateCacheManager.buildStateTargetPath(
             config = config,
             platformId = platformId,
             romBaseName = romBaseName,
@@ -88,13 +112,6 @@ class RestoreStateUseCase @Inject constructor(
             coreName = currentCoreId ?: cache.coreId,
             romPath = romPath,
             gameId = cache.gameId,
-        ) ?: return RestoreStateResult.Error(RestoreStateFailureReason.TargetPathUnresolved)
-
-        val success = stateCacheManager.restoreState(cacheId, targetPath)
-        return if (success) {
-            RestoreStateResult.Success
-        } else {
-            RestoreStateResult.Error(RestoreStateFailureReason.WriteFailed)
-        }
+        )?.let(::File)
     }
 }
