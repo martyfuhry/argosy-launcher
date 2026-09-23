@@ -64,10 +64,11 @@ public:
 private:
     static int32_t roundToEven(int32_t x);
     double computeDynamicBufferConversionFactor(double dt);
-    int32_t computeAudioBufferSize();
+    int32_t computeAudioBufferSizeForLatency(double latencyMs) const;
+    static double effectiveFifoMs(double requestedMs, int32_t framesPerBurst, int32_t sampleRate);
     bool initializeStream();
     std::unique_ptr<Audio::AudioLatencySettings> findBestLatencySettings(bool preferLowLatencyAudio, int audioBufferFrames);
-    void logStreamState();
+    void logStreamState(double effectiveMs);
     double computeMaximumLatency() const;
     void writeConvertedOutput(const int16_t *stereo, void *audioData, int32_t numFrames);
 
