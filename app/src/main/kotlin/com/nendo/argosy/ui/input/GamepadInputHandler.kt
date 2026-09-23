@@ -131,10 +131,10 @@ class GamepadInputHandler @Inject constructor(
     private val directionRepeatIntervalMs = 150L
 
     /**
-     * Joystick sample to directional event conversion, after a registered raw motion listener has
-     * declined the sample. [deliver] receives the direction entered on this sample with isRepeat
-     * false, then the held direction on every repeat tick with isRepeat true until the axes return
-     * to neutral. The result is whether the event was a joystick sample, consumed either way.
+     * Joystick sample to directional event conversion once a raw motion listener declines it.
+     * [deliver] gets a direction entered, or taken over by the hat from a released stick, with
+     * isRepeat false, then the held direction per repeat tick with isRepeat true until neutral.
+     * The result is whether the event was a joystick sample, consumed either way.
      */
     fun processStickMotion(event: MotionEvent, deliver: (GamepadEvent, Boolean) -> Unit): Boolean {
         if (!event.isFromSource(InputDevice.SOURCE_CLASS_JOYSTICK)) return false
@@ -151,9 +151,11 @@ class GamepadInputHandler @Inject constructor(
             event.getAxisValue(MotionEvent.AXIS_HAT_X),
             event.getAxisValue(MotionEvent.AXIS_HAT_Y)
         )
-        updateDirectionRepeat(stickTracker.direction ?: hatTracker.direction, deliver)
+        val direction = stickTracker.direction ?: hatTracker.direction
+        val takenOver = direction.takeIf { it != heldDirection }
+        updateDirectionRepeat(direction, deliver)
 
-        (stickEdge ?: hatEdge)?.let { deliver(it, false) }
+        (stickEdge ?: hatEdge ?: takenOver)?.let { deliver(it, false) }
         return true
     }
 
