@@ -3,12 +3,9 @@ package com.nendo.argosy.ui.input
 /**
  * Edge detector for one two-axis directional input. [update] returns the direction entered on
  * this sample, or null when the sample changes nothing or returns to neutral. A direction is
- * entered at [enterThreshold] and left only below [exitThreshold].
+ * entered at [ENTER_THRESHOLD] and left only below [EXIT_THRESHOLD].
  */
-class AxisDirectionTracker(
-    private val enterThreshold: Float = DEFAULT_ENTER_THRESHOLD,
-    private val exitThreshold: Float = DEFAULT_EXIT_THRESHOLD
-) {
+class AxisDirectionTracker {
     var direction: GamepadEvent? = null
         private set
 
@@ -17,10 +14,10 @@ class AxisDirectionTracker(
         if (previous != null && stillHeld(previous, x, y)) return null
 
         val next = when {
-            y <= -enterThreshold -> GamepadEvent.Up
-            y >= enterThreshold -> GamepadEvent.Down
-            x <= -enterThreshold -> GamepadEvent.Left
-            x >= enterThreshold -> GamepadEvent.Right
+            y <= -ENTER_THRESHOLD -> GamepadEvent.Up
+            y >= ENTER_THRESHOLD -> GamepadEvent.Down
+            x <= -ENTER_THRESHOLD -> GamepadEvent.Left
+            x >= ENTER_THRESHOLD -> GamepadEvent.Right
             else -> null
         }
         direction = next
@@ -32,15 +29,15 @@ class AxisDirectionTracker(
     }
 
     private fun stillHeld(held: GamepadEvent, x: Float, y: Float): Boolean = when (held) {
-        GamepadEvent.Up -> y <= -exitThreshold
-        GamepadEvent.Down -> y >= exitThreshold
-        GamepadEvent.Left -> x <= -exitThreshold
-        GamepadEvent.Right -> x >= exitThreshold
+        GamepadEvent.Up -> y <= -EXIT_THRESHOLD
+        GamepadEvent.Down -> y >= EXIT_THRESHOLD
+        GamepadEvent.Left -> x <= -EXIT_THRESHOLD
+        GamepadEvent.Right -> x >= EXIT_THRESHOLD
         else -> false
     }
 
     companion object {
-        const val DEFAULT_ENTER_THRESHOLD = 0.5f
-        const val DEFAULT_EXIT_THRESHOLD = 0.3f
+        const val ENTER_THRESHOLD = 0.5f
+        const val EXIT_THRESHOLD = 0.3f
     }
 }
