@@ -438,8 +438,7 @@ class HomeInputHandler(
      * A reversed rail draws later items to the left, so the stick has to be read the same way round
      * or pressing right walks the highlight left.
      */
-    private fun railIsReversed(state: HomeUiState): Boolean =
-        state.layoutKind == HomeLayoutKind.CAROUSEL && state.carouselConfig.inverted
+    private fun railIsReversed(state: HomeUiState): Boolean = state.carouselConfig.inverted
 
     private fun gridMove(direction: GridDirection): InputResult =
         when (actions.moveGridFocus(direction)) {

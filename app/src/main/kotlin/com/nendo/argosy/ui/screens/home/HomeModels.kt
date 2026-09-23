@@ -12,7 +12,6 @@ import com.nendo.argosy.data.model.SortableProps
 import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.data.preferences.HomeBackgroundMode
 import com.nendo.argosy.domain.model.HomeSectionKind
-import com.nendo.argosy.domain.model.browsesRows
 import com.nendo.argosy.domain.model.PinnedCollection
 import com.nendo.argosy.domain.usecase.collection.CategoryType
 import com.nendo.argosy.ui.screens.common.DiscPickerState
@@ -312,8 +311,6 @@ data class HomeUiState(
     val currentRow: HomeRow = HomeRow.Continue,
     val carouselConfig: com.nendo.argosy.domain.model.CarouselConfig =
         com.nendo.argosy.domain.model.CarouselConfig(),
-    val spotlightConfig: com.nendo.argosy.domain.model.SpotlightConfig =
-        com.nendo.argosy.domain.model.SpotlightConfig(),
     val friendsActivity: Map<Int, List<com.nendo.argosy.data.social.FriendActivity>> = emptyMap(),
     val autoGridConfig: com.nendo.argosy.domain.model.AutoGridConfig =
         com.nendo.argosy.domain.model.AutoGridConfig(),
@@ -489,7 +486,7 @@ data class HomeUiState(
             is HomeRow.Platform -> if (isPlatformRowLoading) emptyList() else platformItems
             HomeRow.Continue -> when {
                 recentGames.isEmpty() -> emptyList()
-                layoutKind.browsesRows ->
+                layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CAROUSEL ->
                     recentGames.take(CAROUSEL_RECENT_LIMIT).map { HomeRowItem.Game(it) } +
                         HomeRowItem.ViewAll(sourceFilter = "PLAYABLE")
                 else -> recentGames.map { HomeRowItem.Game(it) }

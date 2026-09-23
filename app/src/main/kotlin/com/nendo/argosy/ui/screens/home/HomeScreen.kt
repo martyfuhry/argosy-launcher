@@ -59,8 +59,6 @@ import com.nendo.argosy.ui.common.backgroundBlurDp
 import com.nendo.argosy.ui.common.rememberFileImageModel
 import com.nendo.argosy.ui.components.GameStatBadges
 import com.nendo.argosy.ui.components.GameTitle
-import com.nendo.argosy.ui.components.SpotlightStage
-import com.nendo.argosy.domain.model.browsesRows
 import com.nendo.argosy.ui.components.SectionBreadcrumb
 import com.nendo.argosy.ui.icons.InputIcons
 import androidx.compose.runtime.Composable
@@ -187,7 +185,6 @@ fun HomeScreen(
     val gridState = rememberLazyGridState()
     val isAutoGrid = uiState.layoutKind == HomeLayoutKind.AUTO_GRID
     val isCustomGrid = uiState.layoutKind == HomeLayoutKind.CUSTOM_GRID
-    val isSpotlight = uiState.layoutKind == HomeLayoutKind.SPOTLIGHT
     val scope = rememberCoroutineScope()
     var isProgrammaticScroll by remember { mutableStateOf(false) }
     var skipNextProgrammaticScroll by remember { mutableStateOf(false) }
@@ -539,7 +536,7 @@ fun HomeScreen(
     val overlayBaseColor = if (isDarkTheme) Color.Black else Color.White
 
     val backdropEnabled = LocalSurfaceBackdrop.current.enabled
-    val isGridLayout = !uiState.layoutKind.browsesRows
+    val isGridLayout = uiState.layoutKind != HomeLayoutKind.CAROUSEL
     val showArtLayer = !isGridLayout &&
         (!backdropEnabled || uiState.homeBackgroundMode == HomeBackgroundMode.GAME_ART)
 
@@ -728,7 +725,7 @@ fun HomeScreen(
                 0.dp
             }
             val railHeight = when {
-                isAutoGrid || isCustomGrid || isSpotlight ->
+                isAutoGrid || isCustomGrid ->
                     (maxHeight - headerBlockHeight - Dimens.footerHeight - Dimens.spacingLg)
                         .coerceAtLeast(Dimens.spacingXl)
                 infoAtBottom ->
@@ -850,59 +847,6 @@ fun HomeScreen(
                                 isPinnedLoading = pinId != null && pinId in uiState.pinnedGamesLoading,
                                 onSync = { viewModel.syncFromRomm() }
                             )
-                        }
-                        isSpotlight -> {
-                            val spotlightItems = rememberHomeCarouselItems(
-                                items = uiState.currentItems,
-                                rowKey = uiState.currentRow.toString(),
-                                repairedCoverPaths = uiState.repairedCoverPaths
-                            )
-                            AnimatedContent(
-                                targetState = SpotlightRow(
-                                    rowKey = uiState.currentRow.toString(),
-                                    items = spotlightItems,
-                                    focusedIndex = uiState.focusedGameIndex
-                                ),
-                                contentKey = { it.rowKey },
-                                transitionSpec = {
-                                    fadeIn(tween(Motion.durationPage, easing = Motion.argosyEase)) togetherWith
-                                        fadeOut(tween(Motion.durationPage, easing = Motion.argosyEase))
-                                },
-                                label = "spotlight-row",
-                                modifier = Modifier.fillMaxSize()
-                            ) { row ->
-                                SpotlightStage(
-                                    items = row.items,
-                                    focusedIndex = row.focusedIndex,
-                                    onStep = { delta ->
-                                        if (delta > 0) viewModel.nextGame() else viewModel.previousGame()
-                                    },
-                                    onItemTap = { index -> viewModel.handleItemTap(index, onGameSelect) },
-                                    onItemLongPress = viewModel::handleItemLongPress,
-                                    showPlatformBadge = uiState.spotlightConfig.showPlatformBadge &&
-                                        uiState.currentRow !is HomeRow.Platform &&
-                                        uiState.currentRow != HomeRow.Steam &&
-                                        uiState.currentRow != HomeRow.Android,
-                                    useBoxArt = uiState.spotlightConfig.useBoxArt,
-                                    friendsFor = { item ->
-                                        uiState.friendsFor((item as? CarouselItem.Game)?.game)
-                                    },
-                                    downloadIndicatorFor = { item ->
-                                        when (item) {
-                                            is CarouselItem.Game ->
-                                                downloadIndicators.value[item.game.id]
-                                                    ?: GameDownloadIndicator.NONE
-                                            is CarouselItem.Media ->
-                                                mediaDownloadProgress.value.indicatorFor(item.media)
-                                            else -> GameDownloadIndicator.NONE
-                                        }
-                                    },
-                                    onCoverLoadFailed = viewModel::repairCoverImage,
-                                    onCoverLoaded = viewModel::extractGradientForGame,
-                                    onPosterLoaded = viewModel::extractGradientForMedia,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
                         }
                         isAutoGrid -> {
                             HomeAutoGrid(
@@ -1187,7 +1131,7 @@ fun HomeScreen(
                 }
             }
 
-            if (!isAutoGrid && !isCustomGrid && !isSpotlight && !uiState.isMediaRow) {
+            if (!isAutoGrid && !isCustomGrid && !uiState.isMediaRow) {
             val gameInfoWidth by animateFloatAsState(
                 targetValue = 1f,
                 animationSpec = tween(500),
@@ -1974,12 +1918,6 @@ private fun rememberCarouselCardSize(
     coverAspectRatio = LocalBoxArtStyle.current.aspectRatio,
     restingScale = config.restingScale,
     minCardHeight = Dimens.gameCardHeight * HERO_MIN_CARD_SCALE
-)
-
-private data class SpotlightRow(
-    val rowKey: String,
-    val items: List<CarouselItem>,
-    val focusedIndex: Int
 )
 
 @Composable

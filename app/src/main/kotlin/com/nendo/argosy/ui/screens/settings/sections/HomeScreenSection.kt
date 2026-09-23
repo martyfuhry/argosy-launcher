@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.nendo.argosy.R
 import com.nendo.argosy.data.preferences.HomeBackgroundMode
 import com.nendo.argosy.domain.model.HomeLayoutKind
-import com.nendo.argosy.domain.model.browsesRows
 import com.nendo.argosy.ui.components.ActionPreference
 import com.nendo.argosy.ui.components.CyclePreference
 import com.nendo.argosy.ui.components.HomeLayoutPreview
@@ -76,17 +75,17 @@ internal sealed class HomeScreenItem(
     data object VideoWallpaper : HomeScreenItem(
         key = "videoWallpaper",
         section = "video",
-        visibleWhen = { playsVideoWallpaper(it) }
+        visibleWhen = { drawsBackgroundArt(it) }
     )
     data object VideoDelay : HomeScreenItem(
         key = "videoDelay",
         section = "video",
-        visibleWhen = { it.videoWallpaperEnabled && playsVideoWallpaper(it) }
+        visibleWhen = { it.videoWallpaperEnabled && drawsBackgroundArt(it) }
     )
     data object VideoMuted : HomeScreenItem(
         key = "videoMuted",
         section = "video",
-        visibleWhen = { it.videoWallpaperEnabled && playsVideoWallpaper(it) }
+        visibleWhen = { it.videoWallpaperEnabled && drawsBackgroundArt(it) }
     )
 
     data object LayoutPreview : HomeScreenItem("layoutPreview", "layout")
@@ -129,9 +128,6 @@ internal sealed class HomeScreenItem(
                     state.homeBackgroundMode == HomeBackgroundMode.GAME_ART)
 
         private fun drawsBackgroundArt(state: DisplayState): Boolean =
-            state.homeLayout.selected.browsesRows
-
-        private fun playsVideoWallpaper(state: DisplayState): Boolean =
             state.homeLayout.selected == HomeLayoutKind.CAROUSEL
 
         private val BackgroundHeader =

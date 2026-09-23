@@ -1,15 +1,6 @@
 package com.nendo.argosy.ui.components
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
-import androidx.compose.ui.unit.IntOffset
-import com.nendo.argosy.domain.model.SpotlightConfig
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -65,7 +56,6 @@ import com.nendo.argosy.ui.theme.gripReserveBottomInset
 import kotlinx.coroutines.delay
 
 private const val PREVIEW_CAROUSEL_ITEMS = 8
-private const val PREVIEW_SPOTLIGHT_STAT_BARS = 2
 
 /**
  * Resolved schematic geometry. Every value is the live home screen's own value multiplied by
@@ -168,14 +158,6 @@ fun HomeLayoutPreview(
                         },
                     animate = animate,
                     modifier = Modifier.fillMaxSize()
-                )
-                HomeLayoutKind.SPOTLIGHT -> SpotlightSchematic(
-                    config = settings.spotlight,
-                    preview = preview,
-                    animate = animate,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = edge, vertical = preview.gap)
                 )
                 HomeLayoutKind.AUTO_GRID -> AutoGridSchematic(
                     config = settings.autoGrid,
@@ -416,100 +398,6 @@ private fun CarouselSchematic(
                             preview = preview,
                             modifier = Modifier.zIndex(if (isFocused) 1f else 0f)
                         )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SpotlightSchematic(
-    config: SpotlightConfig,
-    preview: HomeLayoutPreviewMetrics,
-    animate: Boolean,
-    modifier: Modifier = Modifier
-) {
-    var focusedIndex by remember { mutableIntStateOf(0) }
-    LaunchedEffect(animate) {
-        if (!animate) return@LaunchedEffect
-        while (true) {
-            delay(ComponentDefaults.HomeLayoutPreview.stepDwellMs.toLong())
-            focusedIndex = (focusedIndex + 1).mod(PREVIEW_CAROUSEL_ITEMS)
-        }
-    }
-    BoxWithConstraints(modifier = modifier) {
-        val titleReserve = preview.titleHeight + Dimens.spacingXs * preview.scale + preview.barHeight
-        val coverHeight = (maxHeight - titleReserve - Dimens.spacingMd * preview.scale)
-            .coerceAtLeast(preview.barHeight)
-        val coverWidth = minOf(
-            coverHeight * preview.coverAspectRatio,
-            maxWidth * SPOTLIGHT_MAX_COVER_WIDTH_FRACTION
-        )
-        val slidePx = with(LocalDensity.current) {
-            (maxWidth * SPOTLIGHT_SLIDE_WIDTH_FRACTION).toPx().toInt()
-        }
-        AnimatedContent(
-            targetState = focusedIndex,
-            transitionSpec = {
-                val spec = tween<IntOffset>(Motion.durationSlide, easing = Motion.argosyEase)
-                val fade = tween<Float>(Motion.durationSlide, easing = Motion.argosyEase)
-                (slideInHorizontally(spec) { slidePx } + fadeIn(fade)) togetherWith
-                    (slideOutHorizontally(spec) { -slidePx } + fadeOut(fade))
-            },
-            label = "home-layout-preview-spotlight",
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs * preview.scale)
-            ) {
-                PreviewBar(
-                    height = preview.titleHeight,
-                    color = preview.text,
-                    widthFraction = ComponentDefaults.HomeLayoutPreview.titleBarWidthRatio,
-                    alignment = Alignment.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                PreviewBar(
-                    height = preview.barHeight,
-                    color = preview.text,
-                    widthFraction = ComponentDefaults.HomeLayoutPreview.subtitleBarWidthRatio,
-                    alignment = Alignment.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = Dimens.spacingMd * preview.scale),
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Box(modifier = Modifier.weight(1f))
-                    PreviewCoverBlock(
-                        width = coverWidth,
-                        height = coverHeight,
-                        isFocused = true,
-                        focusScale = 1f,
-                        rowAlignment = HomeRowAlignment.BOTTOM,
-                        pushPx = 0f,
-                        showBadge = config.showPlatformBadge,
-                        preview = preview
-                    )
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = preview.gap),
-                        verticalArrangement = Arrangement.spacedBy(preview.gap)
-                    ) {
-                        repeat(PREVIEW_SPOTLIGHT_STAT_BARS) {
-                            PreviewBar(
-                                height = preview.barHeight,
-                                color = preview.text,
-                                widthFraction = ComponentDefaults.HomeLayoutPreview.subtitleBarWidthRatio,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
                     }
                 }
             }

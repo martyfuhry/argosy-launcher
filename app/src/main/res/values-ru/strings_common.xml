@@ -533,8 +533,6 @@
     <string name="ui_home_layout_show_all_games">Показывать все игры</string>
     <string name="ui_home_layout_show_all_games_subtitle">Прокручивать всю библиотеку платформы вместо остановки на плитке \"Смотреть все\"</string>
     <string name="ui_home_layout_carousel_box_art">Коробки 3D</string>
-    <string name="ui_home_layout_spotlight_box_art">Коробки 3D</string>
-    <string name="ui_home_layout_spotlight_platform_badge">Значок платформы</string>
     <string name="ui_home_layout_auto_grid_box_art">Коробки 3D</string>
     <string name="ui_home_layout_custom_grid_lanes">Ячеек в ширину</string>
     <string name="ui_home_layout_custom_grid_auto_add">Добавлять новые загрузки</string>
@@ -554,7 +552,6 @@
     <string name="ui_home_layout_auto_add_auto">Автоматически</string>
     <string name="ui_home_layout_auto_add_prompt">Спрашивать каждый раз</string>
     <string name="ui_home_layout_kind_carousel">Карусель</string>
-    <string name="ui_home_layout_kind_spotlight">Витрина</string>
     <string name="ui_home_layout_kind_auto_grid">Автосетка</string>
     <string name="ui_home_layout_kind_custom_grid">Своя сетка</string>
     <string name="ui_home_layout_alignment_top">Сверху</string>

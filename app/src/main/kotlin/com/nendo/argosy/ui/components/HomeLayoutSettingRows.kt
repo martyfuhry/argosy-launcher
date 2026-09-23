@@ -54,8 +54,6 @@ enum class HomeLayoutSettingField {
     SHOW_TITLES,
     AUTO_GRID_SHOW_ALL,
     CAROUSEL_BOX_ART,
-    SPOTLIGHT_PLATFORM_BADGE,
-    SPOTLIGHT_BOX_ART,
     AUTO_GRID_BOX_ART,
     CUSTOM_GRID_LANES,
     CUSTOM_GRID_AUTO_ADD,
@@ -96,10 +94,6 @@ fun homeLayoutFieldsFor(kind: HomeLayoutKind): List<HomeLayoutSettingField> = wh
         HomeLayoutSettingField.PLATFORM_BADGE,
         HomeLayoutSettingField.CAROUSEL_BOX_ART,
         HomeLayoutSettingField.INVERTED
-    )
-    HomeLayoutKind.SPOTLIGHT -> listOf(
-        HomeLayoutSettingField.SPOTLIGHT_BOX_ART,
-        HomeLayoutSettingField.SPOTLIGHT_PLATFORM_BADGE
     )
     HomeLayoutKind.AUTO_GRID -> listOf(
         HomeLayoutSettingField.SCROLL_AXIS,
@@ -155,10 +149,6 @@ fun adjustHomeLayoutField(
             settings.copy(autoGrid = settings.autoGrid.copy(showAllGames = direction > 0))
         HomeLayoutSettingField.CAROUSEL_BOX_ART ->
             settings.copy(carousel = settings.carousel.copy(useBoxArt = direction > 0))
-        HomeLayoutSettingField.SPOTLIGHT_PLATFORM_BADGE ->
-            settings.copy(spotlight = settings.spotlight.copy(showPlatformBadge = direction > 0))
-        HomeLayoutSettingField.SPOTLIGHT_BOX_ART ->
-            settings.copy(spotlight = settings.spotlight.copy(useBoxArt = direction > 0))
         HomeLayoutSettingField.AUTO_GRID_BOX_ART ->
             settings.copy(autoGrid = settings.autoGrid.copy(useBoxArt = direction > 0))
         HomeLayoutSettingField.AUTO_GRID_LANES ->
@@ -201,14 +191,6 @@ fun toggleHomeLayoutField(settings: HomeLayoutSettings, field: HomeLayoutSetting
             )
         HomeLayoutSettingField.CAROUSEL_BOX_ART ->
             settings.copy(carousel = settings.carousel.copy(useBoxArt = !settings.carousel.useBoxArt))
-        HomeLayoutSettingField.SPOTLIGHT_PLATFORM_BADGE ->
-            settings.copy(
-                spotlight = settings.spotlight.copy(
-                    showPlatformBadge = !settings.spotlight.showPlatformBadge
-                )
-            )
-        HomeLayoutSettingField.SPOTLIGHT_BOX_ART ->
-            settings.copy(spotlight = settings.spotlight.copy(useBoxArt = !settings.spotlight.useBoxArt))
         HomeLayoutSettingField.AUTO_GRID_BOX_ART ->
             settings.copy(autoGrid = settings.autoGrid.copy(useBoxArt = !settings.autoGrid.useBoxArt))
         HomeLayoutSettingField.CUSTOM_GRID_EMPTY_SLOTS ->
@@ -398,19 +380,6 @@ fun HomeLayoutSettingRow(
             isFocused = isFocused,
             onToggle = { onToggle() }
         )
-        HomeLayoutSettingField.SPOTLIGHT_PLATFORM_BADGE -> SwitchPreference(
-            title = stringResource(R.string.ui_home_layout_spotlight_platform_badge),
-            isEnabled = settings.spotlight.showPlatformBadge,
-            isFocused = isFocused,
-            onToggle = { onToggle() }
-        )
-        HomeLayoutSettingField.SPOTLIGHT_BOX_ART -> SwitchPreference(
-            title = stringResource(R.string.ui_home_layout_spotlight_box_art),
-            subtitle = boxArtSubtitle,
-            isEnabled = settings.spotlight.useBoxArt,
-            isFocused = isFocused,
-            onToggle = { onToggle() }
-        )
         HomeLayoutSettingField.AUTO_GRID_BOX_ART -> SwitchPreference(
             title = stringResource(R.string.ui_home_layout_auto_grid_box_art),
             subtitle = boxArtSubtitle,
@@ -496,7 +465,6 @@ private fun autoAddLabel(mode: HomeTileAutoAdd): String = when (mode) {
 @Composable
 private fun layoutLabel(kind: HomeLayoutKind): String = when (kind) {
     HomeLayoutKind.CAROUSEL -> stringResource(R.string.ui_home_layout_kind_carousel)
-    HomeLayoutKind.SPOTLIGHT -> stringResource(R.string.ui_home_layout_kind_spotlight)
     HomeLayoutKind.AUTO_GRID -> stringResource(R.string.ui_home_layout_kind_auto_grid)
     HomeLayoutKind.CUSTOM_GRID -> stringResource(R.string.ui_home_layout_kind_custom_grid)
 }

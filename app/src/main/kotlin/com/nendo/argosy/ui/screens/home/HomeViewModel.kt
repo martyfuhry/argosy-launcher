@@ -618,7 +618,6 @@ class HomeViewModel @Inject constructor(
                         customBackgroundPath = prefs.customBackgroundPath,
                         homeBackgroundMode = prefs.homeBackgroundMode,
                         carouselConfig = prefs.homeLayout.carousel,
-                        spotlightConfig = prefs.homeLayout.spotlight,
                         autoGridConfig = prefs.homeLayout.autoGrid,
                         customGridConfig = prefs.homeLayout.customGrid,
                         layoutKind = prefs.homeLayout.selected,
