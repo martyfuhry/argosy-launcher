@@ -263,6 +263,7 @@ class SecondaryHomeActivity :
 
     override fun onStop() {
         super.onStop()
+        gamepadInputHandler.resetStickMotion()
         if (::dsm.isInitialized) dsm.onCompanionPaused()
     }
 
@@ -872,7 +873,7 @@ class SecondaryHomeActivity :
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) window.hideSystemBars()
+        if (hasFocus) window.hideSystemBars() else gamepadInputHandler.resetStickMotion()
     }
 }
 
