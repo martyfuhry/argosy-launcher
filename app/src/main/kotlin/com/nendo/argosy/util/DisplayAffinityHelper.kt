@@ -334,7 +334,8 @@ class DisplayAffinityHelper @Inject constructor(
             )
 
         /**
-         * The display driving input, then the one describing it. [rolesSwapped] exchanges them.
+         * The display driving input, then the one describing it. [rolesSwapped] means the default
+         * display drives input, whichever order the stored layout lists the pair in.
          */
         internal fun resolveRoleDisplayIds(
             roleDisplayIds: Pair<Int, Int>?,
@@ -344,8 +345,9 @@ class DisplayAffinityHelper @Inject constructor(
         ): Pair<Int, Int>? {
             roleDisplayIds
                 ?.takeIf { it.first in attachedIds && it.second in attachedIds }
-                ?.let { (primary, presentation) ->
-                    return if (rolesSwapped) presentation to primary else primary to presentation
+                ?.let { (first, second) ->
+                    val companionFirst = if (first == Display.DEFAULT_DISPLAY) second to first else first to second
+                    return if (rolesSwapped) companionFirst.second to companionFirst.first else companionFirst
                 }
             val secondary = secondaryDisplayId ?: return null
             return if (rolesSwapped) {

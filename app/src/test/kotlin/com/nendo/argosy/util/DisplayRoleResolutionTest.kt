@@ -87,6 +87,30 @@ class DisplayRoleResolutionTest {
     }
 
     @Test
+    fun `a layout with home on the default display resolves home there once swapped`() {
+        val resolved = resolveRoleDisplayIds(
+            roleDisplayIds = BUILT_IN to LOWER,
+            attachedIds = attached,
+            secondaryDisplayId = LOWER,
+            rolesSwapped = true
+        )
+
+        assertEquals(BUILT_IN to LOWER, resolved)
+    }
+
+    @Test
+    fun `a layout with home on the default display resolves home on the companion when unswapped`() {
+        val resolved = resolveRoleDisplayIds(
+            roleDisplayIds = BUILT_IN to LOWER,
+            attachedIds = attached,
+            secondaryDisplayId = LOWER,
+            rolesSwapped = false
+        )
+
+        assertEquals(LOWER to BUILT_IN, resolved)
+    }
+
+    @Test
     fun `the monitor never takes a role it was not given`() {
         val resolved = resolveRoleDisplayIds(
             roleDisplayIds = LOWER to BUILT_IN,
