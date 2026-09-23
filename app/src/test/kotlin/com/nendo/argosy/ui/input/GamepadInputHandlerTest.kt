@@ -140,4 +140,48 @@ class GamepadInputHandlerTest {
 
         assertEquals(listOf(GamepadEvent.Right to false, GamepadEvent.Right to true), delivered)
     }
+
+    @Test
+    fun `a stick released over a held hat hands the hat an immediate first press`() {
+        process(sample(x = 1f, hatY = 1f))
+        process(sample(hatY = 1f))
+        assertEquals(listOf(GamepadEvent.Right to false, GamepadEvent.Down to false), delivered)
+
+        scheduler.advanceTimeBy(399)
+        assertEquals(2, delivered.size)
+        scheduler.advanceTimeBy(2)
+        assertEquals(GamepadEvent.Down to true, delivered.last())
+        assertEquals(3, delivered.size)
+    }
+
+    @Test
+    fun `a hat held under a stick press gets a first press again when the stick releases`() {
+        process(sample(hatY = 1f))
+        process(sample(x = 1f, hatY = 1f))
+        process(sample(hatY = 1f))
+
+        assertEquals(
+            listOf(GamepadEvent.Down to false, GamepadEvent.Right to false, GamepadEvent.Down to false),
+            delivered
+        )
+    }
+
+    @Test
+    fun `releasing stick and hat together delivers nothing`() {
+        process(sample(x = 1f, hatY = 1f))
+        process(sample())
+        scheduler.advanceTimeBy(1000)
+
+        assertEquals(listOf(GamepadEvent.Right to false), delivered)
+    }
+
+    @Test
+    fun `a single stick press and hold delivers exactly one first press`() {
+        process(sample(y = 1f))
+        process(sample(y = 0.9f))
+        process(sample(y = 0.4f))
+        scheduler.advanceTimeBy(401)
+
+        assertEquals(listOf(GamepadEvent.Down to false, GamepadEvent.Down to true), delivered)
+    }
 }
