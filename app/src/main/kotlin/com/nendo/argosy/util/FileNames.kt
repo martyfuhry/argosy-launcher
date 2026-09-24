@@ -34,11 +34,16 @@ object FileNames {
     }
 
     /**
-     * [name] as a directory entry: the fallback stands in for an empty name and for the two
+     * [name] as a directory entry: the fallback stands in for a blank name and for the two
      * entries every directory already holds.
      */
-    fun entryName(name: String): String =
-        if (name.isEmpty() || name == "." || name == "..") FALLBACK else name
+    fun entryName(name: String): String = if (isEntryName(name)) name else FALLBACK
+
+    /**
+     * Whether [name] can stand as a directory entry of its own, being neither blank nor `.`
+     * nor `..`.
+     */
+    fun isEntryName(name: String): Boolean = name.isNotBlank() && name != "." && name != ".."
 
     /**
      * An archive entry path with every segment folded. Empty, `.` and `..` segments are dropped,

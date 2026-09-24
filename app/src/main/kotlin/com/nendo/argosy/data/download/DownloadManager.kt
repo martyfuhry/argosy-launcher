@@ -279,6 +279,15 @@ class DownloadManager @Inject constructor(
     companion object {
         private const val TAG = "DownloadManager"
         private const val CONNECTION_WAIT_TIMEOUT_MS = 30_000L
+
+        internal fun foldFolderName(name: String): String = name
+            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+            .replace(Regex("\\s+"), " ")
+            .trim()
+            .take(200)
+
+        internal fun gameFolderCandidates(vararg names: String?): List<String> =
+            names.filterNotNull().map(::foldFolderName).filter(FileNames::isEntryName)
     }
 
     /**
@@ -781,9 +790,7 @@ class DownloadManager @Inject constructor(
         gameFolderName: String?,
         gameTitle: String
     ): String {
-        val candidates = listOfNotNull(romFileFolderName(gameId), gameFolderName, gameTitle)
-            .map(::sanitizeFolderName)
-            .filter { it.isNotBlank() }
+        val candidates = gameFolderCandidates(romFileFolderName(gameId), gameFolderName, gameTitle)
         if (candidates.isEmpty()) return sanitizeFolderName(gameTitle)
         return resolveGameFolder(platformDir, candidates)
             .name
@@ -810,12 +817,7 @@ class DownloadManager @Inject constructor(
         return File(platformDir, names.first())
     }
 
-    private fun sanitizeFolderName(name: String): String = name
-        .replace(Regex("[\\\\/:*?\"<>|]"), "_")
-        .replace(Regex("\\s+"), " ")
-        .trim()
-        .take(200)
-        .let(FileNames::entryName)
+    private fun sanitizeFolderName(name: String): String = FileNames.entryName(foldFolderName(name))
 
     /** Server dir of this file relative to the rom root, or null for root files. */
     /**
