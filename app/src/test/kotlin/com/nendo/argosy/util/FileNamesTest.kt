@@ -70,6 +70,24 @@ class FileNamesTest {
     }
 
     @Test
+    fun `keeps a blank slug blank and folds a climbing one`() {
+        assertEquals("", FileNames.sanitizeSlug(""))
+        assertEquals(" ", FileNames.sanitizeSlug(" "))
+        assertEquals("file", FileNames.sanitizeSlug(".."))
+        assertEquals("....x", FileNames.sanitizeSlug("../../x"))
+        assertEquals("gba", FileNames.sanitizeSlug("gba"))
+        assertEquals("sega-cd", FileNames.sanitizeSlug("sega-cd"))
+    }
+
+    @Test
+    fun `a relative path made only of separators folds to nothing`() {
+        assertEquals("", FileNames.sanitizeRelativePath("/"))
+        assertEquals("", FileNames.sanitizeRelativePath("\\"))
+        assertEquals("", FileNames.sanitizeRelativePath("//"))
+        assertEquals("", FileNames.sanitizeRelativePath("../."))
+    }
+
+    @Test
     fun `matches a sanitized file against the name the server reports`() {
         val server = "Pokémon Legends: Z-A.zip"
         assertEquals(

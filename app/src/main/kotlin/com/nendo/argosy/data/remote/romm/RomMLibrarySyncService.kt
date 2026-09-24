@@ -801,8 +801,8 @@ class RomMLibrarySyncService @Inject constructor(
         val (normalizedName, resolvedShortName) = remote.resolvePlatformNames(effectiveSlug)
         val entity = PlatformEntity(
             id = platformId,
-            slug = FileNames.sanitize(effectiveSlug),
-            fsSlug = remote.fsSlug?.let { if (it.isBlank()) it else FileNames.sanitize(it) },
+            slug = FileNames.sanitizeSlug(effectiveSlug),
+            fsSlug = remote.fsSlug?.let(FileNames::sanitizeSlug),
             name = normalizedName,
             shortName = resolvedShortName,
             romExtensions = platformDef?.extensions?.joinToString(",") ?: "",
@@ -879,7 +879,7 @@ class RomMLibrarySyncService @Inject constructor(
 
     private suspend fun syncRom(rom: RomMRom, scope: SyncScope, syncFiles: Boolean = true): Pair<Boolean, GameEntity> {
         val platformSlug = platformDao.getById(rom.platformId)?.slug
-            ?: PlatformDefinitions.resolveImportSlug(rom.platformSlug, rom.platformName)
+            ?: FileNames.sanitizeSlug(PlatformDefinitions.resolveImportSlug(rom.platformSlug, rom.platformName))
         val platformId = if (platformSlug == ANDROID_SLUG) LocalPlatformIds.ANDROID else rom.platformId
         val existing = gameDao.getByRommId(rom.id)
 
