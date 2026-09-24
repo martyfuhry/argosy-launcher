@@ -63,8 +63,6 @@ private const val TIMELINE_SCROLL_DELAY_MS = 1500L
 private const val PLAY_SHARE_COLUMNS = 2
 private const val PLAY_SHARE_TOP_GAMES = 2
 private const val GAME_HERO_SCRIM = 0.88f
-private val IN_GAME_APP_BAR_HEIGHT =
-    com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.companionAppBarHeight.dp
 
 @Composable
 fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = true) {
@@ -100,44 +98,20 @@ fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = 
             }
             is PresentationSlot.PlatformShowcase -> PlatformShowcaseContent(slot)
             is PresentationSlot.InGame -> {
-                val manager = com.nendo.argosy.DualScreenManagerHolder.instance
+                val manager = com.nendo.argosy.DualScreenManagerHolder.instance ?: return@Box
                 val bar = rememberInGameAppBarState()
-                var achievementsOpen by remember(slot.state.gameId) { mutableStateOf(false) }
-                var achievementFocus by remember(slot.state.gameId) { mutableStateOf(0) }
-                CompanionDashboard(
+                val controls by manager.sessionControls.collectAsState()
+                val reader by manager.dashboardReader.state.collectAsState()
+                val actions = remember(manager) { dashboardActions(manager) }
+                com.nendo.argosy.ui.dualscreen.dashboard.InGameDashboard(
                     state = slot.state,
-                    sessionTimer = manager?.swappedSessionTimer,
-                    liveAchievements = slot.achievements,
-                    bottomInset = if (bar == null) Dimens.spacingMd else IN_GAME_APP_BAR_HEIGHT,
-                    onQuickSave = { manager?.sessionQuickActions?.quickSave() },
-                    onQuickLoad = { manager?.sessionQuickActions?.quickLoad() },
-                    onScreenshot = { manager?.sessionQuickActions?.screenshot() },
-                    onOpenAchievements = { achievementsOpen = true },
-                    onOpenDocument = { manager?.openDashboardDocument(it) }
+                    controls = controls,
+                    achievements = slot.achievements,
+                    sessionTimer = manager.swappedSessionTimer,
+                    reader = reader,
+                    actions = actions,
+                    appBar = { if (bar != null) InGameAppBar(bar) }
                 )
-                if (bar != null) {
-                    InGameAppBar(bar, modifier = Modifier.align(Alignment.BottomCenter))
-                }
-                if (achievementsOpen) {
-                    com.nendo.argosy.libretro.ui.InGameAchievements(
-                        gameName = slot.state.title,
-                        achievements = slot.achievements,
-                        focusedIndex = achievementFocus,
-                        onFocusChange = { achievementFocus = it },
-                        onDismiss = { achievementsOpen = false },
-                        showsCloseButton = true
-                    )
-                }
-                val reader = manager?.dashboardReader?.state?.collectAsState()?.value
-                if (manager != null && reader != null) {
-                    com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderOverlay(
-                        state = reader,
-                        onLinesPerPageMeasured = { manager.dashboardReader.setLinesPerPage(it) },
-                        onDismiss = { manager.dashboardReader.dismiss() },
-                        onTurnPage = { manager.dashboardReader.turnPage(it) },
-                        onSpreadsMeasured = { manager.dashboardReader.setShowsSpreads(it) }
-                    )
-                }
             }
         }
         if (slot !is PresentationSlot.InGame) {
@@ -158,6 +132,21 @@ fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = 
         }
     }
 }
+
+private fun dashboardActions(manager: com.nendo.argosy.DualScreenManager) =
+    com.nendo.argosy.ui.dualscreen.dashboard.DashboardActions(
+        onQuickSave = { manager.sessionQuickActions?.quickSave() },
+        onLoadState = { manager.sessionQuickActions?.loadState(it) },
+        onScreenshot = { manager.sessionQuickActions?.screenshot() },
+        onOpenCheats = { manager.sessionQuickActions?.openCheats() },
+        onOpenSettings = { manager.sessionQuickActions?.openGameSettings() },
+        onQuit = { manager.sessionQuickActions?.quit() },
+        onOpenDocument = { manager.openDashboardDocument(it) },
+        onReaderTurnPage = { manager.dashboardReader.turnPage(it) },
+        onReaderDismiss = { manager.dashboardReader.dismiss() },
+        onReaderLinesPerPage = { manager.dashboardReader.setLinesPerPage(it) },
+        onReaderSpreads = { manager.dashboardReader.setShowsSpreads(it) }
+    )
 
 private data class InGameAppBarState(
     val manager: com.nendo.argosy.DualScreenManager,
@@ -224,6 +213,7 @@ private fun InGameAppBar(state: InGameAppBarState, modifier: Modifier = Modifier
             null
         },
         swapEnabled = !manager.swappedIsGameActive.collectAsState().value,
+        drawsScrim = false,
         modifier = modifier
     )
 

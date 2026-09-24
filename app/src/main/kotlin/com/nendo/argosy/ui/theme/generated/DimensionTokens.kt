@@ -106,9 +106,12 @@ object DimensionTokens {
         const val timelineCoverHeight = 64
         const val slotPickerListMaxHeight = 260
         const val companionAppBarSlotWidth = 64
-        const val companionAppBarHeight = 88
-        const val companionArtHeight = 180
         const val companionProgressHeight = 6
+        const val companionRailWidth = 80
+        const val companionRailWidthWide = 200
+        const val companionRailItemHeight = 48
+        const val companionRailCoverWidth = 44
+        const val companionSessionCoverWidth = 72
     }
 
     object Elevation {

@@ -15,7 +15,6 @@
     <string name="ingame_menu_achievements">Erfolge</string>
     <string name="ingame_achievements_title">Erfolge</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
-    <string name="ingame_achievements_close_description">Erfolge schließen</string>
     <string name="ingame_achievements_unlocked_heading">FREIGESCHALTET (%1$d)</string>
     <string name="ingame_achievements_locked_heading">GESPERRT (%1$d)</string>
     <string name="ingame_achievements_empty">Keine Erfolge für dieses Spiel</string>
@@ -412,6 +411,7 @@
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Savestates sind im Hardcore-Modus deaktiviert</string>
     <string name="ingame_libretro_quickaction_netplay_blocked">Savestates sind während Netplay deaktiviert</string>
+    <string name="ingame_libretro_quickaction_cheats_netplay_blocked">Cheats sind während Netplay deaktiviert</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">Savestates für diesen Core nicht verfügbar</string>
     <string name="ingame_libretro_quickaction_save_success">Savestate gespeichert</string>
     <string name="ingame_libretro_quickaction_save_failure">Speichern fehlgeschlagen</string>

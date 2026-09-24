@@ -15,7 +15,6 @@
     <string name="ingame_menu_achievements">Достижения</string>
     <string name="ingame_achievements_title">Достижения</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
-    <string name="ingame_achievements_close_description">Закрыть достижения</string>
     <string name="ingame_achievements_unlocked_heading">РАЗБЛОКИРОВАНО (%1$d)</string>
     <string name="ingame_achievements_locked_heading">ЗАБЛОКИРОВАНО (%1$d)</string>
     <string name="ingame_achievements_empty">Для этой игры нет достижений</string>
@@ -430,6 +429,7 @@
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Состояния отключены в хардкоре</string>
     <string name="ingame_libretro_quickaction_netplay_blocked">Состояния отключены во время сетевой игры</string>
+    <string name="ingame_libretro_quickaction_cheats_netplay_blocked">Читы отключены во время сетевой игры</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">Состояния недоступны для этого ядра</string>
     <string name="ingame_libretro_quickaction_save_success">Состояние сохранено</string>
     <string name="ingame_libretro_quickaction_save_failure">Не удалось сохранить</string>

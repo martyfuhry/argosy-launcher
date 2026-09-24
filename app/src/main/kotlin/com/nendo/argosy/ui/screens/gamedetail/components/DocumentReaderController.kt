@@ -195,5 +195,5 @@ class DocumentReaderController(
     }
 
     private fun pageAt(fraction: Float, pageCount: Int): Int =
-        if (pageCount <= 1) 0 else ((pageCount - 1) * fraction).toInt().coerceIn(0, pageCount - 1)
+        if (pageCount <= 1) 0 else kotlin.math.round((pageCount - 1) * fraction).toInt().coerceIn(0, pageCount - 1)
 }

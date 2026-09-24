@@ -86,7 +86,8 @@ fun CompanionAppBar(
     onFocusPickerToggle: (() -> Unit)? = null,
     onFocusDisplay: (Int) -> Unit = {},
     onSwapRoles: (() -> Unit)? = null,
-    swapEnabled: Boolean = true
+    swapEnabled: Boolean = true,
+    drawsScrim: Boolean = true
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
 
@@ -99,13 +100,19 @@ fun CompanionAppBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Transparent,
-                        MaterialTheme.colorScheme.scrim.copy(alpha = APP_BAR_SCRIM_ALPHA)
+            .then(
+                if (drawsScrim) {
+                    Modifier.background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.scrim.copy(alpha = APP_BAR_SCRIM_ALPHA)
+                            )
+                        )
                     )
-                )
+                } else {
+                    Modifier
+                }
             )
             .padding(vertical = Dimens.spacingSm + Dimens.spacingXs),
         verticalAlignment = Alignment.CenterVertically

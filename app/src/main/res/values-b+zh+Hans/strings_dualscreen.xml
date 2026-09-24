@@ -10,22 +10,39 @@
 
     <string name="dual_companion_quick_action_save_state">保存即时存档</string>
     <string name="dual_companion_quick_action_screenshot">截图</string>
-    <string name="dual_companion_quick_action_load_state">读取即时存档</string>
-    <string name="dual_companion_quick_action_load_confirm">点击确认</string>
-    <string name="dual_companion_quick_access_achievements">成就</string>
-    <string name="dual_companion_quick_access_manual">说明书</string>
-    <string name="dual_companion_quick_access_walkthrough">攻略</string>
+    <string name="dual_dashboard_rail_session">本次</string>
+    <string name="dual_dashboard_rail_states">即时存档</string>
+    <string name="dual_dashboard_rail_trophies">成就</string>
+    <string name="dual_dashboard_rail_manual">说明书</string>
+    <string name="dual_dashboard_rail_guide">攻略</string>
+    <string name="dual_dashboard_rail_cheats">金手指</string>
+    <string name="dual_dashboard_rail_settings">设置</string>
+    <string name="dual_dashboard_rail_quit">退出</string>
+    <string name="dual_dashboard_rail_quit_confirm">再点一次</string>
+    <string name="dual_dashboard_rail_page">第 %1$d 页</string>
+    <string name="dual_dashboard_rail_percent">%1$d%%</string>
+    <string name="dual_dashboard_achievements_progress">%1$d / %2$d</string>
+    <string name="dual_dashboard_states_title">快速存档</string>
+    <string name="dual_dashboard_states_empty">还没有快速存档。保存即时存档后会显示在这里。</string>
+    <string name="dual_dashboard_recent_states">最近存档</string>
+    <string name="dual_dashboard_states_tap_twice">点两次读取</string>
+    <string name="dual_dashboard_state_tap_to_load">点击读取</string>
+    <string name="dual_dashboard_state_just_now">刚刚</string>
+    <string name="dual_dashboard_state_latest">最新</string>
+    <string name="dual_dashboard_total_play">共 %1$s</string>
+    <string name="dual_dashboard_manual_resume">从第 %1$d 页继续</string>
+    <string name="dual_dashboard_guide_progress">已读 %1$d%%</string>
+    <string name="dual_dashboard_document_open">打开</string>
+    <string name="dual_dashboard_latest_achievement">最新成就</string>
+    <string name="dual_dashboard_achievements_label">成就</string>
 
     <string name="dual_companion_session_label">本次时长</string>
-    <string name="dual_companion_achievements_label">成就</string>
     <string name="dual_companion_panel_dashboard">仪表盘</string>
     <string name="dual_companion_panel_achievements">成就</string>
     <string name="dual_companion_achievements_unlocked_heading">已解锁（%1$d）</string>
     <string name="dual_companion_achievements_locked_heading">未解锁（%1$d）</string>
     <string name="dual_companion_achievements_empty">此游戏没有成就</string>
     <string name="dual_companion_footer_switch_panel">面板</string>
-    <string name="dual_companion_stat_play_time">总游戏时长</string>
-    <string name="dual_companion_stat_play_count">游玩次数</string>
 
     <string name="dual_companion_play_time_hours_minutes">%1$dh %2$dm</string>
     <string name="dual_companion_play_time_hours">%1$dh</string>
@@ -34,7 +51,6 @@
 
     <string name="dual_companion_saves_dirty">有新存档数据</string>
     <string name="dual_companion_saves_synced">存档已同步</string>
-    <string name="dual_companion_saves_synced_icon_description">已保存</string>
 
     <string name="dual_companion_app_bar_add_description">添加应用</string>
     <string name="dual_companion_app_drawer_title">全部应用</string>

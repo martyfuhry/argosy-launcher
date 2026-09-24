@@ -20,7 +20,8 @@ data class AchievementUi(
     val type: String?,
     val badgeUrl: String?,
     val isUnlocked: Boolean = false,
-    val isUnlockedHardcore: Boolean = false
+    val isUnlockedHardcore: Boolean = false,
+    val unlockedAtMillis: Long? = null
 )
 
 fun AchievementEntity.toAchievementUi() = AchievementUi(
@@ -31,5 +32,6 @@ fun AchievementEntity.toAchievementUi() = AchievementUi(
     type = type,
     badgeUrl = badgePath,
     isUnlocked = isUnlocked,
-    isUnlockedHardcore = unlockedHardcoreAt != null
+    isUnlockedHardcore = unlockedHardcoreAt != null,
+    unlockedAtMillis = listOfNotNull(unlockedAt, unlockedHardcoreAt).maxOrNull()
 )

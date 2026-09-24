@@ -31,23 +31,21 @@ data class CompanionInGameState(
     val isDirty: Boolean = false,
     val isLoaded: Boolean = false,
     val quickActionsAvailable: Boolean = false,
-    val hasQuickSave: Boolean = false,
+    val backgroundPath: String? = null,
     val manual: com.nendo.argosy.ui.screens.gamedetail.GameDocument? = null,
-    val walkthrough: com.nendo.argosy.ui.screens.gamedetail.GameDocument? = null
+    val walkthrough: com.nendo.argosy.ui.screens.gamedetail.GameDocument? = null,
+    val manualLastPage: Int? = null,
+    val walkthroughProgress: Float? = null
 )
 
 /**
  * Applies live quick-action state after asynchronously loaded game metadata arrives.
- * These flags can change while the metadata is being loaded, so the metadata snapshot
- * must not replace them with their defaults.
+ * The flag can change while the metadata is being loaded, so the metadata snapshot
+ * must not replace it with its default.
  */
 internal fun CompanionInGameState.withLiveQuickActionState(
-    quickActionsAvailable: Boolean,
-    hasQuickSave: Boolean
-): CompanionInGameState = copy(
-    quickActionsAvailable = quickActionsAvailable,
-    hasQuickSave = hasQuickSave
-)
+    quickActionsAvailable: Boolean
+): CompanionInGameState = copy(quickActionsAvailable = quickActionsAvailable)
 
 class CompanionSessionTimer {
     private var screenOnDuration: Duration = Duration.ZERO

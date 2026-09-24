@@ -214,6 +214,44 @@ class SaveStateManagerTest {
         assertFalse(mgr.performQuickLoad(retroView))
     }
 
+    @Test
+    fun `quick save into a full ring overwrites the oldest slot`() {
+        val mgr = manager(mockk(relaxed = true), mockk(relaxed = true))
+        fillRing(mgr)
+        val oldest = SaveStateManager.QUICK_SLOT_BASE + 3
+        mgr.getSlotFile(oldest).setLastModified(1_000L)
+
+        assertTrue(mgr.performQuickSave(byteArrayOf(42)))
+
+        val ring = mgr.getQuickRingInfoList()
+        assertEquals(SaveStateManager.QUICK_RING_SIZE, ring.size)
+        assertEquals(oldest, ring.first().slotNumber)
+        assertArrayEquals(byteArrayOf(42), mgr.getSlotFile(oldest).readBytes())
+    }
+
+    @Test
+    fun `overwriting a slot without a frame drops its old thumbnail`() {
+        val mgr = manager(mockk(relaxed = true), mockk(relaxed = true))
+        fillRing(mgr)
+        val oldest = SaveStateManager.QUICK_SLOT_BASE + 5
+        mgr.getSlotFile(oldest).setLastModified(1_000L)
+        mgr.getSlotScreenshotFile(oldest).writeBytes(byteArrayOf(1))
+
+        mgr.performQuickSave(byteArrayOf(7), screenshot = null)
+
+        assertFalse(mgr.getSlotScreenshotFile(oldest).exists())
+        assertEquals(null, mgr.getQuickRingInfoList().first().screenshotFile)
+    }
+
+    private fun fillRing(mgr: SaveStateManager) {
+        repeat(SaveStateManager.QUICK_RING_SIZE) { index ->
+            val file = mgr.getSlotFile(SaveStateManager.QUICK_SLOT_BASE + index)
+            file.parentFile?.mkdirs()
+            file.writeBytes(byteArrayOf(index.toByte()))
+            file.setLastModified(10_000L + index * 1_000L)
+        }
+    }
+
     companion object {
         private const val GAME_ID = 1L
     }

@@ -166,7 +166,8 @@ fun AchievementList(
     @StringRes emptyTextRes: Int,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(horizontal = Dimens.spacingLg),
-    onRowTapped: (Int) -> Unit = {}
+    onRowTapped: (Int) -> Unit = {},
+    listState: androidx.compose.foundation.lazy.LazyListState = rememberLazyListState()
 ) {
     val ordered = remember(achievements) { achievements.unlockedFirst() }
     val unlockedCount = remember(achievements) { achievements.count { it.isUnlocked } }
@@ -186,7 +187,6 @@ fun AchievementList(
         return
     }
 
-    val listState = rememberLazyListState()
     val headerOffset = if (unlockedCount > 0) 1 else 0
 
     LaunchedEffect(focusIndex, ordered.size) {

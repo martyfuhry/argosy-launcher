@@ -541,9 +541,12 @@ class SaveStateManager(
     }
 
     private fun writeScreenshot(slotNumber: Int, bitmap: Bitmap?) {
-        if (bitmap == null) return
+        val screenshotFile = getSlotScreenshotFile(slotNumber)
+        if (bitmap == null) {
+            screenshotFile.delete()
+            return
+        }
         try {
-            val screenshotFile = getSlotScreenshotFile(slotNumber)
             val scaled = scaleScreenshot(bitmap)
             FileOutputStream(screenshotFile).use { out ->
                 scaled.compress(Bitmap.CompressFormat.PNG, 90, out)

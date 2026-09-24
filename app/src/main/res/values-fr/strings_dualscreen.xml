@@ -15,22 +15,39 @@
 
     <string name="dual_companion_quick_action_save_state">Enregistrer l\'état</string>
     <string name="dual_companion_quick_action_screenshot">Capture d\'écran</string>
-    <string name="dual_companion_quick_action_load_state">Charger l\'état</string>
-    <string name="dual_companion_quick_action_load_confirm">Appuyez pour confirmer</string>
-    <string name="dual_companion_quick_access_achievements">Succès</string>
-    <string name="dual_companion_quick_access_manual">Manuel</string>
-    <string name="dual_companion_quick_access_walkthrough">Soluce</string>
+    <string name="dual_dashboard_rail_session">Session</string>
+    <string name="dual_dashboard_rail_states">États</string>
+    <string name="dual_dashboard_rail_trophies">Trophées</string>
+    <string name="dual_dashboard_rail_manual">Manuel</string>
+    <string name="dual_dashboard_rail_guide">Soluce</string>
+    <string name="dual_dashboard_rail_cheats">Codes</string>
+    <string name="dual_dashboard_rail_settings">Réglages</string>
+    <string name="dual_dashboard_rail_quit">Quitter</string>
+    <string name="dual_dashboard_rail_quit_confirm">Touchez encore</string>
+    <string name="dual_dashboard_rail_page">p. %1$d</string>
+    <string name="dual_dashboard_rail_percent">%1$d%%</string>
+    <string name="dual_dashboard_achievements_progress">%1$d / %2$d</string>
+    <string name="dual_dashboard_states_title">Sauvegardes rapides</string>
+    <string name="dual_dashboard_states_empty">Aucune sauvegarde rapide. Sauvegardez un état pour le voir ici.</string>
+    <string name="dual_dashboard_recent_states">États récents</string>
+    <string name="dual_dashboard_states_tap_twice">Touchez deux fois pour charger</string>
+    <string name="dual_dashboard_state_tap_to_load">Touchez pour charger</string>
+    <string name="dual_dashboard_state_just_now">À l\'instant</string>
+    <string name="dual_dashboard_state_latest">Récent</string>
+    <string name="dual_dashboard_total_play">%1$s au total</string>
+    <string name="dual_dashboard_manual_resume">Reprendre à la page %1$d</string>
+    <string name="dual_dashboard_guide_progress">%1$d%% lu</string>
+    <string name="dual_dashboard_document_open">Ouvrir</string>
+    <string name="dual_dashboard_latest_achievement">Dernier succès</string>
+    <string name="dual_dashboard_achievements_label">Succès</string>
 
     <string name="dual_companion_session_label">Session</string>
-    <string name="dual_companion_achievements_label">Succès</string>
     <string name="dual_companion_panel_dashboard">Tableau de bord</string>
     <string name="dual_companion_panel_achievements">Succès</string>
     <string name="dual_companion_achievements_unlocked_heading">DÉBLOQUÉS (%1$d)</string>
     <string name="dual_companion_achievements_locked_heading">VERROUILLÉS (%1$d)</string>
     <string name="dual_companion_achievements_empty">Aucun succès pour ce jeu</string>
     <string name="dual_companion_footer_switch_panel">Panneau</string>
-    <string name="dual_companion_stat_play_time">Temps de jeu total</string>
-    <string name="dual_companion_stat_play_count">Nombre de parties</string>
 
     <string name="dual_companion_play_time_hours_minutes">%1$dh %2$dm</string>
     <string name="dual_companion_play_time_hours">%1$dh</string>
@@ -39,7 +56,6 @@
 
     <string name="dual_companion_saves_dirty">Nouvelles données de sauvegarde</string>
     <string name="dual_companion_saves_synced">Sauvegardes synchronisées</string>
-    <string name="dual_companion_saves_synced_icon_description">Enregistrée</string>
 
     <string name="dual_companion_app_bar_add_description">Ajouter une application</string>
     <string name="dual_companion_app_drawer_title">Toutes les applications</string>

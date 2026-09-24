@@ -11,22 +11,39 @@
 
     <string name="dual_companion_quick_action_save_state">Сохранить состояние</string>
     <string name="dual_companion_quick_action_screenshot">Скриншот</string>
-    <string name="dual_companion_quick_action_load_state">Загрузить состояние</string>
-    <string name="dual_companion_quick_action_load_confirm">Нажмите для подтверждения</string>
-    <string name="dual_companion_quick_access_achievements">Достижения</string>
-    <string name="dual_companion_quick_access_manual">Руководство</string>
-    <string name="dual_companion_quick_access_walkthrough">Прохождение</string>
+    <string name="dual_dashboard_rail_session">Сессия</string>
+    <string name="dual_dashboard_rail_states">Состояния</string>
+    <string name="dual_dashboard_rail_trophies">Трофеи</string>
+    <string name="dual_dashboard_rail_manual">Руководство</string>
+    <string name="dual_dashboard_rail_guide">Гайд</string>
+    <string name="dual_dashboard_rail_cheats">Читы</string>
+    <string name="dual_dashboard_rail_settings">Настройки</string>
+    <string name="dual_dashboard_rail_quit">Выйти</string>
+    <string name="dual_dashboard_rail_quit_confirm">Ещё раз</string>
+    <string name="dual_dashboard_rail_page">стр. %1$d</string>
+    <string name="dual_dashboard_rail_percent">%1$d%%</string>
+    <string name="dual_dashboard_achievements_progress">%1$d / %2$d</string>
+    <string name="dual_dashboard_states_title">Быстрые состояния</string>
+    <string name="dual_dashboard_states_empty">Быстрых состояний пока нет. Сохраните состояние, и оно появится здесь.</string>
+    <string name="dual_dashboard_recent_states">Последние состояния</string>
+    <string name="dual_dashboard_states_tap_twice">Нажмите дважды, чтобы загрузить</string>
+    <string name="dual_dashboard_state_tap_to_load">Нажмите, чтобы загрузить</string>
+    <string name="dual_dashboard_state_just_now">Только что</string>
+    <string name="dual_dashboard_state_latest">Новое</string>
+    <string name="dual_dashboard_total_play">всего %1$s</string>
+    <string name="dual_dashboard_manual_resume">Продолжить со страницы %1$d</string>
+    <string name="dual_dashboard_guide_progress">Прочитано %1$d%%</string>
+    <string name="dual_dashboard_document_open">Открыть</string>
+    <string name="dual_dashboard_latest_achievement">Последнее достижение</string>
+    <string name="dual_dashboard_achievements_label">Достижения</string>
 
     <string name="dual_companion_session_label">Сессия</string>
-    <string name="dual_companion_achievements_label">Достижения</string>
     <string name="dual_companion_panel_dashboard">Панель</string>
     <string name="dual_companion_panel_achievements">Достижения</string>
     <string name="dual_companion_achievements_unlocked_heading">РАЗБЛОКИРОВАНО (%1$d)</string>
     <string name="dual_companion_achievements_locked_heading">ЗАБЛОКИРОВАНО (%1$d)</string>
     <string name="dual_companion_achievements_empty">Для этой игры нет достижений</string>
     <string name="dual_companion_footer_switch_panel">Вкладка</string>
-    <string name="dual_companion_stat_play_time">Общее время в игре</string>
-    <string name="dual_companion_stat_play_count">Количество запусков</string>
 
     <string name="dual_companion_play_time_hours_minutes">%1$dh %2$dm</string>
     <string name="dual_companion_play_time_hours">%1$dh</string>
@@ -35,7 +52,6 @@
 
     <string name="dual_companion_saves_dirty">Новые данные сохранения</string>
     <string name="dual_companion_saves_synced">Сохранения синхронизированы</string>
-    <string name="dual_companion_saves_synced_icon_description">Сохранено</string>
 
     <string name="dual_companion_app_bar_add_description">Добавить приложение</string>
     <string name="dual_companion_app_drawer_title">Все приложения</string>

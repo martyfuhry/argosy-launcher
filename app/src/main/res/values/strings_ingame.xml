@@ -78,8 +78,6 @@
     <string name="ingame_achievements_title">Achievements</string>
     <!-- Tally at the right of that heading. %1$d is how many are earned, %2$d how many exist. -->
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
-    <!-- Screen-reader label for the button that closes that list. -->
-    <string name="ingame_achievements_close_description">Close achievements</string>
     <!-- Heading over the earned half of that list. Adjective describing the achievements below
          it. %1$d is how many. Rendered in caps in English. -->
     <string name="ingame_achievements_unlocked_heading">UNLOCKED (%1$d)</string>
@@ -881,6 +879,8 @@
     <!-- Social-overlay toast for the cross-app quick-save hotkey/button. -->
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Save states are disabled in hardcore</string>
     <string name="ingame_libretro_quickaction_netplay_blocked">Save states are disabled during netplay</string>
+    <!-- Toast when the second screen asks for the cheat list during an online session. Statement. -->
+    <string name="ingame_libretro_quickaction_cheats_netplay_blocked">Cheats are disabled during netplay</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">Save states unavailable for this core</string>
     <string name="ingame_libretro_quickaction_save_success">State saved</string>
     <!-- "Save" is a noun here (the quick-save action), not a verb. -->

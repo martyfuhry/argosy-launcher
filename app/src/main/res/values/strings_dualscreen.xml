@@ -38,24 +38,63 @@
     <string name="dual_companion_quick_action_save_state">Save State</string>
     <!-- Button on the in-game dashboard. Noun: grabs a picture of the running game. -->
     <string name="dual_companion_quick_action_screenshot">Screenshot</string>
-    <!-- Button on the in-game dashboard. Verb phrase: restores the last save state. -->
-    <string name="dual_companion_quick_action_load_state">Load State</string>
-    <!-- What that button reads after the first press, while it waits for a second press before
-         restoring. Instruction addressed to the user. -->
-    <string name="dual_companion_quick_action_load_confirm">Tap to confirm</string>
-    <!-- Button on the in-game dashboard that opens the running game's achievement list. Noun,
-         plural. -->
-    <string name="dual_companion_quick_access_achievements">Achievements</string>
-    <!-- Button on the in-game dashboard that opens the running game's instruction manual. Noun. -->
-    <string name="dual_companion_quick_access_manual">Manual</string>
-    <!-- Button on the in-game dashboard that opens the running game's walkthrough guide. Noun. -->
-    <string name="dual_companion_quick_access_walkthrough">Walkthrough</string>
 
     <!-- Label beside the running clock on the in-game dashboard. Noun: this sitting at the game,
          not the total. -->
     <string name="dual_companion_session_label">Session</string>
-    <!-- Label above the achievement progress bar on the in-game dashboard. Noun, plural. -->
-    <string name="dual_companion_achievements_label">Achievements</string>
+    <!-- Rail entry on the in-game dashboard for its overview screen. Noun: this sitting at the
+         game. Keep very short; the narrow rail shows it under an icon. -->
+    <string name="dual_dashboard_rail_session">Session</string>
+    <!-- Rail entry for the list of rolling quick save states. Noun, plural. Keep very short. -->
+    <string name="dual_dashboard_rail_states">States</string>
+    <!-- Rail entry for the running game's achievements. Noun, plural. Keep very short. -->
+    <string name="dual_dashboard_rail_trophies">Trophies</string>
+    <!-- Rail entry that opens the game's instruction manual. Noun. Keep very short. -->
+    <string name="dual_dashboard_rail_manual">Manual</string>
+    <!-- Rail entry that opens the game's walkthrough. Noun. Keep very short. -->
+    <string name="dual_dashboard_rail_guide">Guide</string>
+    <!-- Rail entry that opens the cheat list on the game's screen. Noun, plural. Keep very short. -->
+    <string name="dual_dashboard_rail_cheats">Cheats</string>
+    <!-- Rail entry that opens the running game's settings on the game's screen. Noun, plural.
+         Keep very short. -->
+    <string name="dual_dashboard_rail_settings">Settings</string>
+    <!-- Rail entry that saves and closes the game. Verb. Keep very short. -->
+    <string name="dual_dashboard_rail_quit">Quit</string>
+    <!-- What the quit entry reads after the first tap, while it waits for a second. Instruction
+         addressed to the user. Keep very short. -->
+    <string name="dual_dashboard_rail_quit_confirm">Tap again</string>
+    <!-- Page the manual was left open at, beside its rail entry. %1$d is the page number. -->
+    <string name="dual_dashboard_rail_page">p. %1$d</string>
+    <!-- How much of the walkthrough has been read, beside its rail entry. %1$d is a percentage. -->
+    <string name="dual_dashboard_rail_percent">%1$d%%</string>
+    <!-- Achievements earned out of the total. %1$d is earned, %2$d the total. -->
+    <string name="dual_dashboard_achievements_progress">%1$d / %2$d</string>
+    <!-- Heading of the screen listing every rolling quick save state. Noun phrase. -->
+    <string name="dual_dashboard_states_title">Quick states</string>
+    <!-- Body of that screen before any quick state exists. Statement plus instruction. -->
+    <string name="dual_dashboard_states_empty">No quick states yet. Save State adds one here.</string>
+    <!-- Label over the row of the newest quick states on the overview. Noun phrase. -->
+    <string name="dual_dashboard_recent_states">Recent states</string>
+    <!-- Hint beside that row: a state loads on the second tap. Instruction addressed to the user. -->
+    <string name="dual_dashboard_states_tap_twice">Tap twice to load</string>
+    <!-- Shown over a quick state after its first tap, before the second loads it. Instruction. -->
+    <string name="dual_dashboard_state_tap_to_load">Tap to load</string>
+    <!-- Age of a quick state saved less than a minute ago, under its thumbnail. Keep very short. -->
+    <string name="dual_dashboard_state_just_now">Just now</string>
+    <!-- Tag on the newest quick state's thumbnail. Adjective. Keep very short. -->
+    <string name="dual_dashboard_state_latest">Latest</string>
+    <!-- Total play time beside the save status. %1$s is a duration such as "12h 4m". -->
+    <string name="dual_dashboard_total_play">%1$s total</string>
+    <!-- Detail on the manual card: reopening resumes at this page. %1$d is the page number. -->
+    <string name="dual_dashboard_manual_resume">Continue at page %1$d</string>
+    <!-- Detail on the walkthrough card. %1$d is a percentage of the text read. -->
+    <string name="dual_dashboard_guide_progress">%1$d%% read</string>
+    <!-- Detail on a document card that has never been opened. Verb. -->
+    <string name="dual_dashboard_document_open">Open</string>
+    <!-- Label over the most recently earned achievement. Noun phrase. -->
+    <string name="dual_dashboard_latest_achievement">Latest achievement</string>
+    <!-- Label over the progress bar before any achievement is earned. Noun, plural. -->
+    <string name="dual_dashboard_achievements_label">Achievements</string>
     <!-- Tab at the top of the second screen while a game runs. Noun: the summary panel with the
          cover, clock and stats. -->
     <string name="dual_companion_panel_dashboard">Dashboard</string>
@@ -74,10 +113,6 @@
     <!-- Footer hint beside the shoulder buttons on the second screen while a game runs. Noun:
          the shoulder buttons move between the tabs at the top. -->
     <string name="dual_companion_footer_switch_panel">Panel</string>
-    <!-- Row label on the in-game dashboard. Noun phrase: every minute ever spent in this game. -->
-    <string name="dual_companion_stat_play_time">Total Play Time</string>
-    <!-- Row label on the in-game dashboard. Noun phrase: how many times the game was launched. -->
-    <string name="dual_companion_stat_play_count">Times Played</string>
 
     <!-- Play time of some hours and some minutes on the in-game dashboard. %1$d is hours, %2$d
          minutes; "h" and "m" are unit abbreviations. -->
@@ -95,9 +130,6 @@
     <!-- Line beside the save indicator when everything is on the server. Statement about the
          saves, past participle, not a command to sync them. -->
     <string name="dual_companion_saves_synced">Saves synced</string>
-    <!-- Spoken description of the tick on the save indicator. Past participle describing the
-         state, not a command. -->
-    <string name="dual_companion_saves_synced_icon_description">Saved</string>
 
     <!-- Spoken description of the plus button at the left of the companion app bar. Verb phrase:
          opens the list of every installed app so one can be pinned to the bar. -->

@@ -702,6 +702,25 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
+    private fun publishSessionControls() {
+        if (!::saveStateManager.isInitialized) return
+        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
+        val quickStates = saveStateManager.getQuickRingInfoList().map { slot ->
+            com.nendo.argosy.ui.dualscreen.dashboard.DashboardQuickState(
+                slotNumber = slot.slotNumber,
+                savedAtMillis = slot.timestamp ?: 0L,
+                screenshotPath = slot.screenshotFile?.absolutePath
+            )
+        }
+        dsm.updateSessionControls(
+            com.nendo.argosy.ui.dualscreen.dashboard.SessionControls(
+                quickStates = quickStates,
+                cheatsAvailable = !hardcoreMode && PlatformWeightRegistry.supportsCheats(platformSlug),
+                settingsAvailable = true
+            )
+        )
+    }
+
     private fun clearStateOwnership(stateFile: File) {
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO + kotlinx.coroutines.NonCancellable) {
             stateOwnershipTracker.clear(stateFile.absolutePath, EmulatorRegistry.BUILTIN_ID)
@@ -727,8 +746,14 @@ class LibretroActivity : ComponentActivity() {
             channelName = channelName,
             isVariant = variantFileId >= 0,
             primarySavePath = primarySavePath,
-            onLiveStateWritten = { slot, file -> recordStateOwnership(slot, file, channelName) },
-            onLiveStateRemoved = { _, file -> clearStateOwnership(file) }
+            onLiveStateWritten = { slot, file ->
+                recordStateOwnership(slot, file, channelName)
+                publishSessionControls()
+            },
+            onLiveStateRemoved = { _, file ->
+                clearStateOwnership(file)
+                publishSessionControls()
+            }
         )
         saveStateManager.adoptLegacySaveIfMissing()
         if (coreName == "genesis_plus_gx" && isSegaCd()) saveStateManager.adoptSharedSegaCdBramIfMissing()
@@ -743,9 +768,7 @@ class LibretroActivity : ComponentActivity() {
         }
         saveStateManager.initializeFromExistingSave(restoreResult.sramData)
         lifecycleScope.launch {
-            snapshotFlow { saveStateManager.hasQuickSave }.collect { has ->
-                com.nendo.argosy.DualScreenManagerHolder.instance?.updateCompanionHasQuickSave(has)
-            }
+            snapshotFlow { hardcoreMode }.collect { publishSessionControls() }
         }
         lifecycleScope.launch {
             snapshotFlow { isAnyMenuOpen }.collect { open -> if (open) releaseCoreHeldKeys() }
@@ -2545,7 +2568,7 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
-    private fun attemptAutoRestore() {
+    private suspend fun attemptAutoRestore() {
         if (isGuestJoinedSession) return
         val resumeFile = saveStateManager.getSlotFile(SaveStateManager.RESUME_SLOT)
         if (resumeFile.exists()) {
@@ -2566,11 +2589,11 @@ class LibretroActivity : ComponentActivity() {
         val autoFile = saveStateManager.getSlotFile(SaveStateManager.AUTO_SLOT)
         if (!autoFile.exists()) return
 
-        val settings = kotlinx.coroutines.runBlocking {
+        val settings = withContext(Dispatchers.IO) {
             effectiveLibretroSettingsResolver.getEffectiveSettings(platformId, platformSlug)
         }
 
-        if (!settings.autoRestoreState || hardcoreMode) return
+        if (!settings.autoRestoreState || hardcoreMode || coreDestroyed) return
 
         if (saveStateManager.performSlotLoad(retroView, SaveStateManager.AUTO_SLOT)) {
             inGameMessage = getString(R.string.ingame_libretro_auto_restore_success)
@@ -3306,7 +3329,7 @@ class LibretroActivity : ComponentActivity() {
             }
         }
 
-        override fun quickLoad() {
+        override fun loadState(slotNumber: Int) {
             runOnUiThread {
                 if (coreDestroyed || !::retroView.isInitialized) return@runOnUiThread
                 if (netplay.inSession) {
@@ -3322,13 +3345,45 @@ class LibretroActivity : ComponentActivity() {
                     return@runOnUiThread
                 }
                 lifecycleScope.launch(Dispatchers.IO) {
-                    val ok = try { saveStateManager.performQuickLoad(retroView) } catch (_: Exception) { false }
+                    val ok = try {
+                        saveStateManager.performSlotLoad(retroView, slotNumber)
+                    } catch (_: Exception) {
+                        false
+                    }
                     notifyQuickAction(
                         ok,
                         getString(R.string.ingame_libretro_quickaction_load_success),
                         getString(R.string.ingame_libretro_quickaction_load_failure)
                     )
                 }
+            }
+        }
+
+        override fun openCheats() {
+            runOnUiThread {
+                if (coreDestroyed || isClosing) return@runOnUiThread
+                if (netplay.inSession) {
+                    notifyQuickAction(false, "", getString(R.string.ingame_libretro_quickaction_cheats_netplay_blocked))
+                    return@runOnUiThread
+                }
+                if (hardcoreMode || !PlatformWeightRegistry.supportsCheats(platformSlug)) return@runOnUiThread
+                showMenu()
+                handleMenuAction(InGameMenuAction.Cheats)
+            }
+        }
+
+        override fun openGameSettings() {
+            runOnUiThread {
+                if (coreDestroyed || isClosing) return@runOnUiThread
+                showMenu()
+                handleMenuAction(InGameMenuAction.Settings)
+            }
+        }
+
+        override fun quit() {
+            runOnUiThread {
+                if (coreDestroyed || isClosing) return@runOnUiThread
+                handleMenuAction(InGameMenuAction.Quit)
             }
         }
 

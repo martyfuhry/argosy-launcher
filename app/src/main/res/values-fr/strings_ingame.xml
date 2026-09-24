@@ -15,7 +15,6 @@
     <string name="ingame_menu_achievements">Succès</string>
     <string name="ingame_achievements_title">Succès</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
-    <string name="ingame_achievements_close_description">Fermer les succès</string>
     <string name="ingame_achievements_unlocked_heading">DÉBLOQUÉS (%1$d)</string>
     <string name="ingame_achievements_locked_heading">VERROUILLÉS (%1$d)</string>
     <string name="ingame_achievements_empty">Aucun succès pour ce jeu</string>
@@ -421,6 +420,7 @@
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Les états de sauvegarde sont désactivés en hardcore</string>
     <string name="ingame_libretro_quickaction_netplay_blocked">Les états de sauvegarde sont désactivés pendant le netplay</string>
+    <string name="ingame_libretro_quickaction_cheats_netplay_blocked">Les codes sont désactivés pendant le netplay</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">États de sauvegarde indisponibles pour ce core</string>
     <string name="ingame_libretro_quickaction_save_success">État enregistré</string>
     <string name="ingame_libretro_quickaction_save_failure">Échec de l\'enregistrement</string>

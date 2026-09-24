@@ -15,7 +15,6 @@
     <string name="ingame_menu_achievements">成就</string>
     <string name="ingame_achievements_title">成就</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
-    <string name="ingame_achievements_close_description">关闭成就</string>
     <string name="ingame_achievements_unlocked_heading">已解锁（%1$d）</string>
     <string name="ingame_achievements_locked_heading">未解锁（%1$d）</string>
     <string name="ingame_achievements_empty">此游戏没有成就</string>
@@ -405,6 +404,7 @@
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">硬核模式下已禁用即时存档</string>
     <string name="ingame_libretro_quickaction_netplay_blocked">联机期间已禁用即时存档</string>
+    <string name="ingame_libretro_quickaction_cheats_netplay_blocked">联机期间已禁用金手指</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">此核心不支持即时存档</string>
     <string name="ingame_libretro_quickaction_save_success">即时存档已保存</string>
     <string name="ingame_libretro_quickaction_save_failure">保存失败</string>
