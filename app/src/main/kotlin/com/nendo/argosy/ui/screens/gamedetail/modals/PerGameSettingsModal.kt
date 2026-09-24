@@ -38,6 +38,7 @@ fun PerGameSettingsModal(
     onResetSavePath: () -> Unit,
     onMemcardClick: () -> Unit,
     onCycleDisplayTarget: (Int) -> Unit,
+    onCycleLaunchScreen: (Int) -> Unit,
     onCycleExtension: (Int) -> Unit,
     onPlatformSettings: () -> Unit,
     onDismiss: () -> Unit
@@ -65,7 +66,9 @@ fun PerGameSettingsModal(
         onDismiss = onDismiss,
         footerHints = buildList {
             when (focusedRow) {
-                PerGameSettingsRow.DISPLAY_TARGET, PerGameSettingsRow.EXTENSION ->
+                PerGameSettingsRow.DISPLAY_TARGET,
+                PerGameSettingsRow.LAUNCH_SCREEN,
+                PerGameSettingsRow.EXTENSION ->
                     add(InputButton.DPAD_HORIZONTAL to adjustHint)
                 PerGameSettingsRow.SAVE_PATH ->
                     if (state.isSavePathOverride) {
@@ -79,7 +82,9 @@ fun PerGameSettingsModal(
                     PerGameSettingsRow.SAVE_PATH -> changeSavePathHint
                     PerGameSettingsRow.SAVE_BASE_PATH -> openSaveLocationHint
                     PerGameSettingsRow.MEMCARD -> changeMemcardHint
-                    PerGameSettingsRow.DISPLAY_TARGET, PerGameSettingsRow.EXTENSION -> cycleHint
+                    PerGameSettingsRow.DISPLAY_TARGET,
+                    PerGameSettingsRow.LAUNCH_SCREEN,
+                    PerGameSettingsRow.EXTENSION -> cycleHint
                     PerGameSettingsRow.PLATFORM_SETTINGS, null -> openHint
                 }
             )
@@ -156,6 +161,17 @@ fun PerGameSettingsModal(
                     onClick = { onCycleDisplayTarget(1) }
                 )
 
+                PerGameSettingsRow.LAUNCH_SCREEN -> ValueConfigItem(
+                    label = stringResource(R.string.gamedetail_per_game_launch_screen_label),
+                    value = state.launchScreen?.let {
+                        stringResource(R.string.gamedetail_per_game_launch_screen_value, it.number)
+                    } ?: stringResource(R.string.gamedetail_per_game_launch_screen_default),
+                    isOverride = state.launchScreen != null,
+                    showInheritedTag = false,
+                    isFocused = isFocused(row),
+                    onClick = { onCycleLaunchScreen(1) }
+                )
+
                 PerGameSettingsRow.EXTENSION -> ValueConfigItem(
                     label = stringResource(R.string.gamedetail_per_game_extension_label),
                     value = state.preferredExtension?.let { ext ->
@@ -196,7 +212,8 @@ private fun ValueConfigItem(
     value: String,
     isOverride: Boolean,
     isFocused: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    showInheritedTag: Boolean = true
 ) {
     val contentColor = if (isFocused) {
         MaterialTheme.colorScheme.onPrimaryContainer
@@ -237,7 +254,7 @@ private fun ValueConfigItem(
                 style = MaterialTheme.typography.bodyMedium,
                 color = contentColor
             )
-            if (!isOverride) {
+            if (!isOverride && showInheritedTag) {
                 Text(
                     text = stringResource(R.string.gamedetail_per_game_inherited_tag),
                     style = MaterialTheme.typography.labelSmall,

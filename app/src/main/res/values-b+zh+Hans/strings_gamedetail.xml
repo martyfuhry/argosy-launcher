@@ -163,6 +163,11 @@
 
     <string name="gamedetail_more_options_launch_on_display">在屏幕上启动</string>
     <string name="gamedetail_more_options_launch_on_display_value">屏幕 %1$d</string>
+    <string name="gamedetail_launch_screen_picker_title">启动屏幕</string>
+    <string name="gamedetail_launch_screen_picker_option">屏幕 %1$d</string>
+    <string name="gamedetail_launch_screen_picker_footer_navigate">导航</string>
+    <string name="gamedetail_launch_screen_picker_footer_launch">启动</string>
+    <string name="gamedetail_launch_screen_picker_footer_cancel">取消</string>
     <string name="gamedetail_more_options_manage_saves">管理已缓存的存档</string>
     <string name="gamedetail_more_options_ratings_status">评分与状态</string>
     <string name="gamedetail_more_options_change_launcher">更改启动器</string>
@@ -313,6 +318,9 @@
     <string name="gamedetail_per_game_memcard_default_auto">自动</string>
     <string name="gamedetail_per_game_display_target_label">显示目标</string>
     <string name="gamedetail_per_game_display_target_inherit">继承（%1$s）</string>
+    <string name="gamedetail_per_game_launch_screen_label">启动屏幕</string>
+    <string name="gamedetail_per_game_launch_screen_value">屏幕 %1$d</string>
+    <string name="gamedetail_per_game_launch_screen_default">默认</string>
     <string name="gamedetail_per_game_extension_label">文件扩展名</string>
     <string name="gamedetail_per_game_extension_inherit">继承（%1$s）</string>
     <string name="gamedetail_per_game_extension_inherit_auto">自动</string>

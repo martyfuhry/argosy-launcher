@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
+data class LaunchScreenOption(val displayId: Int, val number: Int)
+
 data class PickerModalState(
     val showEmulatorPicker: Boolean = false,
     val availableEmulators: List<InstalledEmulator> = emptyList(),
@@ -38,6 +40,10 @@ data class PickerModalState(
     val showDiscPicker: Boolean = false,
     val discPickerOptions: List<DiscOption> = emptyList(),
     val discPickerFocusIndex: Int = 0,
+
+    val showLaunchScreenPicker: Boolean = false,
+    val launchScreenOptions: List<LaunchScreenOption> = emptyList(),
+    val launchScreenFocusIndex: Int = 0,
 
     val showVariantPicker: Boolean = false,
     val variantPickerOptions: List<com.nendo.argosy.data.emulator.VariantOption> = emptyList(),
@@ -65,7 +71,11 @@ data class PickerModalState(
 ) {
     val hasAnyPickerOpen: Boolean
         get() = showEmulatorPicker || showCorePicker || showSteamLauncherPicker ||
-                showDiscPicker || showVariantPicker || showFilePicker || showCoverPicker
+                showDiscPicker || showLaunchScreenPicker || showVariantPicker || showFilePicker ||
+                showCoverPicker
+
+    val focusedLaunchScreen: LaunchScreenOption?
+        get() = launchScreenOptions.getOrNull(launchScreenFocusIndex)
 
     val visibleFilePickerRows: List<com.nendo.argosy.data.model.FilePickerRow>
         get() = filePickerRows.visibleWithCollapsed(filePickerCollapsed)
@@ -296,6 +306,38 @@ class PickerModalDelegate @Inject constructor(
     }
 
     // endregion
+
+    fun showLaunchScreenPicker(options: List<LaunchScreenOption>, focusIndex: Int) {
+        if (options.isEmpty()) return
+        _state.update {
+            it.copy(
+                showLaunchScreenPicker = true,
+                launchScreenOptions = options,
+                launchScreenFocusIndex = focusIndex.coerceIn(0, options.lastIndex)
+            )
+        }
+        soundManager.play(SoundType.OPEN_MODAL)
+    }
+
+    fun dismissLaunchScreenPicker() {
+        if (!_state.value.showLaunchScreenPicker) return
+        _state.update {
+            it.copy(
+                showLaunchScreenPicker = false,
+                launchScreenOptions = emptyList(),
+                launchScreenFocusIndex = 0
+            )
+        }
+        soundManager.play(SoundType.CLOSE_MODAL)
+    }
+
+    fun moveLaunchScreenFocus(delta: Int) {
+        _state.update { state ->
+            val maxIndex = (state.launchScreenOptions.size - 1).coerceAtLeast(0)
+            val newIndex = computeWrappedIndex(state.launchScreenFocusIndex, delta, maxIndex, menuWrapMode)
+            state.copy(launchScreenFocusIndex = newIndex)
+        }
+    }
 
     // region Disc Picker
 

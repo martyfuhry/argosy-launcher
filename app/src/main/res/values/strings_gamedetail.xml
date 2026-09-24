@@ -514,6 +514,16 @@
     <string name="gamedetail_more_options_launch_on_display">Launch On Display</string>
     <!-- Value of that row. %1$d is the number shown on the screen itself. -->
     <string name="gamedetail_more_options_launch_on_display_value">Screen %1$d</string>
+    <!-- Heading of the chooser that row opens. Noun phrase: the screen the game starts on. -->
+    <string name="gamedetail_launch_screen_picker_title">Launch Screen</string>
+    <!-- Row in that chooser. %1$d is the number shown on the screen itself. -->
+    <string name="gamedetail_launch_screen_picker_option">Screen %1$d</string>
+    <!-- Footer hint in that chooser. Verb: moves between the screens. -->
+    <string name="gamedetail_launch_screen_picker_footer_navigate">Navigate</string>
+    <!-- Footer hint in that chooser. Verb: starts the game on the focused screen. -->
+    <string name="gamedetail_launch_screen_picker_footer_launch">Launch</string>
+    <!-- Footer hint in that chooser. Verb: closes it without starting the game. -->
+    <string name="gamedetail_launch_screen_picker_footer_cancel">Cancel</string>
     <!-- Row in the game's options menu. Verb phrase: opens the saves and save states kept on this
          device. "Saves" is a noun, plural. -->
     <string name="gamedetail_more_options_manage_saves">Manage Cached Saves</string>
@@ -895,6 +905,14 @@
     <string name="gamedetail_per_game_display_target_label">Display Target</string>
     <!-- Value beside that row when the game follows the platform's choice. %1$s is that choice. -->
     <string name="gamedetail_per_game_display_target_inherit">Inherit (%1$s)</string>
+    <!-- Row label in per-game settings for an Android app on a dual-screen handheld. Noun phrase:
+         the screen the app opens on. -->
+    <string name="gamedetail_per_game_launch_screen_label">Launch Screen</string>
+    <!-- Value beside that row. %1$d is the number shown on the screen itself. -->
+    <string name="gamedetail_per_game_launch_screen_value">Screen %1$d</string>
+    <!-- Value beside that row when no screen has been chosen and the app opens where any launch
+         does. Noun. -->
+    <string name="gamedetail_per_game_launch_screen_default">Default</string>
     <!-- Row label in per-game settings. Noun phrase: which of the game's file types to launch when
          several are present. -->
     <string name="gamedetail_per_game_extension_label">File Extension</string>

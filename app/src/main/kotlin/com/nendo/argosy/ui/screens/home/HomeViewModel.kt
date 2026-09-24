@@ -95,6 +95,7 @@ class HomeViewModel @Inject constructor(
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
     private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val appLaunchScreenSettings: com.nendo.argosy.ui.screens.common.AppLaunchScreenSettings,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
     private val notificationManager: NotificationManager,
@@ -1838,7 +1839,7 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun playGameOnDisplay(gameId: Long, displayId: Int) {
+    private fun playGameOnDisplay(gameId: Long, displayId: Int, isAndroidApp: Boolean) {
         videoPreviewDelegate.deactivateVideoPreview()
         saveCurrentState()
         gameLaunchDelegate.launchGame(
@@ -1848,6 +1849,7 @@ class HomeViewModel @Inject constructor(
             overrideDisplayId = displayId,
             onLaunch = { intent ->
                 viewModelScope.launch {
+                    if (isAndroidApp) appLaunchScreenSettings.store(gameId, displayId)
                     val options = emulatorLaunchTargetResolver.launchOptionsFor(
                         gameId = gameId,
                         intent = intent,
@@ -1960,7 +1962,7 @@ class HomeViewModel @Inject constructor(
             }
             is GameMenuAction.PlayOnDisplay -> {
                 toggleGameMenu()
-                playGameOnDisplay(action.gameId, action.displayId)
+                playGameOnDisplay(action.gameId, action.displayId, action.isAndroidApp)
             }
             is GameMenuAction.ToggleFavorite -> toggleFavorite(action.gameId)
             is GameMenuAction.ViewDetails -> {
