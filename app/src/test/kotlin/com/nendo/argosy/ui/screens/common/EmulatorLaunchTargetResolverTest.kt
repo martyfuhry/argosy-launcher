@@ -2,6 +2,7 @@ package com.nendo.argosy.ui.screens.common
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.nendo.argosy.data.emulator.LaunchDisplayPlanner
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
@@ -25,18 +26,19 @@ private const val GAME_ID = 42L
  */
 class EmulatorLaunchTargetResolverTest {
 
-    private val displayAffinityHelper = mockk<DisplayAffinityHelper> {
-        every { getDisplayTargetId(EmulatorDisplayTarget.PRIMARY, rolesSwapped = true) } returns BOTTOM
-        every { getDisplayTargetId(EmulatorDisplayTarget.DEFAULT, any()) } returns null
-    }
     private val emulatorConfigRepository = mockk<EmulatorConfigRepository>()
     private val gameRepository = mockk<GameRepository>()
     private val appLaunchScreenSettings = mockk<AppLaunchScreenSettings>()
+    private val displayAffinityHelper = mockk<DisplayAffinityHelper> {
+        every { getDisplayTargetId(EmulatorDisplayTarget.PRIMARY, rolesSwapped = true) } returns BOTTOM
+        every { getDisplayTargetId(EmulatorDisplayTarget.DEFAULT, any()) } returns null
+        every { gameDisplayId(any(), any(), any()) } answers { secondArg() }
+    }
 
     private val resolver = EmulatorLaunchTargetResolver(
         context = swappedContext(),
         displayAffinityHelper = displayAffinityHelper,
-        emulatorConfigRepository = emulatorConfigRepository,
+        launchDisplayPlanner = LaunchDisplayPlanner(swappedContext(), displayAffinityHelper, emulatorConfigRepository),
         gameRepository = gameRepository,
         appLaunchScreenSettings = appLaunchScreenSettings
     )

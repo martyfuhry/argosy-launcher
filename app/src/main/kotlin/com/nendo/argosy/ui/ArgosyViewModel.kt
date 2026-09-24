@@ -207,6 +207,7 @@ class ArgosyViewModel @Inject constructor(
     private val netplayPreflightChecker: NetplayPreflightChecker,
     private val netplayJoinService: com.nendo.argosy.data.netplay.NetplayJoinService,
     private val launchGameUseCase: LaunchGameUseCase,
+    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
     private val homeLibraryDelegate: com.nendo.argosy.ui.screens.home.delegates.HomeLibraryDelegate,
     private val pendingConflictDao: com.nendo.argosy.data.local.dao.PendingConflictDao,
     private val deepLinkLaunchCoordinator: com.nendo.argosy.ui.deeplink.DeepLinkLaunchCoordinator
@@ -1003,15 +1004,17 @@ class ArgosyViewModel @Inject constructor(
     private val _netplayInviteLaunch = kotlinx.coroutines.flow.MutableSharedFlow<android.content.Intent>(extraBufferCapacity = 4)
     val netplayInviteLaunch: kotlinx.coroutines.flow.SharedFlow<android.content.Intent> = _netplayInviteLaunch
 
-    private val _coreCrashLaunch = kotlinx.coroutines.flow.MutableSharedFlow<android.content.Intent>(extraBufferCapacity = 1)
-    val coreCrashLaunch: kotlinx.coroutines.flow.SharedFlow<android.content.Intent> = _coreCrashLaunch
+    private val _coreCrashLaunch =
+        kotlinx.coroutines.flow.MutableSharedFlow<Pair<android.content.Intent, android.os.Bundle?>>(extraBufferCapacity = 1)
+    val coreCrashLaunch: kotlinx.coroutines.flow.SharedFlow<Pair<android.content.Intent, android.os.Bundle?>> =
+        _coreCrashLaunch
 
     fun launchFromCoreCrash() {
         val gameId = coreCrashController.prompt.value?.gameId ?: return
         coreCrashController.dismiss()
         viewModelScope.launch {
             (launchGameUseCase(gameId = gameId, allowVariantPrompt = false) as? LaunchResult.Success)?.let {
-                _coreCrashLaunch.tryEmit(it.intent)
+                _coreCrashLaunch.tryEmit(it.intent to emulatorLaunchTargetResolver.launchOptionsFor(gameId, it.intent))
             }
         }
     }

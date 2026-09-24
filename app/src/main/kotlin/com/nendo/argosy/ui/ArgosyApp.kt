@@ -690,8 +690,8 @@ fun ArgosyApp(
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.coreCrashLaunch.collect { intent ->
-            context.startActivity(intent)
+        viewModel.coreCrashLaunch.collect { (intent, options) ->
+            context.startActivity(intent, options)
         }
     }
 

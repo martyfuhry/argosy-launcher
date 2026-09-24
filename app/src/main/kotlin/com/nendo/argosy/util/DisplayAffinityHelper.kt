@@ -7,6 +7,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Display
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
+import com.nendo.argosy.domain.model.ScreenLayout
+import com.nendo.argosy.domain.model.ScreenRole
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,6 +23,12 @@ class DisplayAffinityHelper @Inject constructor(
 
     private val physicalDisplays: Array<Display>
         get() = displayManager.displays.filter { it.isPhysicalDisplay() }.toTypedArray()
+
+    /**
+     * Every attached built-in or external panel, whether or not it is switched on right now.
+     */
+    val attachedPanelIds: Set<Int>
+        get() = displayManager.displays.filter { it.isAttachedPanel() }.map { it.displayId }.toSet()
 
     val hasPhysicalSecondaryDisplay: Boolean
         get() = physicalDisplays.size > 1
@@ -46,7 +54,10 @@ class DisplayAffinityHelper @Inject constructor(
         get() = appTargetDisplayId?.takeIf { id -> physicalDisplays.any { it.displayId == id } }
 
     val hasSecondaryDisplay: Boolean
-        get() = dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay
+        get() = dualScreenActive && hasPhysicalSecondaryDisplay
+
+    private val dualScreenActive: Boolean
+        get() = dualScreenEnabled && secondaryDisplayUsable
 
     val secondaryDisplayType: SecondaryDisplayType
         get() {
@@ -67,7 +78,7 @@ class DisplayAffinityHelper @Inject constructor(
     var roleDisplayIds: Pair<Int, Int>? = null
 
     private val attachedIds: Set<Int>
-        get() = physicalDisplays.map { it.displayId }.toSet()
+        get() = attachedPanelIds
 
     private val secondaryDisplayId: Int?
         get() = resolveSecondaryDisplayId(
@@ -126,6 +137,24 @@ class DisplayAffinityHelper @Inject constructor(
             .toBundle()
     }
 
+    /**
+     * The display a game launch goes to, or null to leave it on the launching screen. See
+     * [resolveGameDisplayId] for the rules; [explicitDisplayId] is a screen the player chose.
+     */
+    fun gameDisplayId(drawsSecondScreen: Boolean, explicitDisplayId: Int?, rolesSwapped: Boolean): Int? =
+        resolveGameDisplayId(
+            drawsSecondScreen = drawsSecondScreen,
+            explicitDisplayId = explicitDisplayId,
+            attachedIds = attachedIds,
+            dualScreenActive = dualScreenActive,
+            secondaryDisplayId = resolveSecondaryDisplayId(
+                roleDisplayIds,
+                attachedIds,
+                displayManager.displays.filter { it.isAttachedPanel() }.getOrNull(1)?.displayId
+            ),
+            rolesSwapped = rolesSwapped
+        )
+
     fun getEmulatorDisplayId(rolesSwapped: Boolean): Int =
         if (rolesSwapped) secondaryDisplayId ?: Display.DEFAULT_DISPLAY
         else Display.DEFAULT_DISPLAY
@@ -183,7 +212,8 @@ class DisplayAffinityHelper @Inject constructor(
         overrideDisplayId: Int? = null
     ): Bundle? {
         val appTarget = resolvedAppTarget
-        if (overrideDisplayId == null && !hasSecondaryDisplay && (forEmulator || appTarget == null)) {
+        val placesLaunches = if (forEmulator) dualScreenActive && attachedIds.size > 1 else hasSecondaryDisplay
+        if (overrideDisplayId == null && !placesLaunches && (forEmulator || appTarget == null)) {
             return null
         }
 
@@ -228,11 +258,33 @@ class DisplayAffinityHelper @Inject constructor(
             Display::class.java.getMethod("getType").invoke(this) as? Int
         } catch (_: Exception) { null }
 
-        private fun Display.isPhysicalDisplay(): Boolean {
-            if (state == Display.STATE_OFF) return false
+        private fun Display.isPhysicalDisplay(): Boolean =
+            state != Display.STATE_OFF && isAttachedPanel()
+
+        private fun Display.isAttachedPanel(): Boolean {
             val type = displayType()
             if (type != null) return type == DISPLAY_TYPE_BUILT_IN || type == DISPLAY_TYPE_EXTERNAL
             return flags and Display.FLAG_PRIVATE == 0
+        }
+
+        /**
+         * Whether a launcher holding PRIMARY on [primaryDisplayId] is the swapped arrangement,
+         * the one where the default display's activity hosts the launcher.
+         */
+        fun isSwappedArrangement(primaryDisplayId: Int): Boolean =
+            primaryDisplayId == Display.DEFAULT_DISPLAY
+
+        /**
+         * [layout] with PRIMARY moved to the screen attached as [primaryDisplayId], trading roles
+         * with the screen that held it. Null when that display is not in [keysByDisplayId].
+         */
+        fun layoutWithPrimaryOn(
+            layout: ScreenLayout,
+            keysByDisplayId: Map<Int, String>,
+            primaryDisplayId: Int
+        ): ScreenLayout? {
+            val key = keysByDisplayId[primaryDisplayId] ?: return null
+            return layout.withRole(key, ScreenRole.PRIMARY)
         }
 
         /**
@@ -292,7 +344,35 @@ class DisplayAffinityHelper @Inject constructor(
         }
 
         /**
-         * The display driving input, then the one describing it. [rolesSwapped] exchanges them.
+         * Where a game launch lands. A screen the player chose wins while it is attached. With two
+         * or more panels attached, a game that draws a second screen takes the default display and
+         * leaves the other free for that screen; any other game takes the screen the launcher UI
+         * is not on. Null leaves the launch on the screen it was started from.
+         */
+        internal fun resolveGameDisplayId(
+            drawsSecondScreen: Boolean,
+            explicitDisplayId: Int?,
+            attachedIds: Set<Int>,
+            dualScreenActive: Boolean,
+            secondaryDisplayId: Int?,
+            rolesSwapped: Boolean
+        ): Int? {
+            explicitDisplayId?.takeIf { it in attachedIds }?.let { return it }
+            if (attachedIds.size < 2) return null
+            if (drawsSecondScreen) return Display.DEFAULT_DISPLAY
+            if (!dualScreenActive) return null
+            return resolveLaunchDisplayId(
+                forEmulator = true,
+                overrideDisplayId = null,
+                appTarget = null,
+                secondaryDisplayId = secondaryDisplayId,
+                rolesSwapped = rolesSwapped
+            ) ?: Display.DEFAULT_DISPLAY
+        }
+
+        /**
+         * The display driving input, then the one describing it. [rolesSwapped] means the default
+         * display holds PRIMARY; the stored pair is read in the order that agrees with it.
          */
         internal fun resolveRoleDisplayIds(
             roleDisplayIds: Pair<Int, Int>?,
@@ -303,7 +383,8 @@ class DisplayAffinityHelper @Inject constructor(
             roleDisplayIds
                 ?.takeIf { it.first in attachedIds && it.second in attachedIds }
                 ?.let { (primary, presentation) ->
-                    return if (rolesSwapped) presentation to primary else primary to presentation
+                    val pairSwapped = primary == Display.DEFAULT_DISPLAY
+                    return if (pairSwapped == rolesSwapped) primary to presentation else presentation to primary
                 }
             val secondary = secondaryDisplayId ?: return null
             return if (rolesSwapped) {
