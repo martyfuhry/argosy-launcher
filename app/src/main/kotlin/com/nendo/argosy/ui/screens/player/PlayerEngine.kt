@@ -102,6 +102,7 @@ class PlayerEngine @Inject constructor(
     private fun playbackContext(displayId: Int?): Context {
         if (displayId == null) return context
         if (!displayAffinityHelper.hasSecondaryDisplay) return context
+        if (!displayAffinityHelper.isBuiltInDisplay(displayId)) return context
         return displayAffinityHelper.displayContext(displayId) ?: context
     }
 

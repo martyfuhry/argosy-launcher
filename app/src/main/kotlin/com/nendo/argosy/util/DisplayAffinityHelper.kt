@@ -201,6 +201,9 @@ class DisplayAffinityHelper @Inject constructor(
         return context.createDisplayContext(display)
     }
 
+    fun isBuiltInDisplay(displayId: Int): Boolean =
+        screenCatalog.attachedScreens().any { it.displayId == displayId && it.builtIn }
+
     fun getActivityOptions(
         forEmulator: Boolean,
         rolesSwapped: Boolean = false,
