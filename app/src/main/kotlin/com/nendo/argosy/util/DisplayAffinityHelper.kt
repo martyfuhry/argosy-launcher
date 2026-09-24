@@ -5,9 +5,11 @@ import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.Display
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,8 +25,26 @@ class DisplayAffinityHelper @Inject constructor(
     private val physicalDisplays: Array<Display>
         get() = displayManager.displays.filter { it.isPhysicalDisplay() }.toTypedArray()
 
-    private val attachedPanelIds: Set<Int>
-        get() = displayManager.displays.filter { it.isAttachedPanel() }.map { it.displayId }.toSet()
+    private val attachedPanels: List<Display>
+        get() = displayManager.displays.filter { it.isAttachedPanel() }
+
+    @Volatile
+    private var lastPanelStateChangeAt: Long? = null
+
+    private val panelStates = ConcurrentHashMap<Int, Int>()
+
+    internal var clock: () -> Long = { SystemClock.elapsedRealtime() }
+
+    private val targetablePanels: List<Display>
+        get() {
+            val offAccepted = isWithinPanelWakeWindow(lastPanelStateChangeAt, clock())
+            return attachedPanels.filter { offAccepted || it.state != Display.STATE_OFF }
+        }
+
+    private val hasBuiltInPanelPair: Boolean
+        get() = attachedPanels.getOrNull(1)?.let {
+            it.panelType() == SecondaryDisplayType.BUILT_IN || isKnownDualScreenDevice()
+        } == true
 
     val hasPhysicalSecondaryDisplay: Boolean
         get() = physicalDisplays.size > 1
@@ -71,16 +91,7 @@ class DisplayAffinityHelper @Inject constructor(
         get() = dualScreenEnabled && secondaryDisplayUsable
 
     val secondaryDisplayType: SecondaryDisplayType
-        get() {
-            val secondary = physicalDisplays.getOrNull(1) ?: return SecondaryDisplayType.NONE
-            val type = secondary.displayType()
-            return when {
-                type == DISPLAY_TYPE_EXTERNAL -> SecondaryDisplayType.EXTERNAL
-                type == DISPLAY_TYPE_BUILT_IN -> SecondaryDisplayType.BUILT_IN
-                secondary.flags and Display.FLAG_PRESENTATION != 0 -> SecondaryDisplayType.EXTERNAL
-                else -> SecondaryDisplayType.BUILT_IN
-            }
-        }
+        get() = physicalDisplays.getOrNull(1)?.panelType() ?: SecondaryDisplayType.NONE
 
     /**
      * The displays the stored layout gives the two surface-bearing roles, pushed in whenever the
@@ -104,6 +115,15 @@ class DisplayAffinityHelper @Inject constructor(
     fun largestDisplayId(): Int? =
         pickLargestScreen(screenCatalog.attachedScreens().filter { it.displayId in attachedIds })
             ?.displayId
+
+    /**
+     * The record of a change to [displayId]. A panel switching on or off opens a short window in
+     * which a game launch may still name a panel that reads off, as one does while it wakes.
+     */
+    fun notePanelStateChange(displayId: Int) {
+        val state = displayManager.getDisplay(displayId)?.state ?: return
+        if (panelStates.put(displayId, state) != state) lastPanelStateChangeAt = clock()
+    }
 
     fun registerDisplayListener(
         listener: DisplayManager.DisplayListener,
@@ -147,22 +167,31 @@ class DisplayAffinityHelper @Inject constructor(
 
     /**
      * The display a game launch goes to, or null to leave it on the launching screen. See
-     * [resolveGameDisplayId] for the rules; [explicitDisplayId] is a screen the player chose.
+     * [resolveGameDisplayId] for the rules; [target] is the stored screen pin and
+     * [overrideDisplayId] a screen chosen for this launch alone.
      */
-    fun gameDisplayId(drawsSecondScreen: Boolean, explicitDisplayId: Int?, rolesSwapped: Boolean): Int? {
-        val panels = attachedPanelIds
-        val panelFallback = displayManager.displays.filter { it.isAttachedPanel() }.getOrNull(1)?.displayId
+    fun gameDisplayId(
+        drawsSecondScreen: Boolean,
+        target: EmulatorDisplayTarget,
+        overrideDisplayId: Int?,
+        rolesSwapped: Boolean
+    ): Int? {
+        val panels = targetablePanels
+        val panelIds = panels.map { it.displayId }.toSet()
+        val roles = resolveRoleDisplayIds(
+            roleDisplayIds,
+            panelIds,
+            resolveSecondaryDisplayId(roleDisplayIds, panelIds, panels.getOrNull(1)?.displayId),
+            rolesSwapped
+        )
         return resolveGameDisplayId(
             drawsSecondScreen = drawsSecondScreen,
-            explicitDisplayId = explicitDisplayId,
-            attachedIds = panels,
+            explicitDisplayId = overrideDisplayId
+                ?: resolveDisplayTargetId(target, roles, appScreenDisplayId(rolesSwapped)),
+            attachedIds = panelIds,
+            builtInPanelPair = hasBuiltInPanelPair,
             dualScreenActive = dualScreenActive,
-            presentationDisplayId = resolveRoleDisplayIds(
-                roleDisplayIds,
-                panels,
-                resolveSecondaryDisplayId(roleDisplayIds, panels, panelFallback),
-                rolesSwapped
-            )?.second
+            presentationDisplayId = roles?.second
         )
     }
 
@@ -286,8 +315,10 @@ class DisplayAffinityHelper @Inject constructor(
 
         private val INVERTED_INTERNAL_ORDER_DEVICES = emptyList<String>()
 
+        private const val PANEL_WAKE_WINDOW_MS = 5_000L
+
         fun isKnownDualScreenDevice(): Boolean =
-            KNOWN_DUAL_SCREEN_DEVICES.any { Build.MODEL.contains(it, ignoreCase = true) }
+            KNOWN_DUAL_SCREEN_DEVICES.any { Build.MODEL.orEmpty().contains(it, ignoreCase = true) }
 
         /**
          * Whether this model seats its smaller internal panel above the larger one, against the
@@ -350,6 +381,19 @@ class DisplayAffinityHelper @Inject constructor(
         private fun Display.displayType(): Int? = try {
             Display::class.java.getMethod("getType").invoke(this) as? Int
         } catch (_: Exception) { null }
+
+        private fun Display.panelType(): SecondaryDisplayType {
+            val type = displayType()
+            return when {
+                type == DISPLAY_TYPE_EXTERNAL -> SecondaryDisplayType.EXTERNAL
+                type == DISPLAY_TYPE_BUILT_IN -> SecondaryDisplayType.BUILT_IN
+                flags and Display.FLAG_PRESENTATION != 0 -> SecondaryDisplayType.EXTERNAL
+                else -> SecondaryDisplayType.BUILT_IN
+            }
+        }
+
+        internal fun isWithinPanelWakeWindow(lastChangeAt: Long?, now: Long): Boolean =
+            lastChangeAt != null && (now - lastChangeAt) in 0L until PANEL_WAKE_WINDOW_MS
 
         private fun Display.isPhysicalDisplay(): Boolean =
             state != Display.STATE_OFF && isAttachedPanel()
@@ -417,23 +461,21 @@ class DisplayAffinityHelper @Inject constructor(
         }
 
         /**
-         * Where a game launch lands. A screen the player chose wins while it is attached. With two
-         * or more panels attached, a game that draws a second screen takes the default display and
-         * leaves the other free for that screen; any other game takes the presentation screen,
-         * the one the launcher UI is not on. Null leaves the launch on the screen it was started
-         * from.
+         * Where a game launch lands: a chosen screen while attached, the default display for a
+         * game drawing a second screen on a device with two built-in panels, else the presentation
+         * screen while two screens are in use, or null to leave it where it started.
          */
         internal fun resolveGameDisplayId(
             drawsSecondScreen: Boolean,
             explicitDisplayId: Int?,
             attachedIds: Set<Int>,
+            builtInPanelPair: Boolean,
             dualScreenActive: Boolean,
             presentationDisplayId: Int?
         ): Int? {
             explicitDisplayId?.takeIf { it in attachedIds }?.let { return it }
-            if (attachedIds.size < 2) return null
-            if (drawsSecondScreen) return Display.DEFAULT_DISPLAY
-            if (!dualScreenActive) return null
+            if (drawsSecondScreen && builtInPanelPair) return Display.DEFAULT_DISPLAY
+            if (attachedIds.size < 2 || !dualScreenActive) return null
             return presentationDisplayId ?: Display.DEFAULT_DISPLAY
         }
 

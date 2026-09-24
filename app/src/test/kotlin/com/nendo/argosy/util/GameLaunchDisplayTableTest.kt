@@ -14,6 +14,7 @@ import org.junit.Test
 private const val TOP = 0
 private const val BOTTOM = 4
 private const val DETACHED = 7
+private const val TV = 2
 
 private enum class TargetKind(val className: String?, val packageName: String?, val coreId: String?) {
     DUAL_SCREEN_EMULATOR(null, "org.azahar_emu.azahar.thor", null),
@@ -61,6 +62,7 @@ class GameLaunchDisplayTableTest {
                             drawsSecondScreen = drawsSecondScreen,
                             explicitDisplayId = pin.displayId,
                             attachedIds = attached,
+                            builtInPanelPair = true,
                             dualScreenActive = true,
                             presentationDisplayId = presentation
                         )
@@ -89,6 +91,7 @@ class GameLaunchDisplayTableTest {
                         drawsSecondScreen = drawsSecondScreen,
                         explicitDisplayId = pinned,
                         attachedIds = attached,
+                        builtInPanelPair = true,
                         dualScreenActive = true,
                         presentationDisplayId = roles.second
                     )
@@ -105,6 +108,7 @@ class GameLaunchDisplayTableTest {
             drawsSecondScreen = true,
             explicitDisplayId = null,
             attachedIds = attached,
+            builtInPanelPair = true,
             dualScreenActive = false,
             presentationDisplayId = BOTTOM
         )
@@ -118,8 +122,39 @@ class GameLaunchDisplayTableTest {
             drawsSecondScreen = false,
             explicitDisplayId = null,
             attachedIds = attached,
+            builtInPanelPair = true,
             dualScreenActive = false,
             presentationDisplayId = BOTTOM
+        )
+
+        assertNull(resolved)
+    }
+
+    @Test
+    fun `a handheld with a TV attached sends a dual-screen game to the presentation screen`() {
+        for (presentation in listOf(TOP, TV)) {
+            val resolved = resolveGameDisplayId(
+                drawsSecondScreen = true,
+                explicitDisplayId = null,
+                attachedIds = setOf(TOP, TV),
+                builtInPanelPair = false,
+                dualScreenActive = true,
+                presentationDisplayId = presentation
+            )
+
+            assertEquals("presentation=$presentation", presentation, resolved)
+        }
+    }
+
+    @Test
+    fun `a handheld with a TV and dual screen switched off leaves a dual-screen game where it started`() {
+        val resolved = resolveGameDisplayId(
+            drawsSecondScreen = true,
+            explicitDisplayId = null,
+            attachedIds = setOf(TOP, TV),
+            builtInPanelPair = false,
+            dualScreenActive = false,
+            presentationDisplayId = TV
         )
 
         assertNull(resolved)
@@ -132,6 +167,7 @@ class GameLaunchDisplayTableTest {
                 drawsSecondScreen = drawsSecondScreen,
                 explicitDisplayId = null,
                 attachedIds = setOf(TOP),
+                builtInPanelPair = false,
                 dualScreenActive = true,
                 presentationDisplayId = null
             )
