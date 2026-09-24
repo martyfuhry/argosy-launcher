@@ -241,7 +241,7 @@ class SecondaryHomeActivity :
         launchedExternalApp = false
         dsm.notifyUserActivity("companionResume")
         syncFromSessionStore()
-        dsm.onCompanionResumed()
+        dsm.onCompanionResumed(hostDisplayId())
         endSessionIfEmulatorGone()
     }
 
@@ -276,7 +276,7 @@ class SecondaryHomeActivity :
     override fun onStop() {
         super.onStop()
         gamepadInputHandler.resetStickMotion()
-        if (::dsm.isInitialized) dsm.onCompanionPaused()
+        if (::dsm.isInitialized) dsm.onCompanionPaused(hostDisplayId())
     }
 
     override fun finishCompanion() {
@@ -830,7 +830,7 @@ class SecondaryHomeActivity :
             dsm = holder
             initializeCompanion()
             syncFromSessionStore()
-            dsm.onCompanionResumed()
+            dsm.onCompanionResumed(hostDisplayId())
             endSessionIfEmulatorGone()
         }
     }
