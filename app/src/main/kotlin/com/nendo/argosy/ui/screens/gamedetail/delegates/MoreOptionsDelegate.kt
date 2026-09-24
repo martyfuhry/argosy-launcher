@@ -58,6 +58,10 @@ class MoreOptionsDelegate @Inject constructor(
     fun resolveOptionAction(context: MoreOptionsContext): MoreOptionAction? =
         buildMoreOptions(context).getOrNull(_state.value.moreOptionsFocusIndex)
 
+    fun setLaunchDisplayIndex(index: Int) {
+        _state.update { it.copy(launchDisplayIndex = index.coerceAtLeast(0)) }
+    }
+
     fun cycleLaunchDisplay(delta: Int, displayCount: Int) {
         if (displayCount <= 1) return
         _state.update { it.copy(launchDisplayIndex = (it.launchDisplayIndex + delta).mod(displayCount)) }
