@@ -79,7 +79,8 @@ class SteamLibraryManager @Inject constructor(
     private val steamIgdbResolver: dagger.Lazy<com.nendo.argosy.data.repository.SteamIgdbResolver>,
     private val steamContentManager: dagger.Lazy<SteamContentManager>,
     private val preferencesRepository: com.nendo.argosy.data.preferences.UserPreferencesRepository,
-    private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
+    private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository,
+    private val steamLibraryRepair: dagger.Lazy<SteamLibraryRepair>
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncMutex = Mutex()
@@ -395,6 +396,8 @@ class SteamLibraryManager @Inject constructor(
                 Log.d(TAG, "Enrichment already in progress, skipping")
             } else {
                 enrichmentJob = scope.launch {
+                    steamLibraryRepair.get().restoreSources()
+                    steamLibraryRepair.get().repairCovers()
                     enrichIncompleteGames()
                     steamIgdbResolver.get().requestResolutionForUnresolved(force = wasForceSync)
                 }

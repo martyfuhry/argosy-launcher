@@ -111,6 +111,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var romMRepository: RomMRepository
     @Inject lateinit var gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader
     @Inject lateinit var documentHighlightStore: com.nendo.argosy.data.repository.DocumentHighlightStore
+    @Inject lateinit var steamLibraryRepair: com.nendo.argosy.data.steam.SteamLibraryRepair
     @Inject lateinit var jellyfinConnectionManager: com.nendo.argosy.data.remote.jellyfin.JellyfinConnectionManager
     @Inject lateinit var preferencesRepository: UserPreferencesRepository
     @Inject lateinit var syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
@@ -840,6 +841,7 @@ class MainActivity : ComponentActivity() {
             if (storeSync.configured) {
                 Log.i(TAG, "GameNative store sync: ${storeSync.results}")
             }
+            lifecycleScope.launch { steamLibraryRepair.repairCovers() }
 
             if (shouldInitializeScreenCapture(prefs)) {
                 if (screenCaptureManager.hasPermission.value && !screenCaptureManager.isCapturing.value) {

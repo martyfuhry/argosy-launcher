@@ -87,7 +87,8 @@ class GameNativeStoreSync @Inject constructor(
     private val imageCacheManager: ImageCacheManager,
     private val storagePrefs: StoragePreferencesRepository,
     private val preferencesRepository: UserPreferencesRepository,
-    private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
+    private val syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository,
+    private val steamLibraryRepair: com.nendo.argosy.data.steam.SteamLibraryRepair
 ) {
     private val httpClient by lazy {
         OkHttpClient.Builder()
@@ -109,6 +110,7 @@ class GameNativeStoreSync @Inject constructor(
 
     suspend fun scan(): ScanSummary = withContext(Dispatchers.IO) {
         storagePrefs.migrateLegacyGameNativeSyncDir()
+        steamLibraryRepair.restoreSources()
         val dirs = storagePrefs.preferences.first().gameNativeSyncDirs
         if (dirs.isEmpty()) return@withContext ScanSummary(emptyMap())
 

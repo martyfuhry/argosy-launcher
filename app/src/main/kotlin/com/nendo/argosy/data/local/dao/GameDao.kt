@@ -16,6 +16,9 @@ import java.time.Instant
 
 const val SHOWCASE_COVER_LIMIT = 250
 
+private const val INSTALLED_SQL =
+    "(localPath IS NOT NULL OR (steamLauncher IS NOT NULL AND steamLauncher != '${GameEntity.LAUNCHER_UNSPECIFIED}'))"
+
 data class PlatformGameCount(
     val platformId: Long,
     val gameCount: Int
@@ -57,8 +60,8 @@ interface GameDao {
         AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         ORDER BY
             CASE
-                WHEN localPath IS NOT NULL AND isFavorite = 1 THEN 0
-                WHEN localPath IS NOT NULL THEN 1
+                WHEN $INSTALLED_SQL AND isFavorite = 1 THEN 0
+                WHEN $INSTALLED_SQL THEN 1
                 WHEN isFavorite = 1 THEN 2
                 ELSE 3
             END,
@@ -77,8 +80,8 @@ interface GameDao {
         AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         ORDER BY
             CASE
-                WHEN localPath IS NOT NULL AND isFavorite = 1 THEN 0
-                WHEN localPath IS NOT NULL THEN 1
+                WHEN $INSTALLED_SQL AND isFavorite = 1 THEN 0
+                WHEN $INSTALLED_SQL THEN 1
                 WHEN isFavorite = 1 THEN 2
                 ELSE 3
             END,
@@ -97,8 +100,8 @@ interface GameDao {
         AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         ORDER BY
             CASE
-                WHEN localPath IS NOT NULL AND isFavorite = 1 THEN 0
-                WHEN localPath IS NOT NULL THEN 1
+                WHEN $INSTALLED_SQL AND isFavorite = 1 THEN 0
+                WHEN $INSTALLED_SQL THEN 1
                 WHEN isFavorite = 1 THEN 2
                 ELSE 3
             END,
@@ -443,6 +446,24 @@ interface GameDao {
 
     @Query("SELECT * FROM games WHERE steamAppId = :steamAppId")
     suspend fun getBySteamAppId(steamAppId: Long): GameEntity?
+
+    @Query(
+        """
+        UPDATE games SET source = 'STEAM'
+        WHERE platformId = :steamPlatformId AND steamAppId IS NOT NULL
+          AND rommId IS NULL AND source = 'ROMM_REMOTE'
+        """
+    )
+    suspend fun repairSteamSources(steamPlatformId: Long): Int
+
+    @Query(
+        """
+        SELECT * FROM games
+        WHERE platformId = :steamPlatformId AND steamAppId IS NOT NULL
+          AND (coverPath IS NULL OR coverPath LIKE 'http%')
+        """
+    )
+    suspend fun getSteamGamesWithUncachedCovers(steamPlatformId: Long): List<GameEntity>
 
     @Query("SELECT * FROM games WHERE steamAppId IS NOT NULL")
     suspend fun getAllWithSteamAppId(): List<GameEntity>
