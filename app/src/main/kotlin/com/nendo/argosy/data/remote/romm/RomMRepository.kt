@@ -103,9 +103,16 @@ class RomMRepository @Inject constructor(
 
     fun buildResourceUrlPublic(path: String?): String? = apiClient.buildResourceUrl(path)
 
-    suspend fun openResource(url: String): okhttp3.ResponseBody? = runCatching {
-        apiClient.api?.downloadRaw(url)?.takeIf { it.isSuccessful }?.body()
-    }.getOrNull()
+    /**
+     * The body behind [url] fetched with the RomM session, or null when the fetch fails or [url]
+     * is not on the connected server, so the session token never reaches another host.
+     */
+    suspend fun openResource(url: String): okhttp3.ResponseBody? {
+        if (!apiClient.isSameRommHost(url)) return null
+        return runCatching {
+            apiClient.api?.downloadRaw(url)?.takeIf { it.isSuccessful }?.body()
+        }.getOrNull()
+    }
 
     suspend fun getDocumentProgress(romId: Long, fileId: Long): RomMDocumentProgress? =
         runCatching {
