@@ -51,9 +51,11 @@ import com.nendo.argosy.hardware.FocusDirectorActivity
 import com.nendo.argosy.hardware.SecondaryHomeActivity
 import com.nendo.argosy.hardware.withLiveQuickActionState
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
+import com.nendo.argosy.ui.dualscreen.HostHandoff
 import com.nendo.argosy.util.DisplayAffinityHelper
 import com.nendo.argosy.util.SecondaryDisplayType
 import kotlinx.coroutines.CoroutineScope
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import kotlinx.coroutines.Dispatchers
@@ -912,6 +914,12 @@ class DualScreenManager(
         get() = displayAffinityHelper.secondaryDisplayType == SecondaryDisplayType.EXTERNAL
 
     var onRoleSwapped: ((Boolean) -> Unit)? = null
+
+    /**
+     * The hosting launcher's navigation back stack, carried to the other screen's launcher when a
+     * role change moves PRIMARY there.
+     */
+    val navHandoff = HostHandoff<Bundle>()
 
     /**
      * What a press on the companion display feels and sounds like. That screen routes its own key
@@ -2132,6 +2140,7 @@ class DualScreenManager(
     }
 
     private fun commitRoleSwap(newSwapped: Boolean) {
+        navHandoff.capture(forSwapped = newSwapped)
         _isRolesSwapped.value = newSwapped
         sessionStateStore.setRolesSwapped(newSwapped)
         mediaPlayerDisplayId = null

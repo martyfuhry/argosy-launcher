@@ -132,6 +132,14 @@ fun ArgosyApp(
     val context = LocalContext.current
     val activity = context as? com.nendo.argosy.MainActivity
     val dsm = remember { com.nendo.argosy.DualScreenManagerHolder.instance }
+    remember(navController) {
+        dsm?.let { it.navHandoff.claim(it.isRolesSwapped.value) }?.let(navController::restoreState)
+    }
+    DisposableEffect(navController, dsm) {
+        val navStateSource: () -> android.os.Bundle? = { navController.saveState() }
+        dsm?.navHandoff?.attach(navStateSource)
+        onDispose { dsm?.navHandoff?.detach(navStateSource) }
+    }
 
     val companionActive by dsm?.isCompanionActive?.collectAsState()
         ?: remember { mutableStateOf(false) }
