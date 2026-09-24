@@ -46,7 +46,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -101,8 +100,7 @@ fun SaveSyncScreen(
     val uiState by viewModel.uiState.collectAsState()
     val forceCheck by viewModel.forceCheckStatus.collectAsState()
     val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
+    val topMarginPx = with(LocalDensity.current) { Dimens.spacingLg.roundToPx() }
 
     LaunchedEffect(
         uiState.focusedIndex,
@@ -111,36 +109,14 @@ fun SaveSyncScreen(
         uiState.gameRows.size
     ) {
         if (uiState.allRows.isEmpty()) return@LaunchedEffect
-        val info = listState.layoutInfo
-        if (info.totalItemsCount == 0) {
-            android.util.Log.d("SaveSyncScroll", "skipped: layout not measured yet (totalItemsCount=0)")
-            return@LaunchedEffect
-        }
+        if (listState.layoutInfo.totalItemsCount == 0) return@LaunchedEffect
 
         if (uiState.focusedIndex == 0) {
-            android.util.Log.d("SaveSyncScroll", "focusedIndex=0 -> animateScrollToItem(0)")
             listState.animateScrollToItem(0)
             return@LaunchedEffect
         }
 
-        val target = uiState.lazyIndexForFocused()
-        val viewportHeight = info.viewportEndOffset - info.viewportStartOffset
-        val visibleItem = info.visibleItemsInfo.firstOrNull { it.index == target }
-        val itemSize = visibleItem?.size ?: 0
-        val visibleSummary = info.visibleItemsInfo.joinToString(prefix = "[", postfix = "]") {
-            "${it.index}@${it.offset}(${it.size})"
-        }
-
-        val centerOffset = -((viewportHeight - itemSize) / 2).coerceAtLeast(0)
-        android.util.Log.d(
-            "SaveSyncScroll",
-            "tick focusedIndex=${uiState.focusedIndex} -> lazyIndex=$target " +
-                "attn=${uiState.attentionRows.size} prog=${uiState.inProgressRows.size} games=${uiState.gameRows.size} " +
-                "viewport=${viewportHeight} itemSize=$itemSize offset=$centerOffset " +
-                "density=${density.density} screenDp=${configuration.screenWidthDp}x${configuration.screenHeightDp} " +
-                "visible=$visibleSummary"
-        )
-        listState.animateScrollToItem(target, centerOffset)
+        listState.animateScrollToItem(uiState.lazyIndexForFocused(), -topMarginPx)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
