@@ -229,8 +229,11 @@ class PlayerViewModel @Inject constructor(
             title = args.title,
             subtitle = args.subtitle,
             videoScale = carried.videoScale,
-            volumeStep = carried.volumeStep
+            volumeStep = carried.volumeStep,
+            sessionQuality = carried.sessionQuality,
+            sessionChoices = carried.sessionChoices
         )
+        tracks.resetForItem()
         startJob = viewModelScope.launch {
             authorizationHeader = engine.authorizationHeader()
             val prefs = negotiator.readPreferences()
@@ -245,7 +248,7 @@ class PlayerViewModel @Inject constructor(
                     chapters = detail.chapters,
                     trickplay = detail.trickplay,
                     trickplayAuthHeader = authorizationHeader,
-                    burnInImageSubtitles = prefs.burnInImageSubtitles,
+                    burnInImageSubtitles = it.sessionChoices.burnInImageSubtitles ?: prefs.burnInImageSubtitles,
                     confirmPlayerExit = prefs.confirmPlayerExit,
                     isWatched = detail.isWatched,
                     isEpisode = detail.isEpisode,
@@ -444,6 +447,7 @@ class PlayerViewModel @Inject constructor(
         }
         playbackTracker.onPlaybackStarted(playback.itemId, _uiState.value.title)
         mediaSessionOpen = true
+        if (!playback.isLocalFile) tracks.adoptSessionChoices()
         playbackStartPositionMs = startPositionMs
         completionHandled = false
         startPositionTicker()

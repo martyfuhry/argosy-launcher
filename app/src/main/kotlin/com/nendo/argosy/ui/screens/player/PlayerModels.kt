@@ -184,6 +184,39 @@ sealed class PlaybackNegotiation {
 }
 
 /**
+ * The audio, subtitle and burn-in choices a viewer made during one watch session, carried to the
+ * next episode in the same window. Tracks are remembered by language and label, since stream
+ * indexes differ from episode to episode. A null field means the viewer made no choice there.
+ */
+data class PlayerSessionChoices(
+    val audio: PlayerTrackChoice? = null,
+    val subtitle: PlayerSubtitleChoice? = null,
+    val burnInImageSubtitles: Boolean? = null
+) {
+    val isEmpty: Boolean get() = audio == null && subtitle == null
+
+    fun matchAudio(tracks: List<PlayerTrack>): PlayerTrack? = audio?.matchIn(tracks)
+}
+
+data class PlayerTrackChoice(val language: String?, val label: String, val isTextSubtitle: Boolean = false) {
+    fun matchIn(tracks: List<PlayerTrack>): PlayerTrack? {
+        val sameLanguage = tracks.filter { it.language == language }
+        return tracks.firstOrNull { it.label == label && it.language == language }
+            ?: sameLanguage.firstOrNull { it.isTextSubtitle == isTextSubtitle }
+            ?: sameLanguage.firstOrNull()
+    }
+
+    companion object {
+        fun of(track: PlayerTrack) = PlayerTrackChoice(track.language, track.label, track.isTextSubtitle)
+    }
+}
+
+sealed class PlayerSubtitleChoice {
+    data object Off : PlayerSubtitleChoice()
+    data class Track(val choice: PlayerTrackChoice) : PlayerSubtitleChoice()
+}
+
+/**
  * Everything the player draws, in one val-only object.
  *
  * [positionMs] is the committed player position; [scrubTargetMs] is where the user has walked the
@@ -233,6 +266,7 @@ data class PlayerUiState(
     val sourceVideo: PlayerSourceVideo? = null,
     val defaultQuality: PlayerQualityCeilings = PlayerQualityCeilings(),
     val sessionQuality: PlayerQualityCeilings? = null,
+    val sessionChoices: PlayerSessionChoices = PlayerSessionChoices(),
     val qualityDraft: PlayerQualityCeilings? = null,
     val qualityWheelIndex: Int = 0
 ) {

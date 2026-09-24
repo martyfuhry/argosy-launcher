@@ -7,6 +7,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.screens.player.NegotiatedPlayback
 import com.nendo.argosy.ui.screens.player.PlayerEngine
+import com.nendo.argosy.ui.screens.player.PlayerSubtitleChoice
+import com.nendo.argosy.ui.screens.player.PlayerTrackChoice
 import com.nendo.argosy.ui.screens.player.PlayerUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -35,6 +37,7 @@ class PlayerTrackDelegate(
 ) {
 
     private var containerTracksRead = false
+    private var sessionChoicesAdopted = false
 
     /**
      * Called when a new playback opens, because the track list belongs to the stream that is open
@@ -44,10 +47,54 @@ class PlayerTrackDelegate(
         containerTracksRead = false
     }
 
+    /**
+     * Called when a new item starts, so the watch session's choices are matched against its tracks
+     * once they are known.
+     */
+    fun resetForItem() {
+        sessionChoicesAdopted = false
+    }
+
+    /**
+     * Applies the watch session's audio and subtitle choices to the item that just opened, once its
+     * tracks are known.
+     */
+    fun adoptSessionChoices() {
+        if (sessionChoicesAdopted) return
+        val current = state.value
+        val choices = current.sessionChoices
+        if (choices.isEmpty) {
+            sessionChoicesAdopted = true
+            return
+        }
+        if (current.audioTracks.isEmpty() && current.subtitleTracks.isEmpty()) return
+        sessionChoicesAdopted = true
+        val audio = choices.matchAudio(current.audioTracks)?.streamIndex ?: current.selectedAudioStreamIndex
+        val subtitle = when (val choice = choices.subtitle) {
+            null -> current.selectedSubtitleStreamIndex
+            PlayerSubtitleChoice.Off -> null
+            is PlayerSubtitleChoice.Track -> choice.choice.matchIn(current.subtitleTracks)
+                ?.takeIf { it.isTextSubtitle || current.burnInImageSubtitles }
+                ?.streamIndex
+                ?: current.selectedSubtitleStreamIndex
+        }
+        if (audio == current.selectedAudioStreamIndex && subtitle == current.selectedSubtitleStreamIndex) return
+        state.update { it.copy(selectedAudioStreamIndex = audio, selectedSubtitleStreamIndex = subtitle) }
+        val playback = playbackOf() ?: return
+        val imageSubtitle = subtitle != null &&
+            current.subtitleTracks.any { it.streamIndex == subtitle && !it.isTextSubtitle }
+        if (playback.isTranscode || imageSubtitle) reload(audio, subtitle) else applySelections()
+    }
+
     fun selectAudioTrack(index: Int) {
         val track = state.value.audioTracks.getOrNull(index) ?: return
         closeOverlay()
-        state.update { it.copy(selectedAudioStreamIndex = track.streamIndex) }
+        state.update {
+            it.copy(
+                selectedAudioStreamIndex = track.streamIndex,
+                sessionChoices = it.sessionChoices.copy(audio = PlayerTrackChoice.of(track))
+            )
+        }
         val playback = playbackOf() ?: return
         if (playback.isTranscode) {
             reload(track.streamIndex, state.value.selectedSubtitleStreamIndex)
@@ -78,7 +125,14 @@ class PlayerTrackDelegate(
         }
         closeOverlay()
         state.update {
-            it.copy(selectedSubtitleStreamIndex = track?.streamIndex, subtitleNotice = null)
+            it.copy(
+                selectedSubtitleStreamIndex = track?.streamIndex,
+                subtitleNotice = null,
+                sessionChoices = it.sessionChoices.copy(
+                    subtitle = track?.let { chosen -> PlayerSubtitleChoice.Track(PlayerTrackChoice.of(chosen)) }
+                        ?: PlayerSubtitleChoice.Off
+                )
+            )
         }
         if (track != null && !track.isTextSubtitle) {
             reload(state.value.selectedAudioStreamIndex, track.streamIndex)
@@ -103,7 +157,13 @@ class PlayerTrackDelegate(
             it.streamIndex == current.selectedSubtitleStreamIndex
         }
         val burnedInTrackActive = selected != null && !selected.isTextSubtitle
-        state.update { it.copy(burnInImageSubtitles = enabled, subtitleNotice = null) }
+        state.update {
+            it.copy(
+                burnInImageSubtitles = enabled,
+                subtitleNotice = null,
+                sessionChoices = it.sessionChoices.copy(burnInImageSubtitles = enabled)
+            )
+        }
         if (!burnedInTrackActive) return
         val keepSubtitle = if (enabled) selected?.streamIndex else null
         if (!enabled) state.update { it.copy(selectedSubtitleStreamIndex = null) }
@@ -119,6 +179,10 @@ class PlayerTrackDelegate(
         val player = playerOf() ?: return
         val playback = playbackOf() ?: return
         if (playback.isLocalFile) readContainerTracks(player)
+        if (!sessionChoicesAdopted) {
+            adoptSessionChoices()
+            if (sessionChoicesAdopted) return
+        }
         val current = state.value
         val audioOrdinal = current.audioTracks
             .firstOrNull { it.streamIndex == current.selectedAudioStreamIndex }
