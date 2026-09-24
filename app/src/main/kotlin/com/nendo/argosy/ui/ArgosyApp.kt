@@ -114,6 +114,7 @@ fun ArgosyApp(
     val uiState by viewModel.uiState.collectAsState()
     val drawerUiState by viewModel.drawerUiState.collectAsState()
     val isDrawerOpen by viewModel.isDrawerOpen.collectAsState()
+    val leftEdgeOpensDrawer by viewModel.leftEdgeOpensDrawer.collectAsState()
     val isQuickSettingsOpen by viewModel.isQuickSettingsOpen.collectAsState()
     val quickSettingsFocusIndex by viewModel.quickSettingsFocusIndex.collectAsState()
     val quickSettingsUiState by viewModel.quickSettingsState.collectAsState()
@@ -836,7 +837,8 @@ fun ArgosyApp(
                         }
                     }
                     GamepadEvent.Left -> {
-                        if (!input.isRepeat &&
+                        if (leftEdgeOpensDrawer &&
+                            !input.isRepeat &&
                             !isDrawerOpen &&
                             !isQuickSettingsOpen &&
                             !quickMenuState.isVisible
