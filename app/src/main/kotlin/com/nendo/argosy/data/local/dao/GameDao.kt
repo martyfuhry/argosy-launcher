@@ -394,7 +394,7 @@ interface GameDao {
         SELECT * FROM games
         WHERE lastPlayed IS NOT NULL
         AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
-        ORDER BY lastPlayed DESC LIMIT :limit
+        ORDER BY lastPlayed DESC, id DESC LIMIT :limit
     """)
     fun observeRecentlyPlayed(ownerUserId: Long?, limit: Int = 20): Flow<List<GameEntity>>
 
@@ -402,7 +402,7 @@ interface GameDao {
         SELECT * FROM games
         WHERE lastPlayed IS NOT NULL
         AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
-        ORDER BY lastPlayed DESC LIMIT :limit
+        ORDER BY lastPlayed DESC, id DESC LIMIT :limit
     """)
     suspend fun getRecentlyPlayed(ownerUserId: Long?, limit: Int = 20): List<GameEntity>
 
@@ -419,7 +419,7 @@ interface GameDao {
         AND (:installedOnly = 0
             OR localPath IS NOT NULL OR source = 'ANDROID_APP'
             OR (source = 'STEAM' AND steamLauncher IS NOT NULL AND steamLauncher != 'native'))
-        ORDER BY addedAt DESC
+        ORDER BY addedAt DESC, id DESC
         LIMIT :limit
     """)
     suspend fun getNewlyAdded(
