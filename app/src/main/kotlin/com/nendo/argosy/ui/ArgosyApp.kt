@@ -189,6 +189,7 @@ fun ArgosyApp(
                             localTimestamp = info.localTimestamp,
                             serverTimestamp = info.serverTimestamp,
                             serverDeviceName = info.serverDeviceName,
+                            serverMatchesLastSync = info.serverMatchesLastSync,
                             onSkipSync = { viewModel.dismissSaveConflict() },
                             onOverwrite = { viewModel.forceUploadConflictSave() }
                         )

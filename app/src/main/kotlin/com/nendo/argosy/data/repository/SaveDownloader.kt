@@ -351,6 +351,10 @@ class SaveDownloader @Inject constructor(
                         saveCacheDao.updateCachedAt(cachedMatch.id, serverTimestamp)
                     }
                     activeSaveRepository.activateCache(gameId, cachedMatch.id)
+                    if (deviceId != null && serverSave.deviceSyncs?.any { it.deviceId == deviceId && it.isCurrent } != true) {
+                        Logger.info(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Cache-hit adopted serverSaveId=${serverSave.id}; confirming device")
+                        confirmDeviceSyncedWithRetry(gameId, serverSave.id)
+                    }
                     Logger.info(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Complete (cache-hit) | path=$preDownloadTargetPath")
                     return@withContext SaveSyncResult.Success(rommSaveId = serverSave.id, serverTimestamp = serverTimestamp)
                 }
@@ -747,7 +751,7 @@ class SaveDownloader @Inject constructor(
                     lastSyncDeviceName = serverSave.originDeviceName() ?: completedUploaderSync?.deviceName ?: syncEntity.lastSyncDeviceName
                 )
             )
-            confirmDeviceSynced(serverSave.id)
+            confirmDeviceSyncedWithRetry(gameId, serverSave.id)
 
             Logger.info(TAG, "[SaveSync] DOWNLOAD gameId=$gameId | Complete | path=$targetPath, channel=$effectiveChannelName")
 
@@ -1094,31 +1098,57 @@ class SaveDownloader @Inject constructor(
         }
     }
 
-    suspend fun confirmDeviceSynced(saveId: Long) {
+    /**
+     * True once the server has answered for [saveId]: acknowledged, or rejected with a 4xx that
+     * a retry cannot change. False when offline, unregistered, or on a transport or 5xx failure.
+     */
+    suspend fun confirmDeviceSynced(saveId: Long): Boolean {
         val client = apiClient.get()
-        val api = client.getApi() ?: return
-        val devId = client.getDeviceId() ?: return
-        try {
+        val api = client.getApi() ?: return false
+        val devId = client.getDeviceId() ?: return false
+        return try {
             val response = api.confirmSaveDownloaded(saveId, RomMDeviceIdRequest(devId))
-            if (response.isSuccessful) {
-                Logger.debug(TAG, "[SaveSync] confirmDeviceSynced | saveId=$saveId | Server acknowledged")
-            } else {
-                Logger.warn(TAG, "[SaveSync] confirmDeviceSynced | saveId=$saveId | HTTP ${response.code()}")
+            when {
+                response.isSuccessful -> {
+                    Logger.debug(TAG, "[SaveSync] confirmDeviceSynced | saveId=$saveId | Server acknowledged")
+                    true
+                }
+                response.code() in 400..499 -> {
+                    Logger.warn(TAG, "[SaveSync] confirmDeviceSynced | saveId=$saveId | HTTP ${response.code()}, not retrying")
+                    true
+                }
+                else -> {
+                    Logger.warn(TAG, "[SaveSync] confirmDeviceSynced | saveId=$saveId | HTTP ${response.code()}")
+                    false
+                }
             }
         } catch (e: Exception) {
             Logger.warn(TAG, "[SaveSync] confirmDeviceSynced | saveId=$saveId | Failed", e)
+            false
+        }
+    }
+
+    /**
+     * Records [saveId] as the game's pending device confirmation, then confirms it; the pending
+     * mark stays until the server answers, so [flushPendingDeviceSync] retries it before launch.
+     */
+    suspend fun confirmDeviceSyncedWithRetry(gameId: Long, saveId: Long) {
+        activeSaveRepository.setPendingDeviceSyncSaveId(gameId, saveId)
+        if (confirmDeviceSynced(saveId)) {
+            activeSaveRepository.setPendingDeviceSyncSaveId(gameId, null)
+        } else {
+            Logger.warn(TAG, "[SaveSync] confirmDeviceSynced | gameId=$gameId, saveId=$saveId | Left pending for retry before next sync")
         }
     }
 
     suspend fun flushPendingDeviceSync(gameId: Long) {
         val pendingSaveId = activeSaveRepository.getPendingDeviceSyncSaveId(gameId) ?: return
         Logger.debug(TAG, "[SaveSync] flushPendingDeviceSync | gameId=$gameId, pendingSaveId=$pendingSaveId")
-        try {
-            confirmDeviceSynced(pendingSaveId)
+        if (confirmDeviceSynced(pendingSaveId)) {
             activeSaveRepository.setPendingDeviceSyncSaveId(gameId, null)
             Logger.debug(TAG, "[SaveSync] flushPendingDeviceSync | gameId=$gameId | Flushed successfully")
-        } catch (e: Exception) {
-            Logger.warn(TAG, "[SaveSync] flushPendingDeviceSync | gameId=$gameId | Failed, will retry later", e)
+        } else {
+            Logger.warn(TAG, "[SaveSync] flushPendingDeviceSync | gameId=$gameId | Failed, will retry later")
         }
     }
 

@@ -499,6 +499,11 @@
     <string name="ui_save_conflict_default_slot">Default Save</string>
     <!-- Body of that prompt. -->
     <string name="ui_save_conflict_message">The server has a newer save. Overwriting will replace it with your local save.</string>
+    <!-- Body of that prompt when the server's copy is the save this device last synced, so the
+         local save continues from it. -->
+    <string name="ui_save_conflict_message_server_older">The server copy is older and part of this save\'s history. Overwriting will bring the server up to date with your local save.</string>
+    <!-- Body of that prompt when both copies changed separately and neither continues the other. -->
+    <string name="ui_save_conflict_message_diverged">The saves have diverged since they last matched. Pick which one wins: overwriting replaces the server\'s save with your local one.</string>
     <!-- Row naming the copy on this device. Adjective. -->
     <string name="ui_save_conflict_source_local">Local</string>
     <!-- Row naming the copy on the server. Noun. -->
@@ -1292,6 +1297,11 @@
     <string name="ui_sync_overlay_post_session_default_slot">Default Save</string>
     <!-- Body under that line. -->
     <string name="ui_sync_overlay_post_session_message">The server has a newer save. Overwriting will replace it with your local save.</string>
+    <!-- Body of that prompt when the server's copy is the save this device last synced, so the
+         local save continues from it. -->
+    <string name="ui_sync_overlay_post_session_message_server_older">The server copy is older and part of this save\'s history. Overwriting will bring the server up to date with your local save.</string>
+    <!-- Body of that prompt when both copies changed separately and neither continues the other. -->
+    <string name="ui_sync_overlay_post_session_message_diverged">The saves have diverged since they last matched. Pick which one wins: overwriting replaces the server\'s save with your local one.</string>
     <!-- Label under the timestamp of the copy on this device. Adjective. -->
     <string name="ui_sync_overlay_post_session_local">Local</string>
     <!-- Label under the timestamp of the copy on the server. Noun. -->

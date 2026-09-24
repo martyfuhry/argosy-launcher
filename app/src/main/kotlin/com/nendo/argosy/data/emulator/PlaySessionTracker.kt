@@ -84,7 +84,8 @@ data class SaveConflictEvent(
     val channelName: String?,
     val localTimestamp: Instant,
     val serverTimestamp: Instant,
-    val serverDeviceName: String? = null
+    val serverDeviceName: String? = null,
+    val serverMatchesLastSync: Boolean = false
 )
 
 @Singleton
@@ -1016,7 +1017,8 @@ class PlaySessionTracker @Inject constructor(
                     channelName = result.channelName,
                     localTimestamp = result.localTimestamp,
                     serverTimestamp = result.serverTimestamp,
-                    serverDeviceName = result.serverDeviceName
+                    serverDeviceName = result.serverDeviceName,
+                    serverMatchesLastSync = result.serverMatchesLastSync
                 )
             }
             is SyncSaveOnSessionEndUseCase.Result.Uploaded -> {
