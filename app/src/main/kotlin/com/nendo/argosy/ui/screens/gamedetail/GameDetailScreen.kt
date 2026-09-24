@@ -87,6 +87,7 @@ import com.nendo.argosy.ui.components.MemcardPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.CorePickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.EmulatorPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.ExtractionFailedModal
+import com.nendo.argosy.ui.screens.gamedetail.modals.LaunchScreenPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.MissingDiscModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.StatusPickerModal
 import com.nendo.argosy.ui.screens.gamedetail.modals.SteamLauncherPickerModal
@@ -1033,6 +1034,7 @@ private fun GameDetailModals(
             onResetSavePath = viewModel::clearPerGameSavePath,
             onMemcardClick = viewModel::openPerGameMemcardPicker,
             onCycleDisplayTarget = viewModel::cyclePerGameDisplayTarget,
+            onCycleLaunchScreen = viewModel::cyclePerGameLaunchScreen,
             onCycleExtension = viewModel::cyclePerGameExtension,
             onPlatformSettings = {
                 viewModel.dismissPerGameSettings()
@@ -1219,6 +1221,20 @@ private fun GameDetailModals(
             focusIndex = pickerState.discPickerFocusIndex,
             onSelectDisc = viewModel.pickerModalDelegate::selectDisc,
             onDismiss = viewModel.pickerModalDelegate::dismissDiscPicker
+        )
+    }
+
+    AnimatedVisibility(
+        visible = pickerState.showLaunchScreenPicker,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        LaunchScreenPickerModal(
+            screens = pickerState.launchScreenOptions,
+            focusIndex = pickerState.launchScreenFocusIndex,
+            rememberedDisplayId = uiState.appLaunchScreenDisplayId,
+            onSelect = viewModel::launchOnDisplay,
+            onDismiss = viewModel::dismissLaunchScreenPicker
         )
     }
 

@@ -194,6 +194,11 @@
 
     <string name="gamedetail_more_options_launch_on_display">Lancer sur l\'écran</string>
     <string name="gamedetail_more_options_launch_on_display_value">Écran %1$d</string>
+    <string name="gamedetail_launch_screen_picker_title">Écran de lancement</string>
+    <string name="gamedetail_launch_screen_picker_option">Écran %1$d</string>
+    <string name="gamedetail_launch_screen_picker_footer_navigate">Naviguer</string>
+    <string name="gamedetail_launch_screen_picker_footer_launch">Lancer</string>
+    <string name="gamedetail_launch_screen_picker_footer_cancel">Annuler</string>
     <string name="gamedetail_more_options_manage_saves">Gérer les sauvegardes en cache</string>
     <string name="gamedetail_more_options_ratings_status">Notes et statut</string>
     <string name="gamedetail_more_options_change_launcher">Changer de lanceur</string>
@@ -369,6 +374,9 @@
     <string name="gamedetail_per_game_memcard_default_auto">Auto</string>
     <string name="gamedetail_per_game_display_target_label">Écran cible</string>
     <string name="gamedetail_per_game_display_target_inherit">Hérité (%1$s)</string>
+    <string name="gamedetail_per_game_launch_screen_label">Écran de lancement</string>
+    <string name="gamedetail_per_game_launch_screen_value">Écran %1$d</string>
+    <string name="gamedetail_per_game_launch_screen_default">Par défaut</string>
     <string name="gamedetail_per_game_extension_label">Extension de fichier</string>
     <string name="gamedetail_per_game_extension_inherit">Hérité (%1$s)</string>
     <string name="gamedetail_per_game_extension_inherit_auto">Auto</string>
