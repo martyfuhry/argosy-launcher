@@ -163,7 +163,7 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     LaunchedEffect(initialSection, initialAction, initialPlatformId) {
-        if (initialSection != null) {
+        if (initialSection != null && !viewModel.resumedSectionPath) {
             val section = SettingsSection.entries.find { it.name.equals(initialSection, ignoreCase = true) }
             if (section == SettingsSection.PLATFORM_DETAIL && initialPlatformId != null) {
                 viewModel.openPlatformDetailById(initialPlatformId)
