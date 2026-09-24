@@ -274,15 +274,14 @@ class MainActivity : ComponentActivity() {
 
         displayAffinityHelper.dualScreenEnabled = sessionStateStore.isDualScreenEnabled()
         displayAffinityHelper.secondaryDisplayUsable = sessionStateStore.isSecondaryDisplayUsable()
-        val resolver = DisplayRoleResolver(displayAffinityHelper, sessionStateStore)
-        val initialSwapped = resolver.isSwapped
+        val existingDsm = DualScreenManagerHolder.instance
+        val initialSwapped = existingDsm?.isRolesSwapped?.value
+            ?: DisplayRoleResolver(displayAffinityHelper, sessionStateStore).isSwapped
         sessionStateStore.setRolesSwapped(initialSwapped)
 
-        val existingDsm = DualScreenManagerHolder.instance
         if (existingDsm != null) {
             dualScreenManager = existingDsm
             dualScreenManager.rebind(this, activityScope)
-            dualScreenManager.setRolesSwapped(initialSwapped)
         } else {
             dualScreenManager = DualScreenManager(
                 context = this,

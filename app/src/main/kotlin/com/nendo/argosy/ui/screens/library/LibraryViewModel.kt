@@ -1880,7 +1880,7 @@ class LibraryViewModel @Inject constructor(
             channelName = channelName,
             onLaunch = { intent ->
                 viewModelScope.launch {
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId)
+                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId, intent)
                     _events.emit(LibraryEvent.LaunchIntent(intent, options))
                 }
             }

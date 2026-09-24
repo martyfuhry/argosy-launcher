@@ -181,16 +181,11 @@ class DualScreenManager(
     private val activityIndependentScope =
         com.nendo.argosy.util.SafeCoroutineScope(Dispatchers.Main, "DualScreenState")
 
-    private var preGameRolesSwapped: Boolean? = null
     private var activityContext: Context = context
     private var lastStateEntries: Pair<Long, List<UnifiedStateEntry>>? = null
 
     private val _isRolesSwapped = MutableStateFlow(initialRolesSwapped)
     val isRolesSwapped: StateFlow<Boolean> = _isRolesSwapped
-
-    fun setRolesSwapped(value: Boolean) {
-        _isRolesSwapped.value = value
-    }
 
     private val _hasPresentationScreen = MutableStateFlow(false)
     val hasPresentationScreen: StateFlow<Boolean> = _hasPresentationScreen
@@ -346,14 +341,27 @@ class DualScreenManager(
     /**
      * Moves the PRIMARY role onto [displayId]. A layout that already matches the live arrangement
      * changes nothing and takes nobody's focus, and a running session keeps the screen it was
-     * launched on until it ends.
+     * launched on until it ends, when the move is made.
      */
     fun setPrimaryDisplayId(displayId: Int) {
         val swapped = displayId == android.view.Display.DEFAULT_DISPLAY
-        if (swapped == _isRolesSwapped.value) return
-        if (sessionStateStore.hasActiveSession()) return
+        if (swapped == _isRolesSwapped.value) {
+            deferredPrimaryDisplayId = null
+            return
+        }
+        if (sessionStateStore.hasActiveSession()) {
+            deferredPrimaryDisplayId = displayId
+            return
+        }
+        deferredPrimaryDisplayId = null
         commitRoleSwap(swapped)
         if (swapped) refocusMain()
+    }
+
+    private var deferredPrimaryDisplayId: Int? = null
+
+    private fun applyDeferredPrimary() {
+        deferredPrimaryDisplayId?.let { setPrimaryDisplayId(it) }
     }
 
     /**
@@ -1755,6 +1763,7 @@ class DualScreenManager(
             }
             eachCompanion { it.onSessionStarted(gameId, isHardcore, channelName) }
         } else {
+            activityIndependentScope.launch { applyDeferredPrimary() }
             if (!_swappedIsGameActive.value) return
             emulatorDisplayId = null
             _swappedIsGameActive.value = false
@@ -1765,13 +1774,7 @@ class DualScreenManager(
             sessionStateStore.clearSession()
             swappedSessionTimer?.stop(appContext)
             swappedSessionTimer = null
-            val savedSwapped = preGameRolesSwapped
-            if (savedSwapped != null) {
-                _isRolesSwapped.value = savedSwapped
-                preGameRolesSwapped = null
-            }
             Handler(Looper.getMainLooper()).post {
-                if (savedSwapped != null) onRoleSwapped?.invoke(savedSwapped)
                 eachCompanion {
                     it.onSessionEnded()
                     it.onRoleSwapped(_isRolesSwapped.value)
@@ -1793,14 +1796,6 @@ class DualScreenManager(
 
     fun onDownloadCompleted(gameId: Long) {
         eachCompanion { it.onDownloadCompleted(gameId) }
-    }
-
-    fun onRoleSwapReceived() {
-        val resolver = com.nendo.argosy.util.DisplayRoleResolver(
-            displayAffinityHelper, sessionStateStore
-        )
-        _isRolesSwapped.value = resolver.isSwapped
-        onRoleSwapped?.invoke(_isRolesSwapped.value)
     }
 
     // --- Modal Operations ---

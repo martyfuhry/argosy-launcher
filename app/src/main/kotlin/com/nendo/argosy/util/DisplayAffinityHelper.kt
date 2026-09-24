@@ -23,6 +23,14 @@ class DisplayAffinityHelper @Inject constructor(
     private val physicalDisplays: Array<Display>
         get() = displayManager.displays.filter { it.isPhysicalDisplay() }.toTypedArray()
 
+    /**
+     * Every attached built-in or external panel, whether or not it is switched on right now. A
+     * game launch places itself against these, since a panel reading off at launch time is usually
+     * one about to wake.
+     */
+    private val attachedPanelIds: Set<Int>
+        get() = displayManager.displays.filter { it.isAttachedPanel() }.map { it.displayId }.toSet()
+
     val hasPhysicalSecondaryDisplay: Boolean
         get() = physicalDisplays.size > 1
 
@@ -47,7 +55,10 @@ class DisplayAffinityHelper @Inject constructor(
         get() = appTargetDisplayId?.takeIf { id -> physicalDisplays.any { it.displayId == id } }
 
     val hasSecondaryDisplay: Boolean
-        get() = dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay
+        get() = dualScreenActive && hasPhysicalSecondaryDisplay
+
+    private val dualScreenActive: Boolean
+        get() = dualScreenEnabled && secondaryDisplayUsable
 
     val secondaryDisplayType: SecondaryDisplayType
         get() {
@@ -118,6 +129,27 @@ class DisplayAffinityHelper @Inject constructor(
         return ActivityOptions.makeBasic()
             .setLaunchDisplayId(displayId)
             .toBundle()
+    }
+
+    /**
+     * The display a game launch goes to, or null to leave it on the launching screen. See
+     * [resolveGameDisplayId] for the rules; [explicitDisplayId] is a screen the player chose.
+     */
+    fun gameDisplayId(drawsSecondScreen: Boolean, explicitDisplayId: Int?, rolesSwapped: Boolean): Int? {
+        val panels = attachedPanelIds
+        val panelFallback = displayManager.displays.filter { it.isAttachedPanel() }.getOrNull(1)?.displayId
+        return resolveGameDisplayId(
+            drawsSecondScreen = drawsSecondScreen,
+            explicitDisplayId = explicitDisplayId,
+            attachedIds = panels,
+            dualScreenActive = dualScreenActive,
+            presentationDisplayId = resolveRoleDisplayIds(
+                roleDisplayIds,
+                panels,
+                resolveSecondaryDisplayId(roleDisplayIds, panels, panelFallback),
+                rolesSwapped
+            )?.second
+        )
     }
 
     fun getEmulatorDisplayId(rolesSwapped: Boolean): Int =
@@ -254,8 +286,10 @@ class DisplayAffinityHelper @Inject constructor(
             Display::class.java.getMethod("getType").invoke(this) as? Int
         } catch (_: Exception) { null }
 
-        private fun Display.isPhysicalDisplay(): Boolean {
-            if (state == Display.STATE_OFF) return false
+        private fun Display.isPhysicalDisplay(): Boolean =
+            state != Display.STATE_OFF && isAttachedPanel()
+
+        private fun Display.isAttachedPanel(): Boolean {
             val type = displayType()
             if (type != null) return type == DISPLAY_TYPE_BUILT_IN || type == DISPLAY_TYPE_EXTERNAL
             return flags and Display.FLAG_PRIVATE == 0
@@ -315,6 +349,27 @@ class DisplayAffinityHelper @Inject constructor(
                 roleDisplayIds?.first
             ).distinct()
             return candidates.firstOrNull { it != occupiedDisplayId } ?: candidates.firstOrNull()
+        }
+
+        /**
+         * Where a game launch lands. A screen the player chose wins while it is attached. With two
+         * or more panels attached, a game that draws a second screen takes the default display and
+         * leaves the other free for that screen; any other game takes the presentation screen,
+         * the one the launcher UI is not on. Null leaves the launch on the screen it was started
+         * from.
+         */
+        internal fun resolveGameDisplayId(
+            drawsSecondScreen: Boolean,
+            explicitDisplayId: Int?,
+            attachedIds: Set<Int>,
+            dualScreenActive: Boolean,
+            presentationDisplayId: Int?
+        ): Int? {
+            explicitDisplayId?.takeIf { it in attachedIds }?.let { return it }
+            if (attachedIds.size < 2) return null
+            if (drawsSecondScreen) return Display.DEFAULT_DISPLAY
+            if (!dualScreenActive) return null
+            return presentationDisplayId ?: Display.DEFAULT_DISPLAY
         }
 
         /**
