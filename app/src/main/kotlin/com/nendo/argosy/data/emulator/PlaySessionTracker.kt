@@ -137,7 +137,12 @@ class PlaySessionTracker @Inject constructor(
             sessionStateStore.clearSession()
         }
 
-        DualScreenManagerHolder.instance?.onSessionChanged(gameId ?: -1L, isHardcore, channelName)
+        DualScreenManagerHolder.instance?.onSessionChanged(
+            gameId ?: -1L,
+            isHardcore,
+            channelName,
+            _activeSession.value?.origin ?: LaunchOrigin.INTERNAL
+        )
     }
 
     private suspend fun clearSessionAndBroadcast() {
