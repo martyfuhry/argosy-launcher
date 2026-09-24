@@ -1,5 +1,7 @@
 package com.nendo.argosy
 
+import android.content.Context
+import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.preferences.DisplayRoleOverride
 import io.mockk.every
 import io.mockk.mockk
@@ -29,6 +31,7 @@ class DualScreenManagerRoleSwapTest {
     private lateinit var preferencesRepository:
         com.nendo.argosy.data.preferences.UserPreferencesRepository
     private lateinit var manager: DualScreenManager
+    private val context = mockk<Context>(relaxed = true)
 
     @Before
     fun setup() {
@@ -156,8 +159,35 @@ class DualScreenManagerRoleSwapTest {
         assertEquals(false, manager.isRolesSwapped.value)
     }
 
+    private fun endSessionWithLayoutWaiting(origin: LaunchOrigin) {
+        manager = newManager(initialRolesSwapped = false)
+        every { sessionStateStore.hasActiveSession() } returns true
+        manager.onSessionChanged(1L, origin = origin)
+        manager.setPrimaryDisplayId(android.view.Display.DEFAULT_DISPLAY)
+
+        every { sessionStateStore.hasActiveSession() } returns false
+        manager.onSessionChanged(-1L)
+        testDispatcher.scheduler.advanceUntilIdle()
+    }
+
+    @Test
+    fun `a layout waiting on an externally launched session moves the launcher without taking focus`() {
+        endSessionWithLayoutWaiting(LaunchOrigin.EXTERNAL)
+
+        assertTrue(manager.isRolesSwapped.value)
+        verify(exactly = 0) { context.startActivity(any(), any()) }
+    }
+
+    @Test
+    fun `a layout waiting on a session the launcher started brings the launcher forward`() {
+        endSessionWithLayoutWaiting(LaunchOrigin.INTERNAL)
+
+        assertTrue(manager.isRolesSwapped.value)
+        verify(exactly = 1) { context.startActivity(any(), any()) }
+    }
+
     private fun newManager(initialRolesSwapped: Boolean = false): DualScreenManager = DualScreenManager(
-        context = mockk(relaxed = true),
+        context = context,
         scope = testScope,
         gameDao = mockk(relaxed = true),
         gameRepository = mockk(relaxed = true),
