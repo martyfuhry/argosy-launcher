@@ -25,9 +25,25 @@ internal data class ReconciledState(
 )
 
 /**
+ * Drops links to server states that are no longer on the server. A rom's own state list is the
+ * authority on which ids are live, so an id missing from it can never be repaired by retrying:
+ * downloads stay blocked and uploads keep failing against a dead object.
+ *
+ * A dropped row keeps its cached file and is queued to be re-created, so the slot is never
+ * resolved by discarding what the player has locally.
+ */
+/**
+ * Whether a downloaded state belongs in the live directory for this launch. The live directory
+ * holds one channel at a time and its file names carry no channel, so loading another channel's
+ * slot there overwrites the active one.
+ */
+internal fun belongsToChannel(stateChannel: String?, activeChannel: String?): Boolean =
+    liveChannelKey(stateChannel) == liveChannelKey(activeChannel)
+
+/**
  * The channel a state is filed under for a launch. A launch without a channel, a state without
  * one, and the literal autosave slot are the one autosave channel, as they are for saves. Other
- * names compare without case because the server round-trips them through a file name.
+ * names compare without case.
  */
 internal fun liveChannelKey(channelName: String?): String {
     val name = channelName.orEmpty().lowercase()
@@ -38,14 +54,6 @@ internal fun liveChannelKey(channelName: String?): String {
         else -> name
     }
 }
-
-/**
- * Whether a downloaded state belongs in the live directory for this launch. The live directory
- * holds one channel at a time and its file names carry no channel, so loading another channel's
- * slot there overwrites the active one.
- */
-internal fun belongsToChannel(stateChannel: String?, activeChannel: String?): Boolean =
-    liveChannelKey(stateChannel) == liveChannelKey(activeChannel)
 
 /**
  * The cached row a server state is measured against when none is linked to it by id: a row with
@@ -59,14 +67,6 @@ internal fun hasUnsentChanges(state: StateCacheEntity): Boolean =
         state.syncStatus == StateCacheEntity.STATUS_PENDING_UPLOAD ||
         state.syncStatus == StateCacheEntity.STATUS_LOCAL_NEWER
 
-/**
- * Drops links to server states that are no longer on the server. A rom's own state list is the
- * authority on which ids are live, so an id missing from it can never be repaired by retrying:
- * downloads stay blocked and uploads keep failing against a dead object.
- *
- * A dropped row keeps its cached file and is queued to be re-created, so the slot is never
- * resolved by discarding what the player has locally.
- */
 internal fun reconcileDeadServerLinks(
     localStates: List<StateCacheEntity>,
     liveServerIds: Set<Long>
@@ -331,11 +331,6 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         placeInLiveDir(cached, "downloaded", romPath, platformSlug, emulatorId, coreId, coreVersion)
     }
 
-    /**
-     * Brings a state that is already cached and current back into the live slot when the slot is
-     * empty or holds something older. A live file the player wrote after the cache was taken, or a
-     * slot the player emptied by choosing a restore point, is left as it is.
-     */
     private suspend fun placeCachedIfLiveStale(
         cached: StateCacheEntity,
         restorePointSelected: Boolean,
