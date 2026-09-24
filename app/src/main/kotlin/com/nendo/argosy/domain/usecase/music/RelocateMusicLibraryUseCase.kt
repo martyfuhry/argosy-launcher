@@ -36,7 +36,8 @@ class RelocateMusicLibraryUseCase @Inject constructor(
             gameFileDao.rewriteLocalPathPrefix(oldPrefix, newPrefix)
             controlsPreferencesRepository.rewriteSoundConfigPathPrefix(oldPrefix, newPrefix)
         }
-        storagePreferences.setMusicStoragePath(target.absolutePath)
+        val isDefault = target.absolutePath == musicDirectoryManager.defaultMusicDir().absolutePath
+        storagePreferences.setMusicStoragePath(if (isDefault) null else target.absolutePath)
         attributionRepository.markDirty(StorageCategory.MUSIC)
     }
 }

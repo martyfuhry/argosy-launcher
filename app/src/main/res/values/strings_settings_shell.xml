@@ -387,6 +387,10 @@
     <!-- LB/RB hint that cycles the platform context on built-in video/controls screens. Noun. -->
     <string name="settings_shell_footer_platform_builtin">Platform</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Reset to Default</string>
+    <!-- Y hint on the Storage page's built-in save and state folder rows: puts the folder back to
+         the internal default. Verb phrase. -->
+    <string name="settings_shell_footer_reset_to_default_storage">Reset to Default</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">Reset to Default</string>
     <string name="settings_shell_footer_sample">Sample</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">Reset to Default</string>
     <!-- LB/RB hint that cycles the platform context on the core options screen. Separate site

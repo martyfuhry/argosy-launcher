@@ -448,8 +448,12 @@ data class AmbientAudioState(
     val currentTrackName: String? = null,
     val playlistEntryCount: Int = 0,
     val musicDirPath: String? = null,
+    val defaultMusicDirPath: String? = null,
     val pendingMusicRelocation: MusicRelocationPrompt? = null
-)
+) {
+    val isCustomMusicLocation: Boolean
+        get() = musicDirPath != null && defaultMusicDirPath != null && musicDirPath != defaultMusicDirPath
+}
 
 data class EmulatorState(
     val platforms: List<PlatformEmulatorConfig> = emptyList(),
@@ -834,6 +838,8 @@ data class PlatformStorageConfig(
     val selectedMemcardPath: String? = null
 ) {
     val canResetSavePath: Boolean get() = isUserSavePathOverride || isEvaluatedSavePath
+
+    val memcardResettable: Boolean get() = selectedMemcardPath != null && !isUserSavePathOverride
 }
 
 data class StorageState(

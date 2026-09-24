@@ -50,6 +50,16 @@ internal class ThemeMusicSectionInput(
         return InputResult.UNHANDLED
     }
 
+    override fun onSecondaryAction(): InputResult {
+        val state = viewModel.uiState.value
+        val item = themeMusicItemAtFocusIndex(state.focusedIndex, layoutState())
+        if (item != ThemeMusicItem.MusicLocation || !state.ambientAudio.isCustomMusicLocation) {
+            return InputResult.UNHANDLED
+        }
+        viewModel.resetMusicLocation()
+        return InputResult.HANDLED
+    }
+
     private fun cycle(direction: Int): InputResult {
         val state = viewModel.uiState.value
         when (themeMusicItemAtFocusIndex(state.focusedIndex, layoutState())) {

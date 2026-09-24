@@ -308,6 +308,8 @@
     <string name="settings_shell_footer_add_shaderstack">Ajouter</string>
     <string name="settings_shell_footer_platform_builtin">Plateforme</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Réinitialiser par défaut</string>
+    <string name="settings_shell_footer_reset_to_default_storage">Réinitialiser par défaut</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">Réinitialiser par défaut</string>
     <string name="settings_shell_footer_sample">Exemple</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">Réinitialiser par défaut</string>
     <string name="settings_shell_footer_platform_coreoptions">Plateforme</string>

@@ -1405,6 +1405,7 @@ class SettingsViewModel @Inject constructor(
     fun openMusicBrowserBgm() = ambientAudioDelegate.openMusicBrowser(viewModelScope)
     fun openMusicLocationPicker() = ambientAudioDelegate.openMusicLocationPicker(viewModelScope)
     fun onMusicLocationSelected(path: String) = ambientAudioDelegate.onMusicLocationSelected(viewModelScope, path)
+    fun resetMusicLocation() = ambientAudioDelegate.resetMusicLocation(viewModelScope)
     fun confirmMusicRelocation() = ambientAudioDelegate.confirmMusicRelocation(viewModelScope)
     fun skipMusicRelocation() = ambientAudioDelegate.skipMusicRelocation(viewModelScope)
     fun cancelMusicRelocation() = ambientAudioDelegate.cancelMusicRelocation()

@@ -297,6 +297,8 @@
     <string name="settings_shell_footer_add_shaderstack">添加</string>
     <string name="settings_shell_footer_platform_builtin">平台</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">恢复默认</string>
+    <string name="settings_shell_footer_reset_to_default_storage">恢复默认</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">恢复默认</string>
     <string name="settings_shell_footer_sample">试听</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">恢复默认</string>
     <string name="settings_shell_footer_platform_coreoptions">平台</string>

@@ -35,8 +35,15 @@ internal class PlatformDetailSectionInput(
                 } else InputResult.UNHANDLED
             }
             PlatformDetailItem.SavePath -> {
-                if (storageConfig?.isUserSavePathOverride == true) {
+                if (storageConfig?.canResetSavePath == true) {
                     viewModel.resetPlatformSavePath(config.platform.id)
+                    InputResult.HANDLED
+                } else InputResult.UNHANDLED
+            }
+            PlatformDetailItem.MemoryCard -> {
+                val emulatorId = config.effectiveEmulatorId
+                if (storageConfig?.memcardResettable == true && emulatorId != null) {
+                    viewModel.resetMemcardSelection(emulatorId)
                     InputResult.HANDLED
                 } else InputResult.UNHANDLED
             }

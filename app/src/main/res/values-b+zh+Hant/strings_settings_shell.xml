@@ -304,6 +304,8 @@
     <string name="settings_shell_footer_add_shaderstack">新增</string>
     <string name="settings_shell_footer_platform_builtin">平台</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">重設為預設值</string>
+    <string name="settings_shell_footer_reset_to_default_storage">重設為預設值</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">重設為預設值</string>
     <string name="settings_shell_footer_sample">試聽</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">重設為預設值</string>
     <string name="settings_shell_footer_platform_coreoptions">平台</string>

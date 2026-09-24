@@ -180,6 +180,27 @@ internal fun createStorageLayoutInfo(state: SettingsUiState): StorageLayoutInfo 
 internal fun storageItemAtFocusIndex(index: Int, info: StorageLayoutInfo): StorageItem? =
     info.layout.itemAtFocusIndex(index, info.state)
 
+internal fun StorageItem.isResettableFolder(state: SettingsUiState): Boolean = when (this) {
+    StorageItem.ImageCache ->
+        state.syncSettings.imageCachePath != null && !state.syncSettings.isImageCacheMigrating
+    StorageItem.MusicLocation -> state.ambientAudio.isCustomMusicLocation
+    StorageItem.BiosFolder -> state.bios.customBiosPath != null && !state.bios.isBiosMigrating
+    StorageItem.BuiltinSavePath -> state.builtinVideo.isCustomSavePath
+    StorageItem.BuiltinStatePath -> state.builtinVideo.isCustomStatePath
+    else -> false
+}
+
+internal fun resetStorageFolder(item: StorageItem, viewModel: SettingsViewModel) {
+    when (item) {
+        StorageItem.ImageCache -> viewModel.resetImageCacheToDefault()
+        StorageItem.MusicLocation -> viewModel.resetMusicLocation()
+        StorageItem.BiosFolder -> viewModel.resetBiosToDefault()
+        StorageItem.BuiltinSavePath -> viewModel.resetBuiltinSavePath()
+        StorageItem.BuiltinStatePath -> viewModel.resetBuiltinStatePath()
+        else -> Unit
+    }
+}
+
 internal fun storageFocusIndexOf(item: StorageItem, info: StorageLayoutInfo): Int =
     info.layout.focusIndexOf(item, info.state)
 
@@ -541,7 +562,9 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     },
                     isFocused = isFocused(item),
                     isEnabled = !syncSettings.isImageCacheMigrating,
-                    onClick = { viewModel.openImageCachePicker() }
+                    onClick = { viewModel.openImageCachePicker() },
+                    showResetButton = item.isResettableFolder(uiState),
+                    onReset = { resetStorageFolder(item, viewModel) }
                 )
             }
 
@@ -551,7 +574,9 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 subtitle = uiState.ambientAudio.musicDirPath?.let { formatStoragePath(it) }
                     ?: stringResource(R.string.settings_storage_music_location_default),
                 isFocused = isFocused(item),
-                onClick = { viewModel.openMusicLocationPicker() }
+                onClick = { viewModel.openMusicLocationPicker() },
+                showResetButton = item.isResettableFolder(uiState),
+                onReset = { resetStorageFolder(item, viewModel) }
             )
 
             StorageItem.BiosFolder -> ActionPreference(
@@ -565,7 +590,9 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 },
                 isFocused = isFocused(item),
                 isEnabled = !uiState.bios.isBiosMigrating,
-                onClick = { viewModel.openBiosFolderPicker() }
+                onClick = { viewModel.openBiosFolderPicker() },
+                showResetButton = item.isResettableFolder(uiState),
+                onReset = { resetStorageFolder(item, viewModel) }
             )
 
             StorageItem.BuiltinSavePath -> ActionPreference(
@@ -577,7 +604,9 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     stringResource(R.string.settings_storage_builtin_save_path_internal)
                 },
                 isFocused = isFocused(item),
-                onClick = { viewModel.openBuiltinSavePathBrowser() }
+                onClick = { viewModel.openBuiltinSavePathBrowser() },
+                showResetButton = item.isResettableFolder(uiState),
+                onReset = { resetStorageFolder(item, viewModel) }
             )
 
             StorageItem.BuiltinStatePath -> ActionPreference(
@@ -589,7 +618,9 @@ fun StorageSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                     stringResource(R.string.settings_storage_builtin_state_path_internal)
                 },
                 isFocused = isFocused(item),
-                onClick = { viewModel.openBuiltinStatePathBrowser() }
+                onClick = { viewModel.openBuiltinStatePathBrowser() },
+                showResetButton = item.isResettableFolder(uiState),
+                onReset = { resetStorageFolder(item, viewModel) }
             )
 
             StorageItem.MaxDownloads -> SliderPreference(

@@ -299,6 +299,8 @@
     <string name="settings_shell_footer_add_shaderstack">जोड़ें</string>
     <string name="settings_shell_footer_platform_builtin">प्लेटफ़ॉर्म</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="settings_shell_footer_reset_to_default_storage">डिफ़ॉल्ट पर रीसेट करें</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="settings_shell_footer_sample">सैंपल</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="settings_shell_footer_platform_coreoptions">प्लेटफ़ॉर्म</string>

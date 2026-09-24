@@ -25,15 +25,11 @@ class MusicDirectoryManager @Inject constructor(
 
     suspend fun resolveMusicDir(): File {
         val override = storagePreferences.preferences.first().musicStoragePath
-        return if (override != null) {
-            File(override)
-        } else {
-            File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
-                "RomM"
-            )
-        }
+        return if (override != null) File(override) else defaultMusicDir()
     }
+
+    fun defaultMusicDir(): File =
+        File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC), "RomM")
 
     suspend fun targetFileFor(
         platformName: String,

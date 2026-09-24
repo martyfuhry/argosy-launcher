@@ -646,7 +646,7 @@ fun PlatformDetailSection(
                         trailingText = if (subtitle != null) value else null,
                         isFocused = isFocused(item),
                         onClick = { viewModel.openMemcardPicker(config) },
-                        showResetButton = selected != null && !isOverridingSavePath,
+                        showResetButton = storageConfig?.memcardResettable == true,
                         onReset = {
                             config.effectiveEmulatorId?.let { viewModel.resetMemcardSelection(it) }
                         }

@@ -3,11 +3,47 @@ package com.nendo.argosy.ui.screens.settings.sections.input
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.ui.screens.settings.SettingsUiState
 import com.nendo.argosy.ui.screens.settings.SettingsViewModel
 import com.nendo.argosy.core.emulator.LibretroSettingDef
 import com.nendo.argosy.ui.screens.settings.libretro.PlatformLibretroSettingsAccessor
 import com.nendo.argosy.ui.screens.settings.libretro.libretroSettingsMaxFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.builtinVideoItemAtFocusIndex
+
+internal enum class BuiltinFolder { SAVE, STATE }
+
+internal data class BuiltinFolderRow(
+    val folder: BuiltinFolder,
+    val platformId: Long?,
+    val resettable: Boolean
+)
+
+internal fun focusedBuiltinFolderRow(state: SettingsUiState): BuiltinFolderRow? {
+    val videoState = state.builtinVideo
+    if (videoState.savePath.isEmpty()) return null
+    val isGlobal = videoState.isGlobalContext
+    val platformContext = videoState.currentPlatformContext
+    val platformSettings = platformContext?.let { state.platformLibretro.platformSettings[it.platformId] }
+    val maxSettingsIndex = libretroSettingsMaxFocusIndex(
+        platformSlug = platformContext?.platformSlug,
+        canEnableBFI = videoState.canEnableBlackFrameInsertion
+    )
+    val resetAllExtra = if (!isGlobal && platformSettings?.hasAnyOverrides() == true) 1 else 0
+    val platformId = if (isGlobal) null else platformContext?.platformId
+    return when (state.focusedIndex) {
+        maxSettingsIndex + 1 + resetAllExtra -> BuiltinFolderRow(
+            folder = BuiltinFolder.SAVE,
+            platformId = platformId,
+            resettable = if (isGlobal) videoState.isCustomSavePath else platformSettings?.savePath != null
+        )
+        maxSettingsIndex + 2 + resetAllExtra -> BuiltinFolderRow(
+            folder = BuiltinFolder.STATE,
+            platformId = platformId,
+            resettable = if (isGlobal) videoState.isCustomStatePath else platformSettings?.statePath != null
+        )
+        else -> null
+    }
+}
 
 internal class BuiltinVideoSectionInput(
     private val viewModel: SettingsViewModel
@@ -19,42 +55,22 @@ internal class BuiltinVideoSectionInput(
 
     override fun onSecondaryAction(): InputResult {
         val state = viewModel.uiState.value
-        val videoState = state.builtinVideo
-        if (videoState.savePath.isEmpty()) return InputResult.UNHANDLED
-        val isGlobal = videoState.isGlobalContext
-        val platformContext = videoState.currentPlatformContext
-        val platformSettings = platformContext?.let { state.platformLibretro.platformSettings[it.platformId] }
-        val hasAnyOverrides = platformSettings?.hasAnyOverrides() == true
-        val maxSettingsIndex = libretroSettingsMaxFocusIndex(
-            platformSlug = platformContext?.platformSlug,
-            canEnableBFI = videoState.canEnableBlackFrameInsertion
-        )
-        val resetAllExtra = if (!isGlobal && hasAnyOverrides) 1 else 0
-        val savePathIndex = maxSettingsIndex + 1 + resetAllExtra
-        val statePathIndex = maxSettingsIndex + 2 + resetAllExtra
-        return when (state.focusedIndex) {
-            savePathIndex -> {
-                if (isGlobal) {
-                    if (videoState.isCustomSavePath) viewModel.resetBuiltinSavePath()
-                } else {
-                    if (platformSettings?.savePath != null) {
-                        platformContext.let { viewModel.resetPlatformBuiltinSavePath(it.platformId) }
-                    }
-                }
-                InputResult.HANDLED
+        val row = focusedBuiltinFolderRow(state) ?: return resetFocusedSettingOverride()
+        if (!row.resettable) return InputResult.HANDLED
+        val platformId = row.platformId
+        when (row.folder) {
+            BuiltinFolder.SAVE -> if (platformId == null) {
+                viewModel.resetBuiltinSavePath()
+            } else {
+                viewModel.resetPlatformBuiltinSavePath(platformId)
             }
-            statePathIndex -> {
-                if (isGlobal) {
-                    if (videoState.isCustomStatePath) viewModel.resetBuiltinStatePath()
-                } else {
-                    if (platformSettings?.statePath != null) {
-                        platformContext.let { viewModel.resetPlatformBuiltinStatePath(it.platformId) }
-                    }
-                }
-                InputResult.HANDLED
+            BuiltinFolder.STATE -> if (platformId == null) {
+                viewModel.resetBuiltinStatePath()
+            } else {
+                viewModel.resetPlatformBuiltinStatePath(platformId)
             }
-            else -> resetFocusedSettingOverride()
         }
+        return InputResult.HANDLED
     }
 
     override fun onConfirm(): InputResult {

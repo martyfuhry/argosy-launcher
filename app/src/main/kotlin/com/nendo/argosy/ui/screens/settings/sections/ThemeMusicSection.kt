@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.R
+import com.nendo.argosy.ui.components.ActionPreference
 import com.nendo.argosy.ui.components.NavigationPreference
 import com.nendo.argosy.ui.components.SliderPreference
 import com.nendo.argosy.ui.components.SwitchPreference
@@ -207,12 +208,14 @@ fun ThemeMusicSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 onClick = { viewModel.openBgmAddMusicBrowser() }
             )
 
-            ThemeMusicItem.MusicLocation -> NavigationPreference(
+            ThemeMusicItem.MusicLocation -> ActionPreference(
                 icon = Icons.Outlined.Folder,
                 title = stringResource(R.string.settings_music_location_title),
                 subtitle = uiState.ambientAudio.musicDirPath ?: "",
                 isFocused = isFocused(item),
-                onClick = { viewModel.openMusicLocationPicker() }
+                onClick = { viewModel.openMusicLocationPicker() },
+                showResetButton = uiState.ambientAudio.isCustomMusicLocation,
+                onReset = { viewModel.resetMusicLocation() }
             )
 
             ThemeMusicItem.BgmShuffle -> SwitchPreference(

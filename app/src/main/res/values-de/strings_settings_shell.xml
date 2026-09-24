@@ -306,6 +306,8 @@
     <string name="settings_shell_footer_add_shaderstack">Hinzufügen</string>
     <string name="settings_shell_footer_platform_builtin">Plattform</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Standard</string>
+    <string name="settings_shell_footer_reset_to_default_storage">Standard</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">Standard</string>
     <string name="settings_shell_footer_sample">Anhören</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">Standard</string>
     <string name="settings_shell_footer_platform_coreoptions">Plattform</string>

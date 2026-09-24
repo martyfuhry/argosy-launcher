@@ -143,7 +143,11 @@ import com.nendo.argosy.ui.screens.settings.sections.ThemeSoundsItem
 import com.nendo.argosy.ui.screens.settings.sections.ThemeSoundsLayoutState
 import com.nendo.argosy.ui.screens.settings.sections.ThemeSoundsSection
 import com.nendo.argosy.ui.screens.settings.sections.themeSoundsItemAtFocusIndex
-import com.nendo.argosy.ui.screens.settings.libretro.libretroSettingsMaxFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.input.focusedBuiltinFolderRow
+import com.nendo.argosy.ui.screens.settings.sections.isResettableFolder
+import com.nendo.argosy.ui.screens.settings.sections.themeMusicItemAtFocusIndex
+import com.nendo.argosy.ui.screens.settings.sections.ThemeMusicItem
+import com.nendo.argosy.ui.screens.settings.sections.ThemeMusicLayoutState
 import com.nendo.argosy.ui.icons.InputIcons
 import com.nendo.argosy.ui.theme.Motion
 import com.nendo.argosy.ui.util.clickableNoFocus
@@ -1729,8 +1733,10 @@ private fun SettingsFooter(
     val addShaderStackHint = stringResource(R.string.settings_shell_footer_add_shaderstack)
     val platformBuiltinHint = stringResource(R.string.settings_shell_footer_platform_builtin)
     val resetToDefaultBuiltinVideoHint = stringResource(R.string.settings_shell_footer_reset_to_default_builtinvideo)
+    val resetToDefaultStorageHint = stringResource(R.string.settings_shell_footer_reset_to_default_storage)
     val sampleHint = stringResource(R.string.settings_shell_footer_sample)
     val resetToDefaultThemeSoundsHint = stringResource(R.string.settings_shell_footer_reset_to_default_themesounds)
+    val resetToDefaultThemeMusicHint = stringResource(R.string.settings_shell_footer_reset_to_default_thememusic)
     val platformCoreOptionsHint = stringResource(R.string.settings_shell_footer_platform_coreoptions)
     val resetToDefaultCoreOptionsHint = stringResource(R.string.settings_shell_footer_reset_to_default_coreoptions)
     val forceSyncHint = stringResource(R.string.settings_shell_footer_force_sync)
@@ -1793,18 +1799,8 @@ private fun SettingsFooter(
             add(InputButton.LB_RB to platformBuiltinHint)
         }
         if (uiState.currentSection == SettingsSection.BUILTIN_VIDEO &&
-            uiState.builtinVideo.isGlobalContext &&
-            uiState.builtinVideo.savePath.isNotEmpty()) {
-            val videoState = uiState.builtinVideo
-            val settingsMax = libretroSettingsMaxFocusIndex(
-                platformSlug = null,
-                canEnableBFI = videoState.canEnableBlackFrameInsertion
-            )
-            val onSavePath = uiState.focusedIndex == settingsMax + 1
-            val onStatePath = uiState.focusedIndex == settingsMax + 2
-            if ((onSavePath && videoState.isCustomSavePath) || (onStatePath && videoState.isCustomStatePath)) {
-                add(InputButton.Y to resetToDefaultBuiltinVideoHint)
-            }
+            focusedBuiltinFolderRow(uiState)?.resettable == true) {
+            add(InputButton.Y to resetToDefaultBuiltinVideoHint)
         }
         if (customFrameFocused) {
             add(InputButton.Y to removeFrameHint)
@@ -1818,6 +1814,13 @@ private fun SettingsFooter(
                     add(InputButton.Y to resetToDefaultThemeSoundsHint)
                 }
             }
+        }
+        if (uiState.currentSection == SettingsSection.THEME_MUSIC &&
+            uiState.ambientAudio.isCustomMusicLocation &&
+            themeMusicItemAtFocusIndex(uiState.focusedIndex, ThemeMusicLayoutState.from(uiState)) ==
+            ThemeMusicItem.MusicLocation
+        ) {
+            add(InputButton.Y to resetToDefaultThemeMusicHint)
         }
         if (uiState.currentSection == SettingsSection.CORE_OPTIONS &&
             uiState.coreOptions.availablePlatforms.isNotEmpty()) {
@@ -1853,6 +1856,13 @@ private fun SettingsFooter(
         }
         if (uiState.currentSection == SettingsSection.STORAGE) {
             add(InputButton.X to refreshHint)
+            val storageFocus = com.nendo.argosy.ui.screens.settings.sections.storageItemAtFocusIndex(
+                uiState.focusedIndex,
+                com.nendo.argosy.ui.screens.settings.sections.createStorageLayoutInfo(uiState)
+            )
+            if (storageFocus?.isResettableFolder(uiState) == true) {
+                add(InputButton.Y to resetToDefaultStorageHint)
+            }
         }
         if (uiState.currentSection == SettingsSection.STORAGE_GAMES) {
             add(InputButton.X to sortHint)
@@ -1913,8 +1923,9 @@ private fun SettingsFooter(
             }
             val canReset = when (focusedItem) {
                 is PlatformDetailItem.RomPath -> storageConfig?.customRomPath != null
-                is PlatformDetailItem.SavePath -> storageConfig?.isUserSavePathOverride == true
+                is PlatformDetailItem.SavePath -> storageConfig?.canResetSavePath == true
                 is PlatformDetailItem.StatePath -> storageConfig?.isUserStatePathOverride == true
+                is PlatformDetailItem.MemoryCard -> storageConfig?.memcardResettable == true
                 else -> false
             }
             if (canReset) {

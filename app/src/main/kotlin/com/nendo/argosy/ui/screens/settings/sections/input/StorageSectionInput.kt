@@ -7,6 +7,8 @@ import com.nendo.argosy.ui.screens.settings.SettingsViewModel
 import com.nendo.argosy.ui.screens.settings.sections.StorageItem
 import com.nendo.argosy.ui.screens.settings.sections.StorageLayoutInfo
 import com.nendo.argosy.ui.screens.settings.sections.createStorageLayoutInfo
+import com.nendo.argosy.ui.screens.settings.sections.isResettableFolder
+import com.nendo.argosy.ui.screens.settings.sections.resetStorageFolder
 import com.nendo.argosy.ui.screens.settings.sections.storageItemAtFocusIndex
 import com.nendo.argosy.ui.screens.settings.sections.storageSections
 
@@ -58,6 +60,14 @@ internal class StorageSectionInput(
             return InputResult.handled(SoundType.SILENT)
         }
         viewModel.refreshStorageAttribution()
+        return InputResult.HANDLED
+    }
+
+    override fun onSecondaryAction(): InputResult {
+        val state = viewModel.uiState.value
+        val item = storageItemAtFocusIndex(state.focusedIndex, layoutInfo())
+        if (item == null || !item.isResettableFolder(state)) return InputResult.UNHANDLED
+        resetStorageFolder(item, viewModel)
         return InputResult.HANDLED
     }
 

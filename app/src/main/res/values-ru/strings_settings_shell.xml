@@ -310,6 +310,8 @@
     <string name="settings_shell_footer_add_shaderstack">Добавить</string>
     <string name="settings_shell_footer_platform_builtin">Платформа</string>
     <string name="settings_shell_footer_reset_to_default_builtinvideo">Сбросить по умолчанию</string>
+    <string name="settings_shell_footer_reset_to_default_storage">Сбросить по умолчанию</string>
+    <string name="settings_shell_footer_reset_to_default_thememusic">Сбросить по умолчанию</string>
     <string name="settings_shell_footer_sample">Пример</string>
     <string name="settings_shell_footer_reset_to_default_themesounds">Сбросить по умолчанию</string>
     <string name="settings_shell_footer_platform_coreoptions">Платформа</string>
