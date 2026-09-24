@@ -1345,6 +1345,7 @@ class GameDetailViewModel @Inject constructor(
             gameId = currentGameId,
             allowVariantPrompt = false,
             origin = pendingLaunchOrigin,
+            overrideDisplayId = displayId,
             onLaunch = callbacks.onLaunch,
             onLaunchFailed = { callbacks.onLaunchFailed() }
         )

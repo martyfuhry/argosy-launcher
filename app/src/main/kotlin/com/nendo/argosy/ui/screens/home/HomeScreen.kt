@@ -14,6 +14,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.ui.util.clickableNoFocus
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -257,7 +258,9 @@ fun HomeScreen(
             when (event) {
                 is HomeEvent.LaunchIntent -> {
                     try {
-                        context.startActivity(event.intent, event.options)
+                        if (!event.intent.isAlreadyLaunched()) {
+                            context.startActivity(event.intent, event.options)
+                        }
                     } catch (_: Exception) { }
                 }
                 is HomeEvent.NavigateToLibrary -> {

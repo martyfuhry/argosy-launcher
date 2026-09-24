@@ -1,5 +1,6 @@
 package com.nendo.argosy.ui.screens.social
 
+import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationText
 import androidx.compose.foundation.background
@@ -163,8 +164,10 @@ fun SocialScreen(
         viewModel.launchEvents.collect { event ->
             when (event) {
                 is SocialLaunchEvent.LaunchIntent -> {
-                    event.intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                    launchContext.startActivity(event.intent, event.options)
+                    if (!event.intent.isAlreadyLaunched()) {
+                        event.intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        launchContext.startActivity(event.intent, event.options)
+                    }
                 }
                 is SocialLaunchEvent.LaunchError -> {
                     viewModel.notificationManager.show(
