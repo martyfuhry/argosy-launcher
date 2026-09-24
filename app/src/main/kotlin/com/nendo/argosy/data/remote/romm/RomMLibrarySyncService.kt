@@ -895,7 +895,7 @@ class RomMLibrarySyncService @Inject constructor(
 
     private suspend fun syncRom(rom: RomMRom, scope: SyncScope, syncFiles: Boolean = true): Pair<Boolean, GameEntity> {
         val platformSlug = platformDao.getById(rom.platformId)?.slug
-            ?: PlatformDefinitions.resolveImportSlug(rom.platformSlug, rom.platformName)
+            ?: FileNames.sanitize(PlatformDefinitions.resolveImportSlug(rom.platformSlug, rom.platformName))
         val platformId = if (platformSlug == ANDROID_SLUG) LocalPlatformIds.ANDROID else rom.platformId
         val existing = gameDao.getByRommId(rom.id)
 
