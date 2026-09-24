@@ -80,6 +80,7 @@ data class DiscPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
+    val overrideDisplayId: Int? = null,
     val onLaunch: (Intent) -> Unit
 )
 
@@ -89,6 +90,7 @@ data class VariantPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
+    val overrideDisplayId: Int? = null,
     val onLaunch: (Intent) -> Unit
 )
 
@@ -100,6 +102,7 @@ data class MemcardPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
+    val overrideDisplayId: Int? = null,
     val onLaunch: (Intent) -> Unit
 )
 
@@ -208,6 +211,7 @@ class GameLaunchDelegate @Inject constructor(
         overrideLaunchMode: LaunchMode? = null,
         allowVariantPrompt: Boolean = true,
         origin: LaunchOrigin = LaunchOrigin.INTERNAL,
+        overrideDisplayId: Int? = null,
         onLaunch: (Intent) -> Unit,
         onLaunchFailed: () -> Unit = {}
     ) {
@@ -254,8 +258,8 @@ class GameLaunchDelegate @Inject constructor(
                 }
 
                 if (canResume) {
-                    val result = launchGameUseCase(gameId, discId, forResume = true, variantFileId = resolvedVariantId, allowVariantPrompt = false, prefetchedGame = game)
-                    dispatchPrimaryLaunchResult(result, channelName, discId, overrideLaunchMode, origin, onLaunch, onLaunchFailed)
+                    val result = launchGameUseCase(gameId, discId, forResume = true, variantFileId = resolvedVariantId, allowVariantPrompt = false, prefetchedGame = game, overrideDisplayId = overrideDisplayId)
+                    dispatchPrimaryLaunchResult(result, channelName, discId, overrideLaunchMode, origin, overrideDisplayId, onLaunch, onLaunchFailed)
                     return@launch
                 }
 
@@ -406,8 +410,8 @@ class GameLaunchDelegate @Inject constructor(
                     else -> null
                 }
 
-                val result = launchGameUseCase(gameId, discId, variantFileId = resolvedVariantId, allowVariantPrompt = allowVariantPrompt, prefetchedGame = game, origin = origin)
-                dispatchPrimaryLaunchResult(result, channelName, discId, launchMode, origin, onLaunch, onLaunchFailed)
+                val result = launchGameUseCase(gameId, discId, variantFileId = resolvedVariantId, allowVariantPrompt = allowVariantPrompt, prefetchedGame = game, origin = origin, overrideDisplayId = overrideDisplayId)
+                dispatchPrimaryLaunchResult(result, channelName, discId, launchMode, origin, overrideDisplayId, onLaunch, onLaunchFailed)
             } finally {
                 _syncOverlayState.value = null
                 launchInFlight.set(false)
@@ -421,6 +425,7 @@ class GameLaunchDelegate @Inject constructor(
         discId: Long?,
         launchMode: LaunchMode?,
         origin: LaunchOrigin,
+        overrideDisplayId: Int?,
         onLaunch: (Intent) -> Unit,
         onLaunchFailed: () -> Unit
     ) {
@@ -436,6 +441,7 @@ class GameLaunchDelegate @Inject constructor(
                     channelName = channelName,
                     launchMode = launchMode,
                     origin = origin,
+                    overrideDisplayId = overrideDisplayId,
                     onLaunch = onLaunch
                 )
             }
@@ -444,8 +450,8 @@ class GameLaunchDelegate @Inject constructor(
                     .filter { it.fileId == null || it.isDownloaded }
                     .sortedBy { com.nendo.argosy.data.model.VariantCategory.fromKey(it.category).sortOrder }
                 if (launchable.size <= 1) {
-                    val retry = launchGameUseCase(result.gameId, discId, allowVariantPrompt = false, origin = origin)
-                    dispatchPrimaryLaunchResult(retry, channelName, discId, launchMode, origin, onLaunch, onLaunchFailed)
+                    val retry = launchGameUseCase(result.gameId, discId, allowVariantPrompt = false, origin = origin, overrideDisplayId = overrideDisplayId)
+                    dispatchPrimaryLaunchResult(retry, channelName, discId, launchMode, origin, overrideDisplayId, onLaunch, onLaunchFailed)
                 } else {
                     _variantPickerState.value = VariantPickerState(
                         gameId = result.gameId,
@@ -453,6 +459,7 @@ class GameLaunchDelegate @Inject constructor(
                         channelName = channelName,
                         launchMode = launchMode,
                         origin = origin,
+                        overrideDisplayId = overrideDisplayId,
                         onLaunch = onLaunch
                     )
                 }
@@ -466,6 +473,7 @@ class GameLaunchDelegate @Inject constructor(
                     channelName = channelName,
                     launchMode = launchMode,
                     origin = origin,
+                    overrideDisplayId = overrideDisplayId,
                     onLaunch = onLaunch
                 )
             }
@@ -729,7 +737,8 @@ class GameLaunchDelegate @Inject constructor(
             val result = launchGameUseCase(
                 gameId = state.gameId,
                 selectedDiscPath = discPath,
-                origin = state.origin
+                origin = state.origin,
+                overrideDisplayId = state.overrideDisplayId
             )
             when (result) {
                 is LaunchResult.Success -> {
@@ -756,11 +765,24 @@ class GameLaunchDelegate @Inject constructor(
 
         scope.launch {
             val result = if (variantFileId != null) {
-                launchGameUseCase(gameId = state.gameId, variantFileId = variantFileId, origin = state.origin)
+                launchGameUseCase(
+                    gameId = state.gameId,
+                    variantFileId = variantFileId,
+                    origin = state.origin,
+                    overrideDisplayId = state.overrideDisplayId
+                )
             } else {
-                launchGameUseCase(gameId = state.gameId, skipVariantPrompt = true, origin = state.origin)
+                launchGameUseCase(
+                    gameId = state.gameId,
+                    skipVariantPrompt = true,
+                    origin = state.origin,
+                    overrideDisplayId = state.overrideDisplayId
+                )
             }
-            dispatchPrimaryLaunchResult(result, state.channelName, null, state.launchMode, state.origin, state.onLaunch, onFailed)
+            dispatchPrimaryLaunchResult(
+                result, state.channelName, null, state.launchMode, state.origin, state.overrideDisplayId,
+                state.onLaunch, onFailed
+            )
         }
     }
 
@@ -779,7 +801,8 @@ class GameLaunchDelegate @Inject constructor(
             emulatorSaveConfigRepository.setMemcardPath(state.emulatorId, cardPath)
             val result = launchGameUseCase(
                 gameId = state.gameId,
-                origin = state.origin
+                origin = state.origin,
+                overrideDisplayId = state.overrideDisplayId
             )
             when (result) {
                 is LaunchResult.Success -> {
