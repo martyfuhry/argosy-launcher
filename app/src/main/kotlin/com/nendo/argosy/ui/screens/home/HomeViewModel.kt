@@ -1831,7 +1831,7 @@ class HomeViewModel @Inject constructor(
             allowVariantPrompt = false,
             onLaunch = { intent ->
                 viewModelScope.launch {
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId)
+                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId, intent)
                     _events.emit(HomeEvent.LaunchIntent(intent, options))
                 }
             }
@@ -1849,6 +1849,7 @@ class HomeViewModel @Inject constructor(
                 viewModelScope.launch {
                     val options = emulatorLaunchTargetResolver.launchOptionsFor(
                         gameId = gameId,
+                        intent = intent,
                         overrideDisplayId = displayId
                     )
                     _events.emit(HomeEvent.LaunchIntent(intent, options))
