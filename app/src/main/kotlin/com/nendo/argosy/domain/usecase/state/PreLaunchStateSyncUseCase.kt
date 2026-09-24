@@ -27,7 +27,7 @@ internal data class ReconciledState(
 /**
  * The channel a state is filed under for a launch. A launch without a channel, a state without
  * one, and the literal autosave slot are the one autosave channel, as they are for saves. Other
- * names compare without case because the server round-trips them through a file name.
+ * names compare without case.
  */
 internal fun liveChannelKey(channelName: String?): String {
     val name = channelName.orEmpty().lowercase()
@@ -331,11 +331,6 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         placeInLiveDir(cached, "downloaded", romPath, platformSlug, emulatorId, coreId, coreVersion)
     }
 
-    /**
-     * Brings a state that is already cached and current back into the live slot when the slot is
-     * empty or holds something older. A live file the player wrote after the cache was taken, or a
-     * slot the player emptied by choosing a restore point, is left as it is.
-     */
     private suspend fun placeCachedIfLiveStale(
         cached: StateCacheEntity,
         restorePointSelected: Boolean,
