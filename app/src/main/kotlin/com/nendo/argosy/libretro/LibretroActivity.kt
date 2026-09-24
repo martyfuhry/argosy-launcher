@@ -3131,10 +3131,7 @@ class LibretroActivity : ComponentActivity() {
             as android.hardware.display.DisplayManager
         val gameDisplayId = windowManager.defaultDisplay.displayId
         return displayManager.displays.firstOrNull {
-            it.displayId != gameDisplayId &&
-                it.displayId != android.view.Display.DEFAULT_DISPLAY &&
-                it.isValid &&
-                affinity.isPhysicalDisplay(it.displayId)
+            it.displayId != gameDisplayId && it.isValid && affinity.isPhysicalDisplay(it.displayId)
         }
     }
 
