@@ -1,6 +1,7 @@
 package com.nendo.argosy.ui.screens.settings
 
 import android.util.Log
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.data.cache.GradientExtractionConfig
 import com.nendo.argosy.data.cache.GradientPreset
@@ -31,6 +32,10 @@ import com.nendo.argosy.ui.screens.settings.sections.storageCachesFocusIndexOfSt
 import com.nendo.argosy.ui.screens.settings.sections.storageFocusIndexOf
 import com.nendo.argosy.ui.screens.settings.sections.storageMediaVisibleLive
 import com.nendo.argosy.ui.screens.settings.sections.storageSteamVisibleLive
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import com.nendo.argosy.data.local.entity.PlatformLibretroSettingsEntity
 import com.nendo.argosy.util.AppPaths
@@ -58,6 +63,37 @@ internal fun routeStartAtSection(vm: SettingsViewModel, section: SettingsSection
         it.copy(backStack = emptyList(), currentSection = section, focusedIndex = 0)
     }
     routeApplySectionEntry(vm, section)
+}
+
+/**
+ * Re-enters the section path recorded in [handle] by an earlier instance of this screen, and
+ * answers whether one was re-entered.
+ */
+internal fun routeResumeSectionPath(vm: SettingsViewModel, handle: SavedStateHandle): Boolean {
+    val path = resumableSectionPath(
+        names = handle.get<ArrayList<String>>(SECTION_PATH_KEY).orEmpty(),
+        focus = handle.get<IntArray>(SECTION_FOCUS_KEY)?.toList().orEmpty()
+    )
+    val current = path.lastOrNull() ?: return false
+    vm._uiState.update {
+        it.copy(backStack = path.dropLast(1), currentSection = current.section, focusedIndex = 0)
+    }
+    routeApplySectionEntry(vm, current.section)
+    vm._uiState.update {
+        it.copy(focusedIndex = current.focusedIndex.coerceIn(0, routeMaxFocusIndexOf(vm, it).coerceAtLeast(0)))
+    }
+    return true
+}
+
+internal fun routeRecordSectionPath(vm: SettingsViewModel, handle: SavedStateHandle) {
+    vm.uiState
+        .map { it.sectionPath() }
+        .distinctUntilChanged()
+        .onEach { path ->
+            handle[SECTION_PATH_KEY] = ArrayList(path.map { it.section.name })
+            handle[SECTION_FOCUS_KEY] = path.map { it.focusedIndex }.toIntArray()
+        }
+        .launchIn(vm.viewModelScope)
 }
 
 internal fun routePopSection(vm: SettingsViewModel): Boolean {
