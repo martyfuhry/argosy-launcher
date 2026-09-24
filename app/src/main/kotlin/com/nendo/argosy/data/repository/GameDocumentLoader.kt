@@ -14,6 +14,13 @@ sealed interface DocumentContent {
     data class Unavailable(val reason: String?) : DocumentContent
 }
 
+/**
+ * The stable name a document is cached and annotated under: its RomM file id, else a hash of its
+ * url. Null for a document with neither.
+ */
+fun documentKey(rommFileId: Long?, remoteUrl: String?): String? =
+    rommFileId?.let { "romm_$it" } ?: remoteUrl?.let { "url_${it.hashCode().toUInt()}" }
+
 @Singleton
 class GameDocumentLoader @Inject constructor(
     private val romMRepository: RomMRepository,
@@ -58,9 +65,7 @@ class GameDocumentLoader @Inject constructor(
     }
 
     private fun cacheFileFor(rommFileId: Long?, remoteUrl: String?, fileName: String): File? {
-        val key = rommFileId?.let { "romm_$it" }
-            ?: remoteUrl?.let { "url_${it.hashCode().toUInt()}" }
-            ?: return null
+        val key = documentKey(rommFileId, remoteUrl) ?: return null
         val extension = fileName.substringAfterLast('.', "").takeIf { it.isNotBlank() }?.let { ".$it" }.orEmpty()
         return File(File(context.cacheDir, DOCUMENT_CACHE_DIR).apply { mkdirs() }, "$key$extension")
     }

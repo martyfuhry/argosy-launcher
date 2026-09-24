@@ -15,6 +15,8 @@
     <string name="gamedetail_document_reader_turn_page">पृष्ठ पलटें</string>
     <string name="gamedetail_document_reader_page">%1$d / %2$d</string>
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
+    <string name="gamedetail_document_reader_highlight">हाइलाइट करें</string>
+    <string name="gamedetail_document_reader_next_highlight">अगला हाइलाइट</string>
     <string name="gamedetail_section_documents_remote">डाउनलोड नहीं हुआ</string>
     <string name="gamedetail_menu_reviews">समीक्षाएं</string>
     <string name="gamedetail_menu_achievements">अचीवमेंट्स</string>

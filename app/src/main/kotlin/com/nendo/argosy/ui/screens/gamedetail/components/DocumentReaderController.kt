@@ -6,6 +6,8 @@ import com.nendo.argosy.data.model.VariantCategory
 import com.nendo.argosy.data.preferences.DownloadDefaults
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.repository.DocumentContent
+import com.nendo.argosy.data.repository.DocumentHighlightStore
+import com.nendo.argosy.data.repository.documentKey
 import com.nendo.argosy.data.repository.GameDocumentLoader
 import com.nendo.argosy.ui.screens.gamedetail.GameDocument
 import kotlinx.coroutines.CoroutineScope
@@ -64,7 +66,8 @@ private fun providerManual(game: GameEntity?, romMRepository: RomMRepository): L
 class DocumentReaderController(
     private val scope: CoroutineScope,
     private val loader: GameDocumentLoader,
-    private val romMRepository: RomMRepository
+    private val romMRepository: RomMRepository,
+    private val highlightStore: DocumentHighlightStore
 ) {
     private val _state = MutableStateFlow<DocumentReaderState?>(null)
     val state: StateFlow<DocumentReaderState?> = _state.asStateFlow()
@@ -72,6 +75,7 @@ class DocumentReaderController(
     private var document: GameDocument? = null
     private var romId: Long? = null
     private var body: String? = null
+    private var bodyLines: List<String> = emptyList()
     private var linesPerPage: Int = TEXT_LINES_PER_PAGE
     private var progressJob: Job? = null
 
@@ -79,12 +83,18 @@ class DocumentReaderController(
         this.document = document
         this.romId = romId
         body = null
+        bodyLines = emptyList()
         progressJob?.cancel()
-        _state.value = DocumentReaderState(title = document.title)
+        _state.value = DocumentReaderState(title = document.title, linesPerPage = linesPerPage)
         scope.launch {
             val resume = async { resumeFraction(document, romId) }
             val content = load(document)
             val fraction = resume.await()
+            val highlights = if (content is DocumentContent.Text) {
+                documentKey(document.rommFileId, document.remoteUrl)?.let { highlightStore.load(it) }.orEmpty()
+            } else {
+                emptyList()
+            }
             _state.update { reader ->
                 if (reader == null || this@DocumentReaderController.document != document) {
                     return@update reader
@@ -92,11 +102,13 @@ class DocumentReaderController(
                 when (content) {
                     is DocumentContent.Text -> {
                         body = content.body
+                        bodyLines = content.body.lines()
                         val pages = paginateText(content.body, linesPerPage)
                         reader.copy(
                             textPages = pages,
                             pageIndex = pageAt(fraction, pages.size),
-                            isLoading = false
+                            isLoading = false,
+                            highlights = highlights
                         )
                     }
                     is DocumentContent.Pages -> reader.copy(
@@ -121,8 +133,55 @@ class DocumentReaderController(
         _state.update { reader ->
             reader ?: return@update null
             val pages = paginateText(text, linesPerPage)
-            reader.copy(textPages = pages, pageIndex = pageAt(reader.fraction, pages.size))
+            reader.copy(
+                textPages = pages,
+                pageIndex = pageAt(reader.fraction, pages.size),
+                linesPerPage = linesPerPage
+            )
         }
+    }
+
+    /**
+     * Highlights the section under line [pageLine] of the open text page, or removes the highlight
+     * already covering it.
+     */
+    fun toggleHighlightAt(pageLine: Int) {
+        val reader = _state.value ?: return
+        val line = reader.pageIndex * linesPerPage + pageLine
+        val section = sectionAt(bodyLines, line) ?: return
+        commitHighlights(toggleHighlight(reader.highlights, section, line))
+    }
+
+    /**
+     * The controller's form of [toggleHighlightAt]: acts on the first section that starts on the
+     * open page.
+     */
+    fun toggleHighlightOnPage() {
+        val reader = _state.value ?: return
+        val start = reader.pageIndex * linesPerPage
+        val end = minOf(start + linesPerPage, bodyLines.size)
+        val line = (start until end).firstOrNull { sectionAt(bodyLines, it)?.first == it } ?: return
+        val section = sectionAt(bodyLines, line) ?: return
+        commitHighlights(toggleHighlight(reader.highlights, section, line))
+    }
+
+    /**
+     * Turns to the page holding the next highlight after the open one, wrapping to the first.
+     */
+    fun jumpToNextHighlight() {
+        val reader = _state.value ?: return
+        if (reader.highlights.isEmpty() || linesPerPage <= 0) return
+        val pages = reader.highlights.map { it.first / linesPerPage }.distinct().sorted()
+        val target = pages.firstOrNull { it > reader.pageIndex } ?: pages.first()
+        if (target == reader.pageIndex) return
+        _state.update { it?.copy(pageIndex = target.coerceIn(0, (it.pageCount - 1).coerceAtLeast(0))) }
+        scheduleProgressSave()
+    }
+
+    private fun commitHighlights(highlights: List<IntRange>) {
+        _state.update { it?.copy(highlights = highlights) }
+        val key = document?.let { documentKey(it.rommFileId, it.remoteUrl) } ?: return
+        scope.launch { highlightStore.save(key, highlights) }
     }
 
     fun setShowsSpreads(showsSpreads: Boolean) {
@@ -139,6 +198,10 @@ class DocumentReaderController(
         }
         if (next == reader.pageIndex) return
         _state.update { it?.copy(pageIndex = next) }
+        scheduleProgressSave()
+    }
+
+    private fun scheduleProgressSave() {
         progressJob?.cancel()
         progressJob = scope.launch {
             delay(PROGRESS_DEBOUNCE_MS)
@@ -152,6 +215,7 @@ class DocumentReaderController(
         scope.launch {
             saveProgress()
             body = null
+            bodyLines = emptyList()
             document = null
             _state.value = null
         }

@@ -13,6 +13,8 @@
     <string name="gamedetail_document_reader_turn_page">翻页</string>
     <string name="gamedetail_document_reader_page">%1$d / %2$d</string>
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
+    <string name="gamedetail_document_reader_highlight">标记</string>
+    <string name="gamedetail_document_reader_next_highlight">下一个标记</string>
     <string name="gamedetail_section_documents_remote">未下载</string>
     <string name="gamedetail_menu_reviews">评价</string>
     <string name="gamedetail_menu_achievements">成就</string>

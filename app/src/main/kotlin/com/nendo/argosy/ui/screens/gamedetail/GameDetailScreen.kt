@@ -434,6 +434,16 @@ fun GameDetailScreen(
 
             override fun onConfirm(): com.nendo.argosy.ui.input.InputResult =
                 com.nendo.argosy.ui.input.InputResult.HANDLED
+
+            override fun onContextMenu(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.toggleDocumentHighlightOnPage()
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
+
+            override fun onSecondaryAction(): com.nendo.argosy.ui.input.InputResult {
+                viewModel.jumpToNextDocumentHighlight()
+                return com.nendo.argosy.ui.input.InputResult.HANDLED
+            }
         }
     }
 
@@ -481,6 +491,7 @@ fun GameDetailScreen(
                 onLinesPerPageMeasured = { viewModel.setDocumentLinesPerPage(it) },
                 onDismiss = { viewModel.dismissDocumentReader() },
                 onTurnPage = { viewModel.turnDocumentPage(it) },
+                onToggleHighlight = { viewModel.toggleDocumentHighlightAt(it) },
                 onSpreadsMeasured = { viewModel.setDocumentShowsSpreads(it) }
             )
         }

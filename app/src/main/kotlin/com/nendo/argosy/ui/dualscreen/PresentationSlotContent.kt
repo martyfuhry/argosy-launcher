@@ -145,7 +145,8 @@ private fun dashboardActions(manager: com.nendo.argosy.DualScreenManager) =
         onReaderTurnPage = { manager.dashboardReader.turnPage(it) },
         onReaderDismiss = { manager.dashboardReader.dismiss() },
         onReaderLinesPerPage = { manager.dashboardReader.setLinesPerPage(it) },
-        onReaderSpreads = { manager.dashboardReader.setShowsSpreads(it) }
+        onReaderSpreads = { manager.dashboardReader.setShowsSpreads(it) },
+        onReaderToggleHighlight = { manager.dashboardReader.toggleHighlightAt(it) }
     )
 
 private data class InGameAppBarState(
@@ -207,12 +208,7 @@ private fun InGameAppBar(state: InGameAppBarState, modifier: Modifier = Modifier
             manager.focusDisplay(displayId)
             manager.closeFocusPicker()
         },
-        onSwapRoles = if (selectSwapsRoles()) {
-            { manager.swapRoles() }
-        } else {
-            null
-        },
-        swapEnabled = !manager.swappedIsGameActive.collectAsState().value,
+        onSwapRoles = null,
         drawsScrim = false,
         modifier = modifier
     )

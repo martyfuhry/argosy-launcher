@@ -113,6 +113,7 @@ class GameDetailViewModel @Inject constructor(
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
     private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
     private val gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader,
+    private val documentHighlightStore: com.nendo.argosy.data.repository.DocumentHighlightStore,
     val pickerModalDelegate: PickerModalDelegate,
     private val achievementDelegate: AchievementDelegate,
     private val downloadDelegate: DownloadDelegate,
@@ -159,7 +160,8 @@ class GameDetailViewModel @Inject constructor(
         com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderController(
             scope = viewModelScope,
             loader = gameDocumentLoader,
-            romMRepository = romMRepository
+            romMRepository = romMRepository,
+            highlightStore = documentHighlightStore
         )
     val documentReader = documentReaderController.state
     private var pendingLaunchOrigin: LaunchOrigin = LaunchOrigin.INTERNAL
@@ -1270,6 +1272,12 @@ class GameDetailViewModel @Inject constructor(
     fun turnDocumentPage(delta: Int) = documentReaderController.turnPage(delta)
 
     fun dismissDocumentReader() = documentReaderController.dismiss()
+
+    fun toggleDocumentHighlightAt(pageLine: Int) = documentReaderController.toggleHighlightAt(pageLine)
+
+    fun toggleDocumentHighlightOnPage() = documentReaderController.toggleHighlightOnPage()
+
+    fun jumpToNextDocumentHighlight() = documentReaderController.jumpToNextHighlight()
 
     private fun isLaunchDisplayRowFocused(): Boolean =
         moreOptionsDelegate.resolveOptionAction(moreOptionsContext()) == MoreOptionAction.LaunchOnDisplay

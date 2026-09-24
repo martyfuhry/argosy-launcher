@@ -124,6 +124,7 @@ class DualScreenManager(
     internal val imageCacheManager: com.nendo.argosy.data.cache.ImageCacheManager,
     internal val romMRepository: com.nendo.argosy.data.remote.romm.RomMRepository,
     private val gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader,
+    private val documentHighlightStore: com.nendo.argosy.data.repository.DocumentHighlightStore,
     internal val resolveGameEmulatorContext:
         com.nendo.argosy.domain.usecase.emulator.ResolveGameEmulatorContextUseCase,
     internal val hapticManager: com.nendo.argosy.ui.input.HapticFeedbackManager,
@@ -756,7 +757,8 @@ class DualScreenManager(
     val dashboardReader = com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderController(
         scope = dashboardScope,
         loader = gameDocumentLoader,
-        romMRepository = romMRepository
+        romMRepository = romMRepository,
+        highlightStore = documentHighlightStore
     ).also { reader ->
         dashboardScope.launch {
             reader.state.map { it != null }.distinctUntilChanged().drop(1).collect { open ->
