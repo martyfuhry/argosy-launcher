@@ -31,9 +31,16 @@ class SecondScreenCapabilityTest {
             "org.ppsspp.ppsspp",
             "com.github.stenzek.duckstation",
             "io.github.borked3ds.android",
-            "org.citra.emu",
             "com.example.unknown"
         ).forEach { assertFalse(it, EmulatorRegistry.drawsSecondScreen(it)) }
+    }
+
+    @Test
+    fun `a definition without the flag still draws a second screen when its family does`() {
+        assertFalse(EmulatorRegistry.getByPackage("org.citra.emu")!!.drawsSecondScreen)
+        assertTrue(EmulatorRegistry.findFamilyForPackage("org.citra.emu")!!.drawsSecondScreen)
+
+        assertTrue(EmulatorRegistry.drawsSecondScreen("org.citra.emu"))
     }
 
     @Test
