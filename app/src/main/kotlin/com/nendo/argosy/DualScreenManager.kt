@@ -1426,6 +1426,20 @@ class DualScreenManager(
      * What the presentation screen shows right now. A live session outranks everything, then the
      * most recent published slot, then whatever screen is describing its selection.
      */
+    /**
+     * Whether the Primary surface on [primaryDisplayId] should show the in-game dashboard in place
+     * of Home. It does only while a game runs on the presentation screen, which leaves the
+     * dashboard nowhere else to go; a game on the app screen leaves the presentation screen free
+     * for it and Home stays on Primary.
+     */
+    fun primaryShowsDashboard(primaryDisplayId: Int?): Boolean {
+        if (!_swappedIsGameActive.value) return false
+        val gameDisplay = emulatorDisplayId ?: return false
+        if (gameDisplay == primaryDisplayId) return false
+        val showcase = showcaseDisplayId() ?: return true
+        return gameDisplay == showcase
+    }
+
     val presentationSlot: StateFlow<com.nendo.argosy.ui.dualscreen.PresentationSlot> =
         kotlinx.coroutines.flow.combine(
             _presentationSlots,
@@ -2330,25 +2344,27 @@ class DualScreenManager(
         sessionRefocus?.invoke()
     }
 
-    /**
-     * Brings the surface that should own the keys forward. During a live media playback that is
-     * the player window, addressed on the display it reported itself on: raising MainActivity over
-     * it would stop the stream and leave the pad driving neither screen. With no playback the
-     * launcher window is the target, as before, and an emulator session on the default display is
-     * left alone either way.
-     */
     private fun refocusMain() {
         if (emulatorDisplayId == android.view.Display.DEFAULT_DISPLAY &&
             sessionStateStore.hasActiveSession()
         ) return
+        val interactive = interactiveDisplayId()
         if (mediaPlaybackTracker.activePlayback.value != null) {
             val target = mediaPlayerDisplayId ?: mediaPlayerRelocationDisplayId()
-            val options = target?.let {
-                displayAffinityHelper.getActivityOptions(forEmulator = false, overrideDisplayId = it)
+            if (target == null || interactive == null || target == interactive) {
+                val options = target?.let {
+                    displayAffinityHelper.getActivityOptions(forEmulator = false, overrideDisplayId = it)
+                }
+                val launchContext = target?.let { displayAffinityHelper.displayContext(it) } ?: appContext
+                com.nendo.argosy.ui.screens.player.PlayerActivity.raise(launchContext, options)
+                return
             }
-            val launchContext = target?.let { displayAffinityHelper.displayContext(it) } ?: appContext
-            com.nendo.argosy.ui.screens.player.PlayerActivity.raise(launchContext, options)
-            return
+        }
+        if (companionHoldsPrimary.value) {
+            controlCompanion?.let {
+                it.refocusSelf()
+                return
+            }
         }
         activityContext.startActivity(
             Intent(activityContext, MainActivity::class.java).apply {

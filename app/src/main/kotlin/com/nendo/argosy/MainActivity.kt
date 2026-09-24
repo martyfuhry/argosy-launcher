@@ -404,9 +404,7 @@ class MainActivity : ComponentActivity() {
                     val companionHoldsPrimary =
                         dualScreenManager.companionHoldsPrimary.collectAsState()
                     val gameActive = dualScreenManager.swappedIsGameActive.collectAsState()
-                    val gameElsewhere = gameActive.value &&
-                        dualScreenManager.emulatorDisplayId != display?.displayId
-                    if (companionHoldsPrimary.value || gameElsewhere) {
+                    if (rendersPresentation(companionHoldsPrimary.value, gameActive.value)) {
                         val slot by dualScreenManager.presentationSlot.collectAsState()
                         val presentationSink = androidx.compose.runtime.remember {
                             FocusRequester()
@@ -704,11 +702,22 @@ class MainActivity : ComponentActivity() {
 
     // --- Private Helpers ---
 
-    /** True only when a session's emulator runs on a different display than this activity; a same-display session cannot have focus while we do, so input must never be deferred to it. */
     private fun isGameOnOtherDisplay(): Boolean {
         val emulatorDisplay = dualScreenManager.emulatorDisplayId ?: return false
         val ownDisplay = window.decorView.display?.displayId ?: return false
-        return emulatorDisplay != ownDisplay
+        if (emulatorDisplay == ownDisplay) return false
+        return rendersPresentation(
+            dualScreenManager.companionHoldsPrimary.value,
+            dualScreenManager.swappedIsGameActive.value
+        )
+    }
+
+    private fun rendersPresentation(companionHoldsPrimary: Boolean, gameActive: Boolean): Boolean {
+        if (companionHoldsPrimary) return true
+        if (!gameActive) return false
+        val ownDisplayId = window.decorView.display?.displayId
+        val holdsPrimaryRole = dualScreenManager.interactiveDisplayId()?.let { it == ownDisplayId } ?: true
+        return !holdsPrimaryRole || dualScreenManager.primaryShowsDashboard(ownDisplayId)
     }
 
     /** Relinks companion input forwarding when input arrives on home but the link is stale (companion marked inactive or overlay focus latched) after a game, sleep/wake, or a foreground app yielding the secondary display. */

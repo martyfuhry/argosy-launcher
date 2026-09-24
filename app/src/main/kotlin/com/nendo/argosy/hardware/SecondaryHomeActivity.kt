@@ -201,8 +201,8 @@ class SecondaryHomeActivity :
     private fun CompanionRoleContent() {
         val gameActive by dsm.swappedIsGameActive.collectAsState()
         val hereDisplayId = androidx.core.content.ContextCompat.getDisplayOrDefault(this).displayId
-        val gameElsewhere = gameActive && dsm.emulatorDisplayId != hereDisplayId
-        if (!isShowcaseRole && !gameElsewhere) {
+        val showsDashboard = gameActive && dsm.primaryShowsDashboard(hereDisplayId)
+        if (!isShowcaseRole && !showsDashboard) {
             com.nendo.argosy.ui.ArgosyApp(
                 onStartupComplete = { dsm.stopStartupGuard() }
             )
