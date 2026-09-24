@@ -227,6 +227,8 @@
     <string name="ui_save_conflict_title">存档冲突</string>
     <string name="ui_save_conflict_default_slot">默认存档</string>
     <string name="ui_save_conflict_message">服务器上有更新的存档。覆盖后将用你的本地存档替换它。</string>
+    <string name="ui_save_conflict_message_server_older">服务器上的副本较旧，属于此存档的历史记录。覆盖后将用你的本地存档更新服务器。</string>
+    <string name="ui_save_conflict_message_diverged">两份存档已出现分歧。请选择保留哪一份：覆盖后将用你的本地存档替换服务器上的存档。</string>
     <string name="ui_save_conflict_source_local">本地</string>
     <string name="ui_save_conflict_source_server">服务器</string>
     <string name="ui_save_conflict_skip">跳过同步</string>
@@ -607,6 +609,8 @@
     <string name="ui_sync_overlay_post_session_subject">“%1$s” -- %2$s</string>
     <string name="ui_sync_overlay_post_session_default_slot">默认存档</string>
     <string name="ui_sync_overlay_post_session_message">服务器上有更新的存档。覆盖后将用你的本地存档替换它。</string>
+    <string name="ui_sync_overlay_post_session_message_server_older">服务器上的副本较旧，属于此存档的历史记录。覆盖后将用你的本地存档更新服务器。</string>
+    <string name="ui_sync_overlay_post_session_message_diverged">两份存档已出现分歧。请选择保留哪一份：覆盖后将用你的本地存档替换服务器上的存档。</string>
     <string name="ui_sync_overlay_post_session_local">本地</string>
     <string name="ui_sync_overlay_post_session_server">服务器</string>
     <string name="ui_sync_overlay_post_session_server_named">服务器（%1$s）</string>

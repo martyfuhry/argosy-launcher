@@ -243,6 +243,8 @@
     <string name="ui_save_conflict_title">Conflicto de partida guardada</string>
     <string name="ui_save_conflict_default_slot">Partida guardada predeterminada</string>
     <string name="ui_save_conflict_message">El servidor tiene una partida guardada más reciente. Sobrescribir la reemplazará con tu partida guardada local.</string>
+    <string name="ui_save_conflict_message_server_older">La copia del servidor es más antigua y forma parte del historial de esta partida guardada. Sobrescribir actualizará el servidor con tu partida guardada local.</string>
+    <string name="ui_save_conflict_message_diverged">Las partidas guardadas han divergido. Elige cuál prevalece: sobrescribir reemplazará la del servidor con tu partida guardada local.</string>
     <string name="ui_save_conflict_source_local">Local</string>
     <string name="ui_save_conflict_source_server">Servidor</string>
     <string name="ui_save_conflict_skip">Omitir sincronización</string>
@@ -645,6 +647,8 @@
     <string name="ui_sync_overlay_post_session_subject">\"%1$s\" -- %2$s</string>
     <string name="ui_sync_overlay_post_session_default_slot">Partida guardada predeterminada</string>
     <string name="ui_sync_overlay_post_session_message">El servidor tiene una partida guardada más reciente. Sobrescribir la reemplazará con tu partida guardada local.</string>
+    <string name="ui_sync_overlay_post_session_message_server_older">La copia del servidor es más antigua y forma parte del historial de esta partida guardada. Sobrescribir actualizará el servidor con tu partida guardada local.</string>
+    <string name="ui_sync_overlay_post_session_message_diverged">Las partidas guardadas han divergido. Elige cuál prevalece: sobrescribir reemplazará la del servidor con tu partida guardada local.</string>
     <string name="ui_sync_overlay_post_session_local">Local</string>
     <string name="ui_sync_overlay_post_session_server">Servidor</string>
     <string name="ui_sync_overlay_post_session_server_named">Servidor (%1$s)</string>

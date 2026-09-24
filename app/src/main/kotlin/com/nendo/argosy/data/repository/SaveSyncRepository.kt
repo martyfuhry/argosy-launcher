@@ -38,7 +38,8 @@ sealed class SaveSyncResult {
         val serverDeviceName: String? = null,
         val serverSaveId: Long? = null,
         val localContentHash: String? = null,
-        val serverContentHash: String? = null
+        val serverContentHash: String? = null,
+        val serverMatchesLastSync: Boolean = false
     ) : SaveSyncResult()
     data class NeedsHardcoreResolution(
         val tempFilePath: String,
