@@ -9,20 +9,25 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Highlighted line ranges of text documents, kept on this device only. Each document's ranges
- * live in one file named by [documentKey], one `first last` pair of document line numbers per line.
+ * A highlighted run of document lines and the palette slot its bookmark is drawn in.
+ */
+data class DocumentHighlight(val lines: IntRange, val colorIndex: Int = 0)
+
+/**
+ * Highlighted passages of text documents, kept on this device only. Each document's highlights
+ * live in one file named by [documentKey], one `first last colour` triple per line.
  */
 @Singleton
 class DocumentHighlightStore @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-    suspend fun load(key: String): List<IntRange> = withContext(Dispatchers.IO) {
+    suspend fun load(key: String): List<DocumentHighlight> = withContext(Dispatchers.IO) {
         val file = fileFor(key)
         if (!file.isFile) return@withContext emptyList()
         decodeHighlights(file.readText())
     }
 
-    suspend fun save(key: String, highlights: List<IntRange>) = withContext(Dispatchers.IO) {
+    suspend fun save(key: String, highlights: List<DocumentHighlight>) = withContext(Dispatchers.IO) {
         val file = fileFor(key)
         if (highlights.isEmpty()) {
             file.delete()
@@ -40,13 +45,15 @@ class DocumentHighlightStore @Inject constructor(
     }
 }
 
-internal fun encodeHighlights(highlights: List<IntRange>): String =
-    highlights.sortedBy { it.first }.joinToString("\n") { "${it.first} ${it.last}" }
+internal fun encodeHighlights(highlights: List<DocumentHighlight>): String =
+    highlights.sortedBy { it.lines.first }
+        .joinToString("\n") { "${it.lines.first} ${it.lines.last} ${it.colorIndex}" }
 
-internal fun decodeHighlights(text: String): List<IntRange> =
+internal fun decodeHighlights(text: String): List<DocumentHighlight> =
     text.lineSequence().mapNotNull { line ->
         val parts = line.trim().split(' ')
         val first = parts.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
         val last = parts.getOrNull(1)?.toIntOrNull() ?: return@mapNotNull null
-        if (last < first) null else first..last
+        val color = parts.getOrNull(2)?.toIntOrNull() ?: 0
+        if (last < first) null else DocumentHighlight(first..last, color)
     }.toList()

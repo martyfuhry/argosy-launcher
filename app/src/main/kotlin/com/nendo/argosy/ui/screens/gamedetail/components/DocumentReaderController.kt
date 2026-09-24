@@ -6,6 +6,7 @@ import com.nendo.argosy.data.model.VariantCategory
 import com.nendo.argosy.data.preferences.DownloadDefaults
 import com.nendo.argosy.data.remote.romm.RomMRepository
 import com.nendo.argosy.data.repository.DocumentContent
+import com.nendo.argosy.data.repository.DocumentHighlight
 import com.nendo.argosy.data.repository.DocumentHighlightStore
 import com.nendo.argosy.data.repository.documentKey
 import com.nendo.argosy.data.repository.GameDocumentLoader
@@ -171,14 +172,22 @@ class DocumentReaderController(
     fun jumpToNextHighlight() {
         val reader = _state.value ?: return
         if (reader.highlights.isEmpty() || linesPerPage <= 0) return
-        val pages = reader.highlights.map { it.first / linesPerPage }.distinct().sorted()
+        val pages = reader.highlights.map { it.lines.first / linesPerPage }.distinct().sorted()
         val target = pages.firstOrNull { it > reader.pageIndex } ?: pages.first()
         if (target == reader.pageIndex) return
         _state.update { it?.copy(pageIndex = target.coerceIn(0, (it.pageCount - 1).coerceAtLeast(0))) }
         scheduleProgressSave()
     }
 
-    private fun commitHighlights(highlights: List<IntRange>) {
+    /**
+     * Moves the bookmark of the highlight starting at document line [firstLine] to its next colour.
+     */
+    fun cycleHighlightColor(firstLine: Int) {
+        val reader = _state.value ?: return
+        commitHighlights(cycleHighlightColor(reader.highlights, firstLine, HIGHLIGHT_PALETTE_SIZE))
+    }
+
+    private fun commitHighlights(highlights: List<DocumentHighlight>) {
         _state.update { it?.copy(highlights = highlights) }
         val key = document?.let { documentKey(it.rommFileId, it.remoteUrl) } ?: return
         scope.launch { highlightStore.save(key, highlights) }

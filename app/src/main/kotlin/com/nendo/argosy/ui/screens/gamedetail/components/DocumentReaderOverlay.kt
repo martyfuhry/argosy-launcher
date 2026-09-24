@@ -56,7 +56,7 @@ data class DocumentReaderState(
     val errorReason: String? = null,
     val showsSpreads: Boolean = false,
     val linesPerPage: Int = TEXT_LINES_PER_PAGE,
-    val highlights: List<IntRange> = emptyList()
+    val highlights: List<com.nendo.argosy.data.repository.DocumentHighlight> = emptyList()
 ) {
     val textPageStart: Int get() = pageIndex * linesPerPage
 
@@ -119,6 +119,7 @@ fun DocumentReaderOverlay(
     onTurnPage: (Int) -> Unit,
     onSpreadsMeasured: (Boolean) -> Unit = {},
     onToggleHighlight: (Int) -> Unit = {},
+    onCycleHighlightColor: (Int) -> Unit = {},
     showsControllerHints: Boolean = true
 ) {
     val currentOnTurnPage by androidx.compose.runtime.rememberUpdatedState(onTurnPage)
@@ -271,7 +272,8 @@ fun DocumentReaderOverlay(
                                 gutter = gutter,
                                 pageStart = state.textPageStart,
                                 highlights = state.highlights,
-                                onLongPressLine = onToggleHighlight
+                                onLongPressLine = onToggleHighlight,
+                                onBookmarkTap = onCycleHighlightColor
                             )
                         }
                     }
@@ -306,13 +308,17 @@ private fun HighlightableText(
     style: androidx.compose.ui.text.TextStyle,
     gutter: androidx.compose.ui.unit.Dp,
     pageStart: Int,
-    highlights: List<IntRange>,
-    onLongPressLine: (Int) -> Unit
+    highlights: List<com.nendo.argosy.data.repository.DocumentHighlight>,
+    onLongPressLine: (Int) -> Unit,
+    onBookmarkTap: (Int) -> Unit
 ) {
-    val accent = com.nendo.argosy.ui.theme.LocalArgosyTheme.current.focusAccent
+    val palette = highlightPalette()
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
     var layout by remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
     val currentOnLongPress by androidx.compose.runtime.rememberUpdatedState(onLongPressLine)
+    val currentOnBookmarkTap by androidx.compose.runtime.rememberUpdatedState(onBookmarkTap)
+    val currentHighlights by androidx.compose.runtime.rememberUpdatedState(highlights)
+    val currentPageStart by androidx.compose.runtime.rememberUpdatedState(pageStart)
     val cornerPx = with(androidx.compose.ui.platform.LocalDensity.current) { Dimens.radiusSm.toPx() }
     Text(
         text = text,
@@ -326,7 +332,9 @@ private fun HighlightableText(
                 val result = layout ?: return@drawBehind
                 val gutterPx = gutter.toPx()
                 val pageLines = result.lineCount
-                highlights.forEach { range ->
+                highlights.forEach { highlight ->
+                    val range = highlight.lines
+                    val color = palette[highlight.colorIndex.mod(palette.size)]
                     val first = (range.first - pageStart).coerceAtLeast(0)
                     val last = (range.last - pageStart).coerceAtMost(pageLines - 1)
                     if (first > last || first >= pageLines) return@forEach
@@ -334,32 +342,42 @@ private fun HighlightableText(
                     val bottom = result.getLineBottom(last)
                     val left = gutterPx - cornerPx
                     drawRoundRect(
-                        color = accent.copy(alpha = HIGHLIGHT_FILL_ALPHA),
+                        color = color.copy(alpha = HIGHLIGHT_FILL_ALPHA),
                         topLeft = Offset(left, top),
                         size = androidx.compose.ui.geometry.Size(size.width - left, bottom - top),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx)
                     )
                     drawRoundRect(
-                        color = accent.copy(alpha = HIGHLIGHT_OUTLINE_ALPHA),
+                        color = color.copy(alpha = HIGHLIGHT_OUTLINE_ALPHA),
                         topLeft = Offset(left, top),
                         size = androidx.compose.ui.geometry.Size(size.width - left, bottom - top),
                         cornerRadius = androidx.compose.ui.geometry.CornerRadius(cornerPx),
                         style = androidx.compose.ui.graphics.drawscope.Stroke(width = Dimens.borderThin.toPx())
                     )
-                    if (range.first >= pageStart) drawBookmark(accent, gutterPx, top)
+                    if (range.first >= pageStart) drawBookmark(color, gutterPx, top)
                 }
             }
-            .padding(start = gutter)
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
+                    var up: androidx.compose.ui.input.pointer.PointerInputChange? = null
                     var released = false
                     val finished = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                        waitForUpOrCancellation()
+                        up = waitForUpOrCancellation()
                         released = true
                     }
-                    if (finished == null && !released) {
-                        val result = layout ?: return@awaitEachGesture
+                    val result = layout ?: return@awaitEachGesture
+                    val gutterPx = gutter.toPx()
+                    if (released) {
+                        val tapUp = up ?: return@awaitEachGesture
+                        if (down.position.x > gutterPx) return@awaitEachGesture
+                        val line = result.getLineForVerticalPosition(down.position.y) + currentPageStart
+                        val marked = currentHighlights.firstOrNull { line in it.lines && it.lines.first >= currentPageStart }
+                            ?: return@awaitEachGesture
+                        tapUp.consume()
+                        haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        currentOnBookmarkTap(marked.lines.first)
+                    } else if (finished == null) {
                         haptics.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                         currentOnLongPress(result.getLineForVerticalPosition(down.position.y))
                         do {
@@ -369,6 +387,20 @@ private fun HighlightableText(
                     }
                 }
             }
+            .padding(start = gutter)
+    )
+}
+
+@Composable
+private fun highlightPalette(): List<androidx.compose.ui.graphics.Color> {
+    val accent = com.nendo.argosy.ui.theme.LocalArgosyTheme.current.focusAccent
+    val semantic = com.nendo.argosy.ui.theme.generated.ColorTokens.Semantic.Dark
+    return listOf(
+        accent,
+        com.nendo.argosy.ui.theme.generated.ColorTokens.Domain.trophyAmber,
+        semantic.success,
+        semantic.warning,
+        semantic.info
     )
 }
 
@@ -391,6 +423,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBookmark(
     drawPath(path, color)
 }
 
+internal const val HIGHLIGHT_PALETTE_SIZE = 5
 private const val HIGHLIGHT_FILL_ALPHA = 0.14f
 private const val HIGHLIGHT_OUTLINE_ALPHA = 0.7f
 private const val BOOKMARK_WIDTH_FRACTION = 0.5f

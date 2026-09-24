@@ -1,5 +1,7 @@
 package com.nendo.argosy.ui.screens.gamedetail.components
 
+import com.nendo.argosy.data.repository.DocumentHighlight
+
 private const val MAX_SECTION_REACH = 30
 private const val MIN_RULE_LENGTH = 3
 private val RULE_CHARS = setOf('=', '-', '*', '_', '#', '~', '+', '.')
@@ -28,11 +30,28 @@ fun sectionAt(lines: List<String>, lineIndex: Int): IntRange? {
  * [highlights] with [section] added, or with every highlight covering [touchedLine] removed when
  * one already does.
  */
-fun toggleHighlight(highlights: List<IntRange>, section: IntRange, touchedLine: Int): List<IntRange> {
-    val covering = highlights.filter { touchedLine in it }
+fun toggleHighlight(
+    highlights: List<DocumentHighlight>,
+    section: IntRange,
+    touchedLine: Int
+): List<DocumentHighlight> {
+    val covering = highlights.filter { touchedLine in it.lines }
     if (covering.isNotEmpty()) return highlights - covering.toSet()
-    return (highlights.filterNot { it.first >= section.first && it.last <= section.last } + listOf(section))
-        .sortedBy { it.first }
+    return (
+        highlights.filterNot { it.lines.first >= section.first && it.lines.last <= section.last } +
+            DocumentHighlight(section)
+        ).sortedBy { it.lines.first }
+}
+
+/**
+ * [highlights] with the one starting at [firstLine] moved to the next of [paletteSize] colours.
+ */
+fun cycleHighlightColor(
+    highlights: List<DocumentHighlight>,
+    firstLine: Int,
+    paletteSize: Int
+): List<DocumentHighlight> = highlights.map {
+    if (it.lines.first == firstLine) it.copy(colorIndex = (it.colorIndex + 1).mod(paletteSize)) else it
 }
 
 private fun isBoundary(line: String): Boolean {

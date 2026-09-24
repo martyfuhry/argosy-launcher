@@ -492,6 +492,7 @@ fun GameDetailScreen(
                 onDismiss = { viewModel.dismissDocumentReader() },
                 onTurnPage = { viewModel.turnDocumentPage(it) },
                 onToggleHighlight = { viewModel.toggleDocumentHighlightAt(it) },
+                onCycleHighlightColor = { viewModel.cycleDocumentHighlightColor(it) },
                 onSpreadsMeasured = { viewModel.setDocumentShowsSpreads(it) }
             )
         }

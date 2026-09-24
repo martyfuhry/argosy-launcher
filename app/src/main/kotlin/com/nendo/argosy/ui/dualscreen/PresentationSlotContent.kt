@@ -146,7 +146,8 @@ private fun dashboardActions(manager: com.nendo.argosy.DualScreenManager) =
         onReaderDismiss = { manager.dashboardReader.dismiss() },
         onReaderLinesPerPage = { manager.dashboardReader.setLinesPerPage(it) },
         onReaderSpreads = { manager.dashboardReader.setShowsSpreads(it) },
-        onReaderToggleHighlight = { manager.dashboardReader.toggleHighlightAt(it) }
+        onReaderToggleHighlight = { manager.dashboardReader.toggleHighlightAt(it) },
+        onReaderCycleHighlightColor = { manager.dashboardReader.cycleHighlightColor(it) }
     )
 
 private data class InGameAppBarState(

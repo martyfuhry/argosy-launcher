@@ -1277,6 +1277,8 @@ class GameDetailViewModel @Inject constructor(
 
     fun toggleDocumentHighlightOnPage() = documentReaderController.toggleHighlightOnPage()
 
+    fun cycleDocumentHighlightColor(firstLine: Int) = documentReaderController.cycleHighlightColor(firstLine)
+
     fun jumpToNextDocumentHighlight() = documentReaderController.jumpToNextHighlight()
 
     private fun isLaunchDisplayRowFocused(): Boolean =

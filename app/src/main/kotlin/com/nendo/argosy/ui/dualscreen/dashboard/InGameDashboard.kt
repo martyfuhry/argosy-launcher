@@ -95,7 +95,8 @@ class DashboardActions(
     val onReaderDismiss: () -> Unit,
     val onReaderLinesPerPage: (Int) -> Unit,
     val onReaderSpreads: (Boolean) -> Unit,
-    val onReaderToggleHighlight: (Int) -> Unit
+    val onReaderToggleHighlight: (Int) -> Unit,
+    val onReaderCycleHighlightColor: (Int) -> Unit
 )
 
 private val RAIL_WIDTH = DimensionTokens.Layout.companionRailWidth.dp
@@ -257,6 +258,7 @@ private fun ReaderPane(reader: DocumentReaderState, actions: DashboardActions) {
         onTurnPage = actions.onReaderTurnPage,
         onSpreadsMeasured = actions.onReaderSpreads,
         onToggleHighlight = actions.onReaderToggleHighlight,
+        onCycleHighlightColor = actions.onReaderCycleHighlightColor,
         showsControllerHints = false
     )
 }
