@@ -147,13 +147,7 @@ class RestoreCachedSaveUseCase @Inject constructor(
         }
 
         if (entry.serverSaveId != null) {
-            activeSaveRepository.setPendingDeviceSyncSaveId(gameId, entry.serverSaveId)
-            try {
-                saveSyncRepository.confirmDeviceSynced(entry.serverSaveId)
-                activeSaveRepository.setPendingDeviceSyncSaveId(gameId, null)
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to confirm device sync for saveId=${entry.serverSaveId}, will retry before next sync", e)
-            }
+            saveSyncRepository.confirmOrQueueDeviceSync(gameId, entry.serverSaveId)
         }
 
         if (syncToServer && game.rommId != null) {

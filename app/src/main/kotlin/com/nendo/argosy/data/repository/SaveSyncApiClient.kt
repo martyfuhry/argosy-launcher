@@ -364,7 +364,8 @@ class SaveSyncApiClient @Inject constructor(
         activate: Boolean
     ): Boolean = saveDownloader.get().downloadAndCacheSave(serverSaveId, gameId, channelName, activate)
 
-    suspend fun confirmDeviceSynced(saveId: Long) = saveDownloader.get().confirmDeviceSynced(saveId)
+    suspend fun confirmOrQueueDeviceSync(gameId: Long, saveId: Long) =
+        saveDownloader.get().confirmOrQueueDeviceSync(gameId, saveId)
 
     suspend fun flushPendingDeviceSync(gameId: Long) = saveDownloader.get().flushPendingDeviceSync(gameId)
 

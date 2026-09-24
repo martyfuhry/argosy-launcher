@@ -28,13 +28,14 @@ class SaveDownloaderTest {
         every { getApi() } returns api
         every { getDeviceId() } returns "device-abc"
     }
+    private val activeSaveRepository: ActiveSaveRepository = mockk(relaxed = true)
     private val downloader = SaveDownloader(
         context = mockk(relaxed = true),
         saveSyncDao = mockk(relaxed = true),
         saveCacheDao = mockk(relaxed = true),
         emulatorResolver = mockk(relaxed = true),
         gameDao = mockk(relaxed = true),
-        activeSaveRepository = mockk(relaxed = true),
+        activeSaveRepository = activeSaveRepository,
         titleDbRepository = mockk(relaxed = true),
         titleIdExtractor = mockk(relaxed = true),
         saveArchiver = mockk(relaxed = true),
@@ -94,5 +95,48 @@ class SaveDownloaderTest {
         downloader.confirmDeviceSynced(1L)
 
         coVerify(exactly = 0) { api.confirmSaveDownloaded(any(), any()) }
+    }
+
+    @Test
+    fun `confirmOrQueueDeviceSync clears the pending id once the server acknowledges`() = runTest {
+        coEvery { api.confirmSaveDownloaded(42L, any()) } returns
+            Response.success(RomMSave(id = 42L, romId = 1L, userId = 1L, emulator = null, fileName = "save.sav", updatedAt = ""))
+
+        downloader.confirmOrQueueDeviceSync(gameId = 5L, saveId = 42L)
+
+        coVerify { activeSaveRepository.setPendingDeviceSyncSaveId(5L, 42L) }
+        coVerify { activeSaveRepository.setPendingDeviceSyncSaveId(5L, null) }
+    }
+
+    @Test
+    fun `confirmOrQueueDeviceSync keeps the pending id when the server refuses`() = runTest {
+        coEvery { api.confirmSaveDownloaded(any(), any()) } returns
+            Response.error(500, ResponseBody.create(null, ""))
+
+        downloader.confirmOrQueueDeviceSync(gameId = 5L, saveId = 42L)
+
+        coVerify { activeSaveRepository.setPendingDeviceSyncSaveId(5L, 42L) }
+        coVerify(exactly = 0) { activeSaveRepository.setPendingDeviceSyncSaveId(5L, null) }
+    }
+
+    @Test
+    fun `flushPendingDeviceSync keeps the pending id when the confirm fails`() = runTest {
+        coEvery { activeSaveRepository.getPendingDeviceSyncSaveId(5L) } returns 42L
+        coEvery { api.confirmSaveDownloaded(any(), any()) } throws RuntimeException("timeout")
+
+        downloader.flushPendingDeviceSync(5L)
+
+        coVerify(exactly = 0) { activeSaveRepository.setPendingDeviceSyncSaveId(5L, null) }
+    }
+
+    @Test
+    fun `flushPendingDeviceSync clears the pending id when the confirm succeeds`() = runTest {
+        coEvery { activeSaveRepository.getPendingDeviceSyncSaveId(5L) } returns 42L
+        coEvery { api.confirmSaveDownloaded(42L, any()) } returns
+            Response.success(RomMSave(id = 42L, romId = 1L, userId = 1L, emulator = null, fileName = "save.sav", updatedAt = ""))
+
+        downloader.flushPendingDeviceSync(5L)
+
+        coVerify { activeSaveRepository.setPendingDeviceSyncSaveId(5L, null) }
     }
 }

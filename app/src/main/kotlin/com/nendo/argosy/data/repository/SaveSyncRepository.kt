@@ -533,7 +533,7 @@ class SaveSyncRepository @Inject constructor(
     suspend fun flushPendingDeviceSync(gameId: Long) =
         apiClient.flushPendingDeviceSync(gameId)
 
-    suspend fun confirmDeviceSynced(saveId: Long) =
-        apiClient.confirmDeviceSynced(saveId)
+    suspend fun confirmOrQueueDeviceSync(gameId: Long, saveId: Long) =
+        apiClient.confirmOrQueueDeviceSync(gameId, saveId)
 }
 
