@@ -403,6 +403,7 @@
     <string name="ingame_libretro_hud_last_save_hours_ago">%1$d小时前保存</string>
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">硬核模式下已禁用即时存档</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">联机期间已禁用即时存档</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">此核心不支持即时存档</string>
     <string name="ingame_libretro_quickaction_save_success">即时存档已保存</string>
     <string name="ingame_libretro_quickaction_save_failure">保存失败</string>

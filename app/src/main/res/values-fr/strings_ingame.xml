@@ -419,6 +419,7 @@
     <string name="ingame_libretro_hud_last_save_hours_ago">enregistré il y a %1$dh</string>
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Les états de sauvegarde sont désactivés en hardcore</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">Les états de sauvegarde sont désactivés pendant le netplay</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">États de sauvegarde indisponibles pour ce core</string>
     <string name="ingame_libretro_quickaction_save_success">État enregistré</string>
     <string name="ingame_libretro_quickaction_save_failure">Échec de l\'enregistrement</string>

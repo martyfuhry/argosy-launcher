@@ -402,6 +402,7 @@
     <string name="ingame_libretro_hud_last_save_hours_ago">%1$dh前儲存</string>
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">硬核模式下無法使用即時存檔</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">連線對戰期間無法使用即時存檔</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">此核心無法使用即時存檔</string>
     <string name="ingame_libretro_quickaction_save_success">已儲存即時存檔</string>
     <string name="ingame_libretro_quickaction_save_failure">儲存失敗</string>

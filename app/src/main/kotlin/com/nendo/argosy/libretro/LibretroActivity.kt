@@ -3281,6 +3281,10 @@ class LibretroActivity : ComponentActivity() {
         override fun quickSave() {
             runOnUiThread {
                 if (coreDestroyed || !::retroView.isInitialized) return@runOnUiThread
+                if (netplay.inSession && netplay.role != NetplayMenuRole.Host) {
+                    notifyQuickAction(false, "", getString(R.string.ingame_libretro_quickaction_netplay_blocked))
+                    return@runOnUiThread
+                }
                 if (hardcoreMode) {
                     notifyQuickAction(false, "", getString(R.string.ingame_libretro_quickaction_save_hardcore_blocked))
                     return@runOnUiThread
@@ -3305,6 +3309,10 @@ class LibretroActivity : ComponentActivity() {
         override fun quickLoad() {
             runOnUiThread {
                 if (coreDestroyed || !::retroView.isInitialized) return@runOnUiThread
+                if (netplay.inSession) {
+                    notifyQuickAction(false, "", getString(R.string.ingame_libretro_quickaction_netplay_blocked))
+                    return@runOnUiThread
+                }
                 if (hardcoreMode) {
                     notifyQuickAction(false, "", getString(R.string.ingame_libretro_quickaction_load_hardcore_blocked))
                     return@runOnUiThread

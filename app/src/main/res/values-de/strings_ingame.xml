@@ -410,6 +410,7 @@
     <string name="ingame_libretro_hud_last_save_hours_ago">vor %1$dh gespeichert</string>
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Savestates sind im Hardcore-Modus deaktiviert</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">Savestates sind während Netplay deaktiviert</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">Savestates für diesen Core nicht verfügbar</string>
     <string name="ingame_libretro_quickaction_save_success">Savestate gespeichert</string>
     <string name="ingame_libretro_quickaction_save_failure">Speichern fehlgeschlagen</string>

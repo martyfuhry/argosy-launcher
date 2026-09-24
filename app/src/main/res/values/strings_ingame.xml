@@ -878,6 +878,7 @@
 
     <!-- Social-overlay toast for the cross-app quick-save hotkey/button. -->
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Save states are disabled in hardcore</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">Save states are disabled during netplay</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">Save states unavailable for this core</string>
     <string name="ingame_libretro_quickaction_save_success">State saved</string>
     <!-- "Save" is a noun here (the quick-save action), not a verb. -->

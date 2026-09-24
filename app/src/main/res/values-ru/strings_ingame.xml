@@ -428,6 +428,7 @@
     <string name="ingame_libretro_hud_last_save_hours_ago">сохранено %1$dh назад</string>
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">Состояния отключены в хардкоре</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">Состояния отключены во время сетевой игры</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">Состояния недоступны для этого ядра</string>
     <string name="ingame_libretro_quickaction_save_success">Состояние сохранено</string>
     <string name="ingame_libretro_quickaction_save_failure">Не удалось сохранить</string>

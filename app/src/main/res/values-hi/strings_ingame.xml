@@ -410,6 +410,7 @@
     <string name="ingame_libretro_hud_last_save_hours_ago">%1$dघं पहले सेव हुआ</string>
 
     <string name="ingame_libretro_quickaction_save_hardcore_blocked">हार्डकोर में सेव स्टेट अक्षम हैं</string>
+    <string name="ingame_libretro_quickaction_netplay_blocked">नेटप्ले के दौरान सेव स्टेट अक्षम हैं</string>
     <string name="ingame_libretro_quickaction_save_unsupported_core">इस कोर के लिए सेव स्टेट उपलब्ध नहीं हैं</string>
     <string name="ingame_libretro_quickaction_save_success">स्टेट सेव हुआ</string>
     <string name="ingame_libretro_quickaction_save_failure">सेव विफल</string>
