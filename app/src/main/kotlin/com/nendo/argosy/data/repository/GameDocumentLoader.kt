@@ -20,8 +20,8 @@ class GameDocumentLoader @Inject constructor(
     @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) {
     /**
-     * A PDF rendered to one bitmap per page, up to [MAX_PDF_PAGES]. A remote document is staged
-     * in the cache directory and deleted once its pages are rasterised.
+     * A PDF rendered to one bitmap per page, up to [MAX_PDF_PAGES]. A remote document is kept in
+     * the document cache after its first open, so later opens read it from disk.
      */
     suspend fun readPdf(
         localPath: String?,
@@ -31,15 +31,38 @@ class GameDocumentLoader @Inject constructor(
         pageWidthPx: Int
     ): DocumentContent = withContext(Dispatchers.IO) {
         val source = localPath?.let { File(it) }?.takeIf { it.isFile }
-            ?: stageRemote(rommFileId, remoteUrl, fileName)
+            ?: cachedOrFetched(rommFileId, remoteUrl, fileName)
             ?: return@withContext DocumentContent.Unavailable("unreachable")
         try {
             renderPages(source, pageWidthPx)
         } catch (e: Exception) {
+            cacheFileFor(rommFileId, remoteUrl, fileName)?.takeIf { it == source }?.delete()
             DocumentContent.Unavailable(e.message)
-        } finally {
-            if (source.parentFile == context.cacheDir) source.delete()
         }
+    }
+
+    /**
+     * Downloads a remote document into the document cache unless it is already there. Returns the
+     * cached file, or null when the document has no remote source or cannot be fetched.
+     */
+    suspend fun cacheDocument(rommFileId: Long?, remoteUrl: String?, fileName: String): File? =
+        withContext(Dispatchers.IO) { cachedOrFetched(rommFileId, remoteUrl, fileName) }
+
+    fun isCached(rommFileId: Long?, remoteUrl: String?, fileName: String): Boolean =
+        cacheFileFor(rommFileId, remoteUrl, fileName)?.isFile == true
+
+    private suspend fun cachedOrFetched(rommFileId: Long?, remoteUrl: String?, fileName: String): File? {
+        val target = cacheFileFor(rommFileId, remoteUrl, fileName) ?: return null
+        if (target.isFile && target.length() > 0) return target
+        return fetchInto(target, rommFileId, remoteUrl, fileName)
+    }
+
+    private fun cacheFileFor(rommFileId: Long?, remoteUrl: String?, fileName: String): File? {
+        val key = rommFileId?.let { "romm_$it" }
+            ?: remoteUrl?.let { "url_${it.hashCode().toUInt()}" }
+            ?: return null
+        val extension = fileName.substringAfterLast('.', "").takeIf { it.isNotBlank() }?.let { ".$it" }.orEmpty()
+        return File(File(context.cacheDir, DOCUMENT_CACHE_DIR).apply { mkdirs() }, "$key$extension")
     }
 
     private fun renderPages(file: File, pageWidthPx: Int): DocumentContent {
@@ -71,12 +94,13 @@ class GameDocumentLoader @Inject constructor(
         }
     }
 
-    private suspend fun stageRemote(
+    private suspend fun fetchInto(
+        target: File,
         rommFileId: Long?,
         remoteUrl: String?,
         fileName: String
     ): File? {
-        val target = File(context.cacheDir, "doc_${System.nanoTime()}_$fileName")
+        val partial = File(target.parentFile, "${target.name}.part")
         val body = when {
             rommFileId != null -> when (val r = romMRepository.downloadRomFile(rommFileId, fileName)) {
                 is RomMResult.Success -> r.data.body
@@ -87,16 +111,16 @@ class GameDocumentLoader @Inject constructor(
         }
         return runCatching {
             body.use { source ->
-                target.outputStream().use { out -> source.byteStream().copyTo(out) }
+                partial.outputStream().use { out -> source.byteStream().copyTo(out) }
             }
+            if (!partial.renameTo(target)) error("could not move ${partial.name} into the cache")
             target
-        }.getOrNull()
+        }.onFailure { partial.delete() }.getOrNull()
     }
 
     /**
-     * A document's text, read from disk when the game was downloaded and streamed from the server
-     * when it was not. A streamed read is never written to disk: a document belongs to a game the
-     * player keeps, not to one they are only looking at.
+     * A document's text, from the downloaded game's folder when present, else from the document
+     * cache, which a first open fills from the server.
      */
     suspend fun readText(
         localPath: String?,
@@ -113,18 +137,14 @@ class GameDocumentLoader @Inject constructor(
             }
         }
 
-        val body = when {
-            rommFileId != null -> when (val r = romMRepository.downloadRomFile(rommFileId, fileName)) {
-                is RomMResult.Success -> r.data.body
-                is RomMResult.Error -> return@withContext DocumentContent.Unavailable(r.message)
-            }
-            remoteUrl != null -> romMRepository.openResource(remoteUrl)
-                ?: return@withContext DocumentContent.Unavailable("unreachable")
-            else -> return@withContext DocumentContent.Unavailable("no source")
+        if (rommFileId == null && remoteUrl == null) {
+            return@withContext DocumentContent.Unavailable("no source")
         }
+        val cached = cachedOrFetched(rommFileId, remoteUrl, fileName)
+            ?: return@withContext DocumentContent.Unavailable("unreachable")
         runCatching {
-            body.use { source ->
-                DocumentContent.Text(String(source.byteStream().readNBytes(maxBytes), Charsets.UTF_8))
+            cached.inputStream().use { source ->
+                DocumentContent.Text(String(source.readNBytes(maxBytes), Charsets.UTF_8))
             }
         }.getOrElse { DocumentContent.Unavailable(it.message) }
     }
@@ -132,5 +152,6 @@ class GameDocumentLoader @Inject constructor(
     private companion object {
         const val MAX_TEXT_BYTES = 4 * 1024 * 1024
         const val MAX_PDF_PAGES = 200
+        const val DOCUMENT_CACHE_DIR = "documents"
     }
 }

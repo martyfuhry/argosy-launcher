@@ -216,6 +216,7 @@ fun GameDetailScreen(
                         coroutineScope.launch { achievementListState.animateScrollToItem(newIndex) }
                     }
                     MenuItem.RelatedGames -> viewModel.moveRelatedFocus(-1)
+                    MenuItem.Documents -> viewModel.moveDocumentFocus(-1)
                     else -> {}
                 }
             },
@@ -233,6 +234,7 @@ fun GameDetailScreen(
                         coroutineScope.launch { achievementListState.animateScrollToItem(newIndex) }
                     }
                     MenuItem.RelatedGames -> viewModel.moveRelatedFocus(1)
+                    MenuItem.Documents -> viewModel.moveDocumentFocus(1)
                     else -> {}
                 }
             },
@@ -448,14 +450,6 @@ fun GameDetailScreen(
         }
     }
 
-    uiState.documentReader?.let { reader ->
-        com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderOverlay(
-            state = reader,
-            onLinesPerPageMeasured = { viewModel.setDocumentLinesPerPage(it) },
-            onDismiss = { viewModel.dismissDocumentReader() }
-        )
-    }
-
     Box(modifier = Modifier.fillMaxSize()) {
         if (uiState.isLoading || game == null) {
             GameDetailSkeleton()
@@ -478,6 +472,14 @@ fun GameDetailScreen(
                 onNavigateToPlatformSettings = onNavigateToPlatformSettings,
                 onNavigateToGame = onNavigateToGame,
                 localModifiedFocusIndex = localModifiedFocusIndex
+            )
+        }
+        uiState.documentReader?.let { reader ->
+            com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderOverlay(
+                state = reader,
+                onLinesPerPageMeasured = { viewModel.setDocumentLinesPerPage(it) },
+                onDismiss = { viewModel.dismissDocumentReader() },
+                onSpreadsMeasured = { viewModel.setDocumentShowsSpreads(it) }
             )
         }
     }

@@ -42,6 +42,8 @@
     <string name="gamedetail_document_reader_turn_page">Turn page</string>
     <!-- Page counter in the document reader. %1$d is the current page, %2$d the total. -->
     <string name="gamedetail_document_reader_page">%1$d / %2$d</string>
+    <!-- Page counter while two pages show side by side: first page, last page, total. -->
+    <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
     <!-- Spoken description of the badge on a document that is on the server rather than this
          device. Adjective phrase. -->
     <string name="gamedetail_section_documents_remote">Not downloaded</string>

@@ -1366,10 +1366,20 @@ class GameDetailViewModel @Inject constructor(
         }
     }
 
+    fun setDocumentShowsSpreads(showsSpreads: Boolean) {
+        val reader = _uiState.value.documentReader ?: return
+        if (reader.showsSpreads == showsSpreads) return
+        _uiState.update { it.copy(documentReader = reader.copy(showsSpreads = showsSpreads)) }
+    }
+
     fun turnDocumentPage(delta: Int) {
         val reader = _uiState.value.documentReader ?: return
         if (reader.pageCount <= 1) return
-        val next = (reader.pageIndex + delta).coerceIn(0, reader.pageCount - 1)
+        val next = if (reader.usesSpreads) {
+            com.nendo.argosy.ui.screens.gamedetail.components.spreadStartAfter(reader.pageIndex, reader.pageCount, delta)
+        } else {
+            (reader.pageIndex + delta).coerceIn(0, reader.pageCount - 1)
+        }
         if (next == reader.pageIndex) return
         _uiState.update { it.copy(documentReader = reader.copy(pageIndex = next)) }
         scheduleDocumentProgressSave()

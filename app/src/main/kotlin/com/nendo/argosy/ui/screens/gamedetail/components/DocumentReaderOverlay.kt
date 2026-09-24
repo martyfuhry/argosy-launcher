@@ -1,7 +1,9 @@
 package com.nendo.argosy.ui.screens.gamedetail.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,9 +35,41 @@ data class DocumentReaderState(
     val pages: List<android.graphics.Bitmap> = emptyList(),
     val pageIndex: Int = 0,
     val isLoading: Boolean = true,
-    val errorReason: String? = null
+    val errorReason: String? = null,
+    val showsSpreads: Boolean = false
 ) {
     val pageCount: Int get() = if (pages.isNotEmpty()) pages.size else textPages.size
+
+    val usesSpreads: Boolean get() = showsSpreads && pages.size > 1
+
+    val visiblePages: IntRange
+        get() = if (usesSpreads) spreadOf(pageIndex, pages.size) else pageIndex..pageIndex
+}
+
+/**
+ * The pages shown together as a book spread when [pageIndex] is open: the cover alone, then each
+ * even page beside the odd page after it.
+ */
+fun spreadOf(pageIndex: Int, pageCount: Int): IntRange {
+    if (pageCount <= 0) return 0..0
+    val index = pageIndex.coerceIn(0, pageCount - 1)
+    if (index == 0) return 0..0
+    val start = if (index % 2 == 1) index else index - 1
+    return start..minOf(start + 1, pageCount - 1)
+}
+
+/**
+ * The first page of the spread [delta] spreads away from the one holding [pageIndex], clamped to
+ * the book.
+ */
+fun spreadStartAfter(pageIndex: Int, pageCount: Int, delta: Int): Int {
+    if (pageCount <= 0) return 0
+    val current = spreadOf(pageIndex, pageCount)
+    return when {
+        delta > 0 -> (current.last + 1).coerceAtMost(pageCount - 1).let { spreadOf(it, pageCount).first }
+        delta < 0 -> spreadOf((current.first - 1).coerceAtLeast(0), pageCount).first
+        else -> current.first
+    }
 }
 
 /**
@@ -48,6 +82,7 @@ fun paginateText(body: String, linesPerPage: Int = TEXT_LINES_PER_PAGE): List<St
         .ifEmpty { listOf("") }
 
 const val TEXT_LINES_PER_PAGE = 34
+private const val TEXT_COLUMNS = 80
 private const val DEFAULT_LINE_SPACING = 1.4f
 private const val MIN_LINES_PER_PAGE = 8
 private const val MAX_LINES_PER_PAGE = 120
@@ -56,7 +91,8 @@ private const val MAX_LINES_PER_PAGE = 120
 fun DocumentReaderOverlay(
     state: DocumentReaderState,
     onLinesPerPageMeasured: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSpreadsMeasured: (Boolean) -> Unit = {}
 ) {
     Box(
         modifier = Modifier
@@ -82,12 +118,22 @@ fun DocumentReaderOverlay(
                     modifier = Modifier.weight(1f)
                 )
                 if (state.pageCount > 1) {
+                    val shown = state.visiblePages
                     Text(
-                        text = stringResource(
-                            R.string.gamedetail_document_reader_page,
-                            state.pageIndex + 1,
-                            state.pageCount
-                        ),
+                        text = if (shown.first != shown.last) {
+                            stringResource(
+                                R.string.gamedetail_document_reader_spread,
+                                shown.first + 1,
+                                shown.last + 1,
+                                state.pageCount
+                            )
+                        } else {
+                            stringResource(
+                                R.string.gamedetail_document_reader_page,
+                                shown.first + 1,
+                                state.pageCount
+                            )
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -105,20 +151,48 @@ fun DocumentReaderOverlay(
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.align(Alignment.Center)
                     )
-                    state.pages.isNotEmpty() -> state.pages.getOrNull(state.pageIndex)?.let { page ->
-                        androidx.compose.foundation.Image(
-                            bitmap = page.asImageBitmap(),
-                            contentDescription = null,
-                            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    state.pages.isNotEmpty() -> BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val wide = maxWidth > maxHeight
+                        LaunchedEffect(wide) { onSpreadsMeasured(wide) }
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            state.visiblePages.forEach { index ->
+                                state.pages.getOrNull(index)?.let { page ->
+                                    androidx.compose.foundation.Image(
+                                        bitmap = page.asImageBitmap(),
+                                        contentDescription = null,
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                                        alignment = when {
+                                            state.visiblePages.first == state.visiblePages.last -> Alignment.Center
+                                            index == state.visiblePages.first -> Alignment.CenterEnd
+                                            else -> Alignment.CenterStart
+                                        },
+                                        modifier = Modifier.weight(1f).fillMaxHeight()
+                                    )
+                                }
+                            }
+                        }
                     }
                     else -> {
-                        val textStyle = MaterialTheme.typography.bodySmall.copy(
+                        val baseStyle = MaterialTheme.typography.bodySmall.copy(
                             fontFamily = FontFamily.Monospace
                         )
                         val density = androidx.compose.ui.platform.LocalDensity.current
+                        val measurer = androidx.compose.ui.text.rememberTextMeasurer()
                         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                            val charWidthPx = measurer.measure("M".repeat(TEXT_COLUMNS), baseStyle)
+                                .size.width.toFloat() / TEXT_COLUMNS
+                            val scale = if (charWidthPx > 0f) {
+                                (constraints.maxWidth / (charWidthPx * TEXT_COLUMNS)).coerceAtMost(1f)
+                            } else {
+                                1f
+                            }
+                            val textStyle = baseStyle.copy(
+                                fontSize = baseStyle.fontSize * scale,
+                                lineHeight = if (baseStyle.lineHeight.isSp) baseStyle.lineHeight * scale else baseStyle.lineHeight
+                            )
                             val lineHeightPx = with(density) {
                                 textStyle.lineHeight.takeIf { it.isSp }?.toPx()
                                     ?: (textStyle.fontSize.toPx() * DEFAULT_LINE_SPACING)
