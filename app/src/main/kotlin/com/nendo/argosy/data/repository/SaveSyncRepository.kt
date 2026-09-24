@@ -409,6 +409,10 @@ class SaveSyncRepository @Inject constructor(
             existing?.lastUploadedHash != null &&
             serverHash == existing.lastUploadedHash
         val serverHasNewer = !contentMatchesLastSync && ourSync?.isCurrent != true
+        if (needsAdoptionConfirm(serverHash, existing?.lastUploadedHash, ourSync?.isCurrent == true)) {
+            Logger.info(PRE_LAUNCH_TAG, "[SaveSync] PRE_LAUNCH gameId=$gameId channel=$effectiveChannel | server save matches lastUploadedHash but device not current; confirming serverSaveId=${active.id}")
+            apiClient.confirmDeviceSyncedWithRetry(gameId, active.id)
+        }
 
         val decision: PreLaunchSyncResult = when {
             !serverHasNewer -> PreLaunchSyncResult.LocalIsNewer
@@ -533,7 +537,13 @@ class SaveSyncRepository @Inject constructor(
     suspend fun flushPendingDeviceSync(gameId: Long) =
         apiClient.flushPendingDeviceSync(gameId)
 
-    suspend fun confirmDeviceSynced(saveId: Long) =
-        apiClient.confirmDeviceSynced(saveId)
+    suspend fun confirmDeviceSyncedWithRetry(gameId: Long, saveId: Long) =
+        apiClient.confirmDeviceSyncedWithRetry(gameId, saveId)
 }
 
+/**
+ * True when the server's latest save is the content this device last synced, yet the server
+ * does not count this device as synced to it.
+ */
+internal fun needsAdoptionConfirm(serverHash: String?, lastUploadedHash: String?, deviceIsCurrent: Boolean): Boolean =
+    serverHash != null && serverHash == lastUploadedHash && !deviceIsCurrent

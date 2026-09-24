@@ -7,10 +7,12 @@ import com.nendo.argosy.data.remote.romm.RomMDeviceSync
 import com.nendo.argosy.data.remote.romm.RomMSave
 import com.nendo.argosy.data.sync.SyncQueueManager
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -49,7 +51,8 @@ class SaveSyncRepositoryPreLaunchTest {
     private fun makeServerSave(
         id: Long = 10L,
         slot: String? = "autosave",
-        deviceSyncs: List<RomMDeviceSync>? = listOf(RomMDeviceSync(deviceId = "device-1", isCurrent = true))
+        deviceSyncs: List<RomMDeviceSync>? = listOf(RomMDeviceSync(deviceId = "device-1", isCurrent = true)),
+        contentHash: String? = null
     ) = RomMSave(
         id = id,
         romId = rommId,
@@ -60,7 +63,8 @@ class SaveSyncRepositoryPreLaunchTest {
         updatedAt = "2025-01-15T12:00:00Z",
         slot = slot,
         fileNameNoExt = "save",
-        deviceSyncs = deviceSyncs
+        deviceSyncs = deviceSyncs,
+        contentHash = contentHash
     )
 
     @Test
@@ -285,5 +289,72 @@ class SaveSyncRepositoryPreLaunchTest {
 
         assertTrue(result is PreLaunchSyncResult.LocalModified)
         assertEquals("/persisted/save.srm", (result as PreLaunchSyncResult.LocalModified).localSavePath)
+    }
+
+    private fun trustServerHash() {
+        every { apiClient.getCapabilities() } returns mockk(relaxed = true) {
+            every { trustsServerHash } returns true
+        }
+    }
+
+    private fun lastSyncedHash(hash: String) {
+        coEvery {
+            saveSyncDao.getByGameEmulatorAndChannel(gameId, emulatorId, "autosave", any())
+        } returns SaveSyncEntity(
+            id = 8L, gameId = gameId, rommId = rommId, emulatorId = emulatorId,
+            channelName = "autosave",
+            syncStatus = SaveSyncEntity.STATUS_SYNCED,
+            lastUploadedHash = hash
+        )
+    }
+
+    @Test
+    fun `adoption confirm is needed only when server content is the last synced content and device is not current`() {
+        assertTrue(needsAdoptionConfirm("h1", "h1", deviceIsCurrent = false))
+        assertFalse(needsAdoptionConfirm("h1", "h1", deviceIsCurrent = true))
+        assertFalse(needsAdoptionConfirm("h1", "h2", deviceIsCurrent = false))
+        assertFalse(needsAdoptionConfirm(null, null, deviceIsCurrent = false))
+        assertFalse(needsAdoptionConfirm("h1", null, deviceIsCurrent = false))
+    }
+
+    @Test
+    fun `server save matching lastUploadedHash with device not current confirms that save and stays no_op`() = runTest {
+        trustServerHash()
+        lastSyncedHash("adopted")
+        coEvery { apiClient.checkSavesForGame(gameId, rommId) } returns listOf(
+            makeServerSave(id = 41L, deviceSyncs = emptyList(), contentHash = "adopted")
+        )
+
+        val result = repo.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
+
+        assertTrue(result is PreLaunchSyncResult.LocalIsNewer)
+        coVerify(exactly = 1) { apiClient.confirmDeviceSyncedWithRetry(gameId, 41L) }
+    }
+
+    @Test
+    fun `server save with different content than lastUploadedHash is not confirmed`() = runTest {
+        trustServerHash()
+        lastSyncedHash("mine")
+        coEvery { apiClient.checkSavesForGame(gameId, rommId) } returns listOf(
+            makeServerSave(id = 41L, deviceSyncs = emptyList(), contentHash = "someone-elses")
+        )
+
+        val result = repo.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
+
+        assertTrue(result is PreLaunchSyncResult.ServerIsNewer)
+        coVerify(exactly = 0) { apiClient.confirmDeviceSyncedWithRetry(any(), any()) }
+    }
+
+    @Test
+    fun `server save matching lastUploadedHash with device already current is not reconfirmed`() = runTest {
+        trustServerHash()
+        lastSyncedHash("adopted")
+        coEvery { apiClient.checkSavesForGame(gameId, rommId) } returns listOf(
+            makeServerSave(id = 41L, contentHash = "adopted")
+        )
+
+        repo.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
+
+        coVerify(exactly = 0) { apiClient.confirmDeviceSyncedWithRetry(any(), any()) }
     }
 }
