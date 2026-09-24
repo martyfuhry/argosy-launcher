@@ -65,7 +65,9 @@ fun CompanionDashboard(
     bottomInset: androidx.compose.ui.unit.Dp = Dimens.spacingMd,
     onQuickSave: () -> Unit = {},
     onQuickLoad: () -> Unit = {},
-    onScreenshot: () -> Unit = {}
+    onScreenshot: () -> Unit = {},
+    onOpenAchievements: () -> Unit = {},
+    onOpenDocument: (com.nendo.argosy.ui.screens.gamedetail.GameDocument) -> Unit = {}
 ) {
     if (!state.isLoaded) return
 
@@ -99,6 +101,17 @@ fun CompanionDashboard(
                     onQuickSave = onQuickSave,
                     onQuickLoad = onQuickLoad,
                     onScreenshot = onScreenshot
+                )
+            }
+        }
+        if (achievementTotal > 0 || state.manual != null || state.walkthrough != null) {
+            item {
+                QuickAccessRow(
+                    hasAchievements = achievementTotal > 0,
+                    manual = state.manual,
+                    walkthrough = state.walkthrough,
+                    onOpenAchievements = onOpenAchievements,
+                    onOpenDocument = onOpenDocument
                 )
             }
         }
@@ -153,6 +166,44 @@ private fun QuickActionsRow(
                         loadArmedUntil = android.os.SystemClock.elapsedRealtime() + 3000L
                     }
                 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun QuickAccessRow(
+    hasAchievements: Boolean,
+    manual: com.nendo.argosy.ui.screens.gamedetail.GameDocument?,
+    walkthrough: com.nendo.argosy.ui.screens.gamedetail.GameDocument?,
+    onOpenAchievements: () -> Unit,
+    onOpenDocument: (com.nendo.argosy.ui.screens.gamedetail.GameDocument) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimens.spacingLg, vertical = Dimens.spacingSm),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
+    ) {
+        if (hasAchievements) {
+            QuickActionButton(
+                label = stringResource(R.string.dual_companion_quick_access_achievements),
+                modifier = Modifier.weight(1f),
+                onTap = onOpenAchievements
+            )
+        }
+        manual?.let { document ->
+            QuickActionButton(
+                label = stringResource(R.string.dual_companion_quick_access_manual),
+                modifier = Modifier.weight(1f),
+                onTap = { onOpenDocument(document) }
+            )
+        }
+        walkthrough?.let { document ->
+            QuickActionButton(
+                label = stringResource(R.string.dual_companion_quick_access_walkthrough),
+                modifier = Modifier.weight(1f),
+                onTap = { onOpenDocument(document) }
             )
         }
     }

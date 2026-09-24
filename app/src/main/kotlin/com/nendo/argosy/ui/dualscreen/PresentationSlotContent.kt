@@ -102,6 +102,8 @@ fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = 
             is PresentationSlot.InGame -> {
                 val manager = com.nendo.argosy.DualScreenManagerHolder.instance
                 val bar = rememberInGameAppBarState()
+                var achievementsOpen by remember(slot.state.gameId) { mutableStateOf(false) }
+                var achievementFocus by remember(slot.state.gameId) { mutableStateOf(0) }
                 CompanionDashboard(
                     state = slot.state,
                     sessionTimer = manager?.swappedSessionTimer,
@@ -109,10 +111,32 @@ fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = 
                     bottomInset = if (bar == null) Dimens.spacingMd else IN_GAME_APP_BAR_HEIGHT,
                     onQuickSave = { manager?.sessionQuickActions?.quickSave() },
                     onQuickLoad = { manager?.sessionQuickActions?.quickLoad() },
-                    onScreenshot = { manager?.sessionQuickActions?.screenshot() }
+                    onScreenshot = { manager?.sessionQuickActions?.screenshot() },
+                    onOpenAchievements = { achievementsOpen = true },
+                    onOpenDocument = { manager?.openDashboardDocument(it) }
                 )
                 if (bar != null) {
                     InGameAppBar(bar, modifier = Modifier.align(Alignment.BottomCenter))
+                }
+                if (achievementsOpen) {
+                    com.nendo.argosy.libretro.ui.InGameAchievements(
+                        gameName = slot.state.title,
+                        achievements = slot.achievements,
+                        focusedIndex = achievementFocus,
+                        onFocusChange = { achievementFocus = it },
+                        onDismiss = { achievementsOpen = false },
+                        showsCloseButton = true
+                    )
+                }
+                val reader = manager?.dashboardReader?.state?.collectAsState()?.value
+                if (manager != null && reader != null) {
+                    com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderOverlay(
+                        state = reader,
+                        onLinesPerPageMeasured = { manager.dashboardReader.setLinesPerPage(it) },
+                        onDismiss = { manager.dashboardReader.dismiss() },
+                        onTurnPage = { manager.dashboardReader.turnPage(it) },
+                        onSpreadsMeasured = { manager.dashboardReader.setShowsSpreads(it) }
+                    )
                 }
             }
         }

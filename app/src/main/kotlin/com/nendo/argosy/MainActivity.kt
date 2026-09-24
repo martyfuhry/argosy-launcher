@@ -109,6 +109,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var androidGameScanner: com.nendo.argosy.data.scanner.AndroidGameScanner
     @Inject lateinit var gameNativeStoreSync: com.nendo.argosy.data.launcher.GameNativeStoreSync
     @Inject lateinit var romMRepository: RomMRepository
+    @Inject lateinit var gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader
     @Inject lateinit var jellyfinConnectionManager: com.nendo.argosy.data.remote.jellyfin.JellyfinConnectionManager
     @Inject lateinit var preferencesRepository: UserPreferencesRepository
     @Inject lateinit var syncPreferencesRepository: com.nendo.argosy.data.preferences.SyncPreferencesRepository
@@ -358,6 +359,7 @@ class MainActivity : ComponentActivity() {
                 mediaSiblingsDelegate = mediaSiblingsDelegate,
                 imageCacheManager = imageCacheManager,
                 romMRepository = romMRepository,
+                gameDocumentLoader = gameDocumentLoader,
                 resolveGameEmulatorContext = resolveGameEmulatorContext,
                 hapticManager = hapticFeedbackManager,
                 soundManager = soundFeedbackManager,

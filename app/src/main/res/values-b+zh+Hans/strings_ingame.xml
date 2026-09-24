@@ -15,6 +15,7 @@
     <string name="ingame_menu_achievements">成就</string>
     <string name="ingame_achievements_title">成就</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
+    <string name="ingame_achievements_close_description">关闭成就</string>
     <string name="ingame_achievements_unlocked_heading">已解锁（%1$d）</string>
     <string name="ingame_achievements_locked_heading">未解锁（%1$d）</string>
     <string name="ingame_achievements_empty">此游戏没有成就</string>

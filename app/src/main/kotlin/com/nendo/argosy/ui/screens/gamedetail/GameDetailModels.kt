@@ -248,7 +248,6 @@ data class GameDetailUiState(
     val moreOptionsFocusIndex: Int = 0,
     val documents: List<GameDocument> = emptyList(),
     val documentFocusIndex: Int = 0,
-    val documentReader: com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderState? = null,
     val launchDisplayNumbers: List<Int> = emptyList(),
     val launchDisplayIndex: Int = 0,
     val showPlayOptions: Boolean = false,

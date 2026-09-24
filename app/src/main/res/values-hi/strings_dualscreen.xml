@@ -17,6 +17,9 @@
     <string name="dual_companion_quick_action_screenshot">स्क्रीनशॉट</string>
     <string name="dual_companion_quick_action_load_state">स्टेट लोड करें</string>
     <string name="dual_companion_quick_action_load_confirm">पुष्टि के लिए टैप करें</string>
+    <string name="dual_companion_quick_access_achievements">उपलब्धियाँ</string>
+    <string name="dual_companion_quick_access_manual">मैनुअल</string>
+    <string name="dual_companion_quick_access_walkthrough">वॉकथ्रू</string>
 
     <string name="dual_companion_session_label">सेशन</string>
     <string name="dual_companion_achievements_label">अचीवमेंट्स</string>

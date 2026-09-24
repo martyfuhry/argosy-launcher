@@ -16,7 +16,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -27,7 +30,6 @@ import androidx.compose.ui.res.stringResource
 import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.theme.Dimens
-import com.nendo.argosy.ui.util.clickableNoFocus
 
 data class DocumentReaderState(
     val title: String,
@@ -41,6 +43,8 @@ data class DocumentReaderState(
     val pageCount: Int get() = if (pages.isNotEmpty()) pages.size else textPages.size
 
     val usesSpreads: Boolean get() = showsSpreads && pages.size > 1
+
+    val fraction: Float get() = if (pageCount > 1) pageIndex.toFloat() / (pageCount - 1) else 0f
 
     val visiblePages: IntRange
         get() = if (usesSpreads) spreadOf(pageIndex, pages.size) else pageIndex..pageIndex
@@ -92,13 +96,25 @@ fun DocumentReaderOverlay(
     state: DocumentReaderState,
     onLinesPerPageMeasured: (Int) -> Unit,
     onDismiss: () -> Unit,
+    onTurnPage: (Int) -> Unit,
     onSpreadsMeasured: (Boolean) -> Unit = {}
 ) {
+    val currentOnTurnPage by androidx.compose.runtime.rememberUpdatedState(onTurnPage)
+    val currentOnDismiss by androidx.compose.runtime.rememberUpdatedState(onDismiss)
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = READER_SCRIM_ALPHA))
-            .clickableNoFocus(onClick = onDismiss)
+            .pointerInput(Unit) {
+                detectTapGestures { offset ->
+                    val zone = size.width / TAP_ZONES
+                    when {
+                        offset.x < zone -> currentOnTurnPage(-1)
+                        offset.x > size.width - zone -> currentOnTurnPage(1)
+                        else -> currentOnDismiss()
+                    }
+                }
+            }
     ) {
         Column(
             modifier = Modifier
@@ -221,3 +237,4 @@ fun DocumentReaderOverlay(
 }
 
 private const val READER_SCRIM_ALPHA = 0.95f
+private const val TAP_ZONES = 3

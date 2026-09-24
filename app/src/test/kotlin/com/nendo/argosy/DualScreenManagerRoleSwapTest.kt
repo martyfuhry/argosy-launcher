@@ -129,6 +129,7 @@ class DualScreenManagerRoleSwapTest {
         preferencesRepository = preferencesRepository,
         imageCacheManager = mockk(relaxed = true),
         romMRepository = mockk(relaxed = true),
+        gameDocumentLoader = mockk(relaxed = true),
         resolveGameEmulatorContext = mockk(relaxed = true),
         hapticManager = mockk(relaxed = true),
         soundManager = mockk(relaxed = true),

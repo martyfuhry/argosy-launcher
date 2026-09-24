@@ -13,6 +13,9 @@
     <string name="dual_companion_quick_action_screenshot">Скриншот</string>
     <string name="dual_companion_quick_action_load_state">Загрузить состояние</string>
     <string name="dual_companion_quick_action_load_confirm">Нажмите для подтверждения</string>
+    <string name="dual_companion_quick_access_achievements">Достижения</string>
+    <string name="dual_companion_quick_access_manual">Руководство</string>
+    <string name="dual_companion_quick_access_walkthrough">Прохождение</string>
 
     <string name="dual_companion_session_label">Сессия</string>
     <string name="dual_companion_achievements_label">Достижения</string>

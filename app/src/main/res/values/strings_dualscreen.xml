@@ -43,6 +43,13 @@
     <!-- What that button reads after the first press, while it waits for a second press before
          restoring. Instruction addressed to the user. -->
     <string name="dual_companion_quick_action_load_confirm">Tap to confirm</string>
+    <!-- Button on the in-game dashboard that opens the running game's achievement list. Noun,
+         plural. -->
+    <string name="dual_companion_quick_access_achievements">Achievements</string>
+    <!-- Button on the in-game dashboard that opens the running game's instruction manual. Noun. -->
+    <string name="dual_companion_quick_access_manual">Manual</string>
+    <!-- Button on the in-game dashboard that opens the running game's walkthrough guide. Noun. -->
+    <string name="dual_companion_quick_access_walkthrough">Walkthrough</string>
 
     <!-- Label beside the running clock on the in-game dashboard. Noun: this sitting at the game,
          not the total. -->

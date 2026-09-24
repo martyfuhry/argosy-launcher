@@ -12,6 +12,9 @@
     <string name="dual_companion_quick_action_screenshot">截图</string>
     <string name="dual_companion_quick_action_load_state">读取即时存档</string>
     <string name="dual_companion_quick_action_load_confirm">点击确认</string>
+    <string name="dual_companion_quick_access_achievements">成就</string>
+    <string name="dual_companion_quick_access_manual">说明书</string>
+    <string name="dual_companion_quick_access_walkthrough">攻略</string>
 
     <string name="dual_companion_session_label">本次时长</string>
     <string name="dual_companion_achievements_label">成就</string>

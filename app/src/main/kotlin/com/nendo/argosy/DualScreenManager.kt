@@ -122,6 +122,7 @@ class DualScreenManager(
     internal val preferencesRepository: UserPreferencesRepository,
     internal val imageCacheManager: com.nendo.argosy.data.cache.ImageCacheManager,
     internal val romMRepository: com.nendo.argosy.data.remote.romm.RomMRepository,
+    private val gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader,
     internal val resolveGameEmulatorContext:
         com.nendo.argosy.domain.usecase.emulator.ResolveGameEmulatorContextUseCase,
     internal val hapticManager: com.nendo.argosy.ui.input.HapticFeedbackManager,
@@ -737,6 +738,20 @@ class DualScreenManager(
             field = value
             _swappedCompanionState.update { it.copy(quickActionsAvailable = value != null) }
         }
+
+    val dashboardReader = com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderController(
+        scope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Main.immediate),
+        loader = gameDocumentLoader,
+        romMRepository = romMRepository
+    )
+
+    fun openDashboardDocument(document: com.nendo.argosy.ui.screens.gamedetail.GameDocument) {
+        val gameId = companionSessionGameId
+        scope.launch {
+            val romId = gameDao.getById(gameId)?.rommId
+            dashboardReader.open(document, romId)
+        }
+    }
 
     fun updateCompanionHasQuickSave(hasQuickSave: Boolean) {
         _swappedCompanionState.update { it.copy(hasQuickSave = hasQuickSave) }
@@ -1677,6 +1692,11 @@ class DualScreenManager(
             scope.launch(Dispatchers.IO) {
                 val game = gameDao.getById(gameId) ?: return@launch
                 val platform = platformRepository.getById(game.platformId)
+                val documents = com.nendo.argosy.ui.screens.gamedetail.components.gameDocuments(
+                    game = game,
+                    files = gameFileDao.getFilesForGame(gameId),
+                    romMRepository = romMRepository
+                )
                 _swappedCompanionState.update { liveState ->
                     com.nendo.argosy.hardware.CompanionInGameState(
                         gameId = gameId,
@@ -1693,7 +1713,13 @@ class DualScreenManager(
                         channelName = sessionStateStore.getChannelName(),
                         isHardcore = sessionStateStore.isHardcore(),
                         isDirty = sessionStateStore.isSaveDirty(),
-                        isLoaded = true
+                        isLoaded = true,
+                        manual = documents.firstOrNull {
+                            it.category == com.nendo.argosy.data.model.VariantCategory.MANUAL.key
+                        },
+                        walkthrough = documents.firstOrNull {
+                            it.category == com.nendo.argosy.data.model.VariantCategory.WALKTHROUGH.key
+                        }
                     ).withLiveQuickActionState(
                         quickActionsAvailable = sessionQuickActions != null,
                         hasQuickSave = liveState.hasQuickSave
@@ -1706,6 +1732,7 @@ class DualScreenManager(
             emulatorDisplayId = null
             _swappedIsGameActive.value = false
             _swappedCompanionState.value = com.nendo.argosy.hardware.CompanionInGameState()
+            dashboardReader.dismiss()
             clearCompanionAchievements()
             sessionStateStore.clearSession()
             swappedSessionTimer?.stop(appContext)

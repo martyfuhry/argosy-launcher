@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -48,7 +49,8 @@ fun InGameAchievements(
     achievements: List<AchievementUi>,
     focusedIndex: Int,
     onFocusChange: (Int) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    showsCloseButton: Boolean = false
 ): InputHandler {
     val currentFocusedIndex = rememberUpdatedState(focusedIndex)
     val currentCount = rememberUpdatedState(achievements.size)
@@ -133,6 +135,17 @@ fun InGameAchievements(
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
+                if (showsCloseButton) {
+                    Spacer(modifier = Modifier.width(Dimens.spacingMd))
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.ingame_achievements_close_description),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .size(Dimens.iconLg)
+                            .clickableNoFocus(onClick = onDismiss)
+                    )
+                }
             }
 
             AchievementList(

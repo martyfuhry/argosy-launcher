@@ -15,6 +15,7 @@
     <string name="ingame_menu_achievements">Succès</string>
     <string name="ingame_achievements_title">Succès</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
+    <string name="ingame_achievements_close_description">Fermer les succès</string>
     <string name="ingame_achievements_unlocked_heading">DÉBLOQUÉS (%1$d)</string>
     <string name="ingame_achievements_locked_heading">VERROUILLÉS (%1$d)</string>
     <string name="ingame_achievements_empty">Aucun succès pour ce jeu</string>

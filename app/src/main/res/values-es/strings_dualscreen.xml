@@ -17,6 +17,9 @@
     <string name="dual_companion_quick_action_screenshot">Captura de pantalla</string>
     <string name="dual_companion_quick_action_load_state">Cargar estado</string>
     <string name="dual_companion_quick_action_load_confirm">Toca para confirmar</string>
+    <string name="dual_companion_quick_access_achievements">Logros</string>
+    <string name="dual_companion_quick_access_manual">Manual</string>
+    <string name="dual_companion_quick_access_walkthrough">Guía</string>
 
     <string name="dual_companion_session_label">Sesión</string>
     <string name="dual_companion_achievements_label">Logros</string>

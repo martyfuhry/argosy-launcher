@@ -15,6 +15,7 @@
     <string name="ingame_menu_achievements">अचीवमेंट्स</string>
     <string name="ingame_achievements_title">अचीवमेंट्स</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
+    <string name="ingame_achievements_close_description">उपलब्धियाँ बंद करें</string>
     <string name="ingame_achievements_unlocked_heading">अनलॉक्ड (%1$d)</string>
     <string name="ingame_achievements_locked_heading">लॉक्ड (%1$d)</string>
     <string name="ingame_achievements_empty">इस गेम के लिए कोई अचीवमेंट नहीं</string>

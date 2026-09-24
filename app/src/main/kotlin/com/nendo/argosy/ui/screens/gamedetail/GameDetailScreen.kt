@@ -393,7 +393,8 @@ fun GameDetailScreen(
         }
     }
 
-    val documentReaderOpen = uiState.documentReader != null
+    val documentReader by viewModel.documentReader.collectAsState()
+    val documentReaderOpen = documentReader != null
     val documentReaderInputHandler = remember(viewModel) {
         object : com.nendo.argosy.ui.input.InputHandler {
             override fun onLeft(): com.nendo.argosy.ui.input.InputResult {
@@ -474,11 +475,12 @@ fun GameDetailScreen(
                 localModifiedFocusIndex = localModifiedFocusIndex
             )
         }
-        uiState.documentReader?.let { reader ->
+        documentReader?.let { reader ->
             com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderOverlay(
                 state = reader,
                 onLinesPerPageMeasured = { viewModel.setDocumentLinesPerPage(it) },
                 onDismiss = { viewModel.dismissDocumentReader() },
+                onTurnPage = { viewModel.turnDocumentPage(it) },
                 onSpreadsMeasured = { viewModel.setDocumentShowsSpreads(it) }
             )
         }
@@ -515,7 +517,7 @@ private fun GameDetailContent(
         uiState.showSaveCacheDialog || uiState.showRenameDialog || uiState.showScreenshotViewer ||
         uiState.showExtractionFailedPrompt || uiState.showAchievementList ||
         uiState.showReviewList || uiState.reviewEditor != null || uiState.perGameSettings.visible ||
-        uiState.documentReader != null
+        viewModel.documentReader.collectAsState().value != null
     val modalBlur by animateDpAsState(
         targetValue = if (showAnyOverlay) Motion.blurRadiusModal else 0.dp,
         animationSpec = Motion.focusSpringDp,
