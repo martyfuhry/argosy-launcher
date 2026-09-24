@@ -42,6 +42,7 @@ import com.nendo.argosy.hardware.ScreenCaptureManager
 import com.nendo.argosy.ui.ArgosyApp
 import com.nendo.argosy.ui.audio.AmbientAudioManager
 import com.nendo.argosy.ui.input.GamepadEvent
+import com.nendo.argosy.ui.dualscreen.isInputForGameOnOtherDisplay
 import com.nendo.argosy.ui.input.GamepadInputHandler
 import com.nendo.argosy.ui.input.gamepadEventToKeyCode
 import com.nendo.argosy.ui.screens.common.GameActionsDelegate
@@ -709,9 +710,12 @@ class MainActivity : ComponentActivity() {
     // --- Private Helpers ---
 
     private fun isGameOnOtherDisplay(): Boolean {
-        val emulatorDisplay = dualScreenManager.emulatorDisplayId ?: return false
-        val ownDisplay = window.decorView.display?.displayId ?: return false
-        if (emulatorDisplay == ownDisplay) return false
+        val gameOnOtherDisplay = isInputForGameOnOtherDisplay(
+            emulatorDisplay = dualScreenManager.emulatorDisplayId,
+            ownDisplay = window.decorView.display?.displayId,
+            companionFrontedDisplays = dualScreenManager.companionFrontedDisplays.value
+        )
+        if (!gameOnOtherDisplay) return false
         return rendersPresentation(
             dualScreenManager.companionHoldsPrimary.value,
             dualScreenManager.swappedIsGameActive.value

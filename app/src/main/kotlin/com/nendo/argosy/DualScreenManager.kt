@@ -456,6 +456,7 @@ class DualScreenManager(
         companionLaunchJob = null
         companionWatchdogJob?.cancel()
         _isCompanionActive.value = false
+        _companionFrontedDisplays.value = emptySet()
         CompanionGuardService.stop(appContext)
         eachCompanion { it.finishCompanion() }
     }
@@ -943,6 +944,13 @@ class DualScreenManager(
 
     private val _isCompanionActive = MutableStateFlow(false)
     val isCompanionActive: StateFlow<Boolean> = _isCompanionActive
+
+    private val _companionFrontedDisplays = MutableStateFlow<Set<Int>>(emptySet())
+
+    /**
+     * The displays a companion is resumed on, and so in front of anything else running there.
+     */
+    val companionFrontedDisplays: StateFlow<Set<Int>> = _companionFrontedDisplays
 
     /**
      * Whether the companion window is the one hosting the launcher. What each activity renders and
@@ -1542,6 +1550,7 @@ class DualScreenManager(
             companionLaunchJob?.cancel()
             companionLaunchJob = null
             _isCompanionActive.value = false
+            _companionFrontedDisplays.update { it - displayId }
             CompanionGuardService.stop(appContext)
             reprobeSecondaryDisplay()
             _isDualScreenDevice.value = displayAffinityHelper.hasSecondaryDisplay
@@ -1676,17 +1685,19 @@ class DualScreenManager(
 
     // --- Public methods for companion -> DSM direction ---
 
-    fun onCompanionResumed() {
+    fun onCompanionResumed(displayId: Int) {
         companionPausedPending = false
         companionLaunchAttempts = 0
         companionWatchdogJob?.cancel()
         _isCompanionActive.value = true
+        _companionFrontedDisplays.update { it + displayId }
         if (!_isDualScreenDevice.value) _isDualScreenDevice.value = true
         resyncCompanionState()
     }
 
-    fun onCompanionPaused() {
+    fun onCompanionPaused(displayId: Int) {
         _isCompanionActive.value = false
+        _companionFrontedDisplays.update { it - displayId }
         companionPausedPending = false
         companionWatchdogJob?.cancel()
     }
