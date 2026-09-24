@@ -861,3 +861,16 @@ fun HomeUiState.keepingFocusOn(gameId: Long?): HomeUiState {
         ?: focusedGameIndex.coerceAtMost(items.lastIndex)
     return if (index == focusedGameIndex) this else copy(focusedGameIndex = index)
 }
+
+/**
+ * This state with the Continue row replaced by [games], the cursor staying on the game it was on,
+ * and moving to the first row left when the Continue row empties.
+ */
+fun HomeUiState.withRecentGames(games: List<HomeGameUi>): HomeUiState {
+    val updated = copy(recentGames = games)
+    if (currentRow != HomeRow.Continue) return updated
+    if (games.isEmpty()) {
+        return updated.copy(currentRow = updated.availableRows.firstOrNull() ?: HomeRow.Continue, focusedGameIndex = 0)
+    }
+    return updated.keepingFocusOn(focusedGame?.id)
+}
