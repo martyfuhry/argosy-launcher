@@ -690,7 +690,7 @@ fun ArgosyApp(
     LaunchedEffect(netplayJoinState) {
         val s = netplayJoinState
         if (s is NetplayJoinState.LaunchReady) {
-            context.startActivity(s.intent, viewModel.launchOptionsFor(s.gameId))
+            context.startActivity(s.intent, viewModel.launchOptionsFor(s.gameId, s.intent))
             viewModel.resetNetplayJoin()
         }
     }

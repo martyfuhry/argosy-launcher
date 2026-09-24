@@ -1019,8 +1019,8 @@ class ArgosyViewModel @Inject constructor(
         kotlinx.coroutines.flow.MutableSharedFlow<GameLaunchRequest>(extraBufferCapacity = 1)
     val coreCrashLaunch: kotlinx.coroutines.flow.SharedFlow<GameLaunchRequest> = _coreCrashLaunch
 
-    suspend fun launchOptionsFor(gameId: Long): android.os.Bundle? =
-        emulatorLaunchTargetResolver.launchOptionsFor(gameId)
+    suspend fun launchOptionsFor(gameId: Long, intent: android.content.Intent): android.os.Bundle? =
+        emulatorLaunchTargetResolver.launchOptionsFor(gameId, intent)
 
     fun launchFromCoreCrash() {
         val gameId = coreCrashController.prompt.value?.gameId ?: return
@@ -1028,7 +1028,7 @@ class ArgosyViewModel @Inject constructor(
         viewModelScope.launch {
             (launchGameUseCase(gameId = gameId, allowVariantPrompt = false) as? LaunchResult.Success)?.let {
                 _coreCrashLaunch.tryEmit(
-                    GameLaunchRequest(it.intent, emulatorLaunchTargetResolver.launchOptionsFor(gameId))
+                    GameLaunchRequest(it.intent, emulatorLaunchTargetResolver.launchOptionsFor(gameId, it.intent))
                 )
             }
         }
@@ -1116,7 +1116,7 @@ class ArgosyViewModel @Inject constructor(
                         }
                     }
                     _netplayInviteLaunch.tryEmit(
-                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(gameId))
+                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(gameId, decorated))
                     )
                 }
                 is LaunchResult.Error -> {
@@ -1216,7 +1216,7 @@ class ArgosyViewModel @Inject constructor(
                         }
                     }
                     _netplayInviteLaunch.tryEmit(
-                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(game.id))
+                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(game.id, decorated))
                     )
                 }
                 is LaunchResult.Error -> {
