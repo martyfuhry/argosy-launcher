@@ -113,6 +113,7 @@ class HapticFeedbackManager @Inject constructor(
         }
     }
 
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
     private fun predefinedEffect(pattern: HapticPattern): VibrationEffect = when (pattern) {
         HapticPattern.FOCUS_CHANGE -> VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
         HapticPattern.SECTION_CHANGE -> VibrationEffect.createOneShot(SECTION_MS, VibrationEffect.DEFAULT_AMPLITUDE)
