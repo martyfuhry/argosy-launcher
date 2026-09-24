@@ -41,6 +41,7 @@ import com.nendo.argosy.hardware.AmbientLedManager
 import com.nendo.argosy.hardware.ScreenCaptureManager
 import com.nendo.argosy.ui.ArgosyApp
 import com.nendo.argosy.ui.audio.AmbientAudioManager
+import com.nendo.argosy.ui.dualscreen.isInputForGameOnOtherDisplay
 import com.nendo.argosy.ui.input.GamepadInputHandler
 import com.nendo.argosy.ui.input.gamepadEventToKeyCode
 import com.nendo.argosy.ui.screens.common.GameActionsDelegate
@@ -703,12 +704,11 @@ class MainActivity : ComponentActivity() {
 
     // --- Private Helpers ---
 
-    /** True only when a session's emulator runs on a different display than this activity; a same-display session cannot have focus while we do, so input must never be deferred to it. */
-    private fun isGameOnOtherDisplay(): Boolean {
-        val emulatorDisplay = dualScreenManager.emulatorDisplayId ?: return false
-        val ownDisplay = window.decorView.display?.displayId ?: return false
-        return emulatorDisplay != ownDisplay
-    }
+    private fun isGameOnOtherDisplay(): Boolean = isInputForGameOnOtherDisplay(
+        emulatorDisplay = dualScreenManager.emulatorDisplayId,
+        ownDisplay = window.decorView.display?.displayId,
+        companionFrontedDisplays = dualScreenManager.companionFrontedDisplays.value
+    )
 
     /** Relinks companion input forwarding when input arrives on home but the link is stale (companion marked inactive or overlay focus latched) after a game, sleep/wake, or a foreground app yielding the secondary display. */
     private fun reassertCompanionForwarding() {
