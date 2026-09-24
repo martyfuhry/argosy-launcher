@@ -358,8 +358,8 @@ class RomMApiClient @Inject constructor(
                     val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
                     PlatformEntity(
                         id = remote.id,
-                        slug = FileNames.sanitize(effectiveSlug),
-                        fsSlug = remote.fsSlug?.let { if (it.isBlank()) it else FileNames.sanitize(it) },
+                        slug = FileNames.sanitizeSlug(effectiveSlug),
+                        fsSlug = remote.fsSlug?.let(FileNames::sanitizeSlug),
                         name = normalizedName,
                         shortName = resolvedShortName,
                         romExtensions = platformDef?.extensions?.joinToString(",") ?: "",
