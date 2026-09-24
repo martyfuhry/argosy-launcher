@@ -899,7 +899,9 @@ class GameLauncherTest {
         return EmulatorLaunchTargetResolver(
             context = mockk { every { getSharedPreferences(any(), any()) } returns prefs },
             displayAffinityHelper = mockk(relaxed = true),
-            launchDisplayPlanner = planner
+            launchDisplayPlanner = planner,
+            gameRepository = mockk(relaxed = true),
+            appLaunchScreenSettings = mockk(relaxed = true)
         )
     }
 

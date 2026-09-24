@@ -191,6 +191,11 @@
 
     <string name="gamedetail_more_options_launch_on_display">Auf Bildschirm starten</string>
     <string name="gamedetail_more_options_launch_on_display_value">Bildschirm %1$d</string>
+    <string name="gamedetail_launch_screen_picker_title">Startbildschirm</string>
+    <string name="gamedetail_launch_screen_picker_option">Bildschirm %1$d</string>
+    <string name="gamedetail_launch_screen_picker_footer_navigate">Navigieren</string>
+    <string name="gamedetail_launch_screen_picker_footer_launch">Starten</string>
+    <string name="gamedetail_launch_screen_picker_footer_cancel">Abbrechen</string>
     <string name="gamedetail_more_options_manage_saves">Zwischengespeicherte Spielstände verwalten</string>
     <string name="gamedetail_more_options_ratings_status">Bewertung &amp; Status</string>
     <string name="gamedetail_more_options_change_launcher">Launcher ändern</string>
@@ -364,6 +369,9 @@
     <string name="gamedetail_per_game_memcard_default_auto">Auto</string>
     <string name="gamedetail_per_game_display_target_label">Zielbildschirm</string>
     <string name="gamedetail_per_game_display_target_inherit">Geerbt (%1$s)</string>
+    <string name="gamedetail_per_game_launch_screen_label">Startbildschirm</string>
+    <string name="gamedetail_per_game_launch_screen_value">Bildschirm %1$d</string>
+    <string name="gamedetail_per_game_launch_screen_default">Standard</string>
     <string name="gamedetail_per_game_extension_label">Dateiendung</string>
     <string name="gamedetail_per_game_extension_inherit">Geerbt (%1$s)</string>
     <string name="gamedetail_per_game_extension_inherit_auto">Auto</string>
