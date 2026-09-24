@@ -2,6 +2,7 @@ package com.nendo.argosy.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
+import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -677,13 +678,13 @@ fun ArgosyApp(
 
     LaunchedEffect(viewModel) {
         viewModel.netplayInviteLaunch.collect { request ->
-            context.startActivity(request.intent, request.options)
+            if (!request.intent.isAlreadyLaunched()) context.startActivity(request.intent, request.options)
         }
     }
 
     LaunchedEffect(viewModel) {
         viewModel.coreCrashLaunch.collect { request ->
-            context.startActivity(request.intent, request.options)
+            if (!request.intent.isAlreadyLaunched()) context.startActivity(request.intent, request.options)
         }
     }
 

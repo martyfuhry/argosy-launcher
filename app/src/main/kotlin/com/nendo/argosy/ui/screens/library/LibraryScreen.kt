@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.layout.aspectRatio
+import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.ui.common.rememberCoverAspectRatio
 import com.nendo.argosy.ui.screens.library.components.LibraryPlatformGrid
 import com.nendo.argosy.ui.screens.library.components.LibraryPlatformGridEmpty
@@ -261,7 +262,9 @@ fun LibraryScreen(
             when (event) {
                 is LibraryEvent.LaunchIntent -> {
                     try {
-                        context.startActivity(event.intent, event.options)
+                        if (!event.intent.isAlreadyLaunched()) {
+                            context.startActivity(event.intent, event.options)
+                        }
                     } catch (e: Exception) {
                         android.util.Log.e("LibraryScreen", "Failed to start activity", e)
                     }

@@ -51,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import coil.compose.AsyncImage
+import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationText
@@ -149,7 +150,7 @@ fun GameDetailScreen(
             when (event) {
                 is LaunchEvent.LaunchIntent -> {
                     try {
-                        if (!event.intent.getBooleanExtra("argosy.already_launched", false)) {
+                        if (!event.intent.isAlreadyLaunched()) {
                             context.startActivity(event.intent, event.options)
                         }
                     } catch (e: Exception) {
