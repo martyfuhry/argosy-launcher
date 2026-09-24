@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -408,7 +409,10 @@ class JellyfinConnectionManager @Inject constructor(
      * from a revoked one - without it a token the server has forgotten reads as connected while every
      * request behind it is refused.
      */
-    private suspend fun connect(serverUrl: String, token: String?, signedInUserId: String?) {
+    private suspend fun connect(serverUrl: String, token: String?, signedInUserId: String?) =
+        withContext(Dispatchers.IO) { connectOnIo(serverUrl, token, signedInUserId) }
+
+    private suspend fun connectOnIo(serverUrl: String, token: String?, signedInUserId: String?) {
         connectMutex.withLock {
             _connectionState.value = JellyfinConnectionState.Connecting
             val normalized = normalizeServerUrl(serverUrl)

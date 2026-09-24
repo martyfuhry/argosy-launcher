@@ -33,6 +33,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Duration
@@ -70,6 +71,8 @@ class SyncCoordinator @Inject constructor(
     companion object {
         private const val TAG = "SyncCoordinator"
         private val NEGOTIATE_COOLDOWN: Duration = Duration.ofMinutes(5)
+        private const val RECONNECT_RECONCILE_COOLDOWN_MS = 2 * 60_000L
+        private const val QUEUE_ITEM_SPACING_MS = 750L
         private const val ORPHAN_RECOVERY_TIMEOUT_MS = 10_000L
         private const val PENDING_SCREENSHOTS_DIR = "pending_screenshots"
     }
@@ -93,6 +96,26 @@ class SyncCoordinator @Inject constructor(
     sealed class ProcessResult {
         data object NotConnected : ProcessResult()
         data class Completed(val processed: Int, val failed: Int) : ProcessResult()
+    }
+
+    @Volatile private var lastReconnectReconcileAtMs = 0L
+
+    /**
+     * [reconcileAll] for a connection that just came up. Reconnects inside
+     * [RECONNECT_RECONCILE_COOLDOWN_MS] of the last one, from any caller, reconcile once.
+     */
+    suspend fun reconcileAfterReconnect(): ReconcileSummary? {
+        val now = android.os.SystemClock.elapsedRealtime()
+        synchronized(this) {
+            if (lastReconnectReconcileAtMs != 0L &&
+                now - lastReconnectReconcileAtMs < RECONNECT_RECONCILE_COOLDOWN_MS
+            ) {
+                Logger.debug(TAG, "reconcileAfterReconnect: cooldown active, skipping")
+                return null
+            }
+            lastReconnectReconcileAtMs = now
+        }
+        return reconcileAll()
     }
 
     suspend fun reconcileAll(): ReconcileSummary = withContext(Dispatchers.IO) {
@@ -319,7 +342,8 @@ class SyncCoordinator @Inject constructor(
                 val items = pendingSyncQueueDao.getPendingByPriorityTier(priority)
                 if (items.isNotEmpty()) Logger.debug(TAG, "processQueue: Processing ${items.size} items at priority $priority")
 
-                for (item in items) {
+                for ((index, item) in items.withIndex()) {
+                    if (index > 0) delay(QUEUE_ITEM_SPACING_MS)
                     if (romM.connectionState.value !is ConnectionState.Connected) {
                         Logger.debug(TAG, "processQueue: Connection lost, stopping")
                         break

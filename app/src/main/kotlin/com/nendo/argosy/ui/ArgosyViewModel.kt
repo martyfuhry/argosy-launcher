@@ -79,7 +79,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -90,6 +92,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 private const val WEEKLY_INTEGRITY_INTERVAL_MS = 7L * 24 * 60 * 60 * 1000
+private const val RECONNECT_SETTLE_MS = 5_000L
 
 data class ArgosyUiState(
     val isFirstRun: Boolean = true,
@@ -286,17 +289,16 @@ class ArgosyViewModel @Inject constructor(
         )
     }
 
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
     private fun observeConnectionForSync() {
         syncConflictNotifier.start()
         viewModelScope.launch {
-            var wasConnected = false
-            romMRepository.connectionState.collect { state ->
-                val isConnected = state is ConnectionState.Connected
-                if (isConnected && !wasConnected) {
-                    syncCoordinator.reconcileAll()
-                }
-                wasConnected = isConnected
-            }
+            romMRepository.connectionState
+                .map { it is ConnectionState.Connected }
+                .distinctUntilChanged()
+                .debounce(RECONNECT_SETTLE_MS)
+                .filter { it }
+                .collect { syncCoordinator.reconcileAfterReconnect() }
         }
     }
 

@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import com.nendo.argosy.data.remote.ssl.isCertificateTrustFailure
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -264,7 +265,11 @@ class RomMConnectionManager @Inject constructor(
      * the live session. The saved token has to identify the saved user there; a server that is
      * merely alive does not qualify. Returns the normalized URL the caller should store.
      */
-    suspend fun validateAddress(url: String): RomMResult<String> {
+    suspend fun validateAddress(url: String): RomMResult<String> = withContext(Dispatchers.IO) {
+        validateAddressOnIo(url)
+    }
+
+    private suspend fun validateAddressOnIo(url: String): RomMResult<String> {
         val account = rommAccountRepository.get().activeAccount()
             ?: return RomMResult.Error("Not signed in")
         var lastError: String? = null
@@ -315,7 +320,11 @@ class RomMConnectionManager @Inject constructor(
     }
 
     /** Probes a server URL with a throwaway client, leaving the live session untouched. */
-    suspend fun probeServerVersion(url: String): RomMResult<String> {
+    suspend fun probeServerVersion(url: String): RomMResult<String> = withContext(Dispatchers.IO) {
+        probeServerVersionOnIo(url)
+    }
+
+    private suspend fun probeServerVersionOnIo(url: String): RomMResult<String> {
         var lastError: String? = null
         var lastKind: RomMErrorKind? = null
         for (candidateUrl in buildUrlsToTry(url)) {
@@ -344,6 +353,15 @@ class RomMConnectionManager @Inject constructor(
         token: String?,
         registerDevice: Boolean = true,
         recordAddress: Boolean = true
+    ): RomMResult<String> = withContext(Dispatchers.IO) {
+        attemptConnectionOnIo(candidates, token, registerDevice, recordAddress)
+    }
+
+    private suspend fun attemptConnectionOnIo(
+        candidates: List<String>,
+        token: String?,
+        registerDevice: Boolean,
+        recordAddress: Boolean
     ): RomMResult<String> = connectMutex.withLock {
         var lastFailure: RomMResult.Error? = null
 
