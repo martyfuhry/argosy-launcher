@@ -24,7 +24,10 @@ import com.nendo.argosy.data.sync.platform.MemcardInfo
 import com.nendo.argosy.data.sync.platform.PlatformSaveHandlerRegistry
 import com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase
 import com.nendo.argosy.ui.input.InputDispatcher.Companion.computeWrappedIndex
+import com.nendo.argosy.ui.common.isAndroidApp
 import com.nendo.argosy.ui.input.SoundFeedbackManager
+import com.nendo.argosy.ui.screens.common.AppLaunchScreenSettings
+import com.nendo.argosy.ui.screens.common.LaunchScreenChoice
 import com.nendo.argosy.util.DisplayAffinityHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +40,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
-enum class PerGameSettingsRow { EMULATOR, CORE, SAVE_PATH, SAVE_BASE_PATH, MEMCARD, DISPLAY_TARGET, EXTENSION, PLATFORM_SETTINGS }
+enum class PerGameSettingsRow { EMULATOR, CORE, SAVE_PATH, SAVE_BASE_PATH, MEMCARD, DISPLAY_TARGET, LAUNCH_SCREEN, EXTENSION, PLATFORM_SETTINGS }
 
 data class PerGameSettingsState(
     val visible: Boolean = false,
@@ -58,6 +61,9 @@ data class PerGameSettingsState(
     val showDisplayTargetRow: Boolean = false,
     val displayTarget: EmulatorDisplayTarget? = null,
     val inheritedDisplayTarget: EmulatorDisplayTarget = EmulatorDisplayTarget.DEFAULT,
+    val isAndroidApp: Boolean = false,
+    val launchScreens: List<LaunchScreenChoice> = emptyList(),
+    val launchScreen: LaunchScreenChoice? = null,
     val extensionOptions: List<ExtensionOption> = emptyList(),
     val preferredExtension: String? = null,
     val inheritedExtension: String? = null,
@@ -69,7 +75,7 @@ data class PerGameSettingsState(
     val memcardPickerFocusIndex: Int = 0
 ) {
     val rows: List<PerGameSettingsRow>
-        get() = buildList {
+        get() = if (isAndroidApp) listOf(PerGameSettingsRow.LAUNCH_SCREEN) else buildList {
             add(PerGameSettingsRow.EMULATOR)
             if (showCoreRow) add(PerGameSettingsRow.CORE)
             if (showSavePathRow) add(PerGameSettingsRow.SAVE_PATH)
@@ -109,6 +115,7 @@ class PerGameSettingsDelegate @Inject constructor(
     private val resolveGameEmulatorContext:
         com.nendo.argosy.domain.usecase.emulator.ResolveGameEmulatorContextUseCase,
     private val displayAffinityHelper: DisplayAffinityHelper,
+    private val appLaunchScreenSettings: AppLaunchScreenSettings,
     private val soundManager: SoundFeedbackManager
 ) {
     private val _state = MutableStateFlow(PerGameSettingsState())
@@ -229,6 +236,14 @@ class PerGameSettingsDelegate @Inject constructor(
         _state.update { it.copy(displayTarget = next) }
     }
 
+    suspend fun cycleLaunchScreen(gameId: Long, direction: Int) {
+        val cycle: List<LaunchScreenChoice?> = listOf(null) + _state.value.launchScreens
+        val currentIndex = cycle.indexOf(_state.value.launchScreen).coerceAtLeast(0)
+        val next = cycle[(currentIndex + direction).mod(cycle.size)]
+        appLaunchScreenSettings.store(gameId, next?.displayId)
+        _state.update { it.copy(launchScreen = next) }
+    }
+
     suspend fun cycleExtension(gameId: Long, direction: Int) {
         val options = _state.value.extensionOptions
         if (options.isEmpty()) return
@@ -241,6 +256,13 @@ class PerGameSettingsDelegate @Inject constructor(
 
     private suspend fun buildState(gameId: Long): PerGameSettingsState? {
         val game = gameRepository.getById(gameId) ?: return null
+        if (game.isAndroidApp) {
+            return PerGameSettingsState(
+                isAndroidApp = true,
+                launchScreens = appLaunchScreenSettings.choices(),
+                launchScreen = appLaunchScreenSettings.storedChoice(gameId)
+            )
+        }
         if (emulatorDetector.installedEmulators.value.isEmpty()) {
             emulatorDetector.detectEmulators()
         }
