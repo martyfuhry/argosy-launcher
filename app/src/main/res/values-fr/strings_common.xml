@@ -254,6 +254,8 @@
     <string name="ui_save_conflict_title">Conflit de sauvegarde</string>
     <string name="ui_save_conflict_default_slot">Sauvegarde par défaut</string>
     <string name="ui_save_conflict_message">Le serveur possède une sauvegarde plus récente. Écraser la remplacera par votre sauvegarde locale.</string>
+    <string name="ui_save_conflict_message_server_older">La copie du serveur est plus ancienne et fait partie de l\'historique de cette sauvegarde. Écraser mettra le serveur à jour avec votre sauvegarde locale.</string>
+    <string name="ui_save_conflict_message_diverged">Les sauvegardes ont divergé. Choisissez celle qui l\'emporte : écraser remplacera la sauvegarde du serveur par votre sauvegarde locale.</string>
     <string name="ui_save_conflict_source_local">Locale</string>
     <string name="ui_save_conflict_source_server">Serveur</string>
     <string name="ui_save_conflict_skip">Ignorer la synchro</string>
@@ -658,6 +660,8 @@
     <string name="ui_sync_overlay_post_session_subject">\"%1$s\" -- %2$s</string>
     <string name="ui_sync_overlay_post_session_default_slot">Sauvegarde par défaut</string>
     <string name="ui_sync_overlay_post_session_message">Le serveur possède une sauvegarde plus récente. Écraser la remplacera par votre sauvegarde locale.</string>
+    <string name="ui_sync_overlay_post_session_message_server_older">La copie du serveur est plus ancienne et fait partie de l\'historique de cette sauvegarde. Écraser mettra le serveur à jour avec votre sauvegarde locale.</string>
+    <string name="ui_sync_overlay_post_session_message_diverged">Les sauvegardes ont divergé. Choisissez celle qui l\'emporte : écraser remplacera la sauvegarde du serveur par votre sauvegarde locale.</string>
     <string name="ui_sync_overlay_post_session_local">Locale</string>
     <string name="ui_sync_overlay_post_session_server">Serveur</string>
     <string name="ui_sync_overlay_post_session_server_named">Serveur (%1$s)</string>

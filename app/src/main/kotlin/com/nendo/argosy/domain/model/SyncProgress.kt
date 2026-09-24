@@ -80,6 +80,7 @@ sealed class SyncProgress {
         val localTimestamp: java.time.Instant,
         val serverTimestamp: java.time.Instant,
         val serverDeviceName: String? = null,
+        val serverMatchesLastSync: Boolean = false,
         val onSkipSync: (() -> Unit)? = null,
         val onOverwrite: (() -> Unit)? = null
     ) : SyncProgress()

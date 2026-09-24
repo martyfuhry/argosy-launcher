@@ -237,6 +237,8 @@
     <string name="ui_save_conflict_title">सेव कॉन्फ्लिक्ट</string>
     <string name="ui_save_conflict_default_slot">डिफ़ॉल्ट सेव</string>
     <string name="ui_save_conflict_message">सर्वर पर एक नई सेव मौजूद है। ओवरराइट करने पर यह आपकी लोकल सेव से बदल जाएगी।</string>
+    <string name="ui_save_conflict_message_server_older">सर्वर की कॉपी पुरानी है और इस सेव के इतिहास का हिस्सा है। ओवरराइट करने पर सर्वर आपकी लोकल सेव से अपडेट हो जाएगा।</string>
+    <string name="ui_save_conflict_message_diverged">दोनों सेव अलग-अलग हो गई हैं। चुनें कि कौन सी रखनी है: ओवरराइट करने पर सर्वर की सेव आपकी लोकल सेव से बदल जाएगी।</string>
     <string name="ui_save_conflict_source_local">लोकल</string>
     <string name="ui_save_conflict_source_server">सर्वर</string>
     <string name="ui_save_conflict_skip">सिंक छोड़ें</string>
@@ -635,6 +637,8 @@
     <string name="ui_sync_overlay_post_session_subject">\"%1$s\" -- %2$s</string>
     <string name="ui_sync_overlay_post_session_default_slot">डिफ़ॉल्ट सेव</string>
     <string name="ui_sync_overlay_post_session_message">सर्वर पर एक नई सेव मौजूद है। ओवरराइट करने पर यह आपकी लोकल सेव से बदल जाएगी।</string>
+    <string name="ui_sync_overlay_post_session_message_server_older">सर्वर की कॉपी पुरानी है और इस सेव के इतिहास का हिस्सा है। ओवरराइट करने पर सर्वर आपकी लोकल सेव से अपडेट हो जाएगा।</string>
+    <string name="ui_sync_overlay_post_session_message_diverged">दोनों सेव अलग-अलग हो गई हैं। चुनें कि कौन सी रखनी है: ओवरराइट करने पर सर्वर की सेव आपकी लोकल सेव से बदल जाएगी।</string>
     <string name="ui_sync_overlay_post_session_local">लोकल</string>
     <string name="ui_sync_overlay_post_session_server">सर्वर</string>
     <string name="ui_sync_overlay_post_session_server_named">सर्वर (%1$s)</string>

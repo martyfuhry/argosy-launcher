@@ -289,6 +289,8 @@ class SaveUploader @Inject constructor(
                 localModified = localModified,
                 preSyncTimeIfSession = syncEntity?.lastSyncedAt
             )
+            val serverMatchesLastSync = latestServerSave?.contentHash != null &&
+                latestServerSave.contentHash == syncEntity?.lastUploadedHash
             if (conflictDecision != null && conflictDecision.isConflict) {
                 return@withContext SaveSyncResult.Conflict(
                     gameId = gameId,
@@ -297,7 +299,8 @@ class SaveUploader @Inject constructor(
                     serverDeviceName = conflictDecision.serverDeviceName,
                     serverSaveId = latestServerSave?.id,
                     localContentHash = contentHash,
-                    serverContentHash = latestServerSave?.contentHash
+                    serverContentHash = latestServerSave?.contentHash,
+                    serverMatchesLastSync = serverMatchesLastSync
                 )
             }
 
@@ -347,16 +350,16 @@ class SaveUploader @Inject constructor(
 
             if (response.code() == 409) {
                 val serverTime = latestServerSave?.let { SaveSyncApiClient.parseTimestamp(it.updatedAt) } ?: Instant.now()
-                val conflictLocalTime = syncEntity?.lastSyncedAt ?: localModified
-                Logger.debug(TAG, "[SaveSync] UPLOAD gameId=$gameId | Decision=CONFLICT | Server returned 409 (device out of sync)")
+                Logger.debug(TAG, "[SaveSync] UPLOAD gameId=$gameId | Decision=CONFLICT | Server returned 409 (device out of sync) | local=$localModified, server=$serverTime, serverMatchesLastSync=$serverMatchesLastSync")
                 return@withContext SaveSyncResult.Conflict(
                     gameId = gameId,
-                    localTimestamp = conflictLocalTime,
+                    localTimestamp = localModified,
                     serverTimestamp = serverTime,
                     serverDeviceName = conflictDetector.extractUploaderDeviceName(latestServerSave, deviceId),
                     serverSaveId = latestServerSave?.id,
                     localContentHash = contentHash,
-                    serverContentHash = latestServerSave?.contentHash
+                    serverContentHash = latestServerSave?.contentHash,
+                    serverMatchesLastSync = serverMatchesLastSync
                 )
             }
 

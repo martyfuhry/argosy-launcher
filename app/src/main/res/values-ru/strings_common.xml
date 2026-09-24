@@ -245,6 +245,8 @@
     <string name="ui_save_conflict_title">Конфликт сохранений</string>
     <string name="ui_save_conflict_default_slot">Сохранение по умолчанию</string>
     <string name="ui_save_conflict_message">На сервере есть более новое сохранение. Перезапись заменит его вашим локальным сохранением.</string>
+    <string name="ui_save_conflict_message_server_older">Копия на сервере старее и входит в историю этого сохранения. Перезапись обновит сервер вашим локальным сохранением.</string>
+    <string name="ui_save_conflict_message_diverged">Сохранения разошлись. Выберите, какое оставить: перезапись заменит сохранение на сервере вашим локальным.</string>
     <string name="ui_save_conflict_source_local">Локальное</string>
     <string name="ui_save_conflict_source_server">Сервер</string>
     <string name="ui_save_conflict_skip">Пропустить синхронизацию</string>
@@ -645,6 +647,8 @@
     <string name="ui_sync_overlay_post_session_subject">\"%1$s\" -- %2$s</string>
     <string name="ui_sync_overlay_post_session_default_slot">Сохранение по умолчанию</string>
     <string name="ui_sync_overlay_post_session_message">На сервере есть более новое сохранение. Перезапись заменит его вашим локальным сохранением.</string>
+    <string name="ui_sync_overlay_post_session_message_server_older">Копия на сервере старее и входит в историю этого сохранения. Перезапись обновит сервер вашим локальным сохранением.</string>
+    <string name="ui_sync_overlay_post_session_message_diverged">Сохранения разошлись. Выберите, какое оставить: перезапись заменит сохранение на сервере вашим локальным.</string>
     <string name="ui_sync_overlay_post_session_local">Локальное</string>
     <string name="ui_sync_overlay_post_session_server">Сервер</string>
     <string name="ui_sync_overlay_post_session_server_named">Сервер (%1$s)</string>
