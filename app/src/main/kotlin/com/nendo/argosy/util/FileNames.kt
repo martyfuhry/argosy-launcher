@@ -46,6 +46,12 @@ object FileNames {
     fun isEntryName(name: String): Boolean = name.isNotBlank() && name != "." && name != ".."
 
     /**
+     * A platform slug as it can name a folder. A blank slug stays blank, since it is how a
+     * platform without one is recognised and it already resolves to the parent folder.
+     */
+    fun sanitizeSlug(slug: String): String = if (slug.isBlank()) slug else sanitize(slug)
+
+    /**
      * An archive entry path with every segment folded. Empty, `.` and `..` segments are dropped,
      * so a crafted entry cannot climb out of the directory it is being extracted into.
      */
