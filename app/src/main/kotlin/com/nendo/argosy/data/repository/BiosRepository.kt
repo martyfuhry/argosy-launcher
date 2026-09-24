@@ -584,7 +584,9 @@ class BiosRepository @Inject constructor(
                     config.targetNameFor(firmware.fileName)
                 }
 
-                val targetFile = File(targetDir, FileNames.sanitizeRelativePath(targetFileName))
+                val relativeTarget = FileNames.sanitizeRelativePath(targetFileName)
+                if (relativeTarget.isEmpty()) continue
+                val targetFile = File(targetDir, relativeTarget)
                 if (config.isWriteOnce(firmware.fileName) && targetFile.exists()) {
                     Logger.debug(TAG, "Keeping existing ${targetFile.name}; it is written once")
                     continue

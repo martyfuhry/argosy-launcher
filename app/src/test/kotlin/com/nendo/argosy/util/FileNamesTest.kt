@@ -70,6 +70,14 @@ class FileNamesTest {
     }
 
     @Test
+    fun `a relative path made only of separators folds to nothing`() {
+        assertEquals("", FileNames.sanitizeRelativePath("/"))
+        assertEquals("", FileNames.sanitizeRelativePath("\\"))
+        assertEquals("", FileNames.sanitizeRelativePath("//"))
+        assertEquals("", FileNames.sanitizeRelativePath("../."))
+    }
+
+    @Test
     fun `matches a sanitized file against the name the server reports`() {
         val server = "Pokémon Legends: Z-A.zip"
         assertEquals(
