@@ -114,7 +114,8 @@ class GameLauncher @Inject constructor(
     private val extContentOrganizer: com.nendo.argosy.data.download.ExtContentOrganizer,
     private val baseRomFileResolver: BaseRomFileResolver,
     private val dreamcastVmuMigrator: DreamcastVmuMigrator,
-    private val volumeHealth: StorageVolumeHealth
+    private val volumeHealth: StorageVolumeHealth,
+    private val launchDisplayPlanner: LaunchDisplayPlanner
 ) {
     private val shellAmAvailable: Boolean by lazy {
         try {
@@ -981,7 +982,7 @@ class GameLauncher @Inject constructor(
         var dispatchedMethod = effectiveMethod
         val dispatched = when (effectiveMethod) {
             LaunchMethod.INTENT -> command.copy(launchMethod = LaunchMethod.INTENT).toIntent(context)
-            LaunchMethod.SHELL -> when (val outcome = launchViaShell(command)) {
+            LaunchMethod.SHELL -> when (val outcome = launchViaShell(command, shellLaunchDisplayId(game, command))) {
                 is ShellLaunchOutcome.Success -> outcome.stubIntent
                 ShellLaunchOutcome.Rejected -> {
                     shellLaunchRejected = true
@@ -1578,7 +1579,10 @@ class GameLauncher @Inject constructor(
         object Rejected : ShellLaunchOutcome()
     }
 
-    private fun launchViaShell(command: EffectiveLaunchCommand): ShellLaunchOutcome {
+    private suspend fun shellLaunchDisplayId(game: GameEntity, command: EffectiveLaunchCommand): Int? =
+        launchDisplayPlanner.displayFor(game.id, EmulatorRegistry.drawsSecondScreen(command.packageName))
+
+    private fun launchViaShell(command: EffectiveLaunchCommand, displayId: Int?): ShellLaunchOutcome {
         command.grantReadUriTo.forEach { uri ->
             try {
                 context.grantUriPermission(command.packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -1587,7 +1591,7 @@ class GameLauncher @Inject constructor(
             }
         }
 
-        val argv = command.toShellArgv()
+        val argv = command.toShellArgv(displayId)
         Logger.debug(TAG, "Shell command: ${argv.last()}")
 
         try {

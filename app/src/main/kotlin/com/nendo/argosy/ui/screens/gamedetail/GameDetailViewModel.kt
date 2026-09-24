@@ -1160,6 +1160,7 @@ class GameDetailViewModel @Inject constructor(
                 viewModelScope.launch {
                     val options = emulatorLaunchTargetResolver.launchOptionsFor(
                         gameId = currentGameId,
+                        intent = intent,
                         overrideDisplayId = overrideDisplayId
                     )
                     _launchEvents.emit(LaunchEvent.LaunchIntent(intent, options))
