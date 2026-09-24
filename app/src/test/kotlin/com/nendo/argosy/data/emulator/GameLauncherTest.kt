@@ -1,6 +1,10 @@
 package com.nendo.argosy.data.emulator
 
 import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import com.nendo.argosy.DualScreenManager
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.data.local.dao.EmulatorConfigDao
 import com.nendo.argosy.data.local.dao.EmulatorLaunchArgsDao
 import com.nendo.argosy.data.local.dao.GameDao
@@ -17,13 +21,16 @@ import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.repository.BiosRepository
 import com.nendo.argosy.libretro.LibretroCoreManager
 import com.nendo.argosy.libretro.coreoptions.CoreOptionResolver
+import com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver
 import android.net.Uri
 import androidx.core.content.FileProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
+import io.mockk.unmockkConstructor
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -63,6 +70,7 @@ class GameLauncherTest {
 
     private lateinit var libretroStatePathResolver: LibretroStatePathResolver
     private lateinit var libretroSavePathResolver: LibretroSavePathResolver
+    private val launchDisplayPlanner = mockk<LaunchDisplayPlanner>(relaxed = true)
     private lateinit var launcher: GameLauncher
 
     @Before
@@ -146,7 +154,7 @@ class GameLauncherTest {
             ),
             volumeHealth = mockk(relaxed = true),
             dreamcastVmuMigrator = mockk(relaxed = true),
-            launchDisplayPlanner = mockk(relaxed = true)
+            launchDisplayPlanner = launchDisplayPlanner
         )
     }
 
@@ -861,5 +869,74 @@ class GameLauncherTest {
             "Multi-disc routing failed: ${result::class.simpleName}",
             result is LaunchResult.SelectDisc || result is LaunchResult.Error || result is LaunchResult.NoRomFile
         )
+    }
+
+    private fun recordIntentExtras() {
+        val extras = mutableMapOf<String, Any>()
+        mockkConstructor(Intent::class)
+        every { anyConstructed<Intent>().putExtra(any<String>(), any<Boolean>()) } answers {
+            extras[firstArg()] = secondArg<Boolean>()
+            self as Intent
+        }
+        every { anyConstructed<Intent>().putExtra(any<String>(), any<Int>()) } answers {
+            extras[firstArg()] = secondArg<Int>()
+            self as Intent
+        }
+        every { anyConstructed<Intent>().hasExtra(any()) } answers { firstArg<String>() in extras }
+        every { anyConstructed<Intent>().getBooleanExtra(any(), any()) } answers {
+            extras[firstArg()] as? Boolean ?: secondArg()
+        }
+        every { anyConstructed<Intent>().getIntExtra(any(), any()) } answers {
+            extras[firstArg()] as? Int ?: secondArg()
+        }
+    }
+
+    private fun resolverPlacingEverythingOn(displayId: Int): EmulatorLaunchTargetResolver {
+        val prefs = mockk<SharedPreferences> { every { getBoolean(any(), any()) } returns false }
+        val planner = mockk<LaunchDisplayPlanner> {
+            coEvery { displayFor(any(), any(), any()) } returns displayId
+        }
+        return EmulatorLaunchTargetResolver(
+            context = mockk { every { getSharedPreferences(any(), any()) } returns prefs },
+            displayAffinityHelper = mockk(relaxed = true),
+            launchDisplayPlanner = planner,
+            gameRepository = mockk(relaxed = true),
+            appLaunchScreenSettings = mockk(relaxed = true)
+        )
+    }
+
+    @Test
+    fun `a shell launch names the display its stand-in records, one-shot screen included`() = runTest {
+        val top = 0
+        val bottom = 4
+        val elsewhere = 7
+        recordIntentExtras()
+        val dualScreenManager = mockk<DualScreenManager>(relaxed = true)
+        DualScreenManagerHolder.instance = dualScreenManager
+        coEvery { launchDisplayPlanner.displayFor(any(), any(), any()) } answers { thirdArg<Int?>() ?: top }
+        val command = EffectiveLaunchCommand(
+            action = Intent.ACTION_VIEW,
+            packageName = "org.azahar_emu.azahar",
+            activityClass = "org.citra.citra_emu.activities.EmulationActivity",
+            categories = emptyList(),
+            intentFlags = 0
+        )
+        try {
+            for (overrideDisplayId in listOf(null, bottom)) {
+                val game = createGame(platformSlug = "3ds")
+                val displayId = launcher.shellLaunchDisplayId(game, command, overrideDisplayId)
+                val stub = launcher.shellLaunchStub(command, displayId)
+
+                resolverPlacingEverythingOn(elsewhere).launchOptionsFor(game.id, stub, overrideDisplayId)
+
+                val expected = overrideDisplayId ?: top
+                assertTrue(stub.isAlreadyLaunched())
+                assertTrue(command.toShellArgv(displayId).last().startsWith("/system/bin/am start --display $expected "))
+                verify { dualScreenManager.setEmulatorDisplay(expected) }
+            }
+        } finally {
+            DualScreenManagerHolder.instance = null
+            unmockkConstructor(Intent::class)
+        }
     }
 }

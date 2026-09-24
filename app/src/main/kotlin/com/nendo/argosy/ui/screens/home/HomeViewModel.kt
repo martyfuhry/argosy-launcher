@@ -1831,6 +1831,7 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
+            overrideDisplayId = displayId,
             onLaunch = { intent ->
                 viewModelScope.launch {
                     if (isAndroidApp) appLaunchScreenSettings.store(gameId, displayId)

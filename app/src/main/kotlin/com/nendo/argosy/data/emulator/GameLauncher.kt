@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
+import android.view.Display
 import androidx.core.content.FileProvider
 import com.nendo.argosy.data.download.ZipExtractor
 import com.nendo.argosy.data.emulator.savepath.SavePathRequest
@@ -49,8 +50,21 @@ import javax.inject.Singleton
 
 private const val TAG = "GameLauncher"
 private const val EXTRA_ALREADY_LAUNCHED = "argosy.already_launched"
+private const val EXTRA_LAUNCH_DISPLAY_ID = "argosy.launch_display_id"
 private val DISC_TAG_REGEX = Regex("\\(Disc \\d+\\)", RegexOption.IGNORE_CASE)
 private val DISC_NUMBER_REGEX = Regex("\\d+")
+
+/**
+ * Whether this intent stands in for an emulator a shell launch has already started, which must
+ * not be started a second time.
+ */
+fun Intent.isAlreadyLaunched(): Boolean = getBooleanExtra(EXTRA_ALREADY_LAUNCHED, false)
+
+/**
+ * The display a shell launch put its emulator on, or null when the launch named none.
+ */
+fun Intent.launchedDisplayId(): Int? =
+    if (hasExtra(EXTRA_LAUNCH_DISPLAY_ID)) getIntExtra(EXTRA_LAUNCH_DISPLAY_ID, Display.DEFAULT_DISPLAY) else null
 
 data class DiscOption(
     val fileName: String,
@@ -150,7 +164,8 @@ class GameLauncher @Inject constructor(
         variantFileId: Long? = null,
         skipVariantPrompt: Boolean = false,
         allowVariantPrompt: Boolean = true,
-        prefetchedGame: GameEntity? = null
+        prefetchedGame: GameEntity? = null,
+        overrideDisplayId: Int? = null
     ): LaunchResult = withContext(Dispatchers.IO) {
         launchInternal(
             gameId = gameId,
@@ -160,7 +175,8 @@ class GameLauncher @Inject constructor(
             variantFileId = variantFileId,
             skipVariantPrompt = skipVariantPrompt,
             allowVariantPrompt = allowVariantPrompt,
-            prefetchedGame = prefetchedGame
+            prefetchedGame = prefetchedGame,
+            overrideDisplayId = overrideDisplayId
         )
     }
 
@@ -172,7 +188,8 @@ class GameLauncher @Inject constructor(
         variantFileId: Long?,
         skipVariantPrompt: Boolean,
         allowVariantPrompt: Boolean,
-        prefetchedGame: GameEntity?
+        prefetchedGame: GameEntity?,
+        overrideDisplayId: Int?
     ): LaunchResult {
         Logger.debug(TAG, "launch() called: gameId=$gameId, discId=$discId, forResume=$forResume, variantFileId=$variantFileId, skipVariantPrompt=$skipVariantPrompt")
 
@@ -217,7 +234,7 @@ class GameLauncher @Inject constructor(
         if (variantFileId != null) {
             val variantFile = gameFileDao.getById(variantFileId)
             if (variantFile != null) {
-                val result = launchVariantFile(game, variantFile, forResume)
+                val result = launchVariantFile(game, variantFile, forResume, overrideDisplayId)
                 if (result is LaunchResult.Success) {
                     gameDao.updateLastPlayedFileId(game.id, variantFileId)
                 }
@@ -227,7 +244,7 @@ class GameLauncher @Inject constructor(
 
         val multiDiscGame = backfillDiscModel(game)
         if (multiDiscGame.isMultiDisc) {
-            return launchMultiDiscGame(multiDiscGame, discId, forResume)
+            return launchMultiDiscGame(multiDiscGame, discId, forResume, overrideDisplayId)
         }
 
         val romPath = game.localPath
@@ -258,6 +275,7 @@ class GameLauncher @Inject constructor(
             forResume = forResume,
             selectedDiscPath = selectedDiscPath,
             variantFileId = null,
+            overrideDisplayId = overrideDisplayId,
         )
     }
 
@@ -267,6 +285,7 @@ class GameLauncher @Inject constructor(
         forResume: Boolean,
         selectedDiscPath: String?,
         variantFileId: Long?,
+        overrideDisplayId: Int?,
     ): LaunchResult {
         val gameId = game.id
         val cacheKey = variantFileId?.let { variantCacheKey(it) } ?: PRIMARY_CACHE_KEY
@@ -348,7 +367,7 @@ class GameLauncher @Inject constructor(
 
         romFile = applyExtensionPreferenceIfNeeded(game, romFile)
 
-        val intent = buildIntent(emulator, romFile, game, forResume, variantFileId, builtInDiscM3u)
+        val intent = buildIntent(emulator, romFile, game, forResume, overrideDisplayId, variantFileId, builtInDiscM3u)
             ?: return when (emulator.launchConfig) {
                 is LaunchConfig.RetroArch, is LaunchConfig.BuiltIn -> {
                     LaunchResult.NoCore(game.platformSlug, lastCoreDownloadError).also {
@@ -389,7 +408,12 @@ class GameLauncher @Inject constructor(
         )
     }
 
-    private suspend fun launchVariantFile(game: GameEntity, variant: com.nendo.argosy.data.local.entity.GameFileEntity, forResume: Boolean): LaunchResult {
+    private suspend fun launchVariantFile(
+        game: GameEntity,
+        variant: com.nendo.argosy.data.local.entity.GameFileEntity,
+        forResume: Boolean,
+        overrideDisplayId: Int?
+    ): LaunchResult {
         val variantPath = variant.localPath
             ?: return LaunchResult.NoRomFile(null)
         val variantFile = File(variantPath)
@@ -400,7 +424,7 @@ class GameLauncher @Inject constructor(
             val m3u = variant.m3uPath?.let { File(it) }
             if (m3u != null && m3u.exists()) {
                 val emulator = resolveEmulator(game) ?: return LaunchResult.NoEmulator(game.platformSlug)
-                val intent = buildIntent(emulator, m3u, game, forResume, variant.id) ?: return LaunchResult.NoCore(game.platformSlug, lastCoreDownloadError)
+                val intent = buildIntent(emulator, m3u, game, forResume, overrideDisplayId, variant.id) ?: return LaunchResult.NoCore(game.platformSlug, lastCoreDownloadError)
                 overlayWriter.recordPlayStart(game.id, java.time.Instant.now())
                 val alreadyLaunched = intent.getBooleanExtra(EXTRA_ALREADY_LAUNCHED, false)
                 return LaunchResult.Success(
@@ -418,6 +442,7 @@ class GameLauncher @Inject constructor(
             forResume = forResume,
             selectedDiscPath = null,
             variantFileId = variant.id,
+            overrideDisplayId = overrideDisplayId,
         )
     }
 
@@ -492,7 +517,12 @@ class GameLauncher @Inject constructor(
     private fun discNumberOf(fileName: String): Int? =
         DISC_TAG_REGEX.find(fileName)?.let { DISC_NUMBER_REGEX.find(it.value)?.value?.toIntOrNull() }
 
-    private suspend fun launchMultiDiscGame(game: GameEntity, requestedDiscId: Long?, forResume: Boolean): LaunchResult {
+    private suspend fun launchMultiDiscGame(
+        game: GameEntity,
+        requestedDiscId: Long?,
+        forResume: Boolean,
+        overrideDisplayId: Int?
+    ): LaunchResult {
         Logger.debug(TAG, "launchMultiDiscGame(): discCount query for gameId=${game.id}, forResume=$forResume")
 
         val discs = gameDiscDao.getDiscsForGame(game.id)
@@ -574,7 +604,7 @@ class GameLauncher @Inject constructor(
             )
         }
 
-        val intent = buildIntent(emulator, launchFile, game, forResume, discM3uPath = discM3u)
+        val intent = buildIntent(emulator, launchFile, game, forResume, overrideDisplayId, discM3uPath = discM3u)
             ?: return if (emulator.launchConfig is LaunchConfig.RetroArch) {
                 LaunchResult.NoCore(game.platformSlug, lastCoreDownloadError).also {
                     Logger.warn(TAG, "launchMultiDiscGame() failed: no core for platform=${game.platformSlug}")
@@ -933,7 +963,15 @@ class GameLauncher @Inject constructor(
         return emulatorDetector.getPreferredEmulator(game.platformSlug, builtinEnabled)?.def
     }
 
-    private suspend fun buildIntent(emulator: EmulatorDef, romFile: File, game: GameEntity, forResume: Boolean, variantFileId: Long? = null, discM3uPath: String? = null): Intent? {
+    private suspend fun buildIntent(
+        emulator: EmulatorDef,
+        romFile: File,
+        game: GameEntity,
+        forResume: Boolean,
+        overrideDisplayId: Int?,
+        variantFileId: Long? = null,
+        discM3uPath: String? = null
+    ): Intent? {
         val configType = emulator.launchConfig::class.simpleName
         Logger.debug(TAG, "buildIntent: emulator=${emulator.displayName}, config=$configType, rom=${romFile.name}, forResume=$forResume")
 
@@ -993,7 +1031,7 @@ class GameLauncher @Inject constructor(
         var dispatchedMethod = effectiveMethod
         val dispatched = when (effectiveMethod) {
             LaunchMethod.INTENT -> command.copy(launchMethod = LaunchMethod.INTENT).toIntent(context)
-            LaunchMethod.SHELL -> when (val outcome = launchViaShell(command, shellLaunchDisplayId(game, command))) {
+            LaunchMethod.SHELL -> when (val outcome = launchViaShell(command, shellLaunchDisplayId(game, command, overrideDisplayId))) {
                 is ShellLaunchOutcome.Success -> outcome.stubIntent
                 ShellLaunchOutcome.Rejected -> {
                     shellLaunchRejected = true
@@ -1585,13 +1623,30 @@ class GameLauncher @Inject constructor(
         )
     }
 
+    internal fun shellLaunchStub(command: EffectiveLaunchCommand, displayId: Int?): Intent =
+        Intent(Intent.ACTION_VIEW).apply {
+            this.component = ComponentName(
+                command.packageName,
+                command.activityClass ?: command.packageName
+            )
+            putExtra(EXTRA_ALREADY_LAUNCHED, true)
+            displayId?.let { putExtra(EXTRA_LAUNCH_DISPLAY_ID, it) }
+        }
+
     private sealed class ShellLaunchOutcome {
         data class Success(val stubIntent: Intent) : ShellLaunchOutcome()
         object Rejected : ShellLaunchOutcome()
     }
 
-    private suspend fun shellLaunchDisplayId(game: GameEntity, command: EffectiveLaunchCommand): Int? =
-        launchDisplayPlanner.displayFor(game.id, EmulatorRegistry.drawsSecondScreen(command.packageName))
+    internal suspend fun shellLaunchDisplayId(
+        game: GameEntity,
+        command: EffectiveLaunchCommand,
+        overrideDisplayId: Int?
+    ): Int? = launchDisplayPlanner.displayFor(
+        gameId = game.id,
+        drawsSecondScreen = EmulatorRegistry.drawsSecondScreen(command.packageName),
+        overrideDisplayId = overrideDisplayId
+    )
 
     private fun launchViaShell(command: EffectiveLaunchCommand, displayId: Int?): ShellLaunchOutcome {
         command.grantReadUriTo.forEach { uri ->
@@ -1621,14 +1676,7 @@ class GameLauncher @Inject constructor(
             return ShellLaunchOutcome.Rejected
         }
 
-        val stub = Intent(Intent.ACTION_VIEW).apply {
-            this.component = ComponentName(
-                command.packageName,
-                command.activityClass ?: command.packageName
-            )
-            putExtra(EXTRA_ALREADY_LAUNCHED, true)
-        }
-        return ShellLaunchOutcome.Success(stub)
+        return ShellLaunchOutcome.Success(shellLaunchStub(command, displayId))
     }
 
     private fun commandForCustomScheme(
