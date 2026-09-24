@@ -1048,12 +1048,11 @@ object EmulatorRegistry {
 
     /**
      * Whether the emulator installed as [packageName] shows a second screen on a display of its
-     * own. A package no definition or family claims is taken to draw a single screen.
+     * own, as its definition or its family says. A package neither claims draws a single screen.
      */
     fun drawsSecondScreen(packageName: String): Boolean =
-        getByPackage(packageName)?.drawsSecondScreen
-            ?: findFamilyForPackage(packageName)?.drawsSecondScreen
-            ?: false
+        getByPackage(packageName)?.drawsSecondScreen == true ||
+            findFamilyForPackage(packageName)?.drawsSecondScreen == true
 
     /**
      * Synthesize an [EmulatorDef] for an ad-hoc app binding. The `id` is deterministic per
