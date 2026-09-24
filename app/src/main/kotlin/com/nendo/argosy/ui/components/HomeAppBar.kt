@@ -86,7 +86,6 @@ fun CompanionAppBar(
     onFocusPickerToggle: (() -> Unit)? = null,
     onFocusDisplay: (Int) -> Unit = {},
     onSwapRoles: (() -> Unit)? = null,
-    swapEnabled: Boolean = true,
     drawsScrim: Boolean = true
 ) {
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
@@ -173,7 +172,6 @@ fun CompanionAppBar(
         }
         if (onSwapRoles != null) {
             CompanionSwapScreensButton(
-                enabled = swapEnabled,
                 onClick = onSwapRoles
             )
         }
@@ -351,15 +349,12 @@ private fun CompanionKeyboardButton(
 }
 
 @Composable
-private fun CompanionSwapScreensButton(
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    val contentAlpha = if (enabled) 0.7f else 0.25f
+private fun CompanionSwapScreensButton(onClick: () -> Unit) {
+    val contentAlpha = 0.7f
     Column(
         modifier = Modifier
             .width(COMPANION_APP_BAR_SLOT_WIDTH)
-            .touchOnly { if (enabled) onClick() }
+            .touchOnly(onClick)
             .padding(Dimens.spacingXs),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -367,7 +362,7 @@ private fun CompanionSwapScreensButton(
             modifier = Modifier
                 .size(Dimens.iconXl)
                 .clip(RoundedCornerShape(Dimens.radiusLg))
-                .background(Color.White.copy(alpha = if (enabled) 0.15f else 0.06f)),
+                .background(Color.White.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
