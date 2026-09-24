@@ -32,6 +32,7 @@ import com.nendo.argosy.util.hideSystemBars
 class AppScreenActivity : ComponentActivity(), DualScreenManager.AppScreenHost {
 
     private var hostDisplayId: Int = Display.DEFAULT_DISPLAY
+    private var coveredByApp = false
 
     override fun releaseAppScreen() {
         runOnUiThread { finish() }
@@ -85,6 +86,17 @@ class AppScreenActivity : ComponentActivity(), DualScreenManager.AppScreenHost {
             return
         }
         dsm.registerAppScreenHost(hostDisplayId, this)
+        if (coveredByApp) {
+            coveredByApp = false
+            dsm.interactiveDisplayId()
+                ?.takeIf { it != hostDisplayId }
+                ?.let { dsm.focusDisplay(it) }
+        }
+    }
+
+    override fun onPause() {
+        coveredByApp = !isFinishing
+        super.onPause()
     }
 
     override fun onDestroy() {
