@@ -1571,7 +1571,9 @@ class DualScreenManager(
             applyStoredScreenLayout()
         }
 
-        override fun onDisplayChanged(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            displayAffinityHelper.notePanelStateChange(displayId)
+        }
     }
 
     private fun cleanupSwappedState() {
