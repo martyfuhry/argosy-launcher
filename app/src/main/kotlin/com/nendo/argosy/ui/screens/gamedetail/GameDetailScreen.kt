@@ -112,8 +112,6 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-private const val READER_PAGE_JUMP = 10
-
 @Composable
 fun GameDetailScreen(
     gameId: Long,
@@ -397,57 +395,7 @@ fun GameDetailScreen(
 
     val documentReader by viewModel.documentReader.collectAsState()
     val documentReaderOpen = documentReader != null
-    val documentReaderInputHandler = remember(viewModel) {
-        object : com.nendo.argosy.ui.input.InputHandler {
-            override fun onLeft(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.turnDocumentPage(-1)
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onRight(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.turnDocumentPage(1)
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onUp(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.turnDocumentPage(-1)
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onDown(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.turnDocumentPage(1)
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onPrevTrigger(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.turnDocumentPage(-READER_PAGE_JUMP)
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onNextTrigger(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.turnDocumentPage(READER_PAGE_JUMP)
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onBack(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.dismissDocumentReader()
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onConfirm(): com.nendo.argosy.ui.input.InputResult =
-                com.nendo.argosy.ui.input.InputResult.HANDLED
-
-            override fun onContextMenu(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.toggleDocumentHighlightOnPage()
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-
-            override fun onSecondaryAction(): com.nendo.argosy.ui.input.InputResult {
-                viewModel.jumpToNextDocumentHighlight()
-                return com.nendo.argosy.ui.input.InputResult.HANDLED
-            }
-        }
-    }
+    val documentReaderInputHandler = viewModel.documentReaderInput
 
     LaunchedEffect(documentReaderOpen) {
         if (documentReaderOpen) {

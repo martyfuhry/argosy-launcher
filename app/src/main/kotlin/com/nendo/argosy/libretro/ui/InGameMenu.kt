@@ -57,6 +57,9 @@ sealed class InGameMenuAction {
     data object Settings : InGameMenuAction()
     data object Cheats : InGameMenuAction()
     data object Achievements : InGameMenuAction()
+    data object ViewManual : InGameMenuAction()
+    data object ViewWalkthrough : InGameMenuAction()
+    data object ToggleWalkthroughPanel : InGameMenuAction()
     data object Reset : InGameMenuAction()
     data object Quit : InGameMenuAction()
     data object OpenToFriends : InGameMenuAction()
@@ -126,9 +129,17 @@ fun InGameMenu(
     hasQuickSave: Boolean = false,
     quickHistoryFocused: Boolean = false,
     onQuickHistoryFocusChange: (Boolean) -> Unit = {},
-    twoColumnMenu: Boolean = false
+    twoColumnMenu: Boolean = false,
+    manualAvailable: Boolean = false,
+    walkthroughAvailable: Boolean = false,
+    walkthroughPanelAvailable: Boolean = false,
+    walkthroughPanelShown: Boolean = false
 ): InputHandler {
     val menuItems: List<Pair<Int, InGameMenuAction>> = remember(
+        manualAvailable,
+        walkthroughAvailable,
+        walkthroughPanelAvailable,
+        walkthroughPanelShown,
         cheatsAvailable,
         achievementsAvailable,
         statesSupported,
@@ -159,6 +170,17 @@ fun InGameMenu(
             }
             if (achievementsAvailable) {
                 add(R.string.ingame_menu_achievements to InGameMenuAction.Achievements)
+            }
+            if (manualAvailable) {
+                add(R.string.ingame_menu_view_manual to InGameMenuAction.ViewManual)
+            }
+            if (walkthroughAvailable) {
+                add(R.string.ingame_menu_view_walkthrough to InGameMenuAction.ViewWalkthrough)
+                if (walkthroughPanelShown) {
+                    add(R.string.ingame_menu_hide_walkthrough_panel to InGameMenuAction.ToggleWalkthroughPanel)
+                } else if (walkthroughPanelAvailable) {
+                    add(R.string.ingame_menu_walkthrough_beside_game to InGameMenuAction.ToggleWalkthroughPanel)
+                }
             }
             if (netplaySupported) {
                 if (isInNetplaySession) {

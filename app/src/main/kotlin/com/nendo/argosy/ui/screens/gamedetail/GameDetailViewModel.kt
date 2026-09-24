@@ -164,6 +164,7 @@ class GameDetailViewModel @Inject constructor(
             highlightStore = documentHighlightStore
         )
     val documentReader = documentReaderController.state
+    val documentReaderInput = documentReaderController.inputHandler()
     private var pendingLaunchOrigin: LaunchOrigin = LaunchOrigin.INTERNAL
     private var lastActionTime: Long = 0
     private val actionDebounceMs = 300L
@@ -1276,11 +1277,7 @@ class GameDetailViewModel @Inject constructor(
 
     fun toggleDocumentHighlightAt(pageLine: Int) = documentReaderController.toggleHighlightAt(pageLine)
 
-    fun toggleDocumentHighlightOnPage() = documentReaderController.toggleHighlightOnPage()
-
     fun cycleDocumentHighlightColor(firstLine: Int) = documentReaderController.cycleHighlightColor(firstLine)
-
-    fun jumpToNextDocumentHighlight() = documentReaderController.jumpToNextHighlight()
 
     private fun isLaunchDisplayRowFocused(): Boolean =
         moreOptionsDelegate.resolveOptionAction(moreOptionsContext()) == MoreOptionAction.LaunchOnDisplay

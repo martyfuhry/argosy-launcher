@@ -17,6 +17,20 @@ enum class AspectRatioClass {
     STANDARD,     // 0.5-1.6
     TALL,         // 0.35-0.5 (9:16)
     ULTRA_TALL    // < 0.35 (9:21)
+    ;
+
+    val isWide: Boolean get() = this == WIDE || this == ULTRA_WIDE
+}
+
+fun aspectRatioClassOf(widthDp: Int, heightDp: Int): AspectRatioClass {
+    val aspectRatio = widthDp.toFloat() / heightDp.coerceAtLeast(1).toFloat()
+    return when {
+        aspectRatio >= 2.0f -> AspectRatioClass.ULTRA_WIDE
+        aspectRatio >= 1.6f -> AspectRatioClass.WIDE
+        aspectRatio >= 0.5f -> AspectRatioClass.STANDARD
+        aspectRatio >= 0.35f -> AspectRatioClass.TALL
+        else -> AspectRatioClass.ULTRA_TALL
+    }
 }
 
 val LocalUiScale = staticCompositionLocalOf { UiScaleConfig() }

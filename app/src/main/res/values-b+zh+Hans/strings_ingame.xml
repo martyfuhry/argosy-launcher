@@ -13,6 +13,10 @@
     <string name="ingame_menu_manage_states">管理即时存档</string>
     <string name="ingame_menu_cheats">金手指</string>
     <string name="ingame_menu_achievements">成就</string>
+    <string name="ingame_menu_view_manual">查看说明书</string>
+    <string name="ingame_menu_view_walkthrough">查看攻略</string>
+    <string name="ingame_menu_walkthrough_beside_game">攻略并排显示</string>
+    <string name="ingame_menu_hide_walkthrough_panel">隐藏攻略</string>
     <string name="ingame_achievements_title">成就</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
     <string name="ingame_achievements_unlocked_heading">已解锁（%1$d）</string>

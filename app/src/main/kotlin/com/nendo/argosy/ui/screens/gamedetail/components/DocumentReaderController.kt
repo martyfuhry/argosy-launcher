@@ -10,6 +10,8 @@ import com.nendo.argosy.data.repository.DocumentHighlight
 import com.nendo.argosy.data.repository.DocumentHighlightStore
 import com.nendo.argosy.data.repository.documentKey
 import com.nendo.argosy.data.repository.GameDocumentLoader
+import com.nendo.argosy.ui.input.InputHandler
+import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.screens.gamedetail.GameDocument
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -23,6 +25,7 @@ import kotlinx.coroutines.launch
 
 private const val PDF_PAGE_WIDTH_PX = 1080
 private const val PROGRESS_DEBOUNCE_MS = 1500L
+private const val READER_PAGE_JUMP = 10
 
 /**
  * The documents a game offers: the metadata provider's manual, then its RomM manual and
@@ -72,6 +75,43 @@ class DocumentReaderController(
 ) {
     private val _state = MutableStateFlow<DocumentReaderState?>(null)
     val state: StateFlow<DocumentReaderState?> = _state.asStateFlow()
+
+    val openDocument: GameDocument? get() = document.takeIf { _state.value != null }
+
+    /**
+     * Gamepad control of the open document: d-pad turns a page, the triggers jump
+     * [READER_PAGE_JUMP] pages, X marks the section on the page, Y jumps to the next mark, and
+     * Back runs [onDismiss].
+     */
+    fun inputHandler(onDismiss: () -> Unit = ::dismiss): InputHandler = object : InputHandler {
+        override fun onLeft(): InputResult = turned(-1)
+        override fun onRight(): InputResult = turned(1)
+        override fun onUp(): InputResult = turned(-1)
+        override fun onDown(): InputResult = turned(1)
+        override fun onPrevTrigger(): InputResult = turned(-READER_PAGE_JUMP)
+        override fun onNextTrigger(): InputResult = turned(READER_PAGE_JUMP)
+        override fun onConfirm(): InputResult = InputResult.HANDLED
+
+        override fun onBack(): InputResult {
+            onDismiss()
+            return InputResult.HANDLED
+        }
+
+        override fun onContextMenu(): InputResult {
+            toggleHighlightOnPage()
+            return InputResult.HANDLED
+        }
+
+        override fun onSecondaryAction(): InputResult {
+            jumpToNextHighlight()
+            return InputResult.HANDLED
+        }
+
+        private fun turned(delta: Int): InputResult {
+            turnPage(delta)
+            return InputResult.HANDLED
+        }
+    }
 
     private var document: GameDocument? = null
     private var romId: Long? = null

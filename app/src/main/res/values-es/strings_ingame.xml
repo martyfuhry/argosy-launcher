@@ -13,6 +13,10 @@
     <string name="ingame_menu_manage_states">Administrar estados</string>
     <string name="ingame_menu_cheats">Trucos</string>
     <string name="ingame_menu_achievements">Logros</string>
+    <string name="ingame_menu_view_manual">Ver manual</string>
+    <string name="ingame_menu_view_walkthrough">Ver guía</string>
+    <string name="ingame_menu_walkthrough_beside_game">Guía junto al juego</string>
+    <string name="ingame_menu_hide_walkthrough_panel">Ocultar guía</string>
     <string name="ingame_achievements_title">Logros</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
     <string name="ingame_achievements_unlocked_heading">DESBLOQUEADOS (%1$d)</string>

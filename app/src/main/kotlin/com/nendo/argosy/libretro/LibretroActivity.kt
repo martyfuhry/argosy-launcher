@@ -19,6 +19,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -204,6 +205,21 @@ class LibretroActivity : ComponentActivity() {
     @Inject lateinit var configureEmulatorUseCase: com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase
     @Inject lateinit var speedrunRepository: com.nendo.argosy.data.speedrun.SpeedrunRepository
     @Inject lateinit var stateOwnershipTracker: com.nendo.argosy.data.sync.StateOwnershipTracker
+    @Inject lateinit var gameRepository: com.nendo.argosy.data.repository.GameRepository
+    @Inject lateinit var romMRepository: com.nendo.argosy.data.remote.romm.RomMRepository
+    @Inject lateinit var gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader
+    @Inject lateinit var documentHighlightStore: com.nendo.argosy.data.repository.DocumentHighlightStore
+
+    private val inGameDocuments by lazy {
+        com.nendo.argosy.libretro.ui.InGameDocuments(
+            scope = lifecycleScope,
+            gameRepository = gameRepository,
+            romMRepository = romMRepository,
+            loader = gameDocumentLoader,
+            highlightStore = documentHighlightStore
+        )
+    }
+    private var readerKind by mutableStateOf<com.nendo.argosy.libretro.ui.InGameDocumentKind?>(null)
 
     private var coreLoadedSuccessfully = false
 
@@ -341,11 +357,11 @@ class LibretroActivity : ComponentActivity() {
     private var inputDeviceListener: android.hardware.input.InputManager.InputDeviceListener? = null
     private var splitColumn: android.widget.LinearLayout? = null
     private var splitRow: android.widget.LinearLayout? = null
-    private var speedrunPanelSideState by mutableStateOf("Off")
+    private var sidePanelContent by mutableStateOf<com.nendo.argosy.libretro.ui.SidePanelContent?>(null)
+    private var sidePanelSideState by mutableStateOf("Right")
     private var speedrunPanelFractionState by mutableStateOf(SPEEDRUN_PANEL_FRACTION_DEFAULT)
     private val speedrunTimer = com.nendo.argosy.libretro.speedrun.SpeedrunTimerEngine()
     private var speedrunStartOnReset = true
-    private var speedrunPanelSidePref = "Right"
     private val hotkeyConsumedKeys = mutableSetOf<Int>()
     private val coreHeldKeys = mutableMapOf<Int, KeyEvent>()
     private val deferredCoreKeys = DeferredCoreKeys<KeyEvent>(
@@ -370,7 +386,7 @@ class LibretroActivity : ComponentActivity() {
 
     private val isAnyMenuOpen: Boolean
         get() = menuVisible || cheatsMenuVisible || achievementsVisible || settingsVisible || shaderChainEditorVisible || frameEditorVisible || autoRestorePromptVisible || stateManagerVisible || quickTimelineVisible || discMenuVisible ||
-            speedrunPickerVisible || isClosing || netplay.isAnyDialogVisible
+            speedrunPickerVisible || readerKind != null || isClosing || netplay.isAnyDialogVisible
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -491,13 +507,13 @@ class LibretroActivity : ComponentActivity() {
                     splitColumn?.let { col -> applyPortraitSplit(col) }
                 }
                 speedrunStartOnReset = it.speedrunStartOnReset
-                speedrunPanelSidePref = it.speedrunPanelSide
                 val newFraction = it.speedrunPanelWidthPercent / 100f
                 if (newFraction != speedrunPanelFractionState) {
                     setSpeedrunPanelFraction(newFraction)
                 }
-                if (speedrunPanelSideState != "Off" && speedrunPanelSideState != it.speedrunPanelSide) {
-                    setSpeedrunPanelSide(it.speedrunPanelSide)
+                if (sidePanelSideState != it.speedrunPanelSide) {
+                    sidePanelSideState = it.speedrunPanelSide
+                    splitRow?.let { row -> applySidePanelSplit(row) }
                 }
             }
         }
@@ -632,6 +648,7 @@ class LibretroActivity : ComponentActivity() {
         intent.getStringExtra(EXTRA_CORE_PATH) ?: run { finish(); return false }
         gameName = intent.getStringExtra(EXTRA_GAME_NAME) ?: File(romPath).nameWithoutExtension
         gameId = intent.getLongExtra(EXTRA_GAME_ID, -1L)
+        inGameDocuments.load(gameId)
         variantFileId = intent.getLongExtra(EXTRA_VARIANT_FILE_ID, -1L)
         discPaths = intent.getStringExtra(EXTRA_DISC_M3U_PATH)
             ?.let { M3uManager.parseAllDiscs(File(it)) } ?: emptyList()
@@ -836,7 +853,7 @@ class LibretroActivity : ComponentActivity() {
             splitColumn?.let { applyPortraitSplit(it) }
         }
         lifecycleScope.launch {
-            snapshotFlow { netplay.inSession || speedrunPanelSideState != "Off" }
+            snapshotFlow { netplay.inSession || sidePanelContent != null }
                 .collect { videoSettings.framesSuppressed = it }
         }
         lifecycleScope.launch {
@@ -1079,7 +1096,7 @@ class LibretroActivity : ComponentActivity() {
                 pbTimeMs = armData.third.pbTimeMs,
                 attemptCount = armData.third.attemptCount
             )
-            setSpeedrunPanelSide(speedrunPanelSidePref)
+            setSidePanel(com.nendo.argosy.libretro.ui.SidePanelContent.SPEEDRUN)
         }
     }
 
@@ -1248,7 +1265,7 @@ class LibretroActivity : ComponentActivity() {
         this.splitColumn = splitColumn
         this.splitRow = splitRow
         applyPortraitSplit(splitColumn)
-        applySpeedrunSplit(splitRow)
+        applySidePanelSplit(splitRow)
 
         container.post {
             videoSettings.setScreenSize(splitColumn.width, container.height)
@@ -1293,15 +1310,29 @@ class LibretroActivity : ComponentActivity() {
         column.requestLayout()
     }
 
-    private fun applySpeedrunSplit(row: android.widget.LinearLayout) {
+    private val isWideScreen: Boolean
+        get() = com.nendo.argosy.ui.theme.aspectRatioClassOf(
+            resources.configuration.screenWidthDp,
+            resources.configuration.screenHeightDp
+        ).isWide
+
+    private fun sidePanelFits(content: com.nendo.argosy.libretro.ui.SidePanelContent?): Boolean {
         val landscape = currentOrientationState != android.content.res.Configuration.ORIENTATION_PORTRAIT
-        val panelWeight = if (landscape && isGamepadConnectedState && speedrunPanelSideState != "Off") {
+        return when (content) {
+            null -> false
+            com.nendo.argosy.libretro.ui.SidePanelContent.SPEEDRUN -> landscape && isGamepadConnectedState
+            com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH -> landscape && isWideScreen
+        }
+    }
+
+    private fun applySidePanelSplit(row: android.widget.LinearLayout) {
+        val panelWeight = if (sidePanelFits(sidePanelContent)) {
             speedrunPanelFractionState.coerceIn(SPEEDRUN_PANEL_FRACTION_RANGE)
         } else 0f
-        val (leftWeight, rightWeight) = when (speedrunPanelSideState) {
-            "Left" -> panelWeight to 0f
-            "Right" -> 0f to panelWeight
-            else -> 0f to 0f
+        val (leftWeight, rightWeight) = if (sidePanelSideState == "Left") {
+            panelWeight to 0f
+        } else {
+            0f to panelWeight
         }
         val spacerLeft = row.getChildAt(0)
         val gameArea = row.getChildAt(1)
@@ -1319,14 +1350,43 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
-    private fun setSpeedrunPanelSide(side: String) {
-        speedrunPanelSideState = side
-        splitRow?.let { applySpeedrunSplit(it) }
+    private fun setSidePanel(content: com.nendo.argosy.libretro.ui.SidePanelContent?) {
+        sidePanelContent = content
+        splitRow?.let { applySidePanelSplit(it) }
     }
 
     private fun setSpeedrunPanelFraction(fraction: Float) {
         speedrunPanelFractionState = fraction.coerceIn(SPEEDRUN_PANEL_FRACTION_RANGE)
-        splitRow?.let { applySpeedrunSplit(it) }
+        splitRow?.let { applySidePanelSplit(it) }
+    }
+
+    private fun openReader(kind: com.nendo.argosy.libretro.ui.InGameDocumentKind) {
+        menuVisible = false
+        inGameDocuments.open(kind)
+        readerKind = kind
+    }
+
+    private fun closeReader() {
+        val kind = readerKind ?: return
+        readerKind = null
+        val keptBesideGame = kind == com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH &&
+            sidePanelContent == com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH
+        if (!keptBesideGame) inGameDocuments.reader(kind).dismiss()
+        menuVisible = true
+    }
+
+    private fun toggleWalkthroughPanel() {
+        if (sidePanelContent == com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH) {
+            closeWalkthroughPanel()
+        } else {
+            inGameDocuments.open(com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH)
+            setSidePanel(com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH)
+        }
+    }
+
+    private fun closeWalkthroughPanel() {
+        if (sidePanelContent == com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH) setSidePanel(null)
+        inGameDocuments.reader(com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH).dismiss()
     }
 
 
@@ -1353,17 +1413,32 @@ class LibretroActivity : ComponentActivity() {
                     onKey = { action, kc -> dispatchTouchKey(action, kc) }
                 )
                 val speedrunState by speedrunTimer.state.collectAsState()
-                val speedrunPanelVisible = speedrunState.armed &&
-                    speedrunPanelSideState != "Off" &&
-                    isGamepadConnectedState &&
-                    currentOrientationState != android.content.res.Configuration.ORIENTATION_PORTRAIT
-                if (speedrunPanelVisible) {
+                val documents by inGameDocuments.available.collectAsState()
+                val panelAlignment = if (sidePanelSideState == "Left") Alignment.CenterStart else Alignment.CenterEnd
+                val panelFraction = speedrunPanelFractionState.coerceIn(SPEEDRUN_PANEL_FRACTION_RANGE)
+                val shownPanel = sidePanelContent?.takeIf { sidePanelFits(it) }
+                if (shownPanel == com.nendo.argosy.libretro.ui.SidePanelContent.SPEEDRUN && speedrunState.armed) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         com.nendo.argosy.libretro.ui.SpeedrunPanel(
                             state = speedrunState,
                             modifier = Modifier
-                                .align(if (speedrunPanelSideState == "Left") Alignment.CenterStart else Alignment.CenterEnd)
-                                .fillMaxWidth(speedrunPanelFractionState.coerceIn(SPEEDRUN_PANEL_FRACTION_RANGE))
+                                .align(panelAlignment)
+                                .fillMaxWidth(panelFraction)
+                        )
+                    }
+                }
+                if (shownPanel == com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH &&
+                    readerKind != com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        com.nendo.argosy.libretro.ui.InGameDocumentReader(
+                            reader = inGameDocuments.reader(com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH),
+                            showsControllerHints = false,
+                            onDismiss = ::closeWalkthroughPanel,
+                            modifier = Modifier
+                                .align(panelAlignment)
+                                .fillMaxHeight()
+                                .fillMaxWidth(panelFraction)
                         )
                     }
                 }
@@ -1405,7 +1480,24 @@ class LibretroActivity : ComponentActivity() {
                         hasQuickSave = saveStateManager.hasQuickSave,
                         quickHistoryFocused = menuQuickHistoryFocused,
                         onQuickHistoryFocusChange = { menuQuickHistoryFocused = it },
-                        twoColumnMenu = touchSettingsState.ingameMenuTwoColumn
+                        twoColumnMenu = touchSettingsState.ingameMenuTwoColumn,
+                        manualAvailable = com.nendo.argosy.libretro.ui.InGameDocumentKind.MANUAL in documents,
+                        walkthroughAvailable = com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH in documents,
+                        walkthroughPanelAvailable = !speedrunState.armed &&
+                            sidePanelFits(com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH),
+                        walkthroughPanelShown = sidePanelContent == com.nendo.argosy.libretro.ui.SidePanelContent.WALKTHROUGH
+                    )
+                }
+                readerKind?.let { kind ->
+                    val reader = inGameDocuments.reader(kind)
+                    activeMenuHandler = androidx.compose.runtime.remember(kind) {
+                        reader.inputHandler(onDismiss = ::closeReader)
+                    }
+                    com.nendo.argosy.libretro.ui.InGameDocumentReader(
+                        reader = reader,
+                        showsControllerHints = isGamepadConnectedState,
+                        onDismiss = ::closeReader,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 if (discMenuVisible) {
@@ -2346,6 +2438,12 @@ class LibretroActivity : ComponentActivity() {
                 achievementsFocusIndex = 0
                 achievementsVisible = true
             }
+            InGameMenuAction.ViewManual -> openReader(com.nendo.argosy.libretro.ui.InGameDocumentKind.MANUAL)
+            InGameMenuAction.ViewWalkthrough -> openReader(com.nendo.argosy.libretro.ui.InGameDocumentKind.WALKTHROUGH)
+            InGameMenuAction.ToggleWalkthroughPanel -> {
+                toggleWalkthroughPanel()
+                hideMenu()
+            }
             InGameMenuAction.CustomizeTouchControls -> {
                 enterTouchEditMode()
             }
@@ -2357,7 +2455,7 @@ class LibretroActivity : ComponentActivity() {
             InGameMenuAction.ToggleSpeedrun -> {
                 if (speedrunTimer.isArmed) {
                     speedrunTimer.disarm()
-                    setSpeedrunPanelSide("Off")
+                    if (sidePanelContent == com.nendo.argosy.libretro.ui.SidePanelContent.SPEEDRUN) setSidePanel(null)
                 } else {
                     requestSpeedrunArm()
                 }
@@ -2858,7 +2956,7 @@ class LibretroActivity : ComponentActivity() {
         deferredMenuPause?.cancel()
         deferredMenuPause = lifecycleScope.launch {
             kotlinx.coroutines.delay(window)
-            if (menuVisible && !isClosing && !coreDestroyed) retroView.pauseEmulation()
+            if (isAnyMenuOpen && !isClosing && !coreDestroyed) retroView.pauseEmulation()
         }
     }
 
@@ -3243,7 +3341,7 @@ class LibretroActivity : ComponentActivity() {
         currentOrientationState = newConfig.orientation
         currentRotationState = windowManager.defaultDisplay.rotation
         splitColumn?.let { applyPortraitSplit(it) }
-        splitRow?.let { applySpeedrunSplit(it) }
+        splitRow?.let { applySidePanelSplit(it) }
     }
 
     private fun refreshGamepadPresence() {
@@ -3251,7 +3349,7 @@ class LibretroActivity : ComponentActivity() {
         if (connected != isGamepadConnectedState) {
             isGamepadConnectedState = connected
             splitColumn?.let { applyPortraitSplit(it) }
-            splitRow?.let { applySpeedrunSplit(it) }
+            splitRow?.let { applySidePanelSplit(it) }
         }
     }
 

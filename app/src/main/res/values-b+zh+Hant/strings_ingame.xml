@@ -13,6 +13,10 @@
     <string name="ingame_menu_manage_states">管理即時存檔</string>
     <string name="ingame_menu_cheats">作弊碼</string>
     <string name="ingame_menu_achievements">成就</string>
+    <string name="ingame_menu_view_manual">查看說明書</string>
+    <string name="ingame_menu_view_walkthrough">查看攻略</string>
+    <string name="ingame_menu_walkthrough_beside_game">攻略並排顯示</string>
+    <string name="ingame_menu_hide_walkthrough_panel">隱藏攻略</string>
     <string name="ingame_achievements_title">成就</string>
     <string name="ingame_achievements_progress">%1$d/%2$d</string>
     <string name="ingame_achievements_unlocked_heading">已解鎖（%1$d）</string>

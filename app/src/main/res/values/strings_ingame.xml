@@ -36,6 +36,10 @@
     <string name="ingame_menu_cheats">Cheats</string>
     <!-- Row in that menu. Noun, plural: opens the list of RetroAchievements for this game. -->
     <string name="ingame_menu_achievements">Achievements</string>
+    <string name="ingame_menu_view_manual">View Manual</string>
+    <string name="ingame_menu_view_walkthrough">View Walkthrough</string>
+    <string name="ingame_menu_walkthrough_beside_game">Walkthrough Beside Game</string>
+    <string name="ingame_menu_hide_walkthrough_panel">Hide Walkthrough Panel</string>
     <!-- Row in that menu, for the host of a shared session. Verb phrase: opens the list of
          friends so one can be asked to join. The trailing dots mean another step follows. -->
     <string name="ingame_menu_invite_friend">Invite Friend...</string>

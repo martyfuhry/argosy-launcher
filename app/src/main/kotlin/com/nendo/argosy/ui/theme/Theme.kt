@@ -377,14 +377,7 @@ fun ProvideArgosyThemeLocals(
     )
 
     val configuration = LocalConfiguration.current
-    val aspectRatio = configuration.screenWidthDp.toFloat() / configuration.screenHeightDp.toFloat()
-    val aspectRatioClass = when {
-        aspectRatio >= 2.0f -> AspectRatioClass.ULTRA_WIDE
-        aspectRatio >= 1.6f -> AspectRatioClass.WIDE
-        aspectRatio >= 0.5f -> AspectRatioClass.STANDARD
-        aspectRatio >= 0.35f -> AspectRatioClass.TALL
-        else -> AspectRatioClass.ULTRA_TALL
-    }
+    val aspectRatioClass = aspectRatioClassOf(configuration.screenWidthDp, configuration.screenHeightDp)
 
     val uiScaleConfig = UiScaleConfig(
         scale = themeState.uiScale / 100f,
