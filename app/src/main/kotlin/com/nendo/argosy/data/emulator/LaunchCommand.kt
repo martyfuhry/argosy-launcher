@@ -128,8 +128,9 @@ fun EffectiveLaunchCommand.toIntent(context: Context): Intent {
 private fun shellEscape(value: String): String =
     "'" + value.replace("'", "'\\''") + "'"
 
-fun EffectiveLaunchCommand.toShellArgv(): Array<String> {
+fun EffectiveLaunchCommand.toShellArgv(displayId: Int? = null): Array<String> {
     val cmd = StringBuilder("/system/bin/am start")
+    displayId?.let { cmd.append(" --display ").append(it) }
     cmd.append(" -a ").append(shellEscape(action))
 
     if (activityClass != null) {

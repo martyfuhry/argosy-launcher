@@ -17,6 +17,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+private const val LOWER_DISPLAY = 4
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class DualScreenManagerRoleSwapTest {
 
@@ -45,7 +47,7 @@ class DualScreenManagerRoleSwapTest {
 
     @Test
     fun `a swap flips the live arrangement even when the stored override disagrees`() {
-        manager.setRolesSwapped(false)
+        manager = newManager(initialRolesSwapped = false)
         every { sessionStateStore.getDisplayRoleOverride() } returns "SWAPPED"
 
         manager.swapRoles()
@@ -58,7 +60,7 @@ class DualScreenManagerRoleSwapTest {
 
     @Test
     fun `a swap records the override that matches the arrangement it produced`() {
-        manager.setRolesSwapped(false)
+        manager = newManager(initialRolesSwapped = false)
         every { sessionStateStore.getDisplayRoleOverride() } returns "AUTO"
 
         manager.swapRoles()
@@ -71,7 +73,7 @@ class DualScreenManagerRoleSwapTest {
 
     @Test
     fun `a swap is refused while a session is running`() {
-        manager.setRolesSwapped(false)
+        manager = newManager(initialRolesSwapped = false)
         every { sessionStateStore.hasActiveSession() } returns true
 
         manager.swapRoles()
@@ -81,7 +83,7 @@ class DualScreenManagerRoleSwapTest {
 
     @Test
     fun `clearing the override restores auto without touching the arrangement`() {
-        manager.setRolesSwapped(true)
+        manager = newManager(initialRolesSwapped = true)
         every { sessionStateStore.getDisplayRoleOverride() } returns "SWAPPED"
 
         manager.clearDisplayRoleOverride()
@@ -114,6 +116,45 @@ class DualScreenManagerRoleSwapTest {
         assertEquals(false, manager.isRolesSwapped.value)
         verify(exactly = 0) { sessionStateStore.setDisplayRoleOverride(any()) }
         io.mockk.coVerify(exactly = 0) { preferencesRepository.setDisplayRoleOverride(any()) }
+    }
+
+    @Test
+    fun `a layout applied during a session moves the launcher once the session ends`() {
+        manager = newManager(initialRolesSwapped = false)
+        every { sessionStateStore.hasActiveSession() } returns true
+
+        manager.setPrimaryDisplayId(android.view.Display.DEFAULT_DISPLAY)
+        assertEquals(false, manager.isRolesSwapped.value)
+
+        every { sessionStateStore.hasActiveSession() } returns false
+        manager.onSessionChanged(-1L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(manager.isRolesSwapped.value)
+    }
+
+    @Test
+    fun `a session ending with no layout waiting leaves the arrangement alone`() {
+        manager = newManager(initialRolesSwapped = true)
+
+        manager.onSessionChanged(-1L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(manager.isRolesSwapped.value)
+    }
+
+    @Test
+    fun `a layout matching the live arrangement cancels a waiting move`() {
+        manager = newManager(initialRolesSwapped = false)
+        every { sessionStateStore.hasActiveSession() } returns true
+        manager.setPrimaryDisplayId(android.view.Display.DEFAULT_DISPLAY)
+        manager.setPrimaryDisplayId(LOWER_DISPLAY)
+
+        every { sessionStateStore.hasActiveSession() } returns false
+        manager.onSessionChanged(-1L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(false, manager.isRolesSwapped.value)
     }
 
     @Test
@@ -210,6 +251,7 @@ class DualScreenManagerRoleSwapTest {
     }
 
     private fun newManager(
+        initialRolesSwapped: Boolean = false,
         displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper =
             mockk(relaxed = true) { every { getRoleDisplayIds(any()) } returns null },
         gameWindowMover: com.nendo.argosy.hardware.GameWindowMover = FakeGameWindowMover(arrives = false)
@@ -289,11 +331,14 @@ class DualScreenManagerRoleSwapTest {
         mediaRepository = mockk(relaxed = true),
         getRelatedMediaUseCase = mockk(relaxed = true),
         resolveMediaPlayTargetUseCase = mockk(relaxed = true),
-        mediaPlaybackTracker = mockk(relaxed = true),
+        mediaPlaybackTracker = mockk(relaxed = true) {
+            every { activePlayback } returns kotlinx.coroutines.flow.MutableStateFlow(null)
+        },
         mediaAvailabilityVerifier = mockk(relaxed = true),
         mediaDownloadDelegate = mockk(relaxed = true),
         mediaSeriesDelegate = mockk(relaxed = true),
         mediaSiblingsDelegate = mockk(relaxed = true),
+        initialRolesSwapped = initialRolesSwapped,
         gameWindowMover = gameWindowMover
     )
 }
