@@ -18,6 +18,7 @@
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
     <string name="gamedetail_document_reader_highlight">Resaltar</string>
     <string name="gamedetail_document_reader_next_highlight">Siguiente resaltado</string>
+    <string name="gamedetail_document_reader_close">Cerrar documento</string>
     <string name="gamedetail_section_documents_remote">No descargado</string>
     <string name="gamedetail_menu_reviews">Reseñas</string>
     <string name="gamedetail_menu_achievements">Logros</string>

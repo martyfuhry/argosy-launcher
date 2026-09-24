@@ -18,6 +18,7 @@
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
     <string name="gamedetail_document_reader_highlight">Surligner</string>
     <string name="gamedetail_document_reader_next_highlight">Surlignage suivant</string>
+    <string name="gamedetail_document_reader_close">Fermer le document</string>
     <string name="gamedetail_section_documents_remote">Non téléchargé</string>
     <string name="gamedetail_menu_reviews">Avis</string>
     <string name="gamedetail_menu_achievements">Succès</string>

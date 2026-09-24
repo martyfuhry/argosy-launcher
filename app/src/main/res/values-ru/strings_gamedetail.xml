@@ -16,6 +16,7 @@
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
     <string name="gamedetail_document_reader_highlight">Выделить</string>
     <string name="gamedetail_document_reader_next_highlight">Следующее выделение</string>
+    <string name="gamedetail_document_reader_close">Закрыть документ</string>
     <string name="gamedetail_section_documents_remote">Не загружено</string>
     <string name="gamedetail_menu_reviews">Отзывы</string>
     <string name="gamedetail_menu_achievements">Достижения</string>

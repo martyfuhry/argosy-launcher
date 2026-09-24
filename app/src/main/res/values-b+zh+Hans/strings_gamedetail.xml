@@ -15,6 +15,7 @@
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
     <string name="gamedetail_document_reader_highlight">标记</string>
     <string name="gamedetail_document_reader_next_highlight">下一个标记</string>
+    <string name="gamedetail_document_reader_close">关闭文档</string>
     <string name="gamedetail_section_documents_remote">未下载</string>
     <string name="gamedetail_menu_reviews">评价</string>
     <string name="gamedetail_menu_achievements">成就</string>

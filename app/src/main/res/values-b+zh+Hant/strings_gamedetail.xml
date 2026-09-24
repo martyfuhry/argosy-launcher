@@ -15,6 +15,7 @@
     <string name="gamedetail_document_reader_spread">%1$d-%2$d / %3$d</string>
     <string name="gamedetail_document_reader_highlight">標示</string>
     <string name="gamedetail_document_reader_next_highlight">下一個標示</string>
+    <string name="gamedetail_document_reader_close">關閉文件</string>
     <string name="gamedetail_section_documents_remote">未下載</string>
     <string name="gamedetail_menu_reviews">評論</string>
     <string name="gamedetail_menu_achievements">成就</string>
