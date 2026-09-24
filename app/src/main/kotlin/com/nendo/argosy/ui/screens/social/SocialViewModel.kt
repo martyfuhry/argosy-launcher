@@ -241,7 +241,7 @@ class SocialViewModel @Inject constructor(
                     _launchEvents.emit(
                         SocialLaunchEvent.LaunchIntent(
                             decorated,
-                            emulatorLaunchTargetResolver.launchOptionsFor(gameId)
+                            emulatorLaunchTargetResolver.launchOptionsFor(gameId, decorated)
                         )
                     )
                 }

@@ -357,17 +357,32 @@ class DualScreenManager(
     /**
      * Moves the PRIMARY role onto [displayId]. A layout that already matches the live arrangement
      * changes nothing and takes nobody's focus. While a session runs the role moves only when the
-     * game can follow it to its new display, and the game keeps the pad.
+     * game can follow it to its new display, and the game keeps the pad; otherwise the move is
+     * made when the session ends.
      */
     fun setPrimaryDisplayId(displayId: Int) {
         val swapped = displayId == android.view.Display.DEFAULT_DISPLAY
-        if (swapped == _isRolesSwapped.value) return
-        if (sessionStateStore.hasActiveSession()) {
-            moveGameWithRoles(swapped) { commitRoleSwap(swapped) }
+        if (swapped == _isRolesSwapped.value) {
+            deferredPrimaryDisplayId = null
             return
         }
+        if (sessionStateStore.hasActiveSession()) {
+            deferredPrimaryDisplayId = displayId
+            moveGameWithRoles(swapped) {
+                deferredPrimaryDisplayId = null
+                commitRoleSwap(swapped)
+            }
+            return
+        }
+        deferredPrimaryDisplayId = null
         commitRoleSwap(swapped)
         if (swapped) refocusMain()
+    }
+
+    private var deferredPrimaryDisplayId: Int? = null
+
+    private fun applyDeferredPrimary() {
+        deferredPrimaryDisplayId?.let { setPrimaryDisplayId(it) }
     }
 
     /**
@@ -1984,6 +1999,7 @@ class DualScreenManager(
             }
             eachCompanion { it.onSessionStarted(gameId, isHardcore, channelName) }
         } else {
+            activityIndependentScope.launch { applyDeferredPrimary() }
             if (!_swappedIsGameActive.value) return
             emulatorDisplayId = null
             _swappedIsGameActive.value = false
