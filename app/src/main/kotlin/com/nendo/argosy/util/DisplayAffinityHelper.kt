@@ -23,11 +23,6 @@ class DisplayAffinityHelper @Inject constructor(
     private val physicalDisplays: Array<Display>
         get() = displayManager.displays.filter { it.isPhysicalDisplay() }.toTypedArray()
 
-    /**
-     * Every attached built-in or external panel, whether or not it is switched on right now. A
-     * game launch places itself against these, since a panel reading off at launch time is usually
-     * one about to wake.
-     */
     private val attachedPanelIds: Set<Int>
         get() = displayManager.displays.filter { it.isAttachedPanel() }.map { it.displayId }.toSet()
 
