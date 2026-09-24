@@ -142,28 +142,6 @@ class DisplayAffinityHelper @Inject constructor(
         )
 
     /**
-     * The display the stored layout gives [target], unmoved by a role swap. Null while [target]
-     * names no screen of its own or the device has a single screen.
-     */
-    fun getLayoutDisplayTargetId(target: EmulatorDisplayTarget): Int? =
-        resolveDisplayTargetId(
-            target = target,
-            roleDisplayIds = getRoleDisplayIds(rolesSwapped = false),
-            appScreenDisplayId = appScreenDisplayId(rolesSwapped = false)
-        )
-
-    /**
-     * The target that names [displayId] under the stored layout, unmoved by a role swap. Null when
-     * no target names it.
-     */
-    fun getLayoutDisplayTarget(displayId: Int): EmulatorDisplayTarget? =
-        resolveDisplayTarget(
-            displayId = displayId,
-            roleDisplayIds = getRoleDisplayIds(rolesSwapped = false),
-            appScreenDisplayId = appScreenDisplayId(rolesSwapped = false)
-        )
-
-    /**
      * Which physical display holds each role: the one the viewer is driving, then the one
      * describing what that screen has focused. Null on a single-screen device, where there are no
      * roles to hold.
@@ -290,24 +268,6 @@ class DisplayAffinityHelper @Inject constructor(
                 EmulatorDisplayTarget.PRESENTATION -> presentation
                 EmulatorDisplayTarget.APP_SCREEN -> appScreenDisplayId ?: presentation
                 EmulatorDisplayTarget.DEFAULT -> null
-            }
-        }
-
-        /**
-         * The target naming [displayId]: the inverse of [resolveDisplayTargetId], with the
-         * app-target screen answering only while it is one of its own.
-         */
-        internal fun resolveDisplayTarget(
-            displayId: Int,
-            roleDisplayIds: Pair<Int, Int>?,
-            appScreenDisplayId: Int?
-        ): EmulatorDisplayTarget? {
-            val (primary, presentation) = roleDisplayIds ?: return null
-            return when (displayId) {
-                primary -> EmulatorDisplayTarget.PRIMARY
-                presentation -> EmulatorDisplayTarget.PRESENTATION
-                appScreenDisplayId -> EmulatorDisplayTarget.APP_SCREEN
-                else -> null
             }
         }
 

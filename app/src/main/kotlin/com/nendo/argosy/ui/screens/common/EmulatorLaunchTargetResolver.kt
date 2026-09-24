@@ -18,24 +18,20 @@ class EmulatorLaunchTargetResolver @Inject constructor(
     @ApplicationContext context: Context,
     private val displayAffinityHelper: DisplayAffinityHelper,
     private val emulatorConfigRepository: EmulatorConfigRepository,
-    private val gameRepository: GameRepository
+    private val gameRepository: GameRepository,
+    private val appLaunchScreenSettings: AppLaunchScreenSettings
 ) {
     private val sessionStateStore by lazy { SessionStateStore(context) }
 
     /**
      * The display a launch of [gameId] is sent to, or null when it is placed the way any launch
-     * is. An Android app's own launch screen names the screen the layout gives that role, so a
-     * role swap does not move it; every other stored target follows the roles.
+     * is. An Android app's own launch screen names one physical panel while it is attached; every
+     * other stored target follows the roles.
      */
     suspend fun launchDisplayIdFor(gameId: Long, overrideDisplayId: Int? = null): Int? {
         overrideDisplayId?.let { return it }
         if (gameRepository.getById(gameId)?.source == GameSource.ANDROID_APP) {
-            val appTarget = EmulatorDisplayTarget.fromString(
-                emulatorConfigRepository.getDisplayTargetForGame(gameId)
-            )
-            if (appTarget != EmulatorDisplayTarget.DEFAULT) {
-                return displayAffinityHelper.getLayoutDisplayTargetId(appTarget)
-            }
+            appLaunchScreenSettings.storedChoice(gameId)?.let { return it.displayId }
         }
         val target = EmulatorDisplayTarget.fromString(
             emulatorConfigRepository.getEffectiveDisplayTarget(gameId)
