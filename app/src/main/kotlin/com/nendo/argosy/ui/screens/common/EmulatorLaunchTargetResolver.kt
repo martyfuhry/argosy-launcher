@@ -31,9 +31,8 @@ class EmulatorLaunchTargetResolver @Inject constructor(
     private val sessionStateStore by lazy { SessionStateStore(context) }
 
     /**
-     * The placement for starting [intent]. A shell launch has already started its emulator, so
-     * its stand-in intent keeps the display that launch used instead of being placed again. The
-     * display the game ends up on is recorded with the dual-screen manager either way.
+     * The placement for starting [intent], with the display the game lands on recorded for the
+     * dual-screen manager. A shell launch's stand-in intent keeps the display that launch used.
      */
     suspend fun launchOptionsFor(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Bundle? {
         val rolesSwapped = sessionStateStore.isRolesSwapped()
