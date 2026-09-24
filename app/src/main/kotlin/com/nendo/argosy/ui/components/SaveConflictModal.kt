@@ -28,9 +28,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import android.content.Context
 import com.nendo.argosy.R
-import com.nendo.argosy.ui.common.localIsNewer
-import com.nendo.argosy.ui.common.modalMessageRes
-import com.nendo.argosy.ui.common.saveConflictDirection
 import com.nendo.argosy.ui.primitives.ActionButton
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
@@ -45,8 +42,7 @@ data class SaveConflictInfo(
     val channelName: String?,
     val localTimestamp: Instant,
     val serverTimestamp: Instant,
-    val serverDeviceName: String? = null,
-    val serverMatchesLastSync: Boolean = false
+    val serverDeviceName: String? = null
 )
 
 @Composable
@@ -56,8 +52,7 @@ fun SaveConflictModal(
     onKeepLocal: () -> Unit,
     onOverwrite: () -> Unit
 ) {
-    val direction = saveConflictDirection(info.serverMatchesLastSync, info.localTimestamp, info.serverTimestamp)
-    val localIsNewer = direction.localIsNewer
+    val localIsNewer = info.localTimestamp.isAfter(info.serverTimestamp)
     val context = LocalContext.current
 
     Modal(
@@ -88,7 +83,7 @@ fun SaveConflictModal(
         }
     ) {
         Text(
-            text = stringResource(direction.modalMessageRes),
+            text = stringResource(R.string.ui_save_conflict_message),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

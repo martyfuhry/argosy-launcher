@@ -70,9 +70,6 @@ import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.ModalInputEffect
 import com.nendo.argosy.ui.common.detailMessage
-import com.nendo.argosy.ui.common.localIsNewer
-import com.nendo.argosy.ui.common.overlayMessageRes
-import com.nendo.argosy.ui.common.saveConflictDirection
 import com.nendo.argosy.ui.common.statusMessage
 import com.nendo.argosy.ui.primitives.ActionButton
 import com.nendo.argosy.ui.theme.Dimens
@@ -178,7 +175,6 @@ fun SyncOverlay(
                         localTimestamp = syncProgress.localTimestamp,
                         serverTimestamp = syncProgress.serverTimestamp,
                         serverDeviceName = syncProgress.serverDeviceName,
-                        serverMatchesLastSync = syncProgress.serverMatchesLastSync,
                         focusIndex = localModifiedFocusIndex,
                         onSkipSync = syncProgress.onSkipSync,
                         onOverwrite = syncProgress.onOverwrite
@@ -603,14 +599,12 @@ private fun PostSessionConflictContent(
     localTimestamp: java.time.Instant,
     serverTimestamp: java.time.Instant,
     serverDeviceName: String?,
-    serverMatchesLastSync: Boolean,
     focusIndex: Int,
     onSkipSync: (() -> Unit)?,
     onOverwrite: (() -> Unit)?
 ) {
     val warningColor = Color(0xFFFF9800)
-    val direction = saveConflictDirection(serverMatchesLastSync, localTimestamp, serverTimestamp)
-    val localIsNewer = direction.localIsNewer
+    val localIsNewer = localTimestamp.isAfter(serverTimestamp)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -648,7 +642,7 @@ private fun PostSessionConflictContent(
         Spacer(modifier = Modifier.height(Dimens.spacingSm))
 
         Text(
-            text = stringResource(direction.overlayMessageRes),
+            text = stringResource(R.string.ui_sync_overlay_post_session_message),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center

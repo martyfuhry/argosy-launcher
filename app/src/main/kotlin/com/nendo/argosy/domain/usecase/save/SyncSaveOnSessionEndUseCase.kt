@@ -42,8 +42,7 @@ class SyncSaveOnSessionEndUseCase @Inject constructor(
             val channelName: String?,
             val localTimestamp: Instant,
             val serverTimestamp: Instant,
-            val serverDeviceName: String? = null,
-            val serverMatchesLastSync: Boolean = false
+            val serverDeviceName: String? = null
         ) : Result()
         data object NoSaveFound : Result()
         data object NotConfigured : Result()
@@ -183,8 +182,7 @@ class SyncSaveOnSessionEndUseCase @Inject constructor(
                     activeChannel,
                     syncResult.localTimestamp,
                     syncResult.serverTimestamp,
-                    syncResult.serverDeviceName,
-                    syncResult.serverMatchesLastSync
+                    syncResult.serverDeviceName
                 )
             }
             is SaveSyncResult.Error -> {

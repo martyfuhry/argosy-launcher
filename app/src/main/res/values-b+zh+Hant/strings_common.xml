@@ -231,8 +231,6 @@
     <string name="ui_save_conflict_title">存檔衝突</string>
     <string name="ui_save_conflict_default_slot">預設存檔</string>
     <string name="ui_save_conflict_message">伺服器上有較新的存檔，覆寫將會以本機存檔取代它。</string>
-    <string name="ui_save_conflict_message_server_older">伺服器上的副本較舊，屬於此存檔的歷史記錄。覆寫將會以本機存檔更新伺服器。</string>
-    <string name="ui_save_conflict_message_diverged">兩份存檔已出現分歧。請選擇保留哪一份：覆寫將會以本機存檔取代伺服器上的存檔。</string>
     <string name="ui_save_conflict_source_local">本機</string>
     <string name="ui_save_conflict_source_server">伺服器</string>
     <string name="ui_save_conflict_skip">略過同步</string>
@@ -623,8 +621,6 @@
     <string name="ui_sync_overlay_post_session_subject">「%1$s」—%2$s</string>
     <string name="ui_sync_overlay_post_session_default_slot">預設存檔</string>
     <string name="ui_sync_overlay_post_session_message">伺服器上有較新的存檔，覆寫將會以本機存檔取代它。</string>
-    <string name="ui_sync_overlay_post_session_message_server_older">伺服器上的副本較舊，屬於此存檔的歷史記錄。覆寫將會以本機存檔更新伺服器。</string>
-    <string name="ui_sync_overlay_post_session_message_diverged">兩份存檔已出現分歧。請選擇保留哪一份：覆寫將會以本機存檔取代伺服器上的存檔。</string>
     <string name="ui_sync_overlay_post_session_local">本機</string>
     <string name="ui_sync_overlay_post_session_server">伺服器</string>
     <string name="ui_sync_overlay_post_session_server_named">伺服器（%1$s）</string>

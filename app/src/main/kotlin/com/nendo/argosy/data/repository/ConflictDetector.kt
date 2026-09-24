@@ -37,9 +37,6 @@ class ConflictDetector @Inject constructor() {
 
     fun extractUploaderDeviceName(save: RomMSave?, currentDeviceId: String?): String? {
         val syncs = save?.deviceSyncs ?: return null
-        save.originDeviceId?.takeIf { it != currentDeviceId }
-            ?.let { originId -> syncs.firstOrNull { it.deviceId == originId }?.deviceName }
-            ?.let { return it }
         return syncs
             .filter { it.deviceId != currentDeviceId }
             .maxByOrNull { it.lastSyncedAt ?: "" }

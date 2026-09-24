@@ -538,46 +538,4 @@ class SaveUploaderTest {
         updatedAt = "2026-05-02T00:00:00Z",
         contentHash = contentHash
     )
-
-    private fun primeRejectedUpload(lastUploadedHash: String, serverHash: String): Instant {
-        val fileTime = Instant.parse("2026-09-21T08:30:00Z")
-        preparedFile.setLastModified(fileTime.toEpochMilli())
-        coEvery {
-            saveSyncDao.getByGameEmulatorAndChannel(gameId, emulatorId, "autosave", any())
-        } returns SaveSyncEntity(
-            id = 3L, gameId = gameId, rommId = rommId, emulatorId = emulatorId, channelName = "autosave",
-            rommSaveId = 41L, localSavePath = preparedFile.absolutePath,
-            syncStatus = SaveSyncEntity.STATUS_SYNCED, lastUploadedHash = lastUploadedHash,
-            lastSyncedAt = Instant.parse("2026-09-01T00:00:00Z")
-        )
-        every { saveArchiver.calculateContentHash(any()) } returns "local-after-play"
-        every { conflictDetector.pickLatestServerSave(any(), any(), any(), any()) } returns
-            serverSaveOf(id = 41L, contentHash = serverHash)
-        coEvery {
-            romMApi.uploadSaveWithDevice(any(), any(), any(), any(), any(), any(), any(), any<MultipartBody.Part>(), any())
-        } returns Response.error(409, okhttp3.ResponseBody.create(null, ""))
-        return fileTime
-    }
-
-    @Test
-    fun `409 conflict reports the local file time and marks a server copy this device last synced`() = runTest {
-        val fileTime = primeRejectedUpload(lastUploadedHash = "adopted", serverHash = "adopted")
-
-        val result = uploader.uploadSave(gameId, emulatorId, channelName = "autosave")
-
-        assertTrue("expected Conflict but got $result", result is SaveSyncResult.Conflict)
-        result as SaveSyncResult.Conflict
-        assertEquals(fileTime, result.localTimestamp)
-        assertTrue(result.serverMatchesLastSync)
-    }
-
-    @Test
-    fun `409 conflict against a server copy from elsewhere is not marked as last synced`() = runTest {
-        primeRejectedUpload(lastUploadedHash = "mine", serverHash = "theirs")
-
-        val result = uploader.uploadSave(gameId, emulatorId, channelName = "autosave")
-
-        assertTrue("expected Conflict but got $result", result is SaveSyncResult.Conflict)
-        assertEquals(false, (result as SaveSyncResult.Conflict).serverMatchesLastSync)
-    }
 }
