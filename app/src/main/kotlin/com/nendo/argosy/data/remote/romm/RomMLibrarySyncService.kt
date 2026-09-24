@@ -814,9 +814,7 @@ class RomMLibrarySyncService @Inject constructor(
         }
 
         remote.firmware?.let { firmware ->
-            if (firmware.isNotEmpty()) {
-                biosRepository.syncPlatformFirmware(platformId, effectiveSlug, firmware)
-            }
+            biosRepository.syncPlatformFirmware(platformId, effectiveSlug, firmware)
         }
     }
 
