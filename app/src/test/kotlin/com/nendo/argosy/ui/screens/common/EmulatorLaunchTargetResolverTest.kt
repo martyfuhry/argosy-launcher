@@ -21,24 +21,24 @@ private const val BOTTOM = 4
 private const val GAME_ID = 42L
 
 /**
- * The Thor with its roles swapped: the layout gives PRIMARY to the top panel, but the swap has
- * moved that role to the bottom one.
+ * The Thor with its roles swapped, so the PRIMARY role now sits on the bottom panel.
  */
 class EmulatorLaunchTargetResolverTest {
 
     private val displayAffinityHelper = mockk<DisplayAffinityHelper> {
-        every { getLayoutDisplayTargetId(EmulatorDisplayTarget.PRIMARY) } returns TOP
         every { getDisplayTargetId(EmulatorDisplayTarget.PRIMARY, rolesSwapped = true) } returns BOTTOM
         every { getDisplayTargetId(EmulatorDisplayTarget.DEFAULT, any()) } returns null
     }
     private val emulatorConfigRepository = mockk<EmulatorConfigRepository>()
     private val gameRepository = mockk<GameRepository>()
+    private val appLaunchScreenSettings = mockk<AppLaunchScreenSettings>()
 
     private val resolver = EmulatorLaunchTargetResolver(
         context = swappedContext(),
         displayAffinityHelper = displayAffinityHelper,
         emulatorConfigRepository = emulatorConfigRepository,
-        gameRepository = gameRepository
+        gameRepository = gameRepository,
+        appLaunchScreenSettings = appLaunchScreenSettings
     )
 
     private fun swappedContext(): Context {
@@ -50,14 +50,13 @@ class EmulatorLaunchTargetResolverTest {
         }
     }
 
-    private fun storedTarget(
-        target: String?,
+    private fun stored(
         source: GameSource,
-        platformTarget: String? = null
+        appScreen: LaunchScreenChoice? = null,
+        effectiveTarget: String? = null
     ) {
-        coEvery { emulatorConfigRepository.getDisplayTargetForGame(GAME_ID) } returns target
-        coEvery { emulatorConfigRepository.getEffectiveDisplayTarget(GAME_ID) } returns
-            (target ?: platformTarget)
+        coEvery { appLaunchScreenSettings.storedChoice(GAME_ID) } returns appScreen
+        coEvery { emulatorConfigRepository.getEffectiveDisplayTarget(GAME_ID) } returns effectiveTarget
         coEvery { gameRepository.getById(GAME_ID) } returns GameEntity(
             id = GAME_ID,
             platformId = 1L,
@@ -72,36 +71,36 @@ class EmulatorLaunchTargetResolverTest {
     }
 
     @Test
-    fun `an android app's launch screen stays on the layout's screen through a swap`() = runTest {
-        storedTarget(EmulatorDisplayTarget.PRIMARY.name, GameSource.ANDROID_APP)
+    fun `an android app goes to the panel stored as its launch screen`() = runTest {
+        stored(GameSource.ANDROID_APP, appScreen = LaunchScreenChoice(TOP, 1, "top"))
 
         assertEquals(TOP, resolver.launchDisplayIdFor(GAME_ID))
     }
 
     @Test
     fun `a game's display target follows the swapped roles`() = runTest {
-        storedTarget(EmulatorDisplayTarget.PRIMARY.name, GameSource.ROMM_SYNCED)
+        stored(GameSource.ROMM_SYNCED, effectiveTarget = EmulatorDisplayTarget.PRIMARY.name)
 
         assertEquals(BOTTOM, resolver.launchDisplayIdFor(GAME_ID))
     }
 
     @Test
-    fun `an android app with no stored screen is placed like any launch`() = runTest {
-        storedTarget(null, GameSource.ANDROID_APP)
+    fun `an android app whose stored screen is not attached is placed like any launch`() = runTest {
+        stored(GameSource.ANDROID_APP, appScreen = null, effectiveTarget = "screen:gone")
 
         assertNull(resolver.launchDisplayIdFor(GAME_ID))
     }
 
     @Test
     fun `an android app with only a platform target follows the swapped roles`() = runTest {
-        storedTarget(null, GameSource.ANDROID_APP, platformTarget = EmulatorDisplayTarget.PRIMARY.name)
+        stored(GameSource.ANDROID_APP, effectiveTarget = EmulatorDisplayTarget.PRIMARY.name)
 
         assertEquals(BOTTOM, resolver.launchDisplayIdFor(GAME_ID))
     }
 
     @Test
     fun `a one-shot screen wins over the stored one`() = runTest {
-        storedTarget(EmulatorDisplayTarget.PRIMARY.name, GameSource.ANDROID_APP)
+        stored(GameSource.ANDROID_APP, appScreen = LaunchScreenChoice(TOP, 1, "top"))
 
         assertEquals(BOTTOM, resolver.launchDisplayIdFor(GAME_ID, overrideDisplayId = BOTTOM))
     }
