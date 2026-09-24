@@ -1,6 +1,7 @@
 package com.nendo.argosy.ui.screens.settings
 
 import android.content.Context
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.nendo.argosy.ui.common.GradientColorExtractor
@@ -148,7 +149,8 @@ class SettingsViewModel @Inject constructor(
     private val playStatsRepo: com.nendo.argosy.data.repository.PlayStatsRepository,
     private val biosRepository: com.nendo.argosy.data.repository.BiosRepository,
     private val savePathValidator: com.nendo.argosy.data.emulator.SavePathValidator,
-    internal val jellyfinConnectionManager: JellyfinConnectionManager
+    internal val jellyfinConnectionManager: JellyfinConnectionManager,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private var jellyfinSignInJob: Job? = null
@@ -248,6 +250,12 @@ class SettingsViewModel @Inject constructor(
     internal val _openDeviceSettingsEvent = MutableSharedFlow<Unit>()
     val openDeviceSettingsEvent: SharedFlow<Unit> = _openDeviceSettingsEvent.asSharedFlow()
 
+    /**
+     * Whether this screen re-entered the sections an earlier instance had open, which a route's
+     * own starting section must not then replace.
+     */
+    val resumedSectionPath: Boolean
+
     init {
         routeObserveDelegateStates(this)
         routeObserveDelegateEvents(this)
@@ -264,6 +272,8 @@ class SettingsViewModel @Inject constructor(
         displayDelegate.observeScreenCapturePermission(viewModelScope)
         routeStartControllerDetectionPolling(this)
         installerDelegate.observeJobs(viewModelScope)
+        resumedSectionPath = routeResumeSectionPath(this, savedStateHandle)
+        routeRecordSectionPath(this, savedStateHandle)
 
         // TODO: Remove after testing manage=true Android/data access
         storageDelegate.testManagedStorageAccess(viewModelScope)
