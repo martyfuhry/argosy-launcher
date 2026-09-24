@@ -1,5 +1,7 @@
 package com.nendo.argosy.ui.screens.common
 
+import android.content.Context
+import android.content.SharedPreferences
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.preferences.UserPreferences
@@ -9,6 +11,8 @@ import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase
 import com.nendo.argosy.util.AttachedScreen
 import com.nendo.argosy.util.DisplayAffinityHelper
+import com.nendo.argosy.util.DisplayAffinityHelper.Companion.resolveDisplayTargetId
+import com.nendo.argosy.util.DisplayAffinityHelper.Companion.resolveRoleDisplayIds
 import com.nendo.argosy.util.ScreenCatalog
 import io.mockk.coEvery
 import io.mockk.every
@@ -34,6 +38,7 @@ class AppLaunchScreenSettingsTest {
     private var legacyTarget: String? = null
     private var attached = thor(top = 0, bottom = 4)
     private var layoutPair: Pair<Int, Int>? = 0 to 4
+    private var rolesSwapped = false
 
     private fun thor(top: Int, bottom: Int) = listOf(
         AttachedScreen(TOP_KEY, top, 1, 1080, 1920, builtIn = true),
@@ -45,8 +50,19 @@ class AppLaunchScreenSettingsTest {
         every { screenFor(any()) } answers { attached.find { it.displayId == firstArg<Int>() } }
     }
     private val displayAffinityHelper = mockk<DisplayAffinityHelper> {
-        every { roleDisplayIds } answers { layoutPair }
-        every { appTargetDisplayId } returns null
+        every { getDisplayTargetId(any(), any()) } answers {
+            val roles = resolveRoleDisplayIds(
+                layoutPair,
+                attached.map { it.displayId }.toSet(),
+                null,
+                secondArg()
+            )
+            resolveDisplayTargetId(firstArg(), roles, appScreenDisplayId = null)
+        }
+    }
+    private val context = mockk<Context> {
+        val prefs = mockk<SharedPreferences> { every { getBoolean(any(), any()) } answers { rolesSwapped } }
+        every { getSharedPreferences(any(), any()) } returns prefs
     }
     private val preferencesRepository = mockk<UserPreferencesRepository> {
         every { preferences } answers { flow { emit(UserPreferences(appDisplayTargets = appTargets)) } }
@@ -77,6 +93,7 @@ class AppLaunchScreenSettingsTest {
     }
 
     private val settings = AppLaunchScreenSettings(
+        context = context,
         screenCatalog = screenCatalog,
         displayAffinityHelper = displayAffinityHelper,
         preferencesRepository = preferencesRepository,
@@ -142,12 +159,33 @@ class AppLaunchScreenSettingsTest {
     }
 
     @Test
-    fun `a role name stored by an earlier build moves in as the panel the layout gives it`() = runTest {
+    fun `a role name stored by an earlier build moves in as the panel holding that role now`() = runTest {
         legacyTarget = "PRIMARY"
+
+        assertEquals(4, settings.storedChoice(GAME_ID)?.displayId)
+        assertEquals(mapOf(PACKAGE to BOTTOM_KEY), appTargets)
+        assertNull(legacyTarget)
+    }
+
+    @Test
+    fun `a role name stored by an earlier build follows a role swap`() = runTest {
+        legacyTarget = "PRIMARY"
+        rolesSwapped = true
 
         assertEquals(0, settings.storedChoice(GAME_ID)?.displayId)
         assertEquals(mapOf(PACKAGE to TOP_KEY), appTargets)
         assertNull(legacyTarget)
+    }
+
+    @Test
+    fun `a role name no attached panel holds is kept for a later read`() = runTest {
+        legacyTarget = "PRESENTATION"
+        layoutPair = null
+        attached = thor(top = 0, bottom = 4).take(1)
+
+        assertNull(settings.storedChoice(GAME_ID))
+        assertEquals("PRESENTATION", legacyTarget)
+        assertEquals(emptyMap<String, String>(), appTargets)
     }
 
     @Test
