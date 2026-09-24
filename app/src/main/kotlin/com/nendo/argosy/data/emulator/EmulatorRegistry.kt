@@ -26,7 +26,11 @@ data class EmulatorDef(
     val defaultLaunchMethod: LaunchMethod = LaunchMethod.INTENT,
     val downloadUrl: String? = null,
     val releaseSource: ReleaseSource? = null,
-    val packagePatterns: List<String> = emptyList()
+    val packagePatterns: List<String> = emptyList(),
+    /**
+     * Whether the emulator shows a console's second screen on a second display of its own.
+     */
+    val drawsSecondScreen: Boolean = false
 )
 
 data class EmulatorFamily(
@@ -37,7 +41,8 @@ data class EmulatorFamily(
     val launchAction: String = Intent.ACTION_VIEW,
     val launchConfig: LaunchConfig = LaunchConfig.FileUri,
     val defaultLaunchMethod: LaunchMethod = LaunchMethod.INTENT,
-    val downloadUrl: String? = null
+    val downloadUrl: String? = null,
+    val drawsSecondScreen: Boolean = false
 )
 
 /**
@@ -518,6 +523,7 @@ object EmulatorRegistry {
             packageName = "org.citra.citra_emu",
             displayName = "Citra",
             supportedPlatforms = setOf("3ds"),
+            drawsSecondScreen = true,
             launchConfig = LaunchConfig.Custom(
                 activityClass = "org.citra.citra_emu.activities.EmulationActivity",
                 intentExtras = mapOf("SelectedGame" to ExtraValue.FilePath)
@@ -543,6 +549,7 @@ object EmulatorRegistry {
             packageName = "org.azahar_emu.azahar",
             displayName = "Azahar",
             supportedPlatforms = setOf("3ds"),
+            drawsSecondScreen = true,
             launchConfig = LaunchConfig.Custom(
                 activityClass = "org.citra.citra_emu.activities.EmulationActivity",
                 intentExtras = mapOf("SelectedGame" to ExtraValue.FilePath)
@@ -633,6 +640,7 @@ object EmulatorRegistry {
             packageName = "com.dsemu.drastic",
             displayName = "DraStic",
             supportedPlatforms = setOf("nds"),
+            drawsSecondScreen = true,
             launchConfig = LaunchConfig.Custom(
                 activityClass = "com.dsemu.drastic.DraSticActivity",
                 useShellLaunch = true,
@@ -645,6 +653,7 @@ object EmulatorRegistry {
             packageName = "me.magnum.melonds",
             displayName = "melonDS",
             supportedPlatforms = setOf("nds"),
+            drawsSecondScreen = true,
             launchAction = "me.magnum.melonds.LAUNCH_ROM",
             launchConfig = LaunchConfig.Custom(
                 activityClass = "me.magnum.melonds.ui.emulator.EmulatorActivity",
@@ -659,6 +668,7 @@ object EmulatorRegistry {
             packageName = "me.magnum.melondualds",
             displayName = "MelonDualDS",
             supportedPlatforms = setOf("nds"),
+            drawsSecondScreen = true,
             launchAction = "me.magnum.melondualds.LAUNCH_ROM",
             launchConfig = LaunchConfig.Custom(
                 activityClass = "me.magnum.melonds.ui.emulator.EmulatorActivity",
@@ -1035,6 +1045,15 @@ object EmulatorRegistry {
     fun getByPackage(packageName: String): EmulatorDef? = packageMap[packageName]
 
     fun isKnownPackage(packageName: String): Boolean = packageMap.containsKey(packageName)
+
+    /**
+     * Whether the emulator installed as [packageName] shows a second screen on a display of its
+     * own. A package no definition or family claims is taken to draw a single screen.
+     */
+    fun drawsSecondScreen(packageName: String): Boolean =
+        getByPackage(packageName)?.drawsSecondScreen
+            ?: findFamilyForPackage(packageName)?.drawsSecondScreen
+            ?: false
 
     /**
      * Synthesize an [EmulatorDef] for an ad-hoc app binding. The `id` is deterministic per
@@ -1669,6 +1688,7 @@ object EmulatorRegistry {
             displayNamePrefix = "Citra",
             packagePatterns = listOf("org.citra.*", "org.gamerytb.citra.*"),
             supportedPlatforms = setOf("3ds"),
+            drawsSecondScreen = true,
             downloadUrl = "https://citra-emu.org/"
         ),
         EmulatorFamily(
@@ -1685,6 +1705,7 @@ object EmulatorRegistry {
             displayNamePrefix = "Azahar",
             packagePatterns = listOf("org.azahar_emu.*", "io.github.lime3ds.*", "io.github.azahar_emu.*"),
             supportedPlatforms = setOf("3ds"),
+            drawsSecondScreen = true,
             launchConfig = LaunchConfig.Custom(
                 activityClass = "org.citra.citra_emu.activities.EmulationActivity",
                 intentExtras = mapOf("SelectedGame" to ExtraValue.FilePath)
@@ -1816,6 +1837,7 @@ object EmulatorRegistry {
             displayNamePrefix = "melonDS",
             packagePatterns = listOf("me.magnum.melonds*", "me.magnum.melondualds*"),
             supportedPlatforms = setOf("nds"),
+            drawsSecondScreen = true,
             launchConfig = LaunchConfig.Custom(
                 activityClass = "me.magnum.melonds.ui.emulator.EmulatorActivity",
                 intentExtras = mapOf("PATH" to ExtraValue.FilePath)
@@ -1950,7 +1972,8 @@ object EmulatorRegistry {
             launchAction = family.launchAction,
             launchConfig = family.launchConfig,
             defaultLaunchMethod = family.defaultLaunchMethod,
-            downloadUrl = family.downloadUrl
+            downloadUrl = family.downloadUrl,
+            drawsSecondScreen = family.drawsSecondScreen
         )
     }
 }
