@@ -1,12 +1,15 @@
 package com.nendo.argosy.ui.screens.common
 
+import android.content.Context
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
+import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.repository.EmulatorConfigRepository
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase
 import com.nendo.argosy.util.DisplayAffinityHelper
 import com.nendo.argosy.util.ScreenCatalog
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,6 +28,7 @@ data class LaunchScreenChoice(
  */
 @Singleton
 class AppLaunchScreenSettings @Inject constructor(
+    @ApplicationContext context: Context,
     private val screenCatalog: ScreenCatalog,
     private val displayAffinityHelper: DisplayAffinityHelper,
     private val preferencesRepository: UserPreferencesRepository,
@@ -32,6 +36,8 @@ class AppLaunchScreenSettings @Inject constructor(
     private val emulatorConfigRepository: EmulatorConfigRepository,
     private val configureEmulatorUseCase: ConfigureEmulatorUseCase
 ) {
+    private val sessionStateStore by lazy { SessionStateStore(context) }
+
     fun choices(): List<LaunchScreenChoice> = screenCatalog.attachedScreens().map { screen ->
         LaunchScreenChoice(displayId = screen.displayId, number = screen.number, screenKey = screen.key)
     }
@@ -65,21 +71,14 @@ class AppLaunchScreenSettings @Inject constructor(
     ): String? {
         val raw = emulatorConfigRepository.getDisplayTargetForGame(gameId) ?: return null
         val key = legacyScreenKeyOf(raw)
-            ?: layoutDisplayIdFor(EmulatorDisplayTarget.fromString(raw))
-                ?.let { id -> choices.find { it.displayId == id }?.screenKey }
+            ?: displayAffinityHelper.getDisplayTargetId(
+                EmulatorDisplayTarget.fromString(raw),
+                sessionStateStore.isRolesSwapped()
+            )?.let { id -> choices.find { it.displayId == id }?.screenKey }
+            ?: return null
         configureEmulatorUseCase.setDisplayTargetForGame(gameId, null)
-        if (key != null) preferencesRepository.setAppDisplayTarget(packageName, key)
+        preferencesRepository.setAppDisplayTarget(packageName, key)
         return key
-    }
-
-    private fun layoutDisplayIdFor(target: EmulatorDisplayTarget): Int? {
-        val (primary, presentation) = displayAffinityHelper.roleDisplayIds ?: return null
-        return when (target) {
-            EmulatorDisplayTarget.PRIMARY -> primary
-            EmulatorDisplayTarget.PRESENTATION -> presentation
-            EmulatorDisplayTarget.APP_SCREEN -> displayAffinityHelper.appTargetDisplayId
-            EmulatorDisplayTarget.DEFAULT -> null
-        }
     }
 
     companion object {
