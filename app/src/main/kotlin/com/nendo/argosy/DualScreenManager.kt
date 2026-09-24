@@ -323,6 +323,7 @@ class DualScreenManager(
     }
 
     fun applyStoredScreenLayout(promptWhenUnknown: Boolean = false) {
+        if (displayAffinityHelper.isDockedDark) return
         scope.launch {
             val resolved = resolveScreenLayout() ?: return@launch
             val attached = resolved.attached
@@ -413,7 +414,9 @@ class DualScreenManager(
         companionLaunchAttempts = 0
         displayAffinityHelper.secondaryDisplayUsable = true
         sessionStateStore.setSecondaryDisplayUsable(true)
-        setSecondaryHomeComponentEnabled(sessionStateStore.isDualScreenEnabled())
+        setSecondaryHomeComponentEnabled(
+            sessionStateStore.isDualScreenEnabled() || displayAffinityHelper.isDockedDark
+        )
         _isDualScreenDevice.value = displayAffinityHelper.hasSecondaryDisplay
     }
 
@@ -1528,9 +1531,11 @@ class DualScreenManager(
             CompanionGuardService.start(appContext)
             ensureCompanionLaunched()
             applyStoredScreenLayout(promptWhenUnknown = true)
+            syncDockedState()
         }
 
         override fun onDisplayRemoved(displayId: Int) {
+            dockedDark = displayAffinityHelper.isDockedDark
             companionLaunchJob?.cancel()
             companionLaunchJob = null
             _isCompanionActive.value = false
@@ -1546,7 +1551,34 @@ class DualScreenManager(
             applyStoredScreenLayout()
         }
 
-        override fun onDisplayChanged(displayId: Int) {}
+        override fun onDisplayChanged(displayId: Int) {
+            syncDockedState()
+        }
+    }
+
+    private var dockedDark = false
+
+    private fun syncDockedState() {
+        val docked = displayAffinityHelper.isDockedDark
+        if (docked == dockedDark) return
+        dockedDark = docked
+        Log.i(TAG, "Built-in screens ${if (docked) "off beside an external display" else "back on"}")
+        teardownCompanion()
+        if (docked) {
+            if (_isRolesSwapped.value) commitRoleSwap(false)
+            _hasPresentationScreen.value = false
+            setSecondaryHomeComponentEnabled(true)
+            _isDualScreenDevice.value = true
+            CompanionGuardService.start(appContext)
+            ensureCompanionLaunched()
+        } else {
+            reprobeSecondaryDisplay()
+            if (displayAffinityHelper.hasSecondaryDisplay) {
+                CompanionGuardService.start(appContext)
+                ensureCompanionLaunched()
+            }
+            applyStoredScreenLayout()
+        }
     }
 
     private fun cleanupSwappedState() {
@@ -2120,6 +2152,7 @@ class DualScreenManager(
     }
 
     private suspend fun persistPrimaryRole(swapped: Boolean) {
+        if (displayAffinityHelper.isDockedDark) return
         val primaryDisplayId = displayAffinityHelper.getRoleDisplayIds(swapped)?.first ?: return
         val resolved = resolveScreenLayout() ?: return
         val primary = resolved.attached.find { it.displayId == primaryDisplayId } ?: return
@@ -2222,7 +2255,9 @@ class DualScreenManager(
 
     fun ensureCompanionLaunched(allowDuringSession: Boolean = false) {
         if (!displayAffinityHelper.hasSecondaryDisplay) return
-        if (sessionStateStore.isDualScreenEnabled()) setSecondaryHomeComponentEnabled(true)
+        if (sessionStateStore.isDualScreenEnabled() || displayAffinityHelper.isDockedDark) {
+            setSecondaryHomeComponentEnabled(true)
+        }
         if (_isCompanionActive.value) return
         if (!allowDuringSession && sessionStateStore.hasActiveSession()) return
         if (sessionStateStore.isForeignAppOnSecondary()) return
@@ -2386,6 +2421,7 @@ class DualScreenManager(
 
     fun registerReceivers() {
         displayAffinityHelper.registerDisplayListener(displayListener)
+        syncDockedState()
     }
 
     fun unregisterReceivers() {

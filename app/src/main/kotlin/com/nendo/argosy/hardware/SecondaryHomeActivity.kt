@@ -115,7 +115,10 @@ class SecondaryHomeActivity :
         installImmersiveMode()
         keepAwakeWhileUserActive()
 
-        if (!SessionStateStore(applicationContext).isDualScreenEnabled()) {
+        val docked = com.nendo.argosy.util.DisplayAffinityHelper.dockedExternalDisplayId(
+            getSystemService(DisplayManager::class.java)
+        ) != null
+        if (!docked && !SessionStateStore(applicationContext).isDualScreenEnabled()) {
             android.util.Log.d("SecondaryHome", "dualScreenEnabled=false, finishing")
             finish()
             return

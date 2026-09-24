@@ -3087,7 +3087,7 @@ class LibretroActivity : ComponentActivity() {
     private fun isDualScreenMode(): Boolean =
         com.nendo.argosy.DualScreenManagerHolder.instance
             ?.displayAffinityHelper
-            ?.hasSecondaryDisplay == true
+            ?.let { it.hasSecondaryDisplay && !it.isDockedDark } == true
 
     private fun secondScreenDisplay(): android.view.Display? {
         val affinity = com.nendo.argosy.DualScreenManagerHolder.instance?.displayAffinityHelper

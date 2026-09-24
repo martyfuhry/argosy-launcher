@@ -46,8 +46,23 @@ class DisplayAffinityHelper @Inject constructor(
     private val resolvedAppTarget: Int?
         get() = appTargetDisplayId?.takeIf { id -> physicalDisplays.any { it.displayId == id } }
 
+    /**
+     * The television or monitor while the handheld's own panels are switched off beside it, as
+     * a dock does when the device is set to blank its screens on video output. The launcher, the
+     * games and the apps all run there until the panels light again.
+     */
+    val dockedDisplayId: Int?
+        get() = dockedExternalDisplayId(displayManager)
+
+    val isDockedDark: Boolean
+        get() = dockedDisplayId != null
+
     val hasSecondaryDisplay: Boolean
-        get() = dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay
+        get() = if (isDockedDark) {
+            secondaryDisplayUsable
+        } else {
+            dualScreenEnabled && secondaryDisplayUsable && hasPhysicalSecondaryDisplay
+        }
 
     val secondaryDisplayType: SecondaryDisplayType
         get() {
@@ -71,7 +86,7 @@ class DisplayAffinityHelper @Inject constructor(
         get() = physicalDisplays.map { it.displayId }.toSet()
 
     private val secondaryDisplayId: Int?
-        get() = resolveSecondaryDisplayId(
+        get() = dockedDisplayId ?: resolveSecondaryDisplayId(
             roleDisplayIds,
             attachedIds,
             physicalDisplays.getOrNull(1)?.displayId
@@ -133,7 +148,7 @@ class DisplayAffinityHelper @Inject constructor(
         preferredScreenKey: String? = null,
         rolesSwapped: Boolean = false,
         occupiedDisplayId: Int? = null
-    ): Int? = resolveAppLaunchDisplayId(
+    ): Int? = dockedDisplayId ?: resolveAppLaunchDisplayId(
         preferredDisplayId = preferredScreenKey?.let { key ->
             screenCatalog.attachedScreens().find { it.key == key }?.displayId
         },
@@ -159,7 +174,7 @@ class DisplayAffinityHelper @Inject constructor(
      * and the launch should be placed the way it is on a device with two screens.
      */
     fun getDisplayTargetId(target: EmulatorDisplayTarget, rolesSwapped: Boolean): Int? =
-        resolveDisplayTargetId(
+        dockedDisplayId ?: resolveDisplayTargetId(
             target = target,
             roleDisplayIds = getRoleDisplayIds(rolesSwapped),
             appScreenDisplayId = appScreenDisplayId(rolesSwapped)
@@ -175,7 +190,8 @@ class DisplayAffinityHelper @Inject constructor(
      * and keeps landing correctly after a swap.
      */
     fun getRoleDisplayIds(rolesSwapped: Boolean): Pair<Int, Int>? =
-        resolveRoleDisplayIds(roleDisplayIds, attachedIds, secondaryDisplayId, rolesSwapped)
+        dockedDisplayId?.let { it to it }
+            ?: resolveRoleDisplayIds(roleDisplayIds, attachedIds, secondaryDisplayId, rolesSwapped)
 
     /**
      * Where the video player belongs once a game has claimed [emulatorDisplayId]: the other physical
@@ -183,7 +199,7 @@ class DisplayAffinityHelper @Inject constructor(
      * moves and the player stays where it is.
      */
     fun getMediaPlayerDisplayId(emulatorDisplayId: Int?): Int? {
-        if (!hasSecondaryDisplay) return null
+        if (!hasSecondaryDisplay || isDockedDark) return null
         val secondary = secondaryDisplayId ?: return null
         return if (emulatorDisplayId == secondary) Display.DEFAULT_DISPLAY else secondary
     }
@@ -249,6 +265,25 @@ class DisplayAffinityHelper @Inject constructor(
          */
         fun hasInvertedInternalOrder(): Boolean =
             INVERTED_INTERNAL_ORDER_DEVICES.any { Build.MODEL.contains(it, ignoreCase = true) }
+
+        /**
+         * The lit external display while every built-in panel reports [Display.STATE_OFF], or
+         * null. A sleeping device darkens the external display too, so sleep never reads as
+         * docked.
+         */
+        fun dockedExternalDisplayId(displayManager: DisplayManager): Int? {
+            val displays = displayManager.displays
+            val panels = displays.filter {
+                it.displayId == Display.DEFAULT_DISPLAY || it.displayType() == DISPLAY_TYPE_BUILT_IN
+            }
+            if (panels.isEmpty() || panels.any { it.state != Display.STATE_OFF }) return null
+            return displays.firstOrNull { display ->
+                val type = display.displayType()
+                val external = type == DISPLAY_TYPE_EXTERNAL ||
+                    (type == null && display.flags and Display.FLAG_PRESENTATION != 0)
+                external && display.state == Display.STATE_ON
+            }?.displayId
+        }
 
         private fun Display.displayType(): Int? = try {
             Display::class.java.getMethod("getType").invoke(this) as? Int

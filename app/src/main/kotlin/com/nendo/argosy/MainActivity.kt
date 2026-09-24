@@ -247,7 +247,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         if (display != null && display!!.displayId != Display.DEFAULT_DISPLAY) {
-            if (!sessionStateStore.isDualScreenEnabled()) {
+            val docked = com.nendo.argosy.util.DisplayAffinityHelper.dockedExternalDisplayId(
+                getSystemService(android.hardware.display.DisplayManager::class.java)
+            ) != null
+            if (!docked && !sessionStateStore.isDualScreenEnabled()) {
                 Log.d(TAG, "MainActivity on non-default display with dual-screen disabled, finishing")
                 finish()
                 return
