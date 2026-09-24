@@ -3583,7 +3583,7 @@ class LibretroActivity : ComponentActivity() {
 
         override fun openCheats() {
             runOnUiThread {
-                if (coreDestroyed || isClosing) return@runOnUiThread
+                if (coreDestroyed || isClosing || !::retroView.isInitialized) return@runOnUiThread
                 if (netplay.inSession) {
                     notifyQuickAction(false, "", getString(R.string.ingame_libretro_quickaction_cheats_netplay_blocked))
                     return@runOnUiThread
@@ -3596,7 +3596,7 @@ class LibretroActivity : ComponentActivity() {
 
         override fun openGameSettings() {
             runOnUiThread {
-                if (coreDestroyed || isClosing) return@runOnUiThread
+                if (coreDestroyed || isClosing || !::retroView.isInitialized) return@runOnUiThread
                 showMenu()
                 handleMenuAction(InGameMenuAction.Settings)
             }
@@ -3604,7 +3604,7 @@ class LibretroActivity : ComponentActivity() {
 
         override fun quit() {
             runOnUiThread {
-                if (coreDestroyed || isClosing) return@runOnUiThread
+                if (coreDestroyed || isClosing || !::retroView.isInitialized) return@runOnUiThread
                 handleMenuAction(InGameMenuAction.Quit)
             }
         }
