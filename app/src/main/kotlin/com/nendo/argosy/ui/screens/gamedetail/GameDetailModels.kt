@@ -331,4 +331,27 @@ data class GameDetailUiState(
     // Convenience accessors for backward compatibility
     val showSaveCacheDialog: Boolean get() = saveChannel.isVisible
     val showRenameDialog: Boolean get() = saveChannel.showRenameDialog
+
+    /**
+     * Which menu rows this state shows. The menu's focus index is resolved against it everywhere,
+     * so every reader has to build it here.
+     */
+    val menuLayoutState: com.nendo.argosy.ui.screens.gamedetail.components.MenuLayoutState
+        get() {
+            val status = saveStatusInfo?.status
+            val hasSaveSync = status != null &&
+                status != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NO_SAVE &&
+                status != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NOT_CONFIGURED
+            return com.nendo.argosy.ui.screens.gamedetail.components.MenuLayoutState(
+                hasDescription = !game?.description.isNullOrBlank(),
+                hasScreenshots = game?.screenshots?.isNotEmpty() == true,
+                hasAchievements = game?.achievements?.isNotEmpty() == true,
+                hasSocialAccount = hasSocialAccount,
+                hasSaveSync = hasSaveSync,
+                hasRelated = relatedGames.isNotEmpty(),
+                hasPerGameSettings = game != null && !game.isSteamGame && !game.isAndroidApp &&
+                    downloadStatus == GameDownloadStatus.DOWNLOADED,
+                hasDocuments = documents.isNotEmpty()
+            )
+        }
 }

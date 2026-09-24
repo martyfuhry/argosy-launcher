@@ -2120,23 +2120,7 @@ class GameDetailViewModel @Inject constructor(
     // --- Menu ---
 
     private fun menuLayoutState(): MenuLayoutState {
-        val state = _uiState.value
-        val game = state.game
-        val saveStatus = state.saveStatusInfo?.status
-        val hasSaveSync = saveStatus != null &&
-            saveStatus != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NO_SAVE &&
-            saveStatus != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NOT_CONFIGURED
-        return MenuLayoutState(
-            hasDescription = !game?.description.isNullOrBlank(),
-            hasScreenshots = game?.screenshots?.isNotEmpty() == true,
-            hasAchievements = game?.achievements?.isNotEmpty() == true,
-            hasSocialAccount = state.hasSocialAccount,
-            hasSaveSync = hasSaveSync,
-            hasRelated = state.relatedGames.isNotEmpty(),
-            hasPerGameSettings = game != null && !game.isSteamGame && !game.isAndroidApp &&
-                state.downloadStatus == GameDownloadStatus.DOWNLOADED,
-            hasDocuments = state.documents.isNotEmpty()
-        )
+        return _uiState.value.menuLayoutState
     }
 
     fun moveMenuFocus(delta: Int) {

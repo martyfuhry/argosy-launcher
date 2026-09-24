@@ -180,27 +180,8 @@ fun GameDetailScreen(
     var relatedTopY by remember { mutableIntStateOf(0) }
 
     val game = uiState.game
-    val hasDescription by remember { derivedStateOf { uiState.game?.description?.isNotEmpty() == true } }
-    val hasScreenshots by remember { derivedStateOf { uiState.game?.screenshots?.isNotEmpty() == true } }
-    val hasAchievements by remember { derivedStateOf { uiState.game?.achievements?.isNotEmpty() == true } }
-    val hasSaveSync by remember {
-        derivedStateOf {
-            val s = uiState.saveStatusInfo?.status
-            s != null &&
-                s != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NO_SAVE &&
-                s != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NOT_CONFIGURED
-        }
-    }
     val screenshotCount by remember { derivedStateOf { uiState.game?.screenshots?.size ?: 0 } }
     val achievementColumnCount by remember { derivedStateOf { uiState.game?.achievements?.chunked(3)?.size ?: 0 } }
-    val hasRelated by remember { derivedStateOf { uiState.relatedGames.isNotEmpty() } }
-    val hasPerGameSettings by remember {
-        derivedStateOf {
-            val g = uiState.game
-            g != null && !g.isSteamGame && !g.isAndroidApp &&
-                uiState.downloadStatus == GameDownloadStatus.DOWNLOADED
-        }
-    }
 
     LaunchedEffect(uiState.game?.id) {
         scrollState.scrollTo(0)
@@ -222,16 +203,8 @@ fun GameDetailScreen(
                 true
             },
             onSectionLeft = {
-                val layoutState = MenuLayoutState(
-                    hasDescription = hasDescription,
-                    hasScreenshots = hasScreenshots,
-                    hasAchievements = hasAchievements,
-                    hasSocialAccount = uiState.hasSocialAccount,
-                    hasSaveSync = hasSaveSync,
-                    hasRelated = hasRelated,
-                    hasPerGameSettings = hasPerGameSettings
-                )
-                when (menuLayout.itemAtFocusIndex(uiState.menuFocusIndex, layoutState)) {
+                val current = viewModel.uiState.value
+                when (menuLayout.itemAtFocusIndex(current.menuFocusIndex, current.menuLayoutState)) {
                     MenuItem.Screenshots -> if (screenshotCount > 0) {
                         val currentIndex = screenshotListState.firstVisibleItemIndex
                         val newIndex = (currentIndex - 1).coerceAtLeast(0)
@@ -247,16 +220,8 @@ fun GameDetailScreen(
                 }
             },
             onSectionRight = {
-                val layoutState = MenuLayoutState(
-                    hasDescription = hasDescription,
-                    hasScreenshots = hasScreenshots,
-                    hasAchievements = hasAchievements,
-                    hasSocialAccount = uiState.hasSocialAccount,
-                    hasSaveSync = hasSaveSync,
-                    hasRelated = hasRelated,
-                    hasPerGameSettings = hasPerGameSettings
-                )
-                when (menuLayout.itemAtFocusIndex(uiState.menuFocusIndex, layoutState)) {
+                val current = viewModel.uiState.value
+                when (menuLayout.itemAtFocusIndex(current.menuFocusIndex, current.menuLayoutState)) {
                     MenuItem.Screenshots -> if (screenshotCount > 0) {
                         val currentIndex = screenshotListState.firstVisibleItemIndex
                         val newIndex = (currentIndex + 1).coerceAtMost(screenshotCount - 1)
@@ -275,16 +240,8 @@ fun GameDetailScreen(
             onNextGame = { viewModel.navigateToNextGame() },
             onNavigateToGame = onNavigateToGame,
             isInScreenshotsSection = {
-                val layoutState = MenuLayoutState(
-                    hasDescription = hasDescription,
-                    hasScreenshots = hasScreenshots,
-                    hasAchievements = hasAchievements,
-                    hasSocialAccount = uiState.hasSocialAccount,
-                    hasSaveSync = hasSaveSync,
-                    hasRelated = hasRelated,
-                    hasPerGameSettings = hasPerGameSettings
-                )
-                menuLayout.itemAtFocusIndex(uiState.menuFocusIndex, layoutState) == MenuItem.Screenshots
+                val current = viewModel.uiState.value
+                menuLayout.itemAtFocusIndex(current.menuFocusIndex, current.menuLayoutState) == MenuItem.Screenshots
             }
         )
     }
@@ -577,21 +534,7 @@ private fun GameDetailContent(
         ?.isCompanionActive?.collectAsState()?.value == true
     val isHeaderCollapsed = !heroOnOtherScreen && scrollState.value > headerScrollThreshold
 
-    val contentHasSaveSync = uiState.saveStatusInfo?.status?.let {
-        it != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NO_SAVE &&
-            it != com.nendo.argosy.ui.screens.gamedetail.components.SaveSyncStatus.NOT_CONFIGURED
-    } ?: false
-
-    val menuLayoutState = MenuLayoutState(
-        hasDescription = !game.description.isNullOrBlank(),
-        hasScreenshots = game.screenshots.isNotEmpty(),
-        hasAchievements = game.achievements.isNotEmpty(),
-        hasSocialAccount = uiState.hasSocialAccount,
-        hasSaveSync = contentHasSaveSync,
-        hasRelated = uiState.relatedGames.isNotEmpty(),
-        hasPerGameSettings = !game.isSteamGame && !game.isAndroidApp &&
-            uiState.downloadStatus == GameDownloadStatus.DOWNLOADED
-    )
+    val menuLayoutState = uiState.menuLayoutState
 
     val menuDisplayState = GameDetailMenuState(
         focusedIndex = uiState.menuFocusIndex,
@@ -633,7 +576,7 @@ private fun GameDetailContent(
 
     // Sync menu focus with scroll position (reverse direction)
     @OptIn(FlowPreview::class)
-    LaunchedEffect(scrollState, menuLayoutState.hasDescription, menuLayoutState.hasScreenshots, menuLayoutState.hasAchievements, menuLayoutState.hasRelated) {
+    LaunchedEffect(scrollState, menuLayoutState) {
         snapshotFlow { scrollState.value }
             .debounce(100)
             .distinctUntilChanged()
