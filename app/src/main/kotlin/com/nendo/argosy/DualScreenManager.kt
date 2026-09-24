@@ -18,6 +18,7 @@ import com.nendo.argosy.data.model.selectAllSelection
 import com.nendo.argosy.data.model.selectNoneSelection
 import com.nendo.argosy.data.emulator.DiscOption
 import com.nendo.argosy.data.emulator.EmulatorResolver
+import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.preferences.DisplayRoleOverride
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
@@ -341,9 +342,9 @@ class DualScreenManager(
     /**
      * Moves the PRIMARY role onto [displayId]. A layout that already matches the live arrangement
      * changes nothing and takes nobody's focus, and a running session keeps the screen it was
-     * launched on until it ends, when the move is made.
+     * launched on until it ends, when the move is made. [refocus] false leaves focus where it is.
      */
-    fun setPrimaryDisplayId(displayId: Int) {
+    fun setPrimaryDisplayId(displayId: Int, refocus: Boolean = true) {
         val swapped = displayId == android.view.Display.DEFAULT_DISPLAY
         if (swapped == _isRolesSwapped.value) {
             deferredPrimaryDisplayId = null
@@ -355,13 +356,15 @@ class DualScreenManager(
         }
         deferredPrimaryDisplayId = null
         commitRoleSwap(swapped)
-        if (swapped) refocusMain()
+        if (swapped && refocus) refocusMain()
     }
 
     private var deferredPrimaryDisplayId: Int? = null
 
-    private fun applyDeferredPrimary() {
-        deferredPrimaryDisplayId?.let { setPrimaryDisplayId(it) }
+    private var sessionOrigin = LaunchOrigin.INTERNAL
+
+    private fun applyDeferredPrimary(refocus: Boolean) {
+        deferredPrimaryDisplayId?.let { setPrimaryDisplayId(it, refocus) }
     }
 
     /**
@@ -1720,8 +1723,14 @@ class DualScreenManager(
         }
     }
 
-    fun onSessionChanged(gameId: Long, isHardcore: Boolean = false, channelName: String? = null) {
+    fun onSessionChanged(
+        gameId: Long,
+        isHardcore: Boolean = false,
+        channelName: String? = null,
+        origin: LaunchOrigin = LaunchOrigin.INTERNAL
+    ) {
         if (gameId > 0) {
+            sessionOrigin = origin
             _swappedIsGameActive.value = true
             swappedSessionTimer?.stop(appContext)
             swappedSessionTimer = com.nendo.argosy.hardware.CompanionSessionTimer().also { it.start(appContext) }
@@ -1765,7 +1774,9 @@ class DualScreenManager(
             }
             eachCompanion { it.onSessionStarted(gameId, isHardcore, channelName) }
         } else {
-            activityIndependentScope.launch { applyDeferredPrimary() }
+            val refocus = sessionOrigin != LaunchOrigin.EXTERNAL
+            sessionOrigin = LaunchOrigin.INTERNAL
+            activityIndependentScope.launch { applyDeferredPrimary(refocus) }
             if (!_swappedIsGameActive.value) return
             emulatorDisplayId = null
             _swappedIsGameActive.value = false
