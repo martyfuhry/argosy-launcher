@@ -805,6 +805,7 @@ class GameLaunchDelegate @Inject constructor(
         selectedDiscPath: String? = null,
         variantFileId: Long? = null,
         skipVariantPrompt: Boolean = false,
+        allowVariantPrompt: Boolean = true,
         launchMode: LaunchMode? = null,
         origin: LaunchOrigin = LaunchOrigin.INTERNAL,
         callbacks: LaunchResultCallbacks
@@ -823,12 +824,18 @@ class GameLaunchDelegate @Inject constructor(
                     gameLauncher.forceStopEmulator(activeSession.emulatorPackage)
                     delay(EMULATOR_KILL_DELAY_MS)
                 }
+                val rememberedVariantId = if (variantFileId == null && !allowVariantPrompt) {
+                    gameRepository.getById(gameId)?.let { variantResolver.resolveVariant(it)?.id }
+                } else {
+                    null
+                }
                 val result = launchGameUseCase(
                     gameId = gameId,
                     discId = discId,
                     selectedDiscPath = selectedDiscPath,
-                    variantFileId = variantFileId,
+                    variantFileId = variantFileId ?: rememberedVariantId,
                     skipVariantPrompt = skipVariantPrompt,
+                    allowVariantPrompt = allowVariantPrompt,
                     origin = origin
                 )
                 dispatchSimpleResult(result, launchMode, origin, callbacks)

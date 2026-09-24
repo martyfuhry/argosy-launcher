@@ -1105,6 +1105,7 @@ class GameDetailViewModel @Inject constructor(
                 scope = viewModelScope,
                 gameId = currentGameId,
                 discId = discId,
+                allowVariantPrompt = false,
                 origin = pendingLaunchOrigin,
                 onLaunch = callbacks.onLaunch,
                 onLaunchFailed = { callbacks.onLaunchFailed() }
@@ -1169,6 +1170,7 @@ class GameDetailViewModel @Inject constructor(
                 gameId = currentGameId,
                 skipPreLaunchSync = skipPreLaunchSync,
                 overrideLaunchMode = launchMode,
+                allowVariantPrompt = false,
                 origin = pendingLaunchOrigin,
                 onLaunch = callbacks.onLaunch,
                 onLaunchFailed = { callbacks.onLaunchFailed() }
@@ -1177,6 +1179,7 @@ class GameDetailViewModel @Inject constructor(
             gameLaunchDelegate.launchSimple(
                 scope = viewModelScope,
                 gameId = currentGameId,
+                allowVariantPrompt = false,
                 launchMode = launchMode,
                 origin = pendingLaunchOrigin,
                 callbacks = makeLaunchCallbacks()
@@ -1284,6 +1287,7 @@ class GameDetailViewModel @Inject constructor(
         gameLaunchDelegate.launchGame(
             scope = viewModelScope,
             gameId = currentGameId,
+            allowVariantPrompt = false,
             origin = pendingLaunchOrigin,
             onLaunch = callbacks.onLaunch,
             onLaunchFailed = { callbacks.onLaunchFailed() }
