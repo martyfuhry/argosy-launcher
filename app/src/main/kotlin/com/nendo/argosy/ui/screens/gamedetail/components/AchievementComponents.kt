@@ -39,8 +39,11 @@ import com.nendo.argosy.ui.common.achievementTypeLabelRes
 import com.nendo.argosy.ui.primitives.FocusIndicators
 import com.nendo.argosy.ui.primitives.argosyFocusIndicators
 import com.nendo.argosy.ui.theme.Dimens
+import androidx.compose.ui.unit.dp
 import com.nendo.argosy.ui.theme.generated.ColorTokens
 import com.nendo.argosy.ui.util.clickableNoFocus
+
+private val ROW_BADGE_SIZE = com.nendo.argosy.ui.theme.generated.DimensionTokens.Layout.achievementRowBadge.dp
 
 @Composable
 fun AchievementRow(
@@ -69,11 +72,12 @@ fun AchievementRow(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.width(Dimens.settingsItemMinHeight)
+            modifier = Modifier.width(ROW_BADGE_SIZE)
         ) {
             AchievementBadge(
                 badgePath = achievement.badgeUrl,
                 tier = tier,
+                size = ROW_BADGE_SIZE,
                 contentDescription = achievement.title
             )
             Text(

@@ -112,6 +112,7 @@ object DimensionTokens {
         const val companionRailItemHeight = 48
         const val companionRailCoverWidth = 44
         const val companionSessionCoverWidth = 72
+        const val achievementRowBadge = 56
     }
 
     object Elevation {
