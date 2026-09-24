@@ -844,3 +844,20 @@ sealed class HomeEvent {
  */
 fun HomeUiState.movedTo(row: HomeRow): HomeUiState =
     if (row == currentRow) this else copy(currentRow = row, focusedGameIndex = 0)
+
+/**
+ * This state with the Continue row replaced by [games], the cursor staying on the game it was on
+ * wherever that game now sits, and moving to the first row left when the Continue row empties.
+ */
+fun HomeUiState.withRecentGames(games: List<HomeGameUi>): HomeUiState {
+    val updated = copy(recentGames = games)
+    if (currentRow != HomeRow.Continue) return updated
+    if (games.isEmpty()) {
+        return updated.copy(currentRow = updated.availableRows.firstOrNull() ?: HomeRow.Continue, focusedGameIndex = 0)
+    }
+    if (layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CUSTOM_GRID) return updated
+    val focusedId = (focusedItem as? HomeRowItem.Game)?.game?.id
+    val index = updated.currentItems.indexOfFirst { (it as? HomeRowItem.Game)?.game?.id == focusedId }
+    val lastIndex = (updated.currentItems.size - 1).coerceAtLeast(0)
+    return updated.copy(focusedGameIndex = if (focusedId != null && index >= 0) index else focusedGameIndex.coerceAtMost(lastIndex))
+}
