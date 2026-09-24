@@ -28,9 +28,13 @@ class LaunchGameUseCase @Inject constructor(
         skipVariantPrompt: Boolean = false,
         allowVariantPrompt: Boolean = true,
         prefetchedGame: GameEntity? = null,
-        origin: LaunchOrigin = LaunchOrigin.INTERNAL
+        origin: LaunchOrigin = LaunchOrigin.INTERNAL,
+        overrideDisplayId: Int? = null
     ): LaunchResult {
-        val result = gameLauncher.launch(gameId, discId, forResume, selectedDiscPath, variantFileId, skipVariantPrompt, allowVariantPrompt, prefetchedGame)
+        val result = gameLauncher.launch(
+            gameId, discId, forResume, selectedDiscPath, variantFileId, skipVariantPrompt, allowVariantPrompt,
+            prefetchedGame, overrideDisplayId
+        )
         if (result is LaunchResult.Success && !result.inProcess && !forResume) {
             val coreName = extractCoreName(result.intent)
             playSessionTracker.startSession(
