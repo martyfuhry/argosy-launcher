@@ -180,6 +180,7 @@ class GameDetailViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        clearCompanionDetail()
         imageCacheManager.resumeBackgroundCaching()
         gameThemeAudio.exit(currentGameId)
     }

@@ -162,7 +162,7 @@ fun PlatformBadge(
         BadgeInnerContent(
             content = effectiveContent,
             iconUri = iconUri,
-            displayName = platformDisplayName.take(8).uppercase(),
+            displayName = platformBadgeLabel(platformSlug, platformDisplayName).take(8),
             fontSize = fontSize,
             textColor = textColor
         )
@@ -325,6 +325,10 @@ private fun Modifier.vertical(): Modifier = layout { measurable, constraints ->
     }
 }
 
+fun platformBadgeLabel(platformSlug: String, fallback: String): String =
+    (com.nendo.argosy.data.platform.PlatformDefinitions.getBySlug(platformSlug)?.shortName ?: fallback)
+        .uppercase()
+
 @Composable
 private fun resolveIconUri(platformSlug: String, content: PlatformIndicatorContent): String? {
     if (content == PlatformIndicatorContent.NAME) return null
@@ -405,7 +409,7 @@ private fun PlatformSpineLabel(
         content == PlatformIndicatorContent.NAME_AND_ICON && iconUri == null -> PlatformIndicatorContent.NAME
         else -> content
     }
-    val displayName = platformDisplayName.uppercase()
+    val displayName = platformBadgeLabel(platformSlug, platformDisplayName)
     val isHorizontal = edge == SpineEdge.TOP || edge == SpineEdge.BOTTOM
     val textColor = Color.White
     val fontSize = 12.sp

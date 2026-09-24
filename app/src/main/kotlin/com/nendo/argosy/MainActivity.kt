@@ -429,7 +429,10 @@ class MainActivity : ComponentActivity() {
                             val preferences = dualScreenManager.preferencesRepository.userPreferences
                             com.nendo.argosy.ui.input.ProvideButtonGlyphs(preferences) {
                                 com.nendo.argosy.ui.components.ProvideStatusBarItems(preferences) {
-                                    com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+                                    com.nendo.argosy.ui.dualscreen.PresentationSlotContent(
+                                        slot,
+                                        showsNotifications = true
+                                    )
                                 }
                             }
                         }

@@ -134,7 +134,7 @@ class DualScreenManager(
     internal val homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue,
     internal val appsRepository: com.nendo.argosy.data.repository.AppsRepository,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
-    private val notificationManager: com.nendo.argosy.core.notification.NotificationManager,
+    val notificationManager: com.nendo.argosy.core.notification.NotificationManager,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
     internal val homeGridPageRepository: com.nendo.argosy.data.repository.HomeGridPageRepository,
     internal val pageChooserEntrySource: com.nendo.argosy.ui.home.grid.PageChooserEntrySource,
@@ -207,6 +207,18 @@ class DualScreenManager(
 
     fun publishControlHints(hints: List<com.nendo.argosy.ui.dualscreen.CompanionHint>) {
         if (_controlHints.value != hints) _controlHints.value = hints
+    }
+
+    private val _mutedNotificationKeys = MutableStateFlow<Set<String>>(emptySet())
+
+    /**
+     * Notification keys the launcher's current screen already reports, so the presentation screen
+     * stays quiet about them too.
+     */
+    val mutedNotificationKeys: StateFlow<Set<String>> = _mutedNotificationKeys
+
+    fun setMutedNotificationKeys(keys: Set<String>) {
+        _mutedNotificationKeys.value = keys
     }
 
 

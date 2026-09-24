@@ -255,6 +255,8 @@ fun GameDetailScreen(
                 inputDispatcher.subscribeView(inputHandler, forRoute = Screen.ROUTE_GAME_DETAIL)
                 viewModel.onResume()
                 viewModel.republishCompanionDetail()
+            } else if (event == Lifecycle.Event.ON_STOP) {
+                viewModel.clearCompanionDetail()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

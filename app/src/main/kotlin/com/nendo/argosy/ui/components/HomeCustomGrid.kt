@@ -578,7 +578,6 @@ private fun CustomGridCellBox(
                     isFocused = isFocused,
                     focusScale = focusScaleForSpan(rect),
                     downloadIndicator = indicator,
-                    showPlatformBadge = false,
                     saturationOverride = if (isOverlapped) OVERLAPPED_SATURATION else null,
                     alphaOverride = if (isOverlapped) OVERLAPPED_ALPHA else null,
                     onCoverLoadFailed = onCoverLoadFailed,

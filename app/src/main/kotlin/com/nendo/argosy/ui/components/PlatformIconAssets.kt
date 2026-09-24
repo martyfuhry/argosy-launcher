@@ -11,7 +11,22 @@ object PlatformIconAssets {
         "mame" to "arcade",
         "cps1" to "arcade",
         "cps2" to "arcade",
-        "cps3" to "arcade"
+        "cps3" to "arcade",
+        "naomi" to "arcade",
+        "atomiswave" to "arcade",
+        "model2" to "arcade",
+        "model3" to "arcade",
+        "daphne" to "arcade",
+        "hyperneogeo64" to "arcade",
+        "xboxseriesx" to "series-x",
+        "atari8bit" to "atari800",
+        "cdtv" to "commodore-cdtv",
+        "odyssey2" to "odyssey-2",
+        "neogeocd" to "neogeoaes",
+        "dsi" to "nds",
+        "supergrafx" to "tg16",
+        "nomad" to "genesis",
+        "mac" to "apple"
     )
 
     @Volatile private var cached: Set<String>? = null

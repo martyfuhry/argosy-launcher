@@ -239,6 +239,7 @@ class SecondaryHomeActivity :
             initializeCompanion()
         }
         launchedExternalApp = false
+        dsm.notifyUserActivity("companionResume")
         syncFromSessionStore()
         dsm.onCompanionResumed()
         endSessionIfEmulatorGone()

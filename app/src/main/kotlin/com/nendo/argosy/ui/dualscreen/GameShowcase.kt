@@ -125,7 +125,7 @@ fun GameShowcase(
         ShowcaseScrim(style = style, color = theme.surfaceBase, shadeStart = shadeStart)
 
         when (style.layout) {
-            PresentationLayout.LOGO -> LogoShowcase(detail = detail, gutter = gutter, bottom = contentBottom)
+            PresentationLayout.LOGO -> LogoShowcase(detail = detail, gutter = gutter)
             PresentationLayout.CINEMATIC -> CinematicShowcase(
                 detail = detail,
                 style = style,
@@ -180,12 +180,12 @@ private fun ShowcaseScrim(style: PresentationStyle, color: Color, shadeStart: Fl
 }
 
 @Composable
-private fun LogoShowcase(detail: CompanionDetail, gutter: Dp, bottom: Dp) {
+private fun LogoShowcase(detail: CompanionDetail, gutter: Dp) {
     val theme = LocalArgosyTheme.current
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = gutter, end = gutter, top = bottom, bottom = bottom),
+            .padding(horizontal = gutter, vertical = Dimens.spacingMd),
         contentAlignment = Alignment.Center
     ) {
         var logoFailed by remember(detail.logoUrl) { mutableStateOf(false) }

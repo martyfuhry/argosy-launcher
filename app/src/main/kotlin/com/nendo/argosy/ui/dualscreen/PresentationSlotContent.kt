@@ -65,7 +65,11 @@ private const val PLAY_SHARE_TOP_GAMES = 2
 private const val GAME_HERO_SCRIM = 0.88f
 
 @Composable
-fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = true) {
+fun PresentationSlotContent(
+    slot: PresentationSlot,
+    showControlHints: Boolean = true,
+    showsNotifications: Boolean = false
+) {
     val density = LocalDensity.current
     val hints = com.nendo.argosy.DualScreenManagerHolder.instance
         ?.controlHints?.collectAsState()?.value.orEmpty()
@@ -129,6 +133,17 @@ fun PresentationSlotContent(slot: PresentationSlot, showControlHints: Boolean = 
                     FooterBar(hints = hints.map { it.button to it.label })
                 }
             }
+        }
+        val manager = com.nendo.argosy.DualScreenManagerHolder.instance
+        if (showsNotifications && manager != null) {
+            val mutedKeys by manager.mutedNotificationKeys.collectAsState()
+            com.nendo.argosy.core.notification.NotificationHost(
+                manager = manager.notificationManager,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = hintsHeight),
+                mutedKeys = mutedKeys
+            )
         }
     }
 }

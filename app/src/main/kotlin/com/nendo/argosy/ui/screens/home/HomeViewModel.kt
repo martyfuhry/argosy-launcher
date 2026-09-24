@@ -575,11 +575,16 @@ class HomeViewModel @Inject constructor(
     fun republishCompanionDetail() {
         isDescribing = true
         publishCompanionDetail(_uiState.value.focusedGame)
+        publishTileShowcase(_uiState.value)
     }
 
     fun clearCompanionDetail() {
         isDescribing = false
-        DualScreenManagerHolder.instance?.setCompanionDetail(companionOwner, null)
+        previousTileSlot = null
+        DualScreenManagerHolder.instance?.let {
+            it.setCompanionDetail(companionOwner, null)
+            it.releaseSlot(tileShowcaseOwner)
+        }
     }
 
     private fun observeAchievementUpdates() {

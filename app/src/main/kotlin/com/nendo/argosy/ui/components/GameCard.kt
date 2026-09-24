@@ -214,7 +214,11 @@ fun GameCard(
         val horizontalPadding = (baseHorizontalPaddingDp + userPadding + borderPadding) * badgeScale
         val verticalPadding = (baseVerticalPaddingDp + userPadding / 2 + borderPadding / 2) * badgeScale
 
-        val displayName = if (showPlatformBadge) game.platformSlug.take(8) else ""
+        val displayName = if (showPlatformBadge) {
+            platformBadgeLabel(game.platformSlug, game.platformSlug).take(8)
+        } else {
+            ""
+        }
         val fontSizePx = with(density) { (baseFontSizeSp * badgeScale).dp.toPx() }
         val estimatedTextWidthPx = displayName.length * fontSizePx * 0.7f
         val platformContent = boxArtStyle.platformIndicatorContent

@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -262,10 +263,27 @@ private fun SessionStatusLine(content: DashboardContent) {
     ) {
         Box(
             modifier = Modifier
-                .size(Dimens.spacingSm)
+                .size(Dimens.iconSm)
                 .clip(CircleShape)
-                .background(if (state.isDirty) semantic.warning else semantic.success)
-        )
+                .background(if (state.isDirty) semantic.warning else semantic.success),
+            contentAlignment = Alignment.Center
+        ) {
+            if (state.isDirty) {
+                Box(
+                    modifier = Modifier
+                        .size(Dimens.spacingXs)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                )
+            } else {
+                androidx.compose.material3.Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(Dimens.iconXs)
+                )
+            }
+        }
         Text(
             text = if (state.isDirty) {
                 stringResource(R.string.dual_companion_saves_dirty)

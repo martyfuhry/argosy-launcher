@@ -1083,15 +1083,21 @@ fun ArgosyApp(
                 )
             }
 
-            NotificationHost(
-                manager = viewModel.notificationManager,
-                modifier = Modifier.align(Alignment.BottomCenter),
-                mutedKeys = if (currentRoute == Screen.SyncMonitor.route) {
-                    com.nendo.argosy.domain.usecase.sync.SyncNotificationKeys.ALL
-                } else {
-                    emptySet()
-                }
-            )
+            val mutedNotificationKeys = if (currentRoute == Screen.SyncMonitor.route) {
+                com.nendo.argosy.domain.usecase.sync.SyncNotificationKeys.ALL
+            } else {
+                emptySet()
+            }
+            LaunchedEffect(mutedNotificationKeys) { dsm?.setMutedNotificationKeys(mutedNotificationKeys) }
+            val notificationsOnPresentation by dsm?.companionHoldsPrimary?.collectAsState()
+                ?: remember { mutableStateOf(false) }
+            if (!notificationsOnPresentation) {
+                NotificationHost(
+                    manager = viewModel.notificationManager,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    mutedKeys = mutedNotificationKeys
+                )
+            }
 
             com.nendo.argosy.core.notification.ScreenSetPrompt(
                 visible = screenSetPromptVisible,
