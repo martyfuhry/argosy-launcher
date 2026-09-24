@@ -51,8 +51,7 @@ object FileNames {
     private const val MAX_FOLDER_NAME = 200
 
     /**
-     * A platform slug as it can name a folder. A blank slug stays blank, since it is how a
-     * platform without one is recognised and it already resolves to the parent folder.
+     * A platform slug folded as [sanitize] folds a name, with a blank slug returned unchanged.
      */
     fun sanitizeSlug(slug: String): String = if (slug.isBlank()) slug else sanitize(slug)
 
