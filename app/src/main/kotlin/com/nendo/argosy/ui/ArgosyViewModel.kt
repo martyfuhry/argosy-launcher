@@ -59,6 +59,7 @@ import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.util.PServerExecutor
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.domain.usecase.libretro.LibretroMigrationUseCase
+import com.nendo.argosy.core.input.ConnectedControllerTracker
 import com.nendo.argosy.core.input.ControllerDetector
 import com.nendo.argosy.ui.input.InputDispatcher.Companion.computeWrappedIndex
 import com.nendo.argosy.ui.input.GamepadInputHandler
@@ -67,6 +68,8 @@ import com.nendo.argosy.ui.input.HapticPattern
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.buttonGlyphSwaps
+import com.nendo.argosy.ui.input.isLeftEdgeDrawerEnabled
+import com.nendo.argosy.ui.input.leftEdgeDrawerEnabled
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.ui.navigation.Screen
@@ -105,6 +108,14 @@ data class ArgosyUiState(
 )
 
 enum class DrawerTab { NAVIGATION, FRIENDS }
+
+enum class DrawerRightAction { SWITCH_TO_FRIENDS, CLOSE_DRAWER, NONE }
+
+fun drawerRightAction(tab: DrawerTab, socialConnected: Boolean): DrawerRightAction = when {
+    tab != DrawerTab.NAVIGATION -> DrawerRightAction.NONE
+    socialConnected -> DrawerRightAction.SWITCH_TO_FRIENDS
+    else -> DrawerRightAction.CLOSE_DRAWER
+}
 
 sealed class DrawerModal {
     data object None : DrawerModal()
@@ -216,7 +227,8 @@ class ArgosyViewModel @Inject constructor(
     private val pendingConflictDao: com.nendo.argosy.data.local.dao.PendingConflictDao,
     private val deepLinkLaunchCoordinator: com.nendo.argosy.ui.deeplink.DeepLinkLaunchCoordinator,
     private val emulatorLaunchTargetResolver:
-        com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver
+        com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    connectedControllerTracker: ConnectedControllerTracker
 ) : ViewModel() {
 
     suspend fun resolveDeepLinkLaunch(
@@ -638,6 +650,18 @@ class ArgosyViewModel @Inject constructor(
     private val _isDrawerOpen = MutableStateFlow(false)
     val isDrawerOpen: StateFlow<Boolean> = _isDrawerOpen.asStateFlow()
 
+    val leftEdgeOpensDrawer: StateFlow<Boolean> = leftEdgeDrawerEnabled(
+        connectedControllerTracker.connectedSystemButtons,
+        preferencesRepository.userPreferences.map { it.swapStartSelect }
+    ).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = isLeftEdgeDrawerEnabled(
+            connectedControllerTracker.connectedSystemButtons.value,
+            swapStartSelect = false
+        )
+    )
+
     fun setDrawerOpen(open: Boolean) {
         if (open) _drawerTab.value = DrawerTab.NAVIGATION
         _isDrawerOpen.value = open
@@ -767,13 +791,18 @@ class ArgosyViewModel @Inject constructor(
             return InputResult.UNHANDLED
         }
 
-        override fun onRight(): InputResult {
-            if (_drawerTab.value == DrawerTab.NAVIGATION && drawerUiState.value.socialConnected) {
-                switchToFriendsTab()
-                return InputResult.HANDLED
+        override fun onRight(): InputResult =
+            when (drawerRightAction(_drawerTab.value, drawerUiState.value.socialConnected)) {
+                DrawerRightAction.SWITCH_TO_FRIENDS -> {
+                    switchToFriendsTab()
+                    InputResult.HANDLED
+                }
+                DrawerRightAction.CLOSE_DRAWER -> {
+                    onDismiss()
+                    InputResult.handled(SoundType.CLOSE_MODAL)
+                }
+                DrawerRightAction.NONE -> InputResult.UNHANDLED
             }
-            return InputResult.UNHANDLED
-        }
 
         override fun onConfirm(): InputResult {
             return when (_drawerTab.value) {
