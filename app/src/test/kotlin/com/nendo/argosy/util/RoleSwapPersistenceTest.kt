@@ -50,6 +50,7 @@ class RoleSwapPersistenceTest {
         drawsSecondScreen = drawsSecondScreen,
         explicitDisplayId = null,
         attachedIds = attached,
+        builtInPanelPair = true,
         dualScreenActive = true,
         presentationDisplayId = roles().second
     )

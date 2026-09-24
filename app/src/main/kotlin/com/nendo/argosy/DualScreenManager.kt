@@ -1587,6 +1587,7 @@ class DualScreenManager(
         }
 
         override fun onDisplayChanged(displayId: Int) {
+            displayAffinityHelper.notePanelStateChange(displayId)
             syncDockedState()
         }
     }

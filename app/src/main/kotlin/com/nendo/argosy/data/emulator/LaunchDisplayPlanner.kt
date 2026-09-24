@@ -29,12 +29,12 @@ class LaunchDisplayPlanner @Inject constructor(
         drawsSecondScreen: Boolean,
         overrideDisplayId: Int? = null
     ): Int? {
-        val rolesSwapped = sessionStateStore.isRolesSwapped()
-        val explicit = overrideDisplayId ?: displayAffinityHelper.getDisplayTargetId(
-            EmulatorDisplayTarget.fromString(emulatorConfigRepository.getEffectiveDisplayTarget(gameId)),
-            rolesSwapped
+        return displayAffinityHelper.gameDisplayId(
+            drawsSecondScreen = drawsSecondScreen,
+            target = EmulatorDisplayTarget.fromString(emulatorConfigRepository.getEffectiveDisplayTarget(gameId)),
+            overrideDisplayId = overrideDisplayId,
+            rolesSwapped = sessionStateStore.isRolesSwapped()
         )
-        return displayAffinityHelper.gameDisplayId(drawsSecondScreen, explicit, rolesSwapped)
     }
 
     companion object {
