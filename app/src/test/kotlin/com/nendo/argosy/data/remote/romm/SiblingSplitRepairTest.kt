@@ -387,6 +387,23 @@ class SiblingSplitRepairTest {
     }
 
     @Test
+    fun `an unowned row and an owned row for the same slot keep history in place and move once`() = runBlocking {
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns listOf(
+            saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Slot 1").copy(ownerUserId = null),
+            saveSync(id = 6L, gameId = 1L, rommId = 200L, channel = "Germany/Slot 1")
+        )
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { saveSyncDao.countForGame(1L) } returns 2
+
+        val outcome = repair.repair()
+
+        assertEquals(0, outcome.historyMoved)
+        coVerify(exactly = 0) { overlayDao.movePlayTotals(any(), any()) }
+        coVerify(exactly = 1) { saveSyncDao.moveToGame(5L, 2L, "Slot 1") }
+        coVerify(exactly = 0) { saveSyncDao.moveToGame(6L, any(), any()) }
+    }
+
+    @Test
     fun `a slot an earlier merged game filled keeps the later game's history and row in place`() = runBlocking {
         coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns listOf(
             saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Slot 1"),

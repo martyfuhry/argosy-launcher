@@ -240,7 +240,11 @@ class SiblingSplitRepair @Inject constructor(
         return (saveSyncOwners + sameTitle).filter { it.id != gameId }.distinctBy { it.id }
     }
 
-    private data class SaveSlot(val gameId: Long, val emulatorId: String, val channel: String?, val ownerUserId: Long?)
+    private data class SaveSlot(val gameId: Long, val emulatorId: String, val channel: String?, val ownerUserId: Long?) {
+        fun overlaps(other: SaveSlot): Boolean =
+            gameId == other.gameId && emulatorId == other.emulatorId && channel == other.channel &&
+                (ownerUserId == null || other.ownerUserId == null || ownerUserId == other.ownerUserId)
+    }
 
     private class SaveSyncMove(val row: SaveSyncEntity, val owner: GameEntity, val channel: String?) {
         val slot = SaveSlot(owner.id, row.emulatorId, channel, row.ownerUserId)
@@ -265,11 +269,11 @@ class SiblingSplitRepair @Inject constructor(
     }
 
     private suspend fun slotFree(move: SaveSyncMove, claimed: Set<SaveSlot>): Boolean =
-        move.slot !in claimed && !destinationTaken(move.row, move.owner.id, move.channel)
+        claimed.none { it.overlaps(move.slot) } && !destinationTaken(move.row, move.owner.id, move.channel)
 
     private suspend fun moveHistoryWithSaves(mergedId: Long, group: List<SaveSyncMove>, claimed: Set<SaveSlot>): Boolean {
         val target = group.map { it.owner }.distinctBy { it.id }.singleOrNull() ?: return false
-        if (group.distinctBy { it.slot }.size != group.size) return false
+        if (group.withIndex().any { (i, a) -> group.drop(i + 1).any { b -> a.slot.overlaps(b.slot) } }) return false
         if (group.any { !slotFree(it, claimed) }) return false
         if (saveSyncDao.countForGame(mergedId) != group.size) return false
         gameUserOverlayDao.movePlayTotals(fromGameId = mergedId, toGameId = target.id)
