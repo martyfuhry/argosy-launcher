@@ -7,6 +7,7 @@ import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.components.APP_BAR_DRAWER_INDEX
 import com.nendo.argosy.ui.components.InputButton
+import com.nendo.argosy.data.local.entity.CollectionType
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -195,7 +196,8 @@ class HomeViewModel @Inject constructor(
         featureFilterOptions = {
             com.nendo.argosy.ui.components.FeatureFilterOptions(
                 platforms = libraryDelegate.platformOptionsForTiles(),
-                genres = gameRepository.getDistinctGenres()
+                genres = gameRepository.getDistinctGenres(),
+                series = collectionRepository.getNamesWithGamesByType(CollectionType.SERIES)
             )
         },
         raGamePickerEntries = { query -> libraryDelegate.searchRaCompatibleForTiles(query) },
@@ -1172,7 +1174,12 @@ class HomeViewModel @Inject constructor(
         val platformNames = libraryDelegate.platformOptionsForTiles()
             .associate { it.id to it.shortLabel }
         return links.associate { (tileId, filters) ->
-            val summary = gameRepository.summarizeLibraryLink(filters)
+            val seriesGameIds = filters.series.takeIf { it.isNotEmpty() }?.let { names ->
+                collectionRepository.observeGameIdsByTypeAndNames(CollectionType.SERIES, names.toList())
+                    .first()
+                    .toSet()
+            }
+            val summary = gameRepository.summarizeLibraryLink(filters, seriesGameIds)
             tileId to LibraryLinkTileUi(
                 gameCount = summary.gameCount,
                 coverGameId = summary.coverGameId,

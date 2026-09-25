@@ -17,7 +17,9 @@ import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.local.dao.PlatformShowcaseStats
 import com.nendo.argosy.data.local.dao.SearchCandidate
 import com.nendo.argosy.data.local.dao.UserRomsHiddenDao
+import com.nendo.argosy.data.local.dao.coverPathsForGamesChunked
 import com.nendo.argosy.data.local.dao.getByIdsChunked
+import com.nendo.argosy.data.local.dao.statsForGamesChunked
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.GameFileEntity
 import com.nendo.argosy.data.local.entity.GameListItem
@@ -863,11 +865,12 @@ class GameRepository @Inject constructor(
 
     /**
      * How many games a library link's [filters] match, and the first of them carrying a cover.
-     * Series is excluded; it resolves through the collection tables and is counted by the library
-     * itself, not by the tile.
+     * [seriesGameIds] are the games in the link's series, resolved by the caller through the
+     * collection tables; null when the link names no series.
      */
     suspend fun summarizeLibraryLink(
-        filters: com.nendo.argosy.domain.model.LibraryLinkFilters
+        filters: com.nendo.argosy.domain.model.LibraryLinkFilters,
+        seriesGameIds: Set<Long>?
     ): LibraryLinkSummary {
         val candidates = gameDao.getLibraryLinkCandidates(
             ownerUserId = hiddenOwnerId(),
@@ -877,6 +880,7 @@ class GameRepository @Inject constructor(
         )
         val matching = candidates.filter { candidate ->
             (filters.genres.isEmpty() || candidate.genre in filters.genres) &&
+                (seriesGameIds == null || candidate.id in seriesGameIds) &&
                 (
                     filters.players == null ||
                         filters.players.admits(
@@ -1035,11 +1039,11 @@ class GameRepository @Inject constructor(
         gameDao.showcaseCovers(platformId, hiddenOwnerId())
 
     suspend fun statsForGames(gameIds: List<Long>): PlatformShowcaseStats? =
-        if (gameIds.isEmpty()) null else gameDao.statsForGames(gameIds, hiddenOwnerId())
+        if (gameIds.isEmpty()) null else gameDao.statsForGamesChunked(gameIds, hiddenOwnerId())
 
     suspend fun coverPathsForGames(gameIds: List<Long>, limit: Int): List<String> =
         if (gameIds.isEmpty()) emptyList() else {
-            gameDao.coverPathsForGames(gameIds, hiddenOwnerId(), limit)
+            gameDao.coverPathsForGamesChunked(gameIds, hiddenOwnerId(), limit)
         }
 
     /**

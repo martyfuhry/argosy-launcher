@@ -36,6 +36,14 @@ data class PlatformShowcaseStats(
     val latestYear: Int?
 )
 
+data class ShowcaseCoverCandidate(
+    val coverPath: String,
+    val installed: Boolean,
+    val isFavorite: Boolean,
+    val rating: Float?,
+    val sortTitle: String
+)
+
 /**
  * Hiding is per account and lives in `user_roms_hidden`, so every list, count and filter here
  * carries the owner it is being run for and tests row existence rather than a column.
@@ -607,18 +615,18 @@ interface GameDao {
     suspend fun statsForGames(gameIds: List<Long>, ownerUserId: Long?): PlatformShowcaseStats?
 
     @Query("""
-        SELECT coverPath FROM games
+        SELECT coverPath, (localPath IS NOT NULL) AS installed, isFavorite, rating, sortTitle FROM games
         WHERE id IN (:gameIds)
           AND coverPath IS NOT NULL AND coverPath != ''
           AND NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         ORDER BY (localPath IS NOT NULL) DESC, isFavorite DESC, rating DESC, sortTitle ASC
         LIMIT :limit
     """)
-    suspend fun coverPathsForGames(
+    suspend fun coverCandidatesForGames(
         gameIds: List<Long>,
         ownerUserId: Long?,
         limit: Int
-    ): List<String>
+    ): List<ShowcaseCoverCandidate>
 
     @Query("""
         SELECT coverPath FROM games
@@ -1480,3 +1488,32 @@ suspend fun GameDao.getByIdsChunked(ids: List<Long>): List<GameEntity> {
     if (ids.isEmpty()) return emptyList()
     return ids.chunked(ID_FETCH_BATCH_SIZE).flatMap { getByIds(it) }
 }
+
+private const val SQL_VARIABLE_LIMIT = 900
+
+suspend fun GameDao.statsForGamesChunked(ids: List<Long>, ownerUserId: Long?): PlatformShowcaseStats? =
+    ids.chunked(SQL_VARIABLE_LIMIT)
+        .mapNotNull { statsForGames(it, ownerUserId) }
+        .reduceOrNull { total, part ->
+            total.copy(
+                gameCount = total.gameCount + part.gameCount,
+                installedCount = total.installedCount + part.installedCount,
+                achievementsEarned = total.achievementsEarned + part.achievementsEarned,
+                achievementsTotal = total.achievementsTotal + part.achievementsTotal,
+                playTimeMinutes = total.playTimeMinutes + part.playTimeMinutes,
+                earliestYear = listOfNotNull(total.earliestYear, part.earliestYear).minOrNull(),
+                latestYear = listOfNotNull(total.latestYear, part.latestYear).maxOrNull()
+            )
+        }
+
+suspend fun GameDao.coverPathsForGamesChunked(ids: List<Long>, ownerUserId: Long?, limit: Int): List<String> =
+    ids.chunked(SQL_VARIABLE_LIMIT)
+        .flatMap { coverCandidatesForGames(it, ownerUserId, limit) }
+        .sortedWith(
+            compareByDescending<ShowcaseCoverCandidate> { it.installed }
+                .thenByDescending { it.isFavorite }
+                .thenByDescending { it.rating ?: Float.NEGATIVE_INFINITY }
+                .thenBy { it.sortTitle }
+        )
+        .take(limit)
+        .map { it.coverPath }
