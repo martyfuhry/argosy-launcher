@@ -134,6 +134,14 @@
     <string name="collections_category_hint_swap_screens">Поменять экраны</string>
     <string name="collections_category_hint_open_hold_download_all">Открыть, удерживайте, чтобы скачать всё (%1$d)</string>
     <string name="collections_category_hint_download_all">Скачать всё (%1$d)</string>
+    <string name="collections_category_downloadall_confirm_title">Скачать все игры?</string>
+    <plurals name="collections_category_downloadall_confirm_message">
+        <item quantity="one">На это устройство будет скачана %1$d игра из этой категории.</item>
+        <item quantity="few">На это устройство будут скачаны %1$d игры из этой категории.</item>
+        <item quantity="many">На это устройство будут скачаны %1$d игр из этой категории.</item>
+        <item quantity="other">На это устройство будут скачаны %1$d игры из этой категории.</item>
+    </plurals>
+    <string name="collections_category_downloadall_confirm_action">Скачать всё</string>
     <string name="collections_category_downloadall_title">Добавление в очередь</string>
     <plurals name="collections_category_downloadall_progress">
         <item quantity="one">%1$d из %2$d игры</item>

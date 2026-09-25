@@ -129,6 +129,13 @@
     <string name="collections_category_hint_swap_screens">Cambiar pantallas</string>
     <string name="collections_category_hint_open_hold_download_all">Abrir, mantén para descargar todo (%1$d)</string>
     <string name="collections_category_hint_download_all">Descargar todo (%1$d)</string>
+    <string name="collections_category_downloadall_confirm_title">¿Descargar todos los juegos?</string>
+    <plurals name="collections_category_downloadall_confirm_message">
+        <item quantity="one">Se descargará %1$d juego de esta categoría en este dispositivo.</item>
+        <item quantity="many">Se descargarán %1$d juegos de esta categoría en este dispositivo.</item>
+        <item quantity="other">Se descargarán %1$d juegos de esta categoría en este dispositivo.</item>
+    </plurals>
+    <string name="collections_category_downloadall_confirm_action">Descargar todo</string>
     <string name="collections_category_downloadall_title">Encolando descargas</string>
     <plurals name="collections_category_downloadall_progress">
         <item quantity="one">%1$d de %2$d juego</item>

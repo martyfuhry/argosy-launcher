@@ -57,6 +57,7 @@ import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.ui.input.LocalInputDispatcher
 import com.nendo.argosy.ui.navigation.Screen
+import com.nendo.argosy.ui.primitives.ArgosyConfirmModalHost
 import com.nendo.argosy.ui.primitives.ArgosyProgressBar
 import com.nendo.argosy.ui.screens.collections.components.WideGameCard
 import com.nendo.argosy.ui.theme.Dimens
@@ -90,6 +91,7 @@ fun VirtualCategoryScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+    val downloadAllConfirmVisible by viewModel.downloadAllConfirmVisible.collectAsState()
     val listState = rememberLazyListState()
 
     LaunchedEffect(uiState.focusedIndex) {
@@ -267,6 +269,19 @@ fun VirtualCategoryScreen(
                 }
             }
         }
+
+        ArgosyConfirmModalHost(
+            visible = downloadAllConfirmVisible,
+            title = stringResource(R.string.collections_category_downloadall_confirm_title),
+            message = pluralStringResource(
+                R.plurals.collections_category_downloadall_confirm_message,
+                uiState.downloadableGamesCount,
+                uiState.downloadableGamesCount
+            ),
+            confirmLabel = stringResource(R.string.collections_category_downloadall_confirm_action),
+            onConfirm = viewModel::confirmDownloadAll,
+            onDismiss = viewModel::dismissDownloadAllConfirm
+        )
 
         if (uiState.downloadAllProgress.isActive) {
             DownloadAllModal(

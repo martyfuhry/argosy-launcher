@@ -266,7 +266,23 @@ class VirtualCategoryViewModel @Inject constructor(
         }
     }
 
-    fun showDownloadAllModal() {
+    private val _downloadAllConfirmVisible = MutableStateFlow(false)
+    val downloadAllConfirmVisible: StateFlow<Boolean> = _downloadAllConfirmVisible
+
+    fun requestDownloadAll() {
+        if (uiState.value.canDownloadAll) _downloadAllConfirmVisible.value = true
+    }
+
+    fun dismissDownloadAllConfirm() {
+        _downloadAllConfirmVisible.value = false
+    }
+
+    fun confirmDownloadAll() {
+        _downloadAllConfirmVisible.value = false
+        showDownloadAllModal()
+    }
+
+    private fun showDownloadAllModal() {
         val state = uiState.value
         if (!state.canDownloadAll) return
 
@@ -393,7 +409,7 @@ class VirtualCategoryViewModel @Inject constructor(
         override fun onLongConfirm(): InputResult {
             if (uiState.value.downloadAllProgress.isActive) return InputResult.HANDLED
             if (uiState.value.canDownloadAll) {
-                showDownloadAllModal()
+                requestDownloadAll()
                 return InputResult.HANDLED
             }
             return InputResult.UNHANDLED

@@ -206,6 +206,15 @@
     <!-- Footer hint. Downloads every downloadable game in this category; %1$d is how many
          qualify. Distinct key from collections_options_download_all (different usage site). -->
     <string name="collections_category_hint_download_all">Download All (%1$d)</string>
+    <!-- Title of the confirmation shown before every game in a category is queued for download. Question. -->
+    <string name="collections_category_downloadall_confirm_title">Download all games?</string>
+    <!-- Body of the download-all confirmation. %1$d is how many games would be queued. -->
+    <plurals name="collections_category_downloadall_confirm_message">
+        <item quantity="one">%1$d game in this category will be downloaded to this device.</item>
+        <item quantity="other">%1$d games in this category will be downloaded to this device.</item>
+    </plurals>
+    <!-- Confirm button of the download-all confirmation. Verb phrase. -->
+    <string name="collections_category_downloadall_confirm_action">Download All</string>
     <string name="collections_category_downloadall_title">Queuing Downloads</string>
     <!-- Download-all progress. %1$d is the number of games queued so far, %2$d is the total. -->
     <plurals name="collections_category_downloadall_progress">
