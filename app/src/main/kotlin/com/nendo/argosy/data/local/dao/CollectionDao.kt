@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.nendo.argosy.data.local.entity.CollectionEntity
 import com.nendo.argosy.data.local.entity.CollectionGameEntity
@@ -130,6 +131,7 @@ interface CollectionDao {
     """)
     fun observeLocalGameCounts(): Flow<List<CollectionGameCount>>
 
+    @Transaction
     @Query("""
         SELECT cg.collectionId AS collectionId, g.coverPath AS coverPath
         FROM games g
