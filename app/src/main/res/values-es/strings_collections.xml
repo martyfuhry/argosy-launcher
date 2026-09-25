@@ -53,6 +53,8 @@
     <string name="collections_screen_hint_refresh">Actualizar</string>
     <string name="collections_screen_hint_unpin">Desfijar</string>
     <string name="collections_screen_hint_pin">Fijar</string>
+    <string name="collections_screen_hint_swap_screens">Cambiar pantallas</string>
+    <string name="collections_screen_hint_select_hold_options">Seleccionar, mantén para opciones</string>
     <string name="collections_screen_hint_options">Opciones</string>
 
     <string name="collections_detail_loading">Cargando&#8230;</string>
@@ -65,6 +67,8 @@
     <string name="collections_detail_hint_unpin">Desfijar</string>
     <string name="collections_detail_hint_pin">Fijar</string>
     <string name="collections_detail_hint_jump">Saltar</string>
+    <string name="collections_detail_hint_swap_screens">Cambiar pantallas</string>
+    <string name="collections_detail_hint_open_hold_options">Abrir, mantén para opciones</string>
     <string name="collections_detail_hint_options">Opciones</string>
     <string name="collections_detail_hint_refreshing">Actualizando&#8230;</string>
     <string name="collections_detail_hint_refresh">Actualizar</string>
@@ -122,6 +126,8 @@
     <string name="collections_category_hint_jump">Saltar</string>
     <string name="collections_category_hint_refreshing">Actualizando&#8230;</string>
     <string name="collections_category_hint_refresh">Actualizar</string>
+    <string name="collections_category_hint_swap_screens">Cambiar pantallas</string>
+    <string name="collections_category_hint_open_hold_download_all">Abrir, mantén para descargar todo (%1$d)</string>
     <string name="collections_category_hint_download_all">Descargar todo (%1$d)</string>
     <string name="collections_category_downloadall_title">Encolando descargas</string>
     <plurals name="collections_category_downloadall_progress">

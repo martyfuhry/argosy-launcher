@@ -49,6 +49,8 @@
     <string name="collections_screen_hint_refresh">重新整理</string>
     <string name="collections_screen_hint_unpin">取消釘選</string>
     <string name="collections_screen_hint_pin">釘選</string>
+    <string name="collections_screen_hint_swap_screens">交換螢幕</string>
+    <string name="collections_screen_hint_select_hold_options">選擇，長按查看選項</string>
     <string name="collections_screen_hint_options">選項</string>
 
     <string name="collections_detail_loading">載入中&#8230;</string>
@@ -61,6 +63,8 @@
     <string name="collections_detail_hint_unpin">取消釘選</string>
     <string name="collections_detail_hint_pin">釘選</string>
     <string name="collections_detail_hint_jump">跳至</string>
+    <string name="collections_detail_hint_swap_screens">交換螢幕</string>
+    <string name="collections_detail_hint_open_hold_options">開啟，長按查看選項</string>
     <string name="collections_detail_hint_options">選項</string>
     <string name="collections_detail_hint_refreshing">重新整理中&#8230;</string>
     <string name="collections_detail_hint_refresh">重新整理</string>
@@ -112,6 +116,8 @@
     <string name="collections_category_hint_jump">跳至</string>
     <string name="collections_category_hint_refreshing">重新整理中&#8230;</string>
     <string name="collections_category_hint_refresh">重新整理</string>
+    <string name="collections_category_hint_swap_screens">交換螢幕</string>
+    <string name="collections_category_hint_open_hold_download_all">開啟，長按全部下載 (%1$d)</string>
     <string name="collections_category_hint_download_all">全部下載 (%1$d)</string>
     <string name="collections_category_downloadall_title">正在加入下載佇列</string>
     <plurals name="collections_category_downloadall_progress">

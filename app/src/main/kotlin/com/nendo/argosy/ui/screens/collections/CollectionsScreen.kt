@@ -213,33 +213,49 @@ fun CollectionsScreen(
         }
 
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
+            val hasOptions = uiState.focusedSection == CollectionSection.MY_COLLECTIONS && uiState.focusedCollection != null
             val baseHints = listOf(
                 InputButton.DPAD to stringResource(R.string.collections_screen_hint_navigate),
-                InputButton.A to stringResource(R.string.collections_screen_hint_select),
+                InputButton.A to stringResource(
+                    if (selectSwapsRoles && hasOptions) {
+                        R.string.collections_screen_hint_select_hold_options
+                    } else {
+                        R.string.collections_screen_hint_select
+                    }
+                ),
                 InputButton.B to stringResource(R.string.collections_screen_hint_back),
                 InputButton.X to stringResource(
                     if (uiState.isRefreshing) R.string.collections_screen_hint_refreshing else R.string.collections_screen_hint_refresh
                 )
             )
-            val contextHints = if (uiState.focusedSection == CollectionSection.MY_COLLECTIONS && uiState.focusedCollection != null) {
+            val contextHints = if (hasOptions) {
                 listOf(
                     InputButton.Y to stringResource(
                         if (uiState.isFocusedCollectionPinned) R.string.collections_screen_hint_unpin else R.string.collections_screen_hint_pin
-                    ),
-                    InputButton.SELECT to stringResource(R.string.collections_screen_hint_options)
+                    )
                 )
             } else {
                 emptyList()
             }
+            val selectHints = when {
+                selectSwapsRoles -> listOf(InputButton.SELECT to stringResource(R.string.collections_screen_hint_swap_screens))
+                hasOptions -> listOf(InputButton.SELECT to stringResource(R.string.collections_screen_hint_options))
+                else -> emptyList()
+            }
             FooterHints(
-                hints = baseHints + contextHints,
+                hints = baseHints + contextHints + selectHints,
                 onHintClick = { button ->
                     when (button) {
                         InputButton.A -> { inputHandler.onConfirm() }
                         InputButton.B -> { inputHandler.onBack() }
                         InputButton.X -> { inputHandler.onContextMenu() }
                         InputButton.Y -> { inputHandler.onSecondaryAction() }
-                        InputButton.SELECT -> { inputHandler.onSelect() }
+                        InputButton.SELECT -> if (selectSwapsRoles) {
+                            com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                        } else {
+                            inputHandler.onSelect()
+                        }
                         else -> Unit
                     }
                 }

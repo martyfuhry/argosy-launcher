@@ -269,6 +269,7 @@ fun AppsScreen(
                 }
             }
 
+            val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
             FooterHints(
                 hints = when {
                     uiState.isReorderMode -> listOf(
@@ -277,14 +278,18 @@ fun AppsScreen(
                         InputButton.B to stringResource(R.string.library_apps_hint_cancel)
                     )
                     else -> listOf(
-                        InputButton.A to stringResource(R.string.library_apps_hint_open),
+                        InputButton.A to stringResource(
+                            if (selectSwapsRoles) R.string.library_apps_hint_open_hold_options else R.string.library_apps_hint_open
+                        ),
                         InputButton.B to stringResource(R.string.library_apps_hint_back),
                         InputButton.Y to if (uiState.hasSecondaryDisplay) {
                             stringResource(R.string.library_apps_hint_open_on_top)
                         } else {
                             stringResource(R.string.library_apps_hint_reorder)
                         },
-                        InputButton.SELECT to stringResource(R.string.library_apps_hint_options),
+                        InputButton.SELECT to stringResource(
+                            if (selectSwapsRoles) R.string.library_apps_hint_swap_screens else R.string.library_apps_hint_options
+                        ),
                         InputButton.X to if (uiState.showHiddenApps) {
                             stringResource(R.string.library_apps_hint_show_apps)
                         } else {
@@ -304,7 +309,11 @@ fun AppsScreen(
                             InputButton.A -> uiState.focusedApp?.let { viewModel.launchAppAt(uiState.focusedIndex) }
                             InputButton.B -> onBack()
                             InputButton.Y -> viewModel.handleSecondaryAction()
-                            InputButton.SELECT -> viewModel.showContextMenuAt(uiState.focusedIndex)
+                            InputButton.SELECT -> if (selectSwapsRoles) {
+                                com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                            } else {
+                                viewModel.showContextMenuAt(uiState.focusedIndex)
+                            }
                             InputButton.X -> viewModel.toggleShowHidden()
                             else -> {}
                         }

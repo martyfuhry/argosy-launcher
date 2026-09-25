@@ -518,7 +518,11 @@ fun LibraryScreen(
                                     else viewModel.toggleFavorite(it.id)
                                 }
                                 InputButton.X -> viewModel.toggleFilterMenu()
-                                InputButton.SELECT -> viewModel.toggleQuickMenu()
+                                InputButton.SELECT -> if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) {
+                                    com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                                } else {
+                                    viewModel.toggleQuickMenu()
+                                }
                                 else -> {}
                             }
                         }
@@ -1246,14 +1250,27 @@ private fun LibraryFooter(
         if (showSectionJump) {
             add(InputButton.LT_RT to stringResource(R.string.library_footer_hint_jump_section))
         }
-        add(InputButton.A to stringResource(R.string.library_footer_hint_details))
+        val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
+        add(
+            InputButton.A to stringResource(
+                if (selectSwapsRoles && focusedGame != null) {
+                    R.string.library_footer_hint_details_hold_quick_menu
+                } else {
+                    R.string.library_footer_hint_details
+                }
+            )
+        )
         add(InputButton.Y to when {
             isViewingHidden -> stringResource(R.string.library_footer_hint_unhide)
             focusedGame?.isFavorite == true -> stringResource(R.string.library_footer_hint_unfavorite)
             else -> stringResource(R.string.library_footer_hint_favorite)
         })
         add(InputButton.X to stringResource(R.string.library_footer_hint_filter))
-        add(InputButton.SELECT to stringResource(R.string.library_footer_hint_quick_menu))
+        add(
+            InputButton.SELECT to stringResource(
+                if (selectSwapsRoles) R.string.library_footer_hint_swap_screens else R.string.library_footer_hint_quick_menu
+            )
+        )
     }
     FooterHints(
         hints = hints,

@@ -184,6 +184,7 @@ fun CollectionDetailScreen(
             }
         }
 
+        val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
         val hints = if (uiState.isSearchActive) {
             listOf(
                 InputButton.A to stringResource(R.string.collections_detail_hint_search_open),
@@ -192,7 +193,13 @@ fun CollectionDetailScreen(
         } else {
             val baseHints = listOf(
                 InputButton.DPAD to stringResource(R.string.collections_detail_hint_navigate),
-                InputButton.A to stringResource(R.string.collections_detail_hint_open),
+                InputButton.A to stringResource(
+                    if (selectSwapsRoles && uiState.collection != null) {
+                        R.string.collections_detail_hint_open_hold_options
+                    } else {
+                        R.string.collections_detail_hint_open
+                    }
+                ),
                 InputButton.B to stringResource(R.string.collections_detail_hint_back),
                 InputButton.X to stringResource(R.string.collections_detail_hint_search)
             )
@@ -210,10 +217,10 @@ fun CollectionDetailScreen(
             } else {
                 emptyList()
             }
-            val optionsHint = if (uiState.collection != null) {
-                listOf(InputButton.SELECT to stringResource(R.string.collections_detail_hint_options))
-            } else {
-                emptyList()
+            val optionsHint = when {
+                selectSwapsRoles -> listOf(InputButton.SELECT to stringResource(R.string.collections_detail_hint_swap_screens))
+                uiState.collection != null -> listOf(InputButton.SELECT to stringResource(R.string.collections_detail_hint_options))
+                else -> emptyList()
             }
             val refreshHint = listOf(
                 InputButton.START to stringResource(
@@ -230,7 +237,11 @@ fun CollectionDetailScreen(
                     InputButton.B -> { inputHandler.onBack() }
                     InputButton.X -> { inputHandler.onContextMenu() }
                     InputButton.Y -> { inputHandler.onSecondaryAction() }
-                    InputButton.SELECT -> { inputHandler.onSelect() }
+                    InputButton.SELECT -> if (selectSwapsRoles) {
+                        com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                    } else {
+                        inputHandler.onSelect()
+                    }
                     InputButton.START -> { inputHandler.onMenu() }
                     else -> Unit
                 }

@@ -53,6 +53,8 @@
     <string name="collections_screen_hint_refresh">Actualiser</string>
     <string name="collections_screen_hint_unpin">Désépingler</string>
     <string name="collections_screen_hint_pin">Épingler</string>
+    <string name="collections_screen_hint_swap_screens">Inverser les écrans</string>
+    <string name="collections_screen_hint_select_hold_options">Sélectionner, maintenir pour les options</string>
     <string name="collections_screen_hint_options">Options</string>
 
     <string name="collections_detail_loading">Chargement…</string>
@@ -65,6 +67,8 @@
     <string name="collections_detail_hint_unpin">Désépingler</string>
     <string name="collections_detail_hint_pin">Épingler</string>
     <string name="collections_detail_hint_jump">Aller à</string>
+    <string name="collections_detail_hint_swap_screens">Inverser les écrans</string>
+    <string name="collections_detail_hint_open_hold_options">Ouvrir, maintenir pour les options</string>
     <string name="collections_detail_hint_options">Options</string>
     <string name="collections_detail_hint_refreshing">Actualisation…</string>
     <string name="collections_detail_hint_refresh">Actualiser</string>
@@ -122,6 +126,8 @@
     <string name="collections_category_hint_jump">Aller à</string>
     <string name="collections_category_hint_refreshing">Actualisation…</string>
     <string name="collections_category_hint_refresh">Actualiser</string>
+    <string name="collections_category_hint_swap_screens">Inverser les écrans</string>
+    <string name="collections_category_hint_open_hold_download_all">Ouvrir, maintenir pour tout télécharger (%1$d)</string>
     <string name="collections_category_hint_download_all">Tout télécharger (%1$d)</string>
     <string name="collections_category_downloadall_title">Mise en file des téléchargements</string>
     <plurals name="collections_category_downloadall_progress">

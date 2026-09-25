@@ -159,7 +159,8 @@ fun VirtualCategoryScreen(
                                     achievementCount = game.achievementCount,
                                     playTimeMinutes = game.playTimeMinutes,
                                     isFocused = uiState.focusedIndex == index,
-                                    onClick = { onGameClick(game.id) }
+                                    onClick = { onGameClick(game.id) },
+                                    onLongClick = { inputHandler.onLongConfirm() }
                                 )
                             }
                         }
@@ -181,6 +182,7 @@ fun VirtualCategoryScreen(
             }
         }
 
+        val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
         FooterHints(
             hints = if (uiState.isSearchActive) {
                 listOf(
@@ -190,7 +192,16 @@ fun VirtualCategoryScreen(
             } else {
                 buildList {
                     add(InputButton.DPAD to stringResource(R.string.collections_category_hint_navigate))
-                    add(InputButton.A to stringResource(R.string.collections_category_hint_open))
+                    add(
+                        InputButton.A to if (selectSwapsRoles && uiState.canDownloadAll) {
+                            stringResource(
+                                R.string.collections_category_hint_open_hold_download_all,
+                                uiState.downloadableGamesCount
+                            )
+                        } else {
+                            stringResource(R.string.collections_category_hint_open)
+                        }
+                    )
                     add(InputButton.B to stringResource(R.string.collections_category_hint_back))
                     add(InputButton.X to stringResource(R.string.collections_category_hint_search))
                     add(
@@ -206,7 +217,9 @@ fun VirtualCategoryScreen(
                             if (uiState.isRefreshing) R.string.collections_category_hint_refreshing else R.string.collections_category_hint_refresh
                         )
                     )
-                    if (uiState.canDownloadAll) {
+                    if (selectSwapsRoles) {
+                        add(InputButton.SELECT to stringResource(R.string.collections_category_hint_swap_screens))
+                    } else if (uiState.canDownloadAll) {
                         add(
                             InputButton.SELECT to stringResource(
                                 R.string.collections_category_hint_download_all,
@@ -222,7 +235,11 @@ fun VirtualCategoryScreen(
                     InputButton.B -> { inputHandler.onBack() }
                     InputButton.X -> { inputHandler.onContextMenu() }
                     InputButton.Y -> { inputHandler.onSecondaryAction() }
-                    InputButton.SELECT -> { inputHandler.onLongConfirm() }
+                    InputButton.SELECT -> if (selectSwapsRoles) {
+                        com.nendo.argosy.DualScreenManagerHolder.instance?.swapRoles()
+                    } else {
+                        inputHandler.onSelect()
+                    }
                     InputButton.START -> { inputHandler.onMenu() }
                     else -> Unit
                 }

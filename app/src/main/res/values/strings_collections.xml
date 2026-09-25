@@ -101,6 +101,10 @@
     <string name="collections_screen_hint_refresh">Refresh</string>
     <string name="collections_screen_hint_unpin">Unpin</string>
     <string name="collections_screen_hint_pin">Pin</string>
+    <!-- Footer hint on dual-screen devices, where Select swaps the two screens. Verb phrase. -->
+    <string name="collections_screen_hint_swap_screens">Swap Screens</string>
+    <!-- Footer hint on dual-screen devices: A opens the collection, and holding A opens its options. -->
+    <string name="collections_screen_hint_select_hold_options">Select, hold for Options</string>
     <string name="collections_screen_hint_options">Options</string>
 
     <!-- === CollectionDetailScreen.kt === -->
@@ -119,6 +123,10 @@
     <string name="collections_detail_hint_pin">Pin</string>
     <!-- Footer hint. Verb: jump between alphabet sections. -->
     <string name="collections_detail_hint_jump">Jump</string>
+    <!-- Footer hint on dual-screen devices, where Select swaps the two screens. Verb phrase. -->
+    <string name="collections_detail_hint_swap_screens">Swap Screens</string>
+    <!-- Footer hint on dual-screen devices: A opens the game, and holding A opens the collection's options. -->
+    <string name="collections_detail_hint_open_hold_options">Open, hold for Options</string>
     <string name="collections_detail_hint_options">Options</string>
     <string name="collections_detail_hint_refreshing">Refreshing&#8230;</string>
     <string name="collections_detail_hint_refresh">Refresh</string>
@@ -193,6 +201,10 @@
     <string name="collections_category_hint_refresh">Refresh</string>
     <!-- Footer hint. Downloads every downloadable game in this category; %1$d is how many
          qualify. Distinct key from collections_options_download_all (different usage site). -->
+    <!-- Footer hint on dual-screen devices, where Select swaps the two screens. Verb phrase. -->
+    <string name="collections_category_hint_swap_screens">Swap Screens</string>
+    <!-- Footer hint on dual-screen devices: A opens the game, and holding A downloads every game in the category. %1$d is how many games would download. -->
+    <string name="collections_category_hint_open_hold_download_all">Open, hold to Download All (%1$d)</string>
     <string name="collections_category_hint_download_all">Download All (%1$d)</string>
     <string name="collections_category_downloadall_title">Queuing Downloads</string>
     <!-- Download-all progress. %1$d is the number of games queued so far, %2$d is the total. -->
