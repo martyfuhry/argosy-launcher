@@ -182,6 +182,9 @@ interface SaveSyncDao {
     @Query("UPDATE OR IGNORE save_sync SET gameId = :gameId, channelName = :channelName WHERE id = :id")
     suspend fun moveToGame(id: Long, gameId: Long, channelName: String?): Int
 
+    @Query("SELECT COUNT(*) FROM save_sync WHERE gameId = :gameId")
+    suspend fun countForGame(gameId: Long): Int
+
     @Query("UPDATE save_sync SET lastUploadedHash = :hash WHERE id = :id")
     suspend fun updateLastUploadedHash(id: Long, hash: String)
 

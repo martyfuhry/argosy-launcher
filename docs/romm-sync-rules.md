@@ -34,8 +34,11 @@ then repoints what still refers to the merged game:
 - built-in saves kept under `saves/variants/<fileId>` are copied (never moved) into the owning
   game's save directory when nothing is there yet.
 
-History the merge summed into the winner (playtime, play count, favourites, sessions) stays on
-the winner. Nothing records which copy it came from.
+Play history the merge summed into the winner (playtime, play count, last played, sessions)
+follows the saves. When every `save_sync` row the winner held moved to one sibling and none
+stayed behind, the history moves to that sibling with them. Otherwise it stays on the winner:
+nothing records which copy the play came from, and history split away from its saves would
+point Recent at a game whose progress lives elsewhere. Favourites, ratings and status stay put.
 
 ## Game files record everything the server reports
 

@@ -30,6 +30,9 @@ interface GameUserOverlayDao {
     @Query("SELECT COUNT(*) FROM game_user_overlay WHERE ownerUserId = :ownerUserId")
     suspend fun countForOwner(ownerUserId: Long): Int
 
+    @Query("SELECT * FROM game_user_overlay WHERE gameId = :gameId")
+    suspend fun getRowsForGame(gameId: Long): List<GameUserOverlayEntity>
+
     @Query("SELECT COUNT(*) FROM game_user_overlay")
     suspend fun countAll(): Int
 

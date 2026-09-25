@@ -2,6 +2,9 @@ package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.GameFileDao
+import com.nendo.argosy.data.local.dao.GameUserOverlayDao
+import com.nendo.argosy.data.local.dao.PlaySessionDao
+import com.nendo.argosy.data.local.entity.GameUserOverlayEntity
 import com.nendo.argosy.data.local.dao.SaveCacheDao
 import com.nendo.argosy.data.local.dao.SaveSyncDao
 import com.nendo.argosy.data.local.dao.StateCacheDao
@@ -32,6 +35,8 @@ class SiblingSplitRepairTest {
     private lateinit var carryOver: VariantSaveCarryOver
     private lateinit var saveCacheDao: SaveCacheDao
     private lateinit var stateCacheDao: StateCacheDao
+    private lateinit var overlayDao: GameUserOverlayDao
+    private lateinit var playSessionDao: PlaySessionDao
     private lateinit var repair: SiblingSplitRepair
 
     private val mergedAddedAt = Instant.parse("2026-01-01T00:00:00Z")
@@ -57,9 +62,14 @@ class SiblingSplitRepairTest {
         carryOver = mockk(relaxed = true)
         saveCacheDao = mockk(relaxed = true)
         stateCacheDao = mockk(relaxed = true)
+        overlayDao = mockk(relaxed = true)
+        playSessionDao = mockk(relaxed = true)
         repair = SiblingSplitRepair(
-            gameDao, gameFileDao, saveSyncDao, saveCacheDao, stateCacheDao, syncPreferences, carryOver
+            gameDao, gameFileDao, saveSyncDao, saveCacheDao, stateCacheDao, overlayDao, playSessionDao,
+            syncPreferences, carryOver
         )
+        coEvery { saveSyncDao.countForGame(any()) } returns 0
+        coEvery { overlayDao.getRowsForGame(any()) } returns emptyList()
 
         coEvery { saveCacheDao.getRowsWithChannel() } returns emptyList()
         coEvery { saveCacheDao.moveToGame(any(), any(), any()) } returns 1
@@ -294,6 +304,79 @@ class SiblingSplitRepairTest {
         repair.repair()
 
         coVerify { stateCacheDao.moveToGame(40L, 2L, "Boss") }
+    }
+
+    @Test
+    fun `play history follows saves that all moved to one regional copy`() = runBlocking {
+        val lastPlayed = Instant.parse("2026-09-01T10:00:00Z")
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns
+            listOf(saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Germany"))
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { gameDao.getById(1L) } returns merged.copy(playCount = 3, playTimeMinutes = 90, lastPlayed = lastPlayed)
+        coEvery { gameDao.getById(2L) } returns sibling
+        val mergedOverlay = GameUserOverlayEntity(
+            id = 40L, ownerUserId = 7L, gameId = 1L, playCount = 3, playTimeMinutes = 90, lastPlayed = lastPlayed
+        )
+        coEvery { overlayDao.getRowsForGame(1L) } returns listOf(mergedOverlay)
+        coEvery { overlayDao.get(7L, 2L) } returns GameUserOverlayEntity(id = 41L, ownerUserId = 7L, gameId = 2L)
+
+        val outcome = repair.repair()
+
+        assertEquals(1, outcome.historyMoved)
+        coVerify { overlayDao.ensureRow(7L, 2L) }
+        coVerify {
+            overlayDao.upsert(match { it.id == 41L && it.playCount == 3 && it.playTimeMinutes == 90 && it.lastPlayed == lastPlayed })
+        }
+        coVerify { overlayDao.upsert(match { it.id == 40L && it.playCount == 0 && it.lastPlayed == null }) }
+        coVerify { gameDao.setPlayHistory(2L, 3, 90, lastPlayed) }
+        coVerify { gameDao.setPlayHistory(1L, 0, 0, null) }
+        coVerify { playSessionDao.moveToGame(1L, 2L) }
+    }
+
+    @Test
+    fun `play history stays when the merged game keeps save rows of its own`() = runBlocking {
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns
+            listOf(saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Germany"))
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { gameDao.getById(1L) } returns merged.copy(playCount = 3)
+        coEvery { saveSyncDao.countForGame(1L) } returns 2
+
+        val outcome = repair.repair()
+
+        assertEquals(0, outcome.historyMoved)
+        coVerify(exactly = 0) { gameDao.setPlayHistory(any(), any(), any(), any()) }
+        coVerify(exactly = 0) { playSessionDao.moveToGame(any(), any()) }
+    }
+
+    @Test
+    fun `play history stays when saves went to two regional copies`() = runBlocking {
+        val japan = game(id = 3L, rommId = 300L, localPath = null, regions = "Japan")
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns listOf(
+            saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Germany"),
+            saveSync(id = 6L, gameId = 1L, rommId = 300L, channel = "Japan")
+        )
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { gameDao.getByRommId(300L) } returns japan
+        coEvery { gameDao.getById(1L) } returns merged.copy(playCount = 3)
+
+        val outcome = repair.repair()
+
+        assertEquals(0, outcome.historyMoved)
+        coVerify(exactly = 0) { gameDao.setPlayHistory(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `play history stays when a save row could not move`() = runBlocking {
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns
+            listOf(saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Germany"))
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { gameDao.getById(1L) } returns merged.copy(playCount = 3)
+        coEvery { saveSyncDao.moveToGame(5L, 2L, null) } returns 0
+
+        val outcome = repair.repair()
+
+        assertEquals(0, outcome.historyMoved)
+        coVerify(exactly = 0) { gameDao.setPlayHistory(any(), any(), any(), any()) }
     }
 
     @Test

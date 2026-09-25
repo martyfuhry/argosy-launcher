@@ -2,6 +2,8 @@ package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.GameFileDao
+import com.nendo.argosy.data.local.dao.GameUserOverlayDao
+import com.nendo.argosy.data.local.dao.PlaySessionDao
 import com.nendo.argosy.data.local.dao.SaveCacheDao
 import com.nendo.argosy.data.local.dao.SaveSyncDao
 import com.nendo.argosy.data.local.dao.StateCacheDao
@@ -25,6 +27,7 @@ data class SiblingSplitRepairOutcome(
     val selectionsCleared: Int,
     val saveSyncRowsMoved: Int,
     val cacheRowsMoved: Int,
+    val historyMoved: Int,
     val variantSavesCopied: Int
 )
 
@@ -41,6 +44,8 @@ class SiblingSplitRepair @Inject constructor(
     private val saveSyncDao: SaveSyncDao,
     private val saveCacheDao: SaveCacheDao,
     private val stateCacheDao: StateCacheDao,
+    private val gameUserOverlayDao: GameUserOverlayDao,
+    private val playSessionDao: PlaySessionDao,
     private val syncPreferences: SyncPreferencesRepository,
     private val variantSaveCarryOver: VariantSaveCarryOver
 ) {
@@ -68,12 +73,14 @@ class SiblingSplitRepair @Inject constructor(
         val saveSyncOwners = mutableMapOf<Long, MutableSet<GameEntity>>()
         val saveSyncRowsMoved = moveForeignSaveSyncRows(saveSyncOwners)
         val cacheRowsMoved = moveForeignCacheRows(saveSyncOwners)
+        val historyMoved = moveHistoryWithSaves(saveSyncOwners)
         val variantSavesCopied = carryOverVariantSaves(formerSelections)
         return SiblingSplitRepairOutcome(
             pathsHandedOver = pathsHandedOver,
             selectionsCleared = formerSelections.values.sumOf { it.size },
             saveSyncRowsMoved = saveSyncRowsMoved,
             cacheRowsMoved = cacheRowsMoved,
+            historyMoved = historyMoved,
             variantSavesCopied = variantSavesCopied
         )
     }
@@ -239,7 +246,6 @@ class SiblingSplitRepair @Inject constructor(
         for (row in saveSyncDao.getRowsKeyedToAnotherRom()) {
             val owner = gameDao.getByRommId(row.rommId) ?: continue
             if (owner.id == row.gameId) continue
-            owners.getOrPut(row.gameId) { mutableSetOf() }.add(owner)
             val channel = stripAbsorbedChannelPrefix(row.channelName, owner)
             if (destinationTaken(row, owner.id, channel)) {
                 Logger.warn(
@@ -253,6 +259,7 @@ class SiblingSplitRepair @Inject constructor(
                 Logger.warn(TAG, "saveSync: row ${row.id} not moved to game ${owner.id}, unique key collision")
                 continue
             }
+            owners.getOrPut(row.gameId) { mutableSetOf() }.add(owner)
             moved++
             Logger.info(
                 TAG,
@@ -262,6 +269,46 @@ class SiblingSplitRepair @Inject constructor(
         }
         return moved
     }
+
+    private suspend fun moveHistoryWithSaves(saveSyncOwners: Map<Long, Set<GameEntity>>): Int {
+        var moved = 0
+        for ((mergedId, owners) in saveSyncOwners) {
+            val owner = owners.distinctBy { it.id }.singleOrNull() ?: continue
+            if (saveSyncDao.countForGame(mergedId) > 0) continue
+            val merged = gameDao.getById(mergedId) ?: continue
+            val target = gameDao.getById(owner.id) ?: continue
+            for (row in gameUserOverlayDao.getRowsForGame(mergedId)) {
+                gameUserOverlayDao.ensureRow(row.ownerUserId, target.id)
+                val dest = gameUserOverlayDao.get(row.ownerUserId, target.id) ?: continue
+                gameUserOverlayDao.upsert(
+                    dest.copy(
+                        playCount = dest.playCount + row.playCount,
+                        playTimeMinutes = dest.playTimeMinutes + row.playTimeMinutes,
+                        lastPlayed = latest(dest.lastPlayed, row.lastPlayed)
+                    )
+                )
+                gameUserOverlayDao.upsert(row.copy(playCount = 0, playTimeMinutes = 0, lastPlayed = null))
+            }
+            gameDao.setPlayHistory(
+                target.id,
+                target.playCount + merged.playCount,
+                target.playTimeMinutes + merged.playTimeMinutes,
+                latest(target.lastPlayed, merged.lastPlayed)
+            )
+            gameDao.setPlayHistory(merged.id, 0, 0, null)
+            val sessions = playSessionDao.moveToGame(merged.id, target.id)
+            moved++
+            Logger.info(
+                TAG,
+                "history: ${merged.title} (${merged.id}) -> ${target.title} (${target.id}), " +
+                    "${merged.playTimeMinutes}m, ${merged.playCount} plays, $sessions sessions"
+            )
+        }
+        return moved
+    }
+
+    private fun latest(a: java.time.Instant?, b: java.time.Instant?): java.time.Instant? =
+        listOfNotNull(a, b).maxOrNull()
 
     private suspend fun destinationTaken(row: SaveSyncEntity, gameId: Long, channel: String?): Boolean {
         val existing = if (channel == null) {

@@ -47,6 +47,9 @@ interface PlaySessionDao {
     @Query("DELETE FROM play_sessions WHERE gameId = :gameId")
     suspend fun deleteByGame(gameId: Long)
 
+    @Query("UPDATE play_sessions SET gameId = :toGameId WHERE gameId = :fromGameId")
+    suspend fun moveToGame(fromGameId: Long, toGameId: Long): Int
+
     @Query("DELETE FROM play_sessions WHERE gameId IN (SELECT id FROM games WHERE source IN (:sourceNames))")
     suspend fun deleteByGameSources(sourceNames: List<String>)
 
