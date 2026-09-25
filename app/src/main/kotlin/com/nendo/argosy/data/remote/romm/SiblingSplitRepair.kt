@@ -240,7 +240,11 @@ class SiblingSplitRepair @Inject constructor(
         return (saveSyncOwners + sameTitle).filter { it.id != gameId }.distinctBy { it.id }
     }
 
-    private class SaveSyncMove(val row: SaveSyncEntity, val owner: GameEntity, val channel: String?, val blocked: Boolean)
+    private data class SaveSlot(val gameId: Long, val emulatorId: String, val channel: String?, val ownerUserId: Long?)
+
+    private class SaveSyncMove(val row: SaveSyncEntity, val owner: GameEntity, val channel: String?) {
+        val slot = SaveSlot(owner.id, row.emulatorId, channel, row.ownerUserId)
+    }
 
     private class SaveSyncOutcome(val rowsMoved: Int, val historiesMoved: Int)
 
@@ -248,22 +252,25 @@ class SiblingSplitRepair @Inject constructor(
         val moves = saveSyncDao.getRowsKeyedToAnotherRom().mapNotNull { row ->
             val owner = gameDao.getByRommId(row.rommId) ?: return@mapNotNull null
             if (owner.id == row.gameId) return@mapNotNull null
-            val channel = stripAbsorbedChannelPrefix(row.channelName, owner)
-            SaveSyncMove(row, owner, channel, destinationTaken(row, owner.id, channel))
+            SaveSyncMove(row, owner, stripAbsorbedChannelPrefix(row.channelName, owner))
         }
+        val claimed = mutableSetOf<SaveSlot>()
         var histories = 0
         var moved = 0
         for ((mergedId, group) in moves.groupBy { it.row.gameId }) {
-            if (moveHistoryWithSaves(mergedId, group)) histories++
-            moved += moveSaveSyncGroup(group, owners)
+            if (moveHistoryWithSaves(mergedId, group, claimed)) histories++
+            moved += moveSaveSyncGroup(group, owners, claimed)
         }
         return SaveSyncOutcome(rowsMoved = moved, historiesMoved = histories)
     }
 
-    private suspend fun moveHistoryWithSaves(mergedId: Long, group: List<SaveSyncMove>): Boolean {
+    private suspend fun slotFree(move: SaveSyncMove, claimed: Set<SaveSlot>): Boolean =
+        move.slot !in claimed && !destinationTaken(move.row, move.owner.id, move.channel)
+
+    private suspend fun moveHistoryWithSaves(mergedId: Long, group: List<SaveSyncMove>, claimed: Set<SaveSlot>): Boolean {
         val target = group.map { it.owner }.distinctBy { it.id }.singleOrNull() ?: return false
-        if (group.any { it.blocked }) return false
-        if (group.distinctBy { Triple(it.row.emulatorId, it.channel, it.row.ownerUserId) }.size != group.size) return false
+        if (group.distinctBy { it.slot }.size != group.size) return false
+        if (group.any { !slotFree(it, claimed) }) return false
         if (saveSyncDao.countForGame(mergedId) != group.size) return false
         gameUserOverlayDao.movePlayTotals(fromGameId = mergedId, toGameId = target.id)
         val sessions = playSessionDao.moveToGame(mergedId, target.id)
@@ -271,13 +278,17 @@ class SiblingSplitRepair @Inject constructor(
         return true
     }
 
-    private suspend fun moveSaveSyncGroup(group: List<SaveSyncMove>, owners: MutableMap<Long, MutableSet<GameEntity>>): Int {
+    private suspend fun moveSaveSyncGroup(
+        group: List<SaveSyncMove>,
+        owners: MutableMap<Long, MutableSet<GameEntity>>,
+        claimed: MutableSet<SaveSlot>
+    ): Int {
         var moved = 0
         for (move in group) {
             val row = move.row
             val owner = move.owner
             val channel = move.channel
-            if (move.blocked) {
+            if (!slotFree(move, claimed)) {
                 Logger.warn(
                     TAG,
                     "saveSync: row ${row.id} (${row.emulatorId}, channel=${row.channelName}) left on game " +
@@ -289,6 +300,7 @@ class SiblingSplitRepair @Inject constructor(
                 Logger.warn(TAG, "saveSync: row ${row.id} not moved to game ${owner.id}, unique key collision")
                 continue
             }
+            claimed += move.slot
             owners.getOrPut(row.gameId) { mutableSetOf() }.add(owner)
             moved++
             Logger.info(

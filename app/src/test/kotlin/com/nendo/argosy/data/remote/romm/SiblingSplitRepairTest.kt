@@ -382,6 +382,27 @@ class SiblingSplitRepairTest {
 
         assertEquals(0, outcome.historyMoved)
         coVerify(exactly = 0) { overlayDao.movePlayTotals(any(), any()) }
+        coVerify(exactly = 1) { saveSyncDao.moveToGame(5L, 2L, null) }
+        coVerify(exactly = 0) { saveSyncDao.moveToGame(6L, any(), any()) }
+    }
+
+    @Test
+    fun `a slot an earlier merged game filled keeps the later game's history and row in place`() = runBlocking {
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns listOf(
+            saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Slot 1"),
+            saveSync(id = 6L, gameId = 4L, rommId = 200L, channel = "Slot 1")
+        )
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { saveSyncDao.countForGame(1L) } returns 1
+        coEvery { saveSyncDao.countForGame(4L) } returns 1
+
+        val outcome = repair.repair()
+
+        assertEquals(1, outcome.historyMoved)
+        coVerify(exactly = 1) { overlayDao.movePlayTotals(1L, 2L) }
+        coVerify(exactly = 0) { overlayDao.movePlayTotals(4L, any()) }
+        coVerify(exactly = 1) { saveSyncDao.moveToGame(5L, 2L, "Slot 1") }
+        coVerify(exactly = 0) { saveSyncDao.moveToGame(6L, any(), any()) }
     }
 
     @Test
