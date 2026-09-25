@@ -830,9 +830,7 @@ fun ArgosyApp(
                         }
                     }
                     GamepadEvent.Select -> {
-                        dsm?.takeIf {
-                            it.isDualScreenDevice.value && it.hasPresentationScreen.value
-                        }?.swapRoles()
+                        if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) dsm?.swapRoles()
                     }
                     GamepadEvent.LeftStickClick -> {
                         if (quickMenuState.isVisible) {
