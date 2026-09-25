@@ -42,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -424,6 +425,13 @@ private fun CustomGridCellBox(
     val width = cellSize * rect.columnSpan + gap * (rect.columnSpan - 1)
     val height = cellSize * rect.rowSpan + gap * (rect.rowSpan - 1)
     val placement = Modifier
+        .zIndex(
+            when {
+                editModeLabel != null -> EDITING_TILE_Z
+                isFocused -> FOCUSED_TILE_Z
+                else -> 0f
+            }
+        )
         .offset(
             x = originX + stride * rect.columnIndex,
             y = originY + stride * rect.rowIndex
@@ -843,6 +851,8 @@ private const val DOT_IDLE_ALPHA = 0.35f
 private const val COLLECTION_BADGE_SCRIM_ALPHA = 0.7f
 internal const val OVERLAPPED_ALPHA = 0.6f
 private const val OVERLAPPED_SATURATION = 0.15f
+private const val FOCUSED_TILE_Z = 1f
+private const val EDITING_TILE_Z = 2f
 
 /**
  * Says a tile showing one game is really a collection being played through, so it is not mistaken
