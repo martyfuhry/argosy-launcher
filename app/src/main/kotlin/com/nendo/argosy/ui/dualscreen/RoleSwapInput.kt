@@ -12,9 +12,7 @@ import com.nendo.argosy.DualScreenManagerHolder
  */
 fun selectSwapsRoles(): Boolean =
     DualScreenManagerHolder.instance
-        ?.let {
-            it.isDualScreenDevice.value && it.hasPresentationScreen.value && !it.swappedIsGameActive.value
-        } == true
+        ?.let { swapRule(it.isDualScreenDevice.value, it.hasPresentationScreen.value, it.swappedIsGameActive.value) } == true
 
 /**
  * [selectSwapsRoles] for a footer, recomposing when any of its inputs changes.
@@ -25,5 +23,8 @@ fun selectSwapsRolesState(): Boolean {
     val dualScreen by manager.isDualScreenDevice.collectAsState()
     val hasPresentation by manager.hasPresentationScreen.collectAsState()
     val gameActive by manager.swappedIsGameActive.collectAsState()
-    return dualScreen && hasPresentation && !gameActive
+    return swapRule(dualScreen, hasPresentation, gameActive)
 }
+
+private fun swapRule(dualScreen: Boolean, hasPresentation: Boolean, gameActive: Boolean): Boolean =
+    dualScreen && hasPresentation && !gameActive
