@@ -128,8 +128,10 @@ import com.nendo.argosy.ui.screens.home.GameDownloadIndicator
 import com.nendo.argosy.ui.screens.home.HomeGameUi
 import com.nendo.argosy.ui.util.clickableNoFocus
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.nendo.argosy.ui.components.animateScrollToItemCentered
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.filled.Check
@@ -1405,11 +1407,20 @@ private fun FilterMenuOverlay(
                 )
             }
 
-            Row(
+            val categoryRowState = rememberLazyListState()
+            val currentCategoryIndex = categories.indexOf(uiState.currentFilterCategory)
+            LaunchedEffect(currentCategoryIndex) {
+                if (currentCategoryIndex >= 0) {
+                    categoryRowState.animateScrollToItemCentered(currentCategoryIndex)
+                }
+            }
+            androidx.compose.foundation.lazy.LazyRow(
+                state = categoryRowState,
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Dimens.spacingSm)
             ) {
-                categories.forEach { category ->
+                items(categories.size) { index ->
+                    val category = categories[index]
                     val isCurrent = category == uiState.currentFilterCategory
                     val hasActiveFilters = uiState.activeFilters.isActive(category)
 
@@ -1437,7 +1448,9 @@ private fun FilterMenuOverlay(
                             text = stringResource(category.labelRes),
                             style = MaterialTheme.typography.labelMedium,
                             color = if (isCurrent) lerp(LocalArgosyTheme.current.focusAccent, Color.White, 0.45f)
-                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
