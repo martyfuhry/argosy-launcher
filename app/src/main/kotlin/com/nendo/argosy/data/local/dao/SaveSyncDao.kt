@@ -172,6 +172,16 @@ interface SaveSyncDao {
     @Query("DELETE FROM save_sync WHERE gameId IN (SELECT id FROM games WHERE source IN (:sourceNames))")
     suspend fun deleteByGameSources(sourceNames: List<String>)
 
+    @Query("""
+        SELECT s.* FROM save_sync s
+        INNER JOIN games g ON g.id = s.gameId
+        WHERE g.rommId IS NULL OR g.rommId != s.rommId
+    """)
+    suspend fun getRowsKeyedToAnotherRom(): List<SaveSyncEntity>
+
+    @Query("UPDATE OR IGNORE save_sync SET gameId = :gameId, channelName = :channelName WHERE id = :id")
+    suspend fun moveToGame(id: Long, gameId: Long, channelName: String?): Int
+
     @Query("UPDATE save_sync SET lastUploadedHash = :hash WHERE id = :id")
     suspend fun updateLastUploadedHash(id: Long, hash: String)
 

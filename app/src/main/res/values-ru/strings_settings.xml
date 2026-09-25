@@ -2071,14 +2071,9 @@
     <!-- ===== Region picker popup (Settings > components > RegionPickerPopup) ===== -->
 
     <string name="settings_region_picker_title">ВЫБОР РЕГИОНОВ</string>
-    <string name="settings_region_picker_subtitle_ordering">Отметьте регионы для синхронизации. Удерживайте и перетаскивайте, чтобы задать приоритет; при нескольких версиях игры побеждает верхнее совпадение</string>
     <string name="settings_region_picker_subtitle_toggle">Отметьте регионы для включения/исключения при синхронизации</string>
-    <string name="settings_region_picker_hint_move">Переместить</string>
-    <string name="settings_region_picker_hint_accept">Принять</string>
-    <string name="settings_region_picker_hint_cancel">Отмена</string>
     <string name="settings_region_picker_hint_navigate">Навигация</string>
     <string name="settings_region_picker_hint_toggle">Переключить</string>
-    <string name="settings_region_picker_hint_prioritize">Приоритет</string>
     <string name="settings_region_picker_hint_close">Закрыть</string>
 
     <!-- ===== Driver version picker modal (Settings > components > DriverVersionPickerModal) ===== -->

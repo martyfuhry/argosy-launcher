@@ -10,6 +10,7 @@ val FilterCategory.chipKind: ActiveFilterKind
         FilterCategory.SOURCE -> ActiveFilterKind.SOURCE
         FilterCategory.PLATFORM -> ActiveFilterKind.PLATFORM
         FilterCategory.GENRE -> ActiveFilterKind.GENRE
+        FilterCategory.REGION -> ActiveFilterKind.REGION
         FilterCategory.PLAYERS -> ActiveFilterKind.PLAYERS
         FilterCategory.SERIES -> ActiveFilterKind.SERIES
     }

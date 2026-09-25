@@ -13,9 +13,6 @@ import com.nendo.argosy.data.local.dao.GameFileDao
 import com.nendo.argosy.data.repository.CollectionRepository
 import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.data.model.GameSource
-import com.nendo.argosy.data.model.allSelectableSelected
-import com.nendo.argosy.data.model.selectAllSelection
-import com.nendo.argosy.data.model.selectNoneSelection
 import com.nendo.argosy.data.emulator.DiscOption
 import com.nendo.argosy.data.emulator.EmulatorResolver
 import com.nendo.argosy.data.preferences.DisplayRoleOverride

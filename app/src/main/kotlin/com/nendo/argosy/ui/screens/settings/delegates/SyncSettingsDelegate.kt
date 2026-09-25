@@ -174,22 +174,12 @@ class SyncSettingsDelegate @Inject constructor(
     }
 
     fun dismissRegionPicker() {
-        val state = _state.value
-        if (state.regionPickerHeldRegion != null) {
-            cancelRegionHold()
-            return
-        }
         _state.update {
             it.copy(showRegionPicker = false, regionPickerFocusIndex = 0)
         }
     }
 
     fun moveRegionPickerFocus(delta: Int) {
-        val state = _state.value
-        if (state.regionPickerHeldRegion != null) {
-            moveHeldRegion(delta)
-            return
-        }
         _state.update { s ->
             val maxIndex = SyncFilterPreferences.ALL_KNOWN_REGIONS.size - 1
             val newIndex = (s.regionPickerFocusIndex + delta).coerceIn(0, maxIndex)
@@ -198,12 +188,8 @@ class SyncSettingsDelegate @Inject constructor(
     }
 
     fun confirmRegionPickerSelection(scope: CoroutineScope) {
-        val state = _state.value
-        if (state.regionPickerHeldRegion != null) {
-            dropHeldRegion(scope)
-            return
-        }
-        val region = state.syncFilters.pickerDisplayOrder.getOrNull(state.regionPickerFocusIndex) ?: return
+        val region = SyncFilterPreferences.ALL_KNOWN_REGIONS
+            .getOrNull(_state.value.regionPickerFocusIndex) ?: return
         toggleRegion(scope, region)
     }
 
@@ -215,85 +201,6 @@ class SyncSettingsDelegate @Inject constructor(
             _state.update {
                 it.copy(syncFilters = it.syncFilters.copy(enabledRegions = updated))
             }
-        }
-    }
-
-    fun liftRegion() {
-        _state.update { state ->
-            if (state.syncFilters.regionMode != RegionFilterMode.INCLUDE) return@update state
-            val region = state.syncFilters.pickerDisplayOrder
-                .getOrNull(state.regionPickerFocusIndex)
-                ?.takeIf { it in state.syncFilters.enabledRegions }
-                ?: return@update state
-            state.copy(
-                regionPickerHeldRegion = region,
-                regionPickerOrderBackup = state.syncFilters.enabledRegions
-            )
-        }
-    }
-
-    fun liftRegionAt(region: String) {
-        _state.update { state ->
-            if (state.syncFilters.regionMode != RegionFilterMode.INCLUDE) return@update state
-            if (region !in state.syncFilters.enabledRegions) return@update state
-            state.copy(
-                regionPickerHeldRegion = region,
-                regionPickerOrderBackup = state.syncFilters.enabledRegions,
-                regionPickerFocusIndex = state.syncFilters.enabledRegions.indexOf(region)
-            )
-        }
-    }
-
-    private fun moveHeldRegion(delta: Int) {
-        _state.update { state ->
-            val region = state.regionPickerHeldRegion ?: return@update state
-            val order = state.syncFilters.enabledRegions.toMutableList()
-            val from = order.indexOf(region)
-            if (from == -1) return@update state
-            val to = (from + delta).coerceIn(0, order.size - 1)
-            if (to == from) return@update state
-            order.removeAt(from)
-            order.add(to, region)
-            state.copy(
-                syncFilters = state.syncFilters.copy(enabledRegions = order),
-                regionPickerFocusIndex = to
-            )
-        }
-    }
-
-    fun moveRegionTo(region: String, targetIndex: Int) {
-        _state.update { state ->
-            if (state.regionPickerHeldRegion != region) return@update state
-            val order = state.syncFilters.enabledRegions.toMutableList()
-            val from = order.indexOf(region)
-            if (from == -1) return@update state
-            val to = targetIndex.coerceIn(0, order.size - 1)
-            if (to == from) return@update state
-            order.removeAt(from)
-            order.add(to, region)
-            state.copy(
-                syncFilters = state.syncFilters.copy(enabledRegions = order),
-                regionPickerFocusIndex = to
-            )
-        }
-    }
-
-    fun dropHeldRegion(scope: CoroutineScope) {
-        val order = _state.value.syncFilters.enabledRegions
-        _state.update {
-            it.copy(regionPickerHeldRegion = null, regionPickerOrderBackup = null)
-        }
-        scope.launch { preferencesRepository.setSyncFilterRegions(order) }
-    }
-
-    fun cancelRegionHold() {
-        _state.update { state ->
-            val backup = state.regionPickerOrderBackup
-            state.copy(
-                syncFilters = if (backup != null) state.syncFilters.copy(enabledRegions = backup) else state.syncFilters,
-                regionPickerHeldRegion = null,
-                regionPickerOrderBackup = null
-            )
         }
     }
 

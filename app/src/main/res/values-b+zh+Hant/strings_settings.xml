@@ -1824,14 +1824,9 @@
     <string name="settings_emulator_update_failed">更新失敗：%1$s</string>
 
     <string name="settings_region_picker_title">選擇地區</string>
-    <string name="settings_region_picker_subtitle_ordering">切換要同步的地區。按住並拖曳可設定優先順序；當遊戲有多個版本時，排序最前者優先</string>
     <string name="settings_region_picker_subtitle_toggle">切換同步時要包含／排除的地區</string>
-    <string name="settings_region_picker_hint_move">移動</string>
-    <string name="settings_region_picker_hint_accept">確定</string>
-    <string name="settings_region_picker_hint_cancel">取消</string>
     <string name="settings_region_picker_hint_navigate">瀏覽</string>
     <string name="settings_region_picker_hint_toggle">切換</string>
-    <string name="settings_region_picker_hint_prioritize">設定優先順序</string>
     <string name="settings_region_picker_hint_close">關閉</string>
 
     <string name="settings_driver_picker_title">選擇版本</string>

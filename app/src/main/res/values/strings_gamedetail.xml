@@ -827,9 +827,6 @@
     <string name="gamedetail_file_picker_expand_description">Expand</string>
     <!-- Spoken description of the arrow on an open group heading. Verb: folds the group away. -->
     <string name="gamedetail_file_picker_collapse_description">Collapse</string>
-    <!-- Tag on the file the game will use when several editions exist. Adjective describing that
-         file. Rendered in caps in English. -->
-    <string name="gamedetail_file_picker_default_tag">DEFAULT</string>
     <!-- Second line on a file row that is on the device and has been unticked. Verb phrase in the
          future: it will be erased when the changes are applied. -->
     <string name="gamedetail_file_picker_pending_remove">Will be removed</string>

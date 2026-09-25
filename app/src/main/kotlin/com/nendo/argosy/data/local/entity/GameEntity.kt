@@ -230,3 +230,8 @@ data class GameCategoryInfo(
     val genre: String?,
     val gameModes: String?
 )
+
+data class GameRegionInfo(
+    val id: Long,
+    val regions: String?
+)

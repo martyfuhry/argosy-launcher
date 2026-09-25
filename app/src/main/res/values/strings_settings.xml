@@ -3766,22 +3766,12 @@
     <!-- Modal heading. Rendered in caps in English; use whatever casing suits a heading in your
          language. -->
     <string name="settings_region_picker_title">SELECT REGIONS</string>
-    <!-- Modal subtitle when region priority ordering is available. -->
-    <string name="settings_region_picker_subtitle_ordering">Toggle regions to sync. Hold and drag to set priority; the top match wins when a game has multiple versions</string>
-    <!-- Modal subtitle when region priority ordering is not available. -->
+    <!-- Modal subtitle. The picked regions are included or excluded per the Region Mode row. -->
     <string name="settings_region_picker_subtitle_toggle">Toggle regions to include/exclude during sync</string>
-    <!-- Footer hint while dragging a region. D-pad up/down moves it in the priority list. -->
-    <string name="settings_region_picker_hint_move">Move</string>
-    <!-- Footer hint while dragging a region. A drops it in its new position. -->
-    <string name="settings_region_picker_hint_accept">Accept</string>
-    <!-- Footer hint while dragging a region. B cancels the drag without moving it. -->
-    <string name="settings_region_picker_hint_cancel">Cancel</string>
     <!-- Footer hint. D-pad moves the row focus. -->
     <string name="settings_region_picker_hint_navigate">Navigate</string>
     <!-- Footer hint. A toggles the focused region on or off. -->
     <string name="settings_region_picker_hint_toggle">Toggle</string>
-    <!-- Footer hint. X begins dragging the focused region to reorder its priority. -->
-    <string name="settings_region_picker_hint_prioritize">Prioritize</string>
     <!-- Footer hint. Dismiss the modal. -->
     <string name="settings_region_picker_hint_close">Close</string>
 

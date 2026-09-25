@@ -335,7 +335,6 @@
     <string name="gamedetail_file_picker_footer_confirm">Bestätigen</string>
     <string name="gamedetail_file_picker_expand_description">Ausklappen</string>
     <string name="gamedetail_file_picker_collapse_description">Einklappen</string>
-    <string name="gamedetail_file_picker_default_tag">STANDARD</string>
     <string name="gamedetail_file_picker_pending_remove">Wird entfernt</string>
     <string name="gamedetail_file_picker_pending_add">Wird heruntergeladen</string>
     <string name="gamedetail_file_picker_on_device">Auf dem Gerät</string>

@@ -124,6 +124,7 @@ class SyncPreferencesRepository @Inject constructor(
         val SOCIAL_HIDDEN_GAME_IDS = stringPreferencesKey("social_hidden_game_ids")
         val SAVE_SYNC_LOCAL_REKEY_DONE = booleanPreferencesKey("save_sync_local_rekey_done")
         val SAVE_PATH_CACHE_PURGED = booleanPreferencesKey("save_path_cache_purged")
+        val SIBLING_SPLIT_REPAIR_DONE = booleanPreferencesKey("sibling_split_repair_finished")
         val QUAYPASS_ENABLED = booleanPreferencesKey("quaypass_enabled")
         val QUAYPASS_AVATAR_SYNC_PENDING = booleanPreferencesKey("quaypass_avatar_sync_pending")
         val QUAYPASS_MESSAGE_SYNC_PENDING = booleanPreferencesKey("quaypass_message_sync_pending")
@@ -193,6 +194,13 @@ class SyncPreferencesRepository @Inject constructor(
 
     suspend fun setSavePathCachePurged() {
         dataStore.edit { it[Keys.SAVE_PATH_CACHE_PURGED] = true }
+    }
+
+    suspend fun isSiblingSplitRepairDone(): Boolean =
+        dataStore.data.map { it[Keys.SIBLING_SPLIT_REPAIR_DONE] ?: false }.first()
+
+    suspend fun setSiblingSplitRepairDone() {
+        dataStore.edit { it[Keys.SIBLING_SPLIT_REPAIR_DONE] = true }
     }
 
     suspend fun setQuayPassEnabled(enabled: Boolean) {

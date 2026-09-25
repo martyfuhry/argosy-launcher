@@ -334,7 +334,6 @@
     <string name="gamedetail_file_picker_footer_confirm">पुष्टि करें</string>
     <string name="gamedetail_file_picker_expand_description">विस्तार करें</string>
     <string name="gamedetail_file_picker_collapse_description">समेटें</string>
-    <string name="gamedetail_file_picker_default_tag">डिफ़ॉल्ट</string>
     <string name="gamedetail_file_picker_pending_remove">हटा दी जाएगी</string>
     <string name="gamedetail_file_picker_pending_add">डाउनलोड होगी</string>
     <string name="gamedetail_file_picker_on_device">डिवाइस पर मौजूद</string>

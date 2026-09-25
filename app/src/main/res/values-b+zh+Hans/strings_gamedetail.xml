@@ -286,7 +286,6 @@
     <string name="gamedetail_file_picker_footer_confirm">确认</string>
     <string name="gamedetail_file_picker_expand_description">展开</string>
     <string name="gamedetail_file_picker_collapse_description">收起</string>
-    <string name="gamedetail_file_picker_default_tag">默认</string>
     <string name="gamedetail_file_picker_pending_remove">将被移除</string>
     <string name="gamedetail_file_picker_pending_add">将下载</string>
     <string name="gamedetail_file_picker_on_device">已在设备上</string>

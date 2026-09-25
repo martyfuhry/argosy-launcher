@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material3.Icon
@@ -29,7 +30,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 
-enum class ActiveFilterKind { SORT, SEARCH, SOURCE, PLATFORM, GENRE, PLAYERS, SERIES }
+enum class ActiveFilterKind { SORT, SEARCH, SOURCE, PLATFORM, GENRE, REGION, PLAYERS, SERIES }
 
 /**
  * One active filter as the chip row draws it. [labelRes] wins over [text] for the value; the
@@ -118,6 +119,7 @@ private fun ActiveFilterChip(chip: ActiveFilterChipUi) {
 private fun ActiveFilterChipUi.displayValue(): String = when (kind) {
     ActiveFilterKind.PLATFORM,
     ActiveFilterKind.GENRE,
+    ActiveFilterKind.REGION,
     ActiveFilterKind.SERIES -> count.toString()
     ActiveFilterKind.SORT,
     ActiveFilterKind.SEARCH,
@@ -132,6 +134,7 @@ private val ActiveFilterKind.glyph: ImageVector
         ActiveFilterKind.SOURCE -> Icons.Default.FilterList
         ActiveFilterKind.PLATFORM -> Icons.Default.VideogameAsset
         ActiveFilterKind.GENRE -> Icons.Default.Category
+        ActiveFilterKind.REGION -> Icons.Default.Public
         ActiveFilterKind.PLAYERS -> Icons.Default.Groups
         ActiveFilterKind.SERIES -> Icons.Default.CollectionsBookmark
     }

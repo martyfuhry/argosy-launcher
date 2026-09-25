@@ -9,8 +9,7 @@ import com.nendo.argosy.data.emulator.RetroArchCore
 import com.nendo.argosy.data.launcher.SteamLauncher
 import com.nendo.argosy.data.launcher.SteamLaunchers
 import com.nendo.argosy.data.model.allSelectableSelected
-import com.nendo.argosy.data.model.selectAllSelection
-import com.nendo.argosy.data.model.selectNoneSelection
+import com.nendo.argosy.data.model.selectableFileIds
 import com.nendo.argosy.data.model.visibleWithCollapsed
 import com.nendo.argosy.data.preferences.MenuWrapMode
 import com.nendo.argosy.ui.input.InputDispatcher.Companion.computeWrappedIndex
@@ -48,7 +47,6 @@ data class PickerModalState(
     val showFilePicker: Boolean = false,
     val filePickerRows: List<com.nendo.argosy.data.model.FilePickerRow> = emptyList(),
     val filePickerSelected: Set<Long> = emptySet(),
-    val filePickerSelectedVersions: Set<Long> = emptySet(),
     val filePickerFocusIndex: Int = 0,
     val filePickerManageMode: Boolean = false,
     val filePickerCollapsed: Set<String> = emptySet(),
@@ -413,7 +411,6 @@ class PickerModalDelegate @Inject constructor(
     fun showFilePicker(
         rows: List<com.nendo.argosy.data.model.FilePickerRow>,
         preselectedFileIds: Set<Long>,
-        preselectedVersionIds: Set<Long>,
         manageMode: Boolean = false
     ) {
         _state.update {
@@ -421,7 +418,6 @@ class PickerModalDelegate @Inject constructor(
                 showFilePicker = true,
                 filePickerRows = rows,
                 filePickerSelected = preselectedFileIds,
-                filePickerSelectedVersions = preselectedVersionIds,
                 filePickerFocusIndex = 0,
                 filePickerManageMode = manageMode,
                 filePickerCollapsed = emptySet()
@@ -454,17 +450,12 @@ class PickerModalDelegate @Inject constructor(
 
     fun toggleFilePickerSelectAll() {
         _state.update { st ->
-            val selection = if (
-                st.filePickerRows.allSelectableSelected(st.filePickerSelected, st.filePickerSelectedVersions)
-            ) {
-                st.filePickerRows.selectNoneSelection()
+            val selection = if (st.filePickerRows.allSelectableSelected(st.filePickerSelected)) {
+                emptySet()
             } else {
-                st.filePickerRows.selectAllSelection()
+                st.filePickerRows.selectableFileIds()
             }
-            st.copy(
-                filePickerSelected = selection.fileIds,
-                filePickerSelectedVersions = selection.versionIds
-            )
+            st.copy(filePickerSelected = selection)
         }
         soundManager.play(SoundType.TOGGLE)
     }
@@ -517,28 +508,11 @@ class PickerModalDelegate @Inject constructor(
     fun toggleFilePickerRow(row: com.nendo.argosy.data.model.FilePickerRow) {
         _state.update { st ->
             var selected = st.filePickerSelected
-            var versions = st.filePickerSelectedVersions
             if (row.isHeader) {
-                val members = st.filePickerRows.filter { !it.isHeader && it.groupKey == row.groupKey && !it.isLocked }
-                val fileIds = members.mapNotNull { it.rommFileId }
-                val versionIds = members.mapNotNull { it.versionRommId }
-                val allSelected = fileIds.all { it in selected } && versionIds.all { it in versions }
-                if (allSelected) {
-                    selected = selected - fileIds.toSet()
-                    versions = versions - versionIds.toSet()
-                    if (versionIds.isNotEmpty() && versions.isEmpty()) {
-                        versions = setOf(versionIds.first())
-                    }
-                } else {
-                    selected = selected + fileIds
-                    versions = versions + versionIds
-                }
-            } else if (row.versionRommId != null) {
-                versions = if (row.versionRommId in versions) {
-                    (versions - row.versionRommId).ifEmpty { versions }
-                } else {
-                    versions + row.versionRommId
-                }
+                val fileIds = st.filePickerRows
+                    .filter { !it.isHeader && it.groupKey == row.groupKey && !it.isLocked }
+                    .mapNotNull { it.rommFileId }
+                selected = if (fileIds.all { it in selected }) selected - fileIds.toSet() else selected + fileIds
             } else if (row.rommFileId != null && !row.isLocked) {
                 selected = if (row.rommFileId in selected) {
                     selected - row.rommFileId
@@ -546,7 +520,7 @@ class PickerModalDelegate @Inject constructor(
                     selected + row.rommFileId
                 }
             }
-            st.copy(filePickerSelected = selected, filePickerSelectedVersions = versions)
+            st.copy(filePickerSelected = selected)
         }
         soundManager.play(SoundType.TOGGLE)
     }

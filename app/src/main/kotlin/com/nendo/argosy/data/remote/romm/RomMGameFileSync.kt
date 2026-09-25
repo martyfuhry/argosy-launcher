@@ -9,20 +9,6 @@ import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Writes a ROM's file list - discs, updates, DLC and soundtrack tracks - into `game_files`.
- *
- * Shared by the library sync, which asks for files with `with_files`, and the per-game refresh,
- * which gets them from the single-ROM endpoint.
- *
- * A consolidated game holds every absorbed sibling's files under one gameId, so this only ever
- * prunes and rewrites the rows belonging to the rom it was handed. `versionGroup` and `regions`
- * carry over from the stored row because only version consolidation knows them.
- *
- * Every file the server reports is recorded. Which of them a platform offers or downloads by
- * default is a decision for the download and variant layers; dropping references here left
- * title-id platforms with no soundtrack rows at all, so nothing could play a game's theme.
- */
 @Singleton
 class RomMGameFileSync @Inject constructor(
     private val gameFileDao: GameFileDao,

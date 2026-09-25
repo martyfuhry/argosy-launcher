@@ -2,26 +2,6 @@ package com.nendo.argosy.data.preferences
 
 import androidx.datastore.preferences.core.Preferences
 
-/**
- * Which DataStore keys follow the signed-in RomM account and which belong to the device.
- *
- * Membership is by key name because the same name is declared in several repositories with
- * different value types. The default is device-global: a key that is not listed here keeps the
- * single-store behaviour it had before accounts existed, so a key added elsewhere and forgotten
- * here degrades to "shared between accounts" rather than to "silently empty for everyone".
- *
- * Five groups are deliberately absent and must stay absent. `sync_filter_delete_orphans` decides
- * whether a sync may delete rows from `games`, which is one shared row per rom and carries a
- * CASCADE onto every account's overlay; a per-account copy meant a newly added account read the
- * `true` default and re-enabled cleanup the first account had turned off. `secure_saves` picks one save mode
- * for one shared save directory. `builtin_custom_save_path` and `builtin_custom_state_path`
- * define the resolved save path itself, so a per-account value would make teardown and placement
- * target different directories. The `active_session_*` keys are how an interrupted session is
- * detected across a switch. The one-shot flags (`save_sync_local_rekey_done`,
- * `save_path_cache_purged`, `builtin_migration_v2`, `last_integrity_check_time`,
- * `emulator_update_last_check`, `first_run_complete`) are device migrations that must run once
- * per device; re-running the rekey per account deletes save-sync rows.
- */
 object AccountScopedPreferenceKeys {
 
     private val RETROACHIEVEMENTS = setOf(

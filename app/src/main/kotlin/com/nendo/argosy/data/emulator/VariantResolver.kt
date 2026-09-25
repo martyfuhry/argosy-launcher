@@ -30,14 +30,14 @@ class VariantResolver @Inject constructor(
         val excluded = game.platformSlug in VariantCategory.VARIANT_EXCLUDED_PLATFORMS
 
         game.activeVariantFileId?.let { fileId ->
-            val file = gameFileDao.getById(fileId)
+            val file = gameFileDao.getById(fileId)?.takeIf { it.gameId == game.id }
             if (file != null && file.isOnDisk &&
                 (!excluded || file.versionGroup != null)
             ) return file
         }
 
         game.lastPlayedFileId?.let { fileId ->
-            val file = gameFileDao.getById(fileId)
+            val file = gameFileDao.getById(fileId)?.takeIf { it.gameId == game.id }
             if (file != null && file.isOnDisk &&
                 (!excluded || file.versionGroup != null)
             ) return file

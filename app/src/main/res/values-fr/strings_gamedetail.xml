@@ -339,7 +339,6 @@
     <string name="gamedetail_file_picker_footer_confirm">Confirmer</string>
     <string name="gamedetail_file_picker_expand_description">Développer</string>
     <string name="gamedetail_file_picker_collapse_description">Réduire</string>
-    <string name="gamedetail_file_picker_default_tag">DÉFAUT</string>
     <string name="gamedetail_file_picker_pending_remove">Sera supprimé</string>
     <string name="gamedetail_file_picker_pending_add">Sera téléchargé</string>
     <string name="gamedetail_file_picker_on_device">Sur l\'appareil</string>

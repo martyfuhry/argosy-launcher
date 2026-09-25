@@ -2034,14 +2034,9 @@
     <!-- ===== Region picker popup (Settings > components > RegionPickerPopup) ===== -->
 
     <string name="settings_region_picker_title">SELECCIONAR REGIONES</string>
-    <string name="settings_region_picker_subtitle_ordering">Activa las regiones a sincronizar. Mantén pulsado y arrastra para definir la prioridad; la primera coincidencia gana cuando un juego tiene varias versiones</string>
     <string name="settings_region_picker_subtitle_toggle">Activa las regiones a incluir o excluir durante la sincronización</string>
-    <string name="settings_region_picker_hint_move">Mover</string>
-    <string name="settings_region_picker_hint_accept">Aceptar</string>
-    <string name="settings_region_picker_hint_cancel">Cancelar</string>
     <string name="settings_region_picker_hint_navigate">Navegar</string>
     <string name="settings_region_picker_hint_toggle">Alternar</string>
-    <string name="settings_region_picker_hint_prioritize">Priorizar</string>
     <string name="settings_region_picker_hint_close">Cerrar</string>
 
     <!-- ===== Driver version picker modal (Settings > components > DriverVersionPickerModal) ===== -->

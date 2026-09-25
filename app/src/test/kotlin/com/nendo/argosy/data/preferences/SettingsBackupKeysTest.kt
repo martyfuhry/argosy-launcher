@@ -46,7 +46,8 @@ class SettingsBackupKeysTest {
     private val oneShotAndVersionMarkers = setOf(
         "builtin_migration_v2", "first_run_complete", "save_sync_local_rekey_done",
         "save_path_cache_purged", "per_account_prefs_adopted_by", "last_seen_version",
-        "last_integrity_check_time", "romm_play_session_backfill_done"
+        "last_integrity_check_time", "romm_play_session_backfill_done",
+        "sibling_split_repair_finished"
     )
 
     private val liveSessionState = setOf(

@@ -638,13 +638,4 @@ object RomMUtils {
             else -> title
         }.lowercase()
     }
-
-    fun getDedupKey(rom: RomMRom): String? {
-        return when {
-            rom.igdbId != null -> "igdb:${rom.igdbId}"
-            rom.mobyId != null -> "moby:${rom.mobyId}"
-            rom.raId != null -> "ra:${rom.raId}"
-            else -> null
-        }
-    }
 }

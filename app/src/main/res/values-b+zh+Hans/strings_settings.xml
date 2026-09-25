@@ -1928,14 +1928,9 @@
     <!-- ===== Region picker popup ===== -->
 
     <string name="settings_region_picker_title">选择地区</string>
-    <string name="settings_region_picker_subtitle_ordering">切换要同步的地区。按住并拖动以设置优先级；当游戏有多个版本时，排在最前的匹配项优先</string>
     <string name="settings_region_picker_subtitle_toggle">切换同步时要包含/排除的地区</string>
-    <string name="settings_region_picker_hint_move">移动</string>
-    <string name="settings_region_picker_hint_accept">确认</string>
-    <string name="settings_region_picker_hint_cancel">取消</string>
     <string name="settings_region_picker_hint_navigate">导航</string>
     <string name="settings_region_picker_hint_toggle">切换</string>
-    <string name="settings_region_picker_hint_prioritize">设置优先级</string>
     <string name="settings_region_picker_hint_close">关闭</string>
 
     <!-- ===== Driver version picker modal ===== -->

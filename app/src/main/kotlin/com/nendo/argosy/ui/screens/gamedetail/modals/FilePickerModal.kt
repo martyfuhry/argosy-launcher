@@ -71,7 +71,6 @@ fun FilePickerModal(
     title: String,
     rows: List<FilePickerRow>,
     selectedIds: Set<Long>,
-    selectedVersionIds: Set<Long>,
     focusIndex: Int,
     summary: String,
     onToggleRow: (FilePickerRow) -> Unit,
@@ -87,8 +86,7 @@ fun FilePickerModal(
     val listState = rememberLazyListState()
 
     val isRowSelected = { row: FilePickerRow ->
-        (row.isLocked && row.isDownloaded) ||
-            (row.versionRommId?.let { it in selectedVersionIds } ?: (row.rommFileId in selectedIds))
+        (row.isLocked && row.isDownloaded) || row.rommFileId in selectedIds
     }
     val pendingAdds = if (manageMode) {
         allRows.count { !it.isHeader && !it.isLocked && !it.isDownloaded && isRowSelected(it) }
@@ -108,7 +106,7 @@ fun FilePickerModal(
     }
     val confirmEnabled = !manageMode || pendingAdds + pendingRemoves > 0
     val confirmTint = if (manageMode && pendingRemoves > 0) theme.destructive else theme.focusAccent
-    val everythingSelected = allRows.allSelectableSelected(selectedIds, selectedVersionIds)
+    val everythingSelected = allRows.allSelectableSelected(selectedIds)
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
     Box(
@@ -156,11 +154,11 @@ fun FilePickerModal(
                     modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
                     verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
                 ) {
-                    itemsIndexed(rows, key = { _, row -> "${row.groupKey}:${row.rommFileId ?: row.versionRommId ?: "h"}" }) { index, row ->
+                    itemsIndexed(rows, key = { _, row -> "${row.groupKey}:${row.rommFileId ?: "h"}" }) { index, row ->
                         if (row.isHeader) {
                             FilePickerGroupHeader(
                                 row = row,
-                                checkState = groupCheckState(row.groupKey, allRows, selectedIds, selectedVersionIds),
+                                checkState = groupCheckState(row.groupKey, allRows, selectedIds),
                                 isFocused = focusIndex == index,
                                 isCollapsed = row.groupKey in collapsedGroups,
                                 onClick = { onToggleRow(row) },
@@ -229,14 +227,12 @@ fun FilePickerModal(
 private fun groupCheckState(
     groupKey: String,
     rows: List<FilePickerRow>,
-    selectedIds: Set<Long>,
-    selectedVersionIds: Set<Long>
+    selectedIds: Set<Long>
 ): GroupCheckState {
     val members = rows.filter { !it.isHeader && it.groupKey == groupKey }
     if (members.isEmpty()) return GroupCheckState.NONE
     val selectedCount = members.count { row ->
-        (row.isLocked && row.isDownloaded) ||
-            (row.versionRommId?.let { it in selectedVersionIds } ?: (row.rommFileId in selectedIds))
+        (row.isLocked && row.isDownloaded) || row.rommFileId in selectedIds
     }
     return when (selectedCount) {
         0 -> GroupCheckState.NONE
@@ -357,14 +353,6 @@ private fun FilePickerFileRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
                 )
-                if (row.isDefaultVersion) {
-                    Spacer(modifier = Modifier.width(Dimens.spacingSm))
-                    Text(
-                        text = stringResource(R.string.gamedetail_file_picker_default_tag),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = theme.focusAccent
-                    )
-                }
             }
             if (parts.tags.isNotEmpty()) {
                 Text(

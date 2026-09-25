@@ -247,7 +247,6 @@ abstract class ALauncherDatabase : RoomDatabase() {
     abstract fun pendingConflictDao(): PendingConflictDao
     abstract fun touchLayoutOverrideDao(): com.nendo.argosy.data.local.dao.TouchLayoutOverrideDao
     abstract fun speedrunDao(): com.nendo.argosy.data.local.dao.SpeedrunDao
-    abstract fun gameAbsorptionDao(): com.nendo.argosy.data.local.dao.GameAbsorptionDao
     abstract fun bgmPlaylistDao(): BgmPlaylistDao
     abstract fun audioLoudnessDao(): AudioLoudnessDao
     abstract fun quayPassEncounterDao(): QuayPassEncounterDao

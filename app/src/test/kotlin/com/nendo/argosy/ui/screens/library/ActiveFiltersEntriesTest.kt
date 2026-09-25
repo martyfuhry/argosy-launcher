@@ -132,6 +132,16 @@ class ActiveFiltersEntriesTest {
     }
 
     @Test
+    fun `a lone region names itself and marks only the region tab`() {
+        val filters = ActiveFilters(regions = setOf("Japan"))
+
+        assertEquals(listOf(ActiveFilterEntry(FilterCategory.REGION, text = "Japan", count = 1)), filters.entries)
+        assertEquals("Japan", filters.summary(context))
+        assertTrue(filters.isActive(FilterCategory.REGION))
+        assertFalse(filters.isActive(FilterCategory.GENRE))
+    }
+
+    @Test
     fun `several categories sum their counts and follow the tab order`() {
         val filters = ActiveFilters(
             searchQuery = "zelda",

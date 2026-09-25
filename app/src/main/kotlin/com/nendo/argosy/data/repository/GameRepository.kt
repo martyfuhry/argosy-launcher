@@ -292,6 +292,10 @@ class GameRepository @Inject constructor(
 
         val targets = games.map { ClaimTarget(it.id, it.rommFileName, it.title) }
         val claims = claimLocalEntries(targets, entries.keys.toList())
+        val pathOwners = (
+            gameDao.getGamesWithLocalPathByPlatform(platform.id).mapNotNull { g -> g.localPath?.let { it to g.id } } +
+                gameFileDao.getFilesWithLocalPathByPlatform(platform.id).mapNotNull { f -> f.localPath?.let { it to f.gameId } }
+            ).groupBy({ it.first }, { it.second })
         var discovered = 0
 
         for (game in games) {
@@ -302,6 +306,10 @@ class GameRepository @Inject constructor(
             } else {
                 entry
             } ?: continue
+            if (pathOwners[resolved.absolutePath].orEmpty().any { it != game.id }) {
+                Log.d(TAG, "Discovery skipped: ${game.title} -> ${entry.name} already belongs to another game")
+                continue
+            }
             gameDao.updateLocalPath(game.id, resolved.absolutePath, GameSource.ROMM_SYNCED, FileOrigin.ADOPTED)
             discovered++
             Log.d(TAG, "Discovered: ${game.title} -> ${entry.name}")
@@ -952,6 +960,25 @@ class GameRepository @Inject constructor(
     }
 
     suspend fun getDistinctGenres(): List<String> = gameDao.getDistinctGenres(hiddenOwnerId())
+
+    suspend fun getDistinctRegions(): List<String> =
+        gameDao.getDistinctRegions(hiddenOwnerId())
+            .flatMap { splitRegions(it) }
+            .distinct()
+            .sorted()
+
+    /**
+     * Ids of the games tagged with at least one of [regions]. A game whose stored region list is
+     * empty or absent never matches.
+     */
+    fun observeGameIdsInRegions(regions: Set<String>): Flow<Set<Long>> =
+        gameDao.observeRegionInfo().map { rows ->
+            rows.filter { row -> splitRegions(row.regions).any { it in regions } }
+                .mapTo(HashSet()) { it.id }
+        }
+
+    private fun splitRegions(joined: String?): List<String> =
+        joined?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
 
     fun observeHiddenByPlatformList(platformId: Long): Flow<List<GameListItem>> = flow {
         emitAll(gameDao.observeHiddenByPlatformList(platformId, hiddenOwnerId()))

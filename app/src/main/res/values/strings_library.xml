@@ -116,6 +116,7 @@
     <!-- Tab in the filter modal. Narrows the list by game genre. Noun, singular, naming the
          category. -->
     <string name="library_filter_category_genre">Genre</string>
+    <string name="library_filter_category_region">Region</string>
     <!-- Tab in the filter modal. Narrows the list by how many people can play at once. Noun,
          plural. -->
     <string name="library_filter_category_players">Players</string>

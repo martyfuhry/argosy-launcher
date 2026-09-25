@@ -299,7 +299,6 @@
     <string name="gamedetail_file_picker_footer_confirm">Подтвердить</string>
     <string name="gamedetail_file_picker_expand_description">Развернуть</string>
     <string name="gamedetail_file_picker_collapse_description">Свернуть</string>
-    <string name="gamedetail_file_picker_default_tag">ПО УМОЛЧАНИЮ</string>
     <string name="gamedetail_file_picker_pending_remove">Будет удалён</string>
     <string name="gamedetail_file_picker_pending_add">Будет загружен</string>
     <string name="gamedetail_file_picker_on_device">На устройстве</string>

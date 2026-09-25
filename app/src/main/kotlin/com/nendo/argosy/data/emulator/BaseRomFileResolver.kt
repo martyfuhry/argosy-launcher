@@ -41,7 +41,7 @@ class BaseRomFileResolver @Inject constructor(
      */
     suspend fun resolve(game: GameEntity, romFile: File): File {
         game.activeVariantFileId?.let { fileId ->
-            val chosen = gameFileDao.getById(fileId)
+            val chosen = gameFileDao.getById(fileId)?.takeIf { it.gameId == game.id }
             val chosenPath = chosen?.localPath
             if (chosen?.versionGroup != null && chosenPath != null && File(chosenPath).exists()) {
                 if (chosenPath != romFile.absolutePath) {

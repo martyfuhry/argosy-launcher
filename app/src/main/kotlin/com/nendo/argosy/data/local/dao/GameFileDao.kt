@@ -148,11 +148,6 @@ interface GameFileDao {
     @Query("DELETE FROM game_files WHERE gameId = :gameId AND rommFileId NOT IN (:validRommFileIds)")
     suspend fun deleteInvalidFiles(gameId: Long, validRommFileIds: List<Long>)
 
-    /**
-     * Prunes only the rows this rom contributed. A consolidated game holds the files of every
-     * absorbed sibling under one gameId, so a response describing a single rom is not evidence
-     * about the others and must not be allowed to delete them.
-     */
     @Query(
         """
         DELETE FROM game_files
@@ -189,6 +184,6 @@ interface GameFileDao {
     @Query("SELECT * FROM game_files WHERE localPath = :localPath LIMIT 1")
     suspend fun getByLocalPath(localPath: String): GameFileEntity?
 
-    @Query("SELECT gameId FROM game_files WHERE versionGroup = :versionGroup LIMIT 1")
-    suspend fun getGameIdForVersionGroup(versionGroup: String): Long?
+    @Query("SELECT * FROM game_files WHERE versionGroup IS NOT NULL")
+    suspend fun getVersionGroupedFiles(): List<GameFileEntity>
 }

@@ -59,6 +59,7 @@
     <string name="library_filter_category_source">Origen</string>
     <string name="library_filter_category_platform">Plataforma</string>
     <string name="library_filter_category_genre">Género</string>
+    <string name="library_filter_category_region">Región</string>
     <string name="library_filter_category_players">Jugadores</string>
     <string name="library_filter_players_one">1</string>
     <string name="library_filter_players_two">2</string>

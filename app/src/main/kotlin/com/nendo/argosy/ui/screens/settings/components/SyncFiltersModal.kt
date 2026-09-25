@@ -44,12 +44,7 @@ fun SyncFiltersModal(
     focusIndex: Int,
     showRegionPicker: Boolean,
     regionPickerFocusIndex: Int,
-    regionPickerRegions: List<String>,
-    regionPickerHeldRegion: String?,
     onToggleRegion: (String) -> Unit,
-    onLiftRegion: (String) -> Unit,
-    onMoveRegionTo: (String, Int) -> Unit,
-    onDropRegion: () -> Unit,
     onToggleRegionMode: () -> Unit,
     onToggleExcludeBeta: (Boolean) -> Unit,
     onToggleExcludePrototype: (Boolean) -> Unit,
@@ -209,15 +204,10 @@ fun SyncFiltersModal(
 
         if (showRegionPicker) {
             RegionPickerPopup(
-                regions = regionPickerRegions,
+                regions = SyncFilterPreferences.ALL_KNOWN_REGIONS,
                 enabledRegions = syncFilters.enabledRegions,
                 focusIndex = regionPickerFocusIndex,
-                heldRegion = regionPickerHeldRegion,
-                orderingEnabled = syncFilters.regionMode == RegionFilterMode.INCLUDE,
                 onToggle = onToggleRegion,
-                onLift = onLiftRegion,
-                onMoveTo = onMoveRegionTo,
-                onDrop = onDropRegion,
                 onDismiss = onDismissRegionPicker
             )
         }

@@ -15,6 +15,11 @@ Server behaviour is read against RomM 5.2.0 source; the live measurements are
 against a 5.1.0-alpha.4 instance with a 23,873-rom library, and each section
 says which it is.
 
+Sibling consolidation, dedup cleanup, `chooseWinner` and `GameAbsorptionDao` no
+longer exist: every RomM rom now syncs as its own game (see
+`docs/romm-sync-rules.md`). Sections below that reason about them describe the
+sync as it was when measured.
+
 ## What we send today
 
 `RomMApiClient.buildRomsQueryParams` produces:

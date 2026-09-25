@@ -1059,9 +1059,7 @@ private fun GameDetailModals(
     ) {
         val fileRows = pickerState.filePickerRows
         val isSelected = { row: com.nendo.argosy.data.model.FilePickerRow ->
-            row.versionRommId
-                ?.let { it in pickerState.filePickerSelectedVersions }
-                ?: (row.rommFileId in pickerState.filePickerSelected)
+            row.rommFileId in pickerState.filePickerSelected
         }
         val adds = fileRows.filter { !it.isHeader && !it.isLocked && !it.isDownloaded && isSelected(it) }
         val removes = fileRows.filter { !it.isHeader && !it.isLocked && it.isDownloaded && !isSelected(it) }
@@ -1103,7 +1101,6 @@ private fun GameDetailModals(
             },
             rows = pickerState.visibleFilePickerRows,
             selectedIds = pickerState.filePickerSelected,
-            selectedVersionIds = pickerState.filePickerSelectedVersions,
             focusIndex = pickerState.filePickerFocusIndex,
             summary = summary,
             onToggleRow = viewModel::toggleFilePickerRow,

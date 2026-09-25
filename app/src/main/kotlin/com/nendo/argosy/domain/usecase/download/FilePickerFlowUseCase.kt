@@ -27,8 +27,7 @@ private fun pathOnDisk(path: String?): Boolean = path != null && File(path).exis
 
 data class FilePickerSetup(
     val rows: List<FilePickerRow>,
-    val preselectedFileIds: Set<Long>,
-    val preselectedVersionIds: Set<Long>
+    val preselectedFileIds: Set<Long>
 )
 
 /**
@@ -91,30 +90,6 @@ class FilePickerFlowUseCase @Inject constructor(
 
         val rows = mutableListOf<FilePickerRow>()
         val preselectedFiles = mutableSetOf<Long>()
-        val preselectedVersions = mutableSetOf<Long>()
-
-        val versionGroups = dbRows.filter { it.versionGroup != null }.groupBy { it.versionGroup!! }
-        if (versionGroups.size > 1) {
-            rows += FilePickerRow(isHeader = true, groupKey = "versions", label = "Version")
-            val defaultLaunch = game.activeVariantFileId
-            versionGroups.forEach { (key, files) ->
-                val memberRommId = key.removePrefix("romm:").toLongOrNull() ?: return@forEach
-                val label = files.first().fileName
-                val isDefault = defaultLaunch != null && files.any { it.id == defaultLaunch } ||
-                    (defaultLaunch == null && memberRommId == rommId)
-                rows += FilePickerRow(
-                    isHeader = false,
-                    groupKey = "versions",
-                    label = label,
-                    versionRommId = memberRommId,
-                    sizeBytes = files.sumOf { it.fileSize },
-                    isDownloaded = files.any { pathOnDisk(it.localPath) },
-                    isDefaultVersion = isDefault
-                )
-                if (isDefault) preselectedVersions += memberRommId
-            }
-            if (preselectedVersions.isEmpty()) preselectedVersions += rommId
-        }
 
         val allFiles = when (val result = romMRepository.getRom(rommId)) {
             is RomMResult.Success -> result.data.files
@@ -169,8 +144,8 @@ class FilePickerFlowUseCase @Inject constructor(
         }
 
         if (rows.none { !it.isHeader }) return null
-        if (versionGroups.size <= 1 && romFiles.size <= 1) return null
-        return FilePickerSetup(rows, preselectedFiles, preselectedVersions)
+        if (romFiles.size <= 1) return null
+        return FilePickerSetup(rows, preselectedFiles)
     }
 
     /**
@@ -237,7 +212,7 @@ class FilePickerFlowUseCase @Inject constructor(
                 }
             }
         if (rows.none { !it.isHeader && !it.isLocked }) return null
-        return FilePickerSetup(rows, preselected, emptySet())
+        return FilePickerSetup(rows, preselected)
     }
 
     /** Checked-but-missing files get queued; unchecked-but-present files get deleted. Returns added to removed. */
@@ -323,27 +298,16 @@ class FilePickerFlowUseCase @Inject constructor(
      */
     suspend fun downloadSelection(
         gameId: Long,
-        selectedFileIds: Set<Long>,
-        selectedVersionIds: Set<Long>
+        selectedFileIds: Set<Long>
     ): Pair<Int, List<DownloadResult>> {
-        val primaryRommId = gameDao.getById(gameId)?.rommId
         var queued = 0
         val issues = mutableListOf<DownloadResult>()
-        if (primaryRommId == null || primaryRommId in selectedVersionIds || selectedVersionIds.isEmpty()) {
-            val explicit = selectedFileIds.toList().takeIf { it.isNotEmpty() }
-            when (val r = downloadGameUseCase(gameId, selectedFileIds = explicit)) {
-                is DownloadResult.Queued -> queued++
-                is DownloadResult.AlreadyDownloaded -> issues += r
-                is DownloadResult.Error -> issues += r
-                else -> {}
-            }
-        }
-        selectedVersionIds.filter { it != primaryRommId }.forEach { versionId ->
-            when (val r = downloadGameUseCase(gameId, versionRommId = versionId)) {
-                is DownloadResult.Queued -> queued++
-                is DownloadResult.Error -> issues += r
-                else -> {}
-            }
+        val explicit = selectedFileIds.toList().takeIf { it.isNotEmpty() }
+        when (val r = downloadGameUseCase(gameId, selectedFileIds = explicit)) {
+            is DownloadResult.Queued -> queued++
+            is DownloadResult.AlreadyDownloaded -> issues += r
+            is DownloadResult.Error -> issues += r
+            else -> {}
         }
         return queued to issues
     }

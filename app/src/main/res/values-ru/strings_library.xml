@@ -65,6 +65,7 @@
     <string name="library_filter_category_source">Источник</string>
     <string name="library_filter_category_platform">Платформа</string>
     <string name="library_filter_category_genre">Жанр</string>
+    <string name="library_filter_category_region">Регион</string>
     <string name="library_filter_category_players">Игроки</string>
     <string name="library_filter_players_one">1</string>
     <string name="library_filter_players_two">2</string>

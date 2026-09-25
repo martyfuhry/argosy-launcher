@@ -88,6 +88,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -113,6 +114,7 @@ enum class FilterCategory(@StringRes val labelRes: Int) {
     SOURCE(R.string.library_filter_category_source),
     PLATFORM(R.string.library_filter_category_platform),
     GENRE(R.string.library_filter_category_genre),
+    REGION(R.string.library_filter_category_region),
     PLAYERS(R.string.library_filter_category_players),
     SERIES(R.string.library_filter_category_series)
 }
@@ -140,6 +142,7 @@ data class ActiveFilters(
     val source: SourceFilter = SourceFilter.ALL,
     val platforms: Set<PlatformRef> = emptySet(),
     val genres: Set<String> = emptySet(),
+    val regions: Set<String> = emptySet(),
     val players: PlayerCountBucket? = null,
     val series: Set<String> = emptySet(),
     val sort: ActiveSort = ActiveSort()
@@ -156,6 +159,7 @@ data class ActiveFilters(
                 ActiveFilterEntry(FilterCategory.PLATFORM, text = it.label, count = platforms.size)
             },
             multiSelectEntry(FilterCategory.GENRE, genres),
+            multiSelectEntry(FilterCategory.REGION, regions),
             players?.let { ActiveFilterEntry(FilterCategory.PLAYERS, labelRes = it.labelRes) },
             multiSelectEntry(FilterCategory.SERIES, series)
         )
@@ -176,6 +180,7 @@ data class ActiveFilters(
 data class FilterOptions(
     val platforms: List<PlatformRef> = emptyList(),
     val genres: List<String> = emptyList(),
+    val regions: List<String> = emptyList(),
     val series: List<String> = emptyList()
 )
 
@@ -352,6 +357,7 @@ data class LibraryUiState(
             }
             FilterCategory.PLATFORM -> filterOptions.platforms.map { it.label }
             FilterCategory.GENRE -> filterOptions.genres
+            FilterCategory.REGION -> filterOptions.regions
             FilterCategory.PLAYERS -> PlayerCountBucket.entries.map { context.getString(it.labelRes) }
             FilterCategory.SERIES -> filterOptions.series
         }
@@ -384,6 +390,7 @@ data class LibraryUiState(
             FilterCategory.SOURCE -> emptySet()
             FilterCategory.PLATFORM -> activeFilters.platforms.map { it.label }.toSet()
             FilterCategory.GENRE -> activeFilters.genres
+            FilterCategory.REGION -> activeFilters.regions
             FilterCategory.PLAYERS -> emptySet()
             FilterCategory.SERIES -> activeFilters.series
         }
@@ -396,6 +403,7 @@ data class LibraryUiState(
                 FilterCategory.SOURCE -> true
                 FilterCategory.PLATFORM -> filterOptions.platforms.isNotEmpty()
                 FilterCategory.GENRE -> filterOptions.genres.isNotEmpty()
+                FilterCategory.REGION -> filterOptions.regions.isNotEmpty()
                 FilterCategory.PLAYERS -> true
                 FilterCategory.SERIES -> filterOptions.series.isNotEmpty()
             }
@@ -1023,14 +1031,17 @@ class LibraryViewModel @Inject constructor(
                 .distinct()
                 .sorted()
 
+            val regions = gameRepository.getDistinctRegions()
+
             val series = collectionRepository.getNamesWithGamesByType(CollectionType.SERIES)
 
-            Log.d(TAG, "loadFilterOptions: genres=${genres.size}, series=${series.size}")
+            Log.d(TAG, "loadFilterOptions: genres=${genres.size}, regions=${regions.size}, series=${series.size}")
 
             _uiState.update { state ->
                 state.copy(
                     filterOptions = state.filterOptions.copy(
                         genres = genres,
+                        regions = regions,
                         series = series
                     )
                 )
@@ -1076,7 +1087,15 @@ class LibraryViewModel @Inject constructor(
                     .map<List<Long>, Set<Long>?> { it.toSet() }
             }
 
-            val source = combine(baseFlow, seriesIdsFlow) { games, seriesIds -> games to seriesIds }
+            val regionIdsFlow: Flow<Set<Long>?> = if (filters.regions.isEmpty()) {
+                flowOf(null)
+            } else {
+                gameRepository.observeGameIdsInRegions(filters.regions)
+            }
+
+            val source = combine(baseFlow, seriesIdsFlow, regionIdsFlow) { games, seriesIds, regionIds ->
+                Triple(games, seriesIds, regionIds)
+            }
 
             source
                 .catch { e ->
@@ -1084,7 +1103,7 @@ class LibraryViewModel @Inject constructor(
                     kotlinx.coroutines.delay(100)
                     emitAll(source)
                 }
-                .collectLatest { (games, seriesIds) ->
+                .collectLatest { (games, seriesIds, regionIds) ->
                     val normalizedQuery = com.nendo.argosy.util.SearchNormalizer.normalize(filters.searchQuery)
                     val platformIds = filters.platforms.map { it.id }.toSet()
                     val filteredGames = games.filter { game ->
@@ -1094,9 +1113,11 @@ class LibraryViewModel @Inject constructor(
                             game.platformId in platformIds
                         val matchesGenre = filters.genres.isEmpty() ||
                             filters.genres.contains(game.genre)
+                        val matchesRegion = regionIds == null || game.id in regionIds
                         val matchesPlayers = filters.players?.admits(PlayerCount.parse(game.players)) ?: true
                         val matchesSeries = seriesIds == null || game.id in seriesIds
-                        matchesSearch && matchesPlatform && matchesGenre && matchesPlayers && matchesSeries
+                        matchesSearch && matchesPlatform && matchesGenre && matchesRegion &&
+                            matchesPlayers && matchesSeries
                     }
 
                     val sections = computeSections(filteredGames, filters.sort, sortPartition)
@@ -1343,6 +1364,7 @@ class LibraryViewModel @Inject constructor(
                     source = filters.source,
                     platforms = platforms,
                     genres = filters.genres,
+                    regions = filters.regions,
                     series = filters.series,
                     players = filters.players,
                     sort = filters.sort
@@ -1634,6 +1656,12 @@ class LibraryViewModel @Inject constructor(
                 val newGenres = if (genre in currentGenres) currentGenres - genre else currentGenres + genre
                 state.activeFilters.copy(genres = newGenres)
             }
+            FilterCategory.REGION -> {
+                val region = options.getOrNull(optionIndex) ?: return
+                val current = state.activeFilters.regions
+                val updated = if (region in current) current - region else current + region
+                state.activeFilters.copy(regions = updated)
+            }
             FilterCategory.PLAYERS -> {
                 val bucket = PlayerCountBucket.entries.getOrNull(optionIndex) ?: return
                 val updated = if (bucket == state.activeFilters.players) null else bucket
@@ -1661,6 +1689,7 @@ class LibraryViewModel @Inject constructor(
             FilterCategory.SOURCE -> state.activeFilters.copy(source = SourceFilter.ALL)
             FilterCategory.PLATFORM -> state.activeFilters.copy(platforms = emptySet())
             FilterCategory.GENRE -> state.activeFilters.copy(genres = emptySet())
+            FilterCategory.REGION -> state.activeFilters.copy(regions = emptySet())
             FilterCategory.PLAYERS -> state.activeFilters.copy(players = null)
             FilterCategory.SERIES -> state.activeFilters.copy(series = emptySet())
         }

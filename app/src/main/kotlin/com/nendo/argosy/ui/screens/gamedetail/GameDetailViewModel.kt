@@ -979,8 +979,8 @@ class GameDetailViewModel @Inject constructor(
         toggleMoreOptions()
         viewModelScope.launch {
             val built = downloadDelegate.buildManageRows(currentGameId) ?: return@launch
-            val (rows, files, versions) = built
-            pickerModalDelegate.showFilePicker(rows, files, versions, manageMode = true)
+            val (rows, files) = built
+            pickerModalDelegate.showFilePicker(rows, files, manageMode = true)
         }
     }
 
@@ -990,8 +990,8 @@ class GameDetailViewModel @Inject constructor(
             if (built == null) {
                 downloadGame()
             } else {
-                val (rows, files, versions) = built
-                pickerModalDelegate.showFilePicker(rows, files, versions)
+                val (rows, files) = built
+                pickerModalDelegate.showFilePicker(rows, files)
             }
         }
     }
@@ -1011,8 +1011,7 @@ class GameDetailViewModel @Inject constructor(
             downloadDelegate.downloadWithSelection(
                 viewModelScope,
                 currentGameId,
-                picker.filePickerSelected,
-                picker.filePickerSelectedVersions
+                picker.filePickerSelected
             )
         }
     }

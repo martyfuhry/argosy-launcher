@@ -190,14 +190,14 @@ class DownloadDelegate @Inject constructor(
         }
     }
 
-    suspend fun buildFilePickerRows(gameId: Long): Triple<List<FilePickerRow>, Set<Long>, Set<Long>>? {
+    suspend fun buildFilePickerRows(gameId: Long): Pair<List<FilePickerRow>, Set<Long>>? {
         val setup = filePickerFlow.buildRows(gameId) ?: return null
-        return Triple(setup.rows, setup.preselectedFileIds, setup.preselectedVersionIds)
+        return setup.rows to setup.preselectedFileIds
     }
 
-    suspend fun buildManageRows(gameId: Long): Triple<List<FilePickerRow>, Set<Long>, Set<Long>>? {
+    suspend fun buildManageRows(gameId: Long): Pair<List<FilePickerRow>, Set<Long>>? {
         val setup = filePickerFlow.buildManageRows(gameId) ?: return null
-        return Triple(setup.rows, setup.preselectedFileIds, setup.preselectedVersionIds)
+        return setup.rows to setup.preselectedFileIds
     }
 
     fun applyManagedFiles(
@@ -237,11 +237,10 @@ class DownloadDelegate @Inject constructor(
     fun downloadWithSelection(
         scope: CoroutineScope,
         gameId: Long,
-        selectedFileIds: Set<Long>,
-        selectedVersionIds: Set<Long>
+        selectedFileIds: Set<Long>
     ) {
         scope.launch {
-            val (queued, issues) = filePickerFlow.downloadSelection(gameId, selectedFileIds, selectedVersionIds)
+            val (queued, issues) = filePickerFlow.downloadSelection(gameId, selectedFileIds)
             issues.forEach { issue ->
                 when (issue) {
                     is DownloadResult.AlreadyDownloaded -> notificationManager.showError(

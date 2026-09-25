@@ -1984,14 +1984,9 @@
     <!-- ===== Region picker popup (Settings > components > RegionPickerPopup) ===== -->
 
     <string name="settings_region_picker_title">REGIONEN AUSWÄHLEN</string>
-    <string name="settings_region_picker_subtitle_ordering">Regionen für den Sync umschalten. Halten und ziehen, um die Priorität festzulegen; die oberste Übereinstimmung gewinnt, wenn ein Spiel mehrere Versionen hat</string>
     <string name="settings_region_picker_subtitle_toggle">Regionen für den Sync ein-/ausschließen</string>
-    <string name="settings_region_picker_hint_move">Verschieben</string>
-    <string name="settings_region_picker_hint_accept">Übernehmen</string>
-    <string name="settings_region_picker_hint_cancel">Abbrechen</string>
     <string name="settings_region_picker_hint_navigate">Navigieren</string>
     <string name="settings_region_picker_hint_toggle">Umschalten</string>
-    <string name="settings_region_picker_hint_prioritize">Priorisieren</string>
     <string name="settings_region_picker_hint_close">Schließen</string>
 
     <!-- ===== Driver version picker modal (Settings > components > DriverVersionPickerModal) ===== -->

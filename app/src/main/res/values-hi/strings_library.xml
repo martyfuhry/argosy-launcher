@@ -53,6 +53,7 @@
     <string name="library_filter_category_source">सोर्स</string>
     <string name="library_filter_category_platform">प्लेटफ़ॉर्म</string>
     <string name="library_filter_category_genre">जॉनर</string>
+    <string name="library_filter_category_region">क्षेत्र</string>
     <string name="library_filter_category_players">प्लेयर</string>
     <string name="library_filter_players_one">1</string>
     <string name="library_filter_players_two">2</string>

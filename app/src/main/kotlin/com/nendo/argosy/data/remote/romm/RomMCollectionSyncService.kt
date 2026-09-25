@@ -2,11 +2,9 @@ package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.local.dao.CollectionDao
 import com.nendo.argosy.data.local.dao.GameDao
-import com.nendo.argosy.data.local.dao.GameFileDao
 import com.nendo.argosy.data.local.entity.CollectionEntity
 import com.nendo.argosy.data.local.entity.CollectionGameEntity
 import com.nendo.argosy.data.local.entity.CollectionType
-import com.nendo.argosy.data.model.VersionGroups
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.sync.SyncCoordinator
 import com.nendo.argosy.util.Logger
@@ -30,7 +28,6 @@ class RomMCollectionSyncService @Inject constructor(
     private val connectionManager: RomMConnectionManager,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val gameDao: GameDao,
-    private val gameFileDao: GameFileDao,
     private val collectionDao: CollectionDao,
     private val collectionMembershipDao: com.nendo.argosy.data.local.dao.CollectionMembershipDao,
     private val overlayWriter: com.nendo.argosy.data.repository.GameUserOverlayWriter,
@@ -376,20 +373,10 @@ class RomMCollectionSyncService @Inject constructor(
         }
     }
 
-    /**
-     * Sibling consolidation keeps one row per group and absorbs the rest, so a collection that
-     * names an absorbed rom has no row of its own to point at. Falling back to the version group
-     * finds the row that swallowed it; resolving to null instead drops the game from the
-     * collection, and the membership repointed onto the winner is then deleted as stale.
-     */
-    internal suspend fun resolveCollectionGameId(rommId: Long): Long? =
-        gameDao.getByRommId(rommId)?.id
-            ?: gameFileDao.getGameIdForVersionGroup(VersionGroups.groupKey(rommId))
-
     private suspend fun syncCollectionGames(collectionId: Long, remoteRomIds: List<Long>) {
         val localGameIds = collectionDao.getGameIdsInCollection(collectionId).toSet()
         val remoteGameIds = remoteRomIds.mapNotNull { rommId ->
-            resolveCollectionGameId(rommId)
+            gameDao.getByRommId(rommId)?.id
         }.toSet()
 
         for (gameId in remoteGameIds - localGameIds) {

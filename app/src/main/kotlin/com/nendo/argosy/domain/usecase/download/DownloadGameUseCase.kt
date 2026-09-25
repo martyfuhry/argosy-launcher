@@ -58,13 +58,12 @@ class DownloadGameUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         gameId: Long,
-        selectedFileIds: List<Long>? = null,
-        versionRommId: Long? = null
+        selectedFileIds: List<Long>? = null
     ): DownloadResult {
         val game = gameDao.getById(gameId)
             ?: return DownloadResult.Error(DownloadGameFailureReason.GameNotFound)
 
-        val rommId = versionRommId ?: game.rommId
+        val rommId = game.rommId
             ?: return DownloadResult.Error(DownloadGameFailureReason.GameNotSynced)
 
         // Check if game is already downloaded (validates path and tries discovery)

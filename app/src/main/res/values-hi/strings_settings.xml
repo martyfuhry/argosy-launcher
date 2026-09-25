@@ -1974,14 +1974,9 @@
     <!-- ===== Region picker popup (Settings > components > RegionPickerPopup) ===== -->
 
     <string name="settings_region_picker_title">क्षेत्र चुनें</string>
-    <string name="settings_region_picker_subtitle_ordering">सिंक करने के लिए क्षेत्र टॉगल करें। प्राथमिकता सेट करने के लिए दबाकर खींचें; एक से ज़्यादा वर्शन होने पर सबसे ऊपर वाला मैच जीतता है</string>
     <string name="settings_region_picker_subtitle_toggle">सिंक में शामिल/छोड़ने के लिए क्षेत्र टॉगल करें</string>
-    <string name="settings_region_picker_hint_move">मूव करें</string>
-    <string name="settings_region_picker_hint_accept">स्वीकार करें</string>
-    <string name="settings_region_picker_hint_cancel">रद्द करें</string>
     <string name="settings_region_picker_hint_navigate">नेविगेट करें</string>
     <string name="settings_region_picker_hint_toggle">टॉगल करें</string>
-    <string name="settings_region_picker_hint_prioritize">प्राथमिकता दें</string>
     <string name="settings_region_picker_hint_close">बंद करें</string>
 
     <!-- ===== Driver version picker modal (Settings > components > DriverVersionPickerModal) ===== -->

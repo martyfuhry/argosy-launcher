@@ -18,14 +18,15 @@ class GetRelatedGamesUseCase @Inject constructor(
     suspend operator fun invoke(game: GameEntity): List<GameListItem> {
         val results = LinkedHashMap<Long, GameListItem>()
         val ownerUserId = syncPreferencesRepository.getRommUserId()
+        val igdbId = game.igdbId
 
         tokensOf(game.collections).forEach { token ->
-            gameDao.getRelatedByCollection(token, game.id, ownerUserId, PER_QUERY_LIMIT)
+            gameDao.getRelatedByCollection(token, game.id, igdbId, game.platformId, ownerUserId, PER_QUERY_LIMIT)
                 .forEach { results.putIfAbsent(it.id, it) }
         }
 
         tokensOf(game.franchises).forEach { token ->
-            gameDao.getRelatedByFranchise(token, game.id, ownerUserId, PER_QUERY_LIMIT)
+            gameDao.getRelatedByFranchise(token, game.id, igdbId, game.platformId, ownerUserId, PER_QUERY_LIMIT)
                 .forEach { results.putIfAbsent(it.id, it) }
         }
 
@@ -38,6 +39,8 @@ class GetRelatedGamesUseCase @Inject constructor(
                     releaseYear - YEAR_WINDOW,
                     releaseYear + YEAR_WINDOW,
                     game.id,
+                    igdbId,
+                    game.platformId,
                     ownerUserId,
                     PER_QUERY_LIMIT
                 ).forEach { results.putIfAbsent(it.id, it) }

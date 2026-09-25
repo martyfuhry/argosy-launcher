@@ -9,6 +9,7 @@ import androidx.room.Update
 import com.nendo.argosy.data.local.entity.GameCategoryInfo
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.GameListItem
+import com.nendo.argosy.data.local.entity.GameRegionInfo
 import com.nendo.argosy.data.model.FileOrigin
 import com.nendo.argosy.data.model.GameSource
 import kotlinx.coroutines.flow.Flow
@@ -887,6 +888,9 @@ interface GameDao {
     """)
     suspend fun getDistinctRegions(ownerUserId: Long?): List<String>
 
+    @Query("SELECT id, regions FROM games WHERE regions IS NOT NULL AND regions != ''")
+    fun observeRegionInfo(): Flow<List<GameRegionInfo>>
+
     @Query("""
         SELECT DISTINCT genre FROM games
         WHERE genre IS NOT NULL
@@ -948,6 +952,7 @@ interface GameDao {
         FROM games
         WHERE NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         AND id != :excludeGameId
+        AND NOT (:excludeIgdbId IS NOT NULL AND igdbId IS :excludeIgdbId AND platformId = :excludePlatformId)
         AND collections LIKE '%' || :token || '%'
         ORDER BY releaseYear ASC
         LIMIT :limit
@@ -955,6 +960,8 @@ interface GameDao {
     suspend fun getRelatedByCollection(
         token: String,
         excludeGameId: Long,
+        excludeIgdbId: Long?,
+        excludePlatformId: Long,
         ownerUserId: Long?,
         limit: Int
     ): List<GameListItem>
@@ -967,6 +974,7 @@ interface GameDao {
         FROM games
         WHERE NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         AND id != :excludeGameId
+        AND NOT (:excludeIgdbId IS NOT NULL AND igdbId IS :excludeIgdbId AND platformId = :excludePlatformId)
         AND franchises LIKE '%' || :token || '%'
         ORDER BY rating DESC
         LIMIT :limit
@@ -974,6 +982,8 @@ interface GameDao {
     suspend fun getRelatedByFranchise(
         token: String,
         excludeGameId: Long,
+        excludeIgdbId: Long?,
+        excludePlatformId: Long,
         ownerUserId: Long?,
         limit: Int
     ): List<GameListItem>
@@ -986,6 +996,7 @@ interface GameDao {
         FROM games
         WHERE NOT EXISTS (SELECT 1 FROM user_roms_hidden h WHERE h.gameId = games.id AND (h.ownerUserId IS NULL OR h.ownerUserId IS :ownerUserId))
         AND id != :excludeGameId
+        AND NOT (:excludeIgdbId IS NOT NULL AND igdbId IS :excludeIgdbId AND platformId = :excludePlatformId)
         AND releaseYear BETWEEN :yearLo AND :yearHi
         AND (genres LIKE '%' || :token || '%' OR (genres IS NULL AND genre = :token))
         ORDER BY rating DESC
@@ -996,6 +1007,8 @@ interface GameDao {
         yearLo: Int,
         yearHi: Int,
         excludeGameId: Long,
+        excludeIgdbId: Long?,
+        excludePlatformId: Long,
         ownerUserId: Long?,
         limit: Int
     ): List<GameListItem>
@@ -1032,6 +1045,9 @@ interface GameDao {
 
     @Query("UPDATE games SET lastPlayedFileId = :fileId WHERE id = :gameId")
     suspend fun updateLastPlayedFileId(gameId: Long, fileId: Long?)
+
+    @Query("SELECT * FROM games WHERE activeVariantFileId IS NOT NULL OR lastPlayedFileId IS NOT NULL")
+    suspend fun getGamesWithFileSelection(): List<GameEntity>
 
     @Query("UPDATE games SET achievementsFetchedAt = :timestamp WHERE id = :gameId")
     suspend fun updateAchievementsFetchedAt(gameId: Long, timestamp: Long)
