@@ -57,8 +57,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -204,9 +202,6 @@ class MainActivity : ComponentActivity() {
 
     lateinit var dualScreenManager: DualScreenManager
         private set
-
-    private val _pendingDeepLink = MutableStateFlow<android.net.Uri?>(null)
-    val pendingDeepLink: StateFlow<android.net.Uri?> = _pendingDeepLink
 
     var isOnHomeScreen = false
 
@@ -867,7 +862,7 @@ class MainActivity : ComponentActivity() {
         if (uri.scheme == "argosy") {
             val resolved = mergeLaunchExtras(uri, intent)
             Log.d(TAG, "Received deep link: $resolved")
-            _pendingDeepLink.value = resolved
+            dualScreenManager.publishDeepLink(resolved)
             return true
         }
         return false
@@ -881,10 +876,6 @@ class MainActivity : ComponentActivity() {
             builder = (builder ?: uri.buildUpon()).appendQueryParameter(key, value)
         }
         return builder?.build() ?: uri
-    }
-
-    fun clearPendingDeepLink() {
-        _pendingDeepLink.value = null
     }
 
     private fun handleHomeIntent(intent: Intent): Boolean {

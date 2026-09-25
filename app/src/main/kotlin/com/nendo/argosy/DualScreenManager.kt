@@ -380,6 +380,15 @@ class DualScreenManager(
         _localeChangeToken.value += 1
     }
 
+    private val _pendingDeepLink = MutableStateFlow<android.net.Uri?>(null)
+    val pendingDeepLink: StateFlow<android.net.Uri?> = _pendingDeepLink
+
+    fun publishDeepLink(uri: android.net.Uri) {
+        _pendingDeepLink.value = uri
+    }
+
+    fun consumeDeepLink(uri: android.net.Uri): Boolean = _pendingDeepLink.compareAndSet(uri, null)
+
     /**
      * The display the viewer is driving right now, or null on a single-screen device.
      *

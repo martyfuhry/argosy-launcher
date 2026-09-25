@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.focusable
@@ -90,6 +91,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -191,9 +193,7 @@ fun ArgosyApp(
             }
         }
     }
-    val pendingDeepLink by activity?.pendingDeepLink?.collectAsState() ?: remember { mutableStateOf(null) }
-    LaunchedEffect(pendingDeepLink) {
-        val uri = pendingDeepLink ?: return@LaunchedEffect
+    val handleDeepLink: suspend (android.net.Uri) -> Unit = { uri ->
         android.util.Log.d("ArgosyApp", "Handling deep link: $uri")
         val showDeepLinkNotice: (Int) -> Unit = { messageRes ->
             android.widget.Toast.makeText(context, messageRes, android.widget.Toast.LENGTH_LONG).show()
@@ -263,7 +263,13 @@ fun ArgosyApp(
                 }
             }
         }
-        activity?.clearPendingDeepLink()
+    }
+    val currentHandleDeepLink by rememberUpdatedState(handleDeepLink)
+    LaunchedEffect(dsm) {
+        val manager = dsm ?: return@LaunchedEffect
+        manager.pendingDeepLink.filterNotNull().collect { uri ->
+            if (manager.consumeDeepLink(uri)) currentHandleDeepLink(uri)
+        }
     }
 
     // Drawer state - confirmStateChange handles swipe gestures synchronously
