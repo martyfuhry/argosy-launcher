@@ -357,10 +357,21 @@ class MediaLibraryViewModel @Inject constructor(
                 dismissMenu()
                 openDownloadPrompt()
             }
-            MediaMenuAction.RemoveDownloads,
+            MediaMenuAction.RemoveDownloads -> {
+                dismissMenu()
+                openRemovalPrompt()
+            }
             MediaMenuAction.RefreshSeries,
             MediaMenuAction.GoToLibrary,
             null -> dismissMenu()
+        }
+    }
+
+    private fun openRemovalPrompt() {
+        val item = _uiState.value.focusedItem ?: return
+        viewModelScope.launch {
+            val prompt = downloadDelegate.openRemovalPrompt(item)
+            _uiState.update { it.copy(downloadPrompt = prompt) }
         }
     }
 
