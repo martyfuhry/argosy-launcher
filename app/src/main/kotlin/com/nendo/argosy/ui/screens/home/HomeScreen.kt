@@ -936,9 +936,7 @@ fun HomeScreen(
                     val gridRerollLabel = stringResource(R.string.home_footer_grid_reroll)
                     val gridSwapScreensLabel = stringResource(R.string.home_footer_grid_swap_screens)
                     val gridDetailsLabel = stringResource(R.string.home_footer_game_details)
-                    val swapBlockedByGame = com.nendo.argosy.DualScreenManagerHolder.instance
-                        ?.swappedIsGameActive?.collectAsState()?.value == true
-                    val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles() && !swapBlockedByGame
+                    val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRolesState()
                     val engagedFullscreenLabel =
                         stringResource(R.string.home_footer_grid_engaged_fullscreen)
                     val engagedIsMedia = grid.engagedTile?.target is

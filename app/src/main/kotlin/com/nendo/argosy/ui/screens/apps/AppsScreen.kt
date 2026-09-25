@@ -269,7 +269,7 @@ fun AppsScreen(
                 }
             }
 
-            val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
+            val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRolesState()
             FooterHints(
                 hints = when {
                     uiState.isReorderMode -> listOf(

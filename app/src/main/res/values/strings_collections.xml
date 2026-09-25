@@ -199,12 +199,12 @@
     <string name="collections_category_hint_jump">Jump</string>
     <string name="collections_category_hint_refreshing">Refreshing&#8230;</string>
     <string name="collections_category_hint_refresh">Refresh</string>
-    <!-- Footer hint. Downloads every downloadable game in this category; %1$d is how many
-         qualify. Distinct key from collections_options_download_all (different usage site). -->
     <!-- Footer hint on dual-screen devices, where Select swaps the two screens. Verb phrase. -->
     <string name="collections_category_hint_swap_screens">Swap Screens</string>
     <!-- Footer hint on dual-screen devices: A opens the game, and holding A downloads every game in the category. %1$d is how many games would download. -->
     <string name="collections_category_hint_open_hold_download_all">Open, hold to Download All (%1$d)</string>
+    <!-- Footer hint. Downloads every downloadable game in this category; %1$d is how many
+         qualify. Distinct key from collections_options_download_all (different usage site). -->
     <string name="collections_category_hint_download_all">Download All (%1$d)</string>
     <string name="collections_category_downloadall_title">Queuing Downloads</string>
     <!-- Download-all progress. %1$d is the number of games queued so far, %2$d is the total. -->

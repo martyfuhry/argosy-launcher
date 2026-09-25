@@ -1246,11 +1246,11 @@ private fun LibraryFooter(
     showSectionJump: Boolean = false,
     onHintClick: ((InputButton) -> Unit)? = null
 ) {
+    val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRolesState()
     val hints = buildList {
         if (showSectionJump) {
             add(InputButton.LT_RT to stringResource(R.string.library_footer_hint_jump_section))
         }
-        val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
         add(
             InputButton.A to stringResource(
                 if (selectSwapsRoles && focusedGame != null) {

@@ -184,7 +184,7 @@ fun CollectionDetailScreen(
             }
         }
 
-        val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
+        val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRolesState()
         val hints = if (uiState.isSearchActive) {
             listOf(
                 InputButton.A to stringResource(R.string.collections_detail_hint_search_open),

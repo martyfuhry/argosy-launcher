@@ -213,7 +213,7 @@ fun CollectionsScreen(
         }
 
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-            val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRoles()
+            val selectSwapsRoles = com.nendo.argosy.ui.dualscreen.selectSwapsRolesState()
             val hasOptions = uiState.focusedSection == CollectionSection.MY_COLLECTIONS && uiState.focusedCollection != null
             val baseHints = listOf(
                 InputButton.DPAD to stringResource(R.string.collections_screen_hint_navigate),
