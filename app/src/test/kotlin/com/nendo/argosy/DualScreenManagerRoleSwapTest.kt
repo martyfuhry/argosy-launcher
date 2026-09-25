@@ -89,6 +89,32 @@ class DualScreenManagerRoleSwapTest {
         assertTrue(manager.isRolesSwapped.value)
     }
 
+    @Test
+    fun `a stored layout moving the primary role leaves the override at auto`() {
+        manager.setRolesSwapped(false)
+        every { sessionStateStore.getDisplayRoleOverride() } returns "AUTO"
+
+        manager.setPrimaryDisplayId(android.view.Display.DEFAULT_DISPLAY)
+        testScope.testScheduler.advanceUntilIdle()
+
+        assertTrue(manager.isRolesSwapped.value)
+        verify(exactly = 0) { sessionStateStore.setDisplayRoleOverride(any()) }
+        io.mockk.coVerify(exactly = 0) { preferencesRepository.setDisplayRoleOverride(any()) }
+    }
+
+    @Test
+    fun `a stored layout returning the primary role to the second screen leaves the override at auto`() {
+        manager.setRolesSwapped(true)
+        every { sessionStateStore.getDisplayRoleOverride() } returns "AUTO"
+
+        manager.setPrimaryDisplayId(2)
+        testScope.testScheduler.advanceUntilIdle()
+
+        assertEquals(false, manager.isRolesSwapped.value)
+        verify(exactly = 0) { sessionStateStore.setDisplayRoleOverride(any()) }
+        io.mockk.coVerify(exactly = 0) { preferencesRepository.setDisplayRoleOverride(any()) }
+    }
+
     private fun newManager(): DualScreenManager = DualScreenManager(
         context = mockk(relaxed = true),
         scope = testScope,
@@ -124,7 +150,9 @@ class DualScreenManagerRoleSwapTest {
         raRepository = mockk(relaxed = true),
         raTileContentRepository = mockk(relaxed = true),
         achievementUpdateBus = mockk(relaxed = true),
-        displayAffinityHelper = mockk(relaxed = true),
+        displayAffinityHelper = mockk<com.nendo.argosy.util.DisplayAffinityHelper>(relaxed = true) {
+            every { getRoleDisplayIds(any()) } returns null
+        },
         sessionStateStore = sessionStateStore,
         preferencesRepository = preferencesRepository,
         imageCacheManager = mockk(relaxed = true),

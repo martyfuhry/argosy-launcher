@@ -222,7 +222,7 @@ fun VirtualCategoryScreen(
                     InputButton.B -> { inputHandler.onBack() }
                     InputButton.X -> { inputHandler.onContextMenu() }
                     InputButton.Y -> { inputHandler.onSecondaryAction() }
-                    InputButton.SELECT -> { inputHandler.onSelect() }
+                    InputButton.SELECT -> { inputHandler.onLongConfirm() }
                     InputButton.START -> { inputHandler.onMenu() }
                     else -> Unit
                 }

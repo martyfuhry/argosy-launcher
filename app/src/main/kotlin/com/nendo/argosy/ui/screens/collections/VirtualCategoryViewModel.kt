@@ -386,6 +386,12 @@ class VirtualCategoryViewModel @Inject constructor(
 
         override fun onSelect(): InputResult {
             if (uiState.value.downloadAllProgress.isActive) return InputResult.HANDLED
+            if (com.nendo.argosy.ui.dualscreen.selectSwapsRoles()) return InputResult.UNHANDLED
+            return onLongConfirm()
+        }
+
+        override fun onLongConfirm(): InputResult {
+            if (uiState.value.downloadAllProgress.isActive) return InputResult.HANDLED
             if (uiState.value.canDownloadAll) {
                 showDownloadAllModal()
                 return InputResult.HANDLED
