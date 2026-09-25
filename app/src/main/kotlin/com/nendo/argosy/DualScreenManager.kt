@@ -438,6 +438,11 @@ class DualScreenManager(
      * [persistent] records the refusal across restarts, for a display that structurally rejects
      * the companion rather than a transient launch failure.
      */
+    fun companionTargetVanished(): Boolean {
+        val target = displayAffinityHelper.lastCompanionTargetDisplayId ?: return false
+        return !displayAffinityHelper.isPhysicalDisplay(target)
+    }
+
     fun fallbackToSingleScreen(persistent: Boolean) {
         if (!displayAffinityHelper.secondaryDisplayUsable) return
         Log.w(TAG, "Companion could not initialize on the secondary display, falling back to single screen (persistent=$persistent)")
@@ -1543,7 +1548,7 @@ class DualScreenManager(
             CompanionGuardService.start(appContext)
             ensureCompanionLaunched()
             applyStoredScreenLayout(promptWhenUnknown = true)
-            syncDockedState()
+            scheduleDockedResync()
         }
 
         override fun onDisplayRemoved(displayId: Int) {
@@ -1577,6 +1582,9 @@ class DualScreenManager(
         Log.i(TAG, "Built-in screens ${if (docked) "off beside an external display" else "back on"}")
         teardownCompanion()
         if (docked) {
+            companionLaunchAttempts = 0
+            displayAffinityHelper.secondaryDisplayUsable = true
+            sessionStateStore.setSecondaryDisplayUsable(true)
             if (_isRolesSwapped.value) commitRoleSwap(false)
             _hasPresentationScreen.value = false
             setSecondaryHomeComponentEnabled(true)
@@ -2351,6 +2359,7 @@ class DualScreenManager(
         const val OVERLAY_QUICK_SETTINGS = "com.nendo.argosy.OVERLAY_QUICK_SETTINGS"
         private const val COMPANION_WATCHDOG_TIMEOUT_MS = 5000L
         private const val COMPANION_LAUNCH_WAIT_MS = 500L
+        private const val DOCKED_RESYNC_DELAY_MS = 2000L
         private const val COMPANION_LAUNCH_VERIFY_MS = 8000L
         private const val MAX_COMPANION_LAUNCH_ATTEMPTS = 3
         private const val SWAP_DEBOUNCE_MS = 500L
@@ -2431,15 +2440,43 @@ class DualScreenManager(
 
     // --- Registration ---
 
+    private val blankPanelsSettingObserver =
+        object : android.database.ContentObserver(android.os.Handler(android.os.Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                Log.d(TAG, "Blank-panels-on-video-output setting changed, docked=${displayAffinityHelper.isDockedDark}")
+                scheduleDockedResync()
+            }
+        }
+
+    private var dockedResyncJob: Job? = null
+
+    private fun scheduleDockedResync() {
+        syncDockedState()
+        dockedResyncJob?.cancel()
+        dockedResyncJob = scope.launch {
+            delay(DOCKED_RESYNC_DELAY_MS)
+            syncDockedState()
+        }
+    }
+
     fun registerReceivers() {
         displayAffinityHelper.registerDisplayListener(displayListener)
+        appContext.contentResolver.registerContentObserver(
+            android.provider.Settings.System.getUriFor(
+                com.nendo.argosy.util.DisplayAffinityHelper.BLANK_PANELS_ON_VIDEO_OUTPUT_SETTING
+            ),
+            false,
+            blankPanelsSettingObserver
+        )
         syncDockedState()
     }
 
     fun unregisterReceivers() {
         companionLaunchJob?.cancel()
         companionLaunchJob = null
+        dockedResyncJob?.cancel()
         displayAffinityHelper.unregisterDisplayListener(displayListener)
+        appContext.contentResolver.unregisterContentObserver(blankPanelsSettingObserver)
     }
 
     fun refocusSession() {

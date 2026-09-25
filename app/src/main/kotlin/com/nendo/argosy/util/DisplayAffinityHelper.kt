@@ -52,7 +52,7 @@ class DisplayAffinityHelper @Inject constructor(
      * games and the apps all run there until the panels light again.
      */
     val dockedDisplayId: Int?
-        get() = dockedExternalDisplayId(displayManager)
+        get() = dockedExternalDisplayId(context)
 
     val isDockedDark: Boolean
         get() = dockedDisplayId != null
@@ -110,8 +110,12 @@ class DisplayAffinityHelper @Inject constructor(
         displayManager.unregisterDisplayListener(listener)
     }
 
+    var lastCompanionTargetDisplayId: Int? = null
+        private set
+
     fun getCompanionLaunchOptions(): Bundle? {
         val displayId = secondaryDisplayId ?: return null
+        lastCompanionTargetDisplayId = displayId
         return ActivityOptions.makeBasic()
             .setLaunchDisplayId(displayId)
             .toBundle()
@@ -267,22 +271,53 @@ class DisplayAffinityHelper @Inject constructor(
             INVERTED_INTERNAL_ORDER_DEVICES.any { Build.MODEL.contains(it, ignoreCase = true) }
 
         /**
-         * The lit external display while every built-in panel reports [Display.STATE_OFF], or
-         * null. A sleeping device darkens the external display too, so sleep never reads as
-         * docked.
+         * The lit external display while the built-in panels are dark beside it, or null. Dark
+         * means every panel reports [Display.STATE_OFF], or the firmware has blanked their
+         * backlights for video output while Android still reports them on. A sleeping device
+         * darkens the external display too, so sleep never reads as docked.
          */
-        fun dockedExternalDisplayId(displayManager: DisplayManager): Int? {
+        fun dockedExternalDisplayId(context: Context): Int? = dockedExternalDisplayId(
+            displayManager = context.getSystemService(DisplayManager::class.java),
+            firmwareBlanksPanels = firmwareBlanksPanels(context)
+        )
+
+        internal fun dockedExternalDisplayId(
+            displayManager: DisplayManager,
+            firmwareBlanksPanels: Boolean
+        ): Int? {
             val displays = displayManager.displays
             val panels = displays.filter {
                 it.displayId == Display.DEFAULT_DISPLAY || it.displayType() == DISPLAY_TYPE_BUILT_IN
             }
-            if (panels.isEmpty() || panels.any { it.state != Display.STATE_OFF }) return null
+            if (panels.isEmpty()) return null
+            if (!firmwareBlanksPanels && panels.any { it.state != Display.STATE_OFF }) return null
             return displays.firstOrNull { display ->
                 val type = display.displayType()
                 val external = type == DISPLAY_TYPE_EXTERNAL ||
                     (type == null && display.flags and Display.FLAG_PRESENTATION != 0)
                 external && display.state == Display.STATE_ON
             }?.displayId
+        }
+
+        /**
+         * The system setting a handheld's firmware reads to blank its own panels while video
+         * output is connected, as the AYN Thor's "Turn off handheld console's screen" does.
+         */
+        const val BLANK_PANELS_ON_VIDEO_OUTPUT_SETTING = "close_screen_when_output_video"
+
+        private const val BACKLIGHT_CLASS_DIR = "/sys/class/backlight"
+
+        private fun firmwareBlanksPanels(context: Context): Boolean {
+            val enabled = android.provider.Settings.System.getInt(
+                context.contentResolver,
+                BLANK_PANELS_ON_VIDEO_OUTPUT_SETTING,
+                0
+            ) == 1
+            if (!enabled) return false
+            val powers = java.io.File(BACKLIGHT_CLASS_DIR).listFiles().orEmpty().mapNotNull { dir ->
+                runCatching { java.io.File(dir, "bl_power").readText().trim().toInt() }.getOrNull()
+            }
+            return powers.isEmpty() || powers.all { it != 0 }
         }
 
         private fun Display.displayType(): Int? = try {

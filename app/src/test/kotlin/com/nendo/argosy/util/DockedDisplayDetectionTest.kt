@@ -20,6 +20,9 @@ class DockedDisplayDetectionTest {
         every { this@mockk.displays } returns arrayOf(*displays)
     }
 
+    private fun docked(dm: DisplayManager, firmwareBlanksPanels: Boolean = false): Int? =
+        DisplayAffinityHelper.dockedExternalDisplayId(dm, firmwareBlanksPanels)
+
     @Test
     fun `panel off beside a lit television reads as docked on the television`() {
         val dm = manager(
@@ -27,7 +30,7 @@ class DockedDisplayDetectionTest {
             display(7, Display.STATE_ON, presentation = true)
         )
 
-        assertEquals(7, DisplayAffinityHelper.dockedExternalDisplayId(dm))
+        assertEquals(7, docked(dm))
     }
 
     @Test
@@ -37,7 +40,17 @@ class DockedDisplayDetectionTest {
             display(7, Display.STATE_ON, presentation = true)
         )
 
-        assertNull(DisplayAffinityHelper.dockedExternalDisplayId(dm))
+        assertNull(docked(dm))
+    }
+
+    @Test
+    fun `firmware blanking a panel android still reports on reads as docked`() {
+        val dm = manager(
+            display(Display.DEFAULT_DISPLAY, Display.STATE_ON),
+            display(7, Display.STATE_ON, presentation = true)
+        )
+
+        assertEquals(7, docked(dm, firmwareBlanksPanels = true))
     }
 
     @Test
@@ -47,13 +60,14 @@ class DockedDisplayDetectionTest {
             display(7, Display.STATE_OFF, presentation = true)
         )
 
-        assertNull(DisplayAffinityHelper.dockedExternalDisplayId(dm))
+        assertNull(docked(dm))
+        assertNull(docked(dm, firmwareBlanksPanels = true))
     }
 
     @Test
     fun `a dark panel with no external display is not docked`() {
         val dm = manager(display(Display.DEFAULT_DISPLAY, Display.STATE_OFF))
 
-        assertNull(DisplayAffinityHelper.dockedExternalDisplayId(dm))
+        assertNull(docked(dm, firmwareBlanksPanels = true))
     }
 }

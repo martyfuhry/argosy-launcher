@@ -115,9 +115,7 @@ class SecondaryHomeActivity :
         installImmersiveMode()
         keepAwakeWhileUserActive()
 
-        val docked = com.nendo.argosy.util.DisplayAffinityHelper.dockedExternalDisplayId(
-            getSystemService(DisplayManager::class.java)
-        ) != null
+        val docked = com.nendo.argosy.util.DisplayAffinityHelper.dockedExternalDisplayId(this) != null
         if (!docked && !SessionStateStore(applicationContext).isDualScreenEnabled()) {
             android.util.Log.d("SecondaryHome", "dualScreenEnabled=false, finishing")
             finish()
@@ -841,6 +839,12 @@ class SecondaryHomeActivity :
             window.decorView.display?.displayId ?: windowManager.defaultDisplay.displayId
         } catch (_: Exception) { return false }
         if (ownDisplayId != android.view.Display.DEFAULT_DISPLAY) return false
+
+        if (DualScreenManagerHolder.instance?.companionTargetVanished() == true) {
+            android.util.Log.w("SecondaryHome", "Companion displaced to the default display by a hotplug, finishing")
+            finish()
+            return true
+        }
 
         android.util.Log.w(
             "SecondaryHome",
