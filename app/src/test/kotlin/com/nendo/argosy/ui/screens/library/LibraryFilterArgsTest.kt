@@ -21,7 +21,6 @@ class LibraryFilterArgsTest {
             source = SourceFilter.FAVORITES,
             platformIds = setOf(7L, 2L),
             genres = setOf("Shooter", "Role-playing (RPG)"),
-            regions = setOf("USA", "Japan"),
             series = setOf("Mega Man", "The Legend of Zelda"),
             players = PlayerCountBucket.FOUR_PLUS,
             sort = ActiveSort(SortOption.RELEASE_YEAR, descending = false)

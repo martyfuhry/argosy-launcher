@@ -74,7 +74,6 @@ class HomeTileRepositoryTest {
                 source = com.nendo.argosy.data.model.SourceFilter.FAVORITES,
                 platformIds = setOf(3L, 9L),
                 genres = setOf("Role-playing (RPG)"),
-                regions = setOf("Europe"),
                 series = setOf("Mega Man"),
                 players = com.nendo.argosy.domain.model.PlayerCountBucket.FOUR_PLUS,
                 sort = com.nendo.argosy.data.model.ActiveSort(

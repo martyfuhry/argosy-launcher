@@ -1341,7 +1341,7 @@ private fun FilterMenuOverlay(
     val options = uiState.currentCategoryOptions(filterContext)
     val categories = uiState.availableCategories
     val isMultiSelect = uiState.isCurrentCategoryMultiSelect
-    val selectedOptions = uiState.selectedOptionsInCurrentCategory(filterContext)
+    val selectedIndices = uiState.selectedIndicesInCurrentCategory
     val isSearchCategory = uiState.currentFilterCategory == FilterCategory.SEARCH
     val searchQuery = uiState.activeFilters.searchQuery
     val focusRequester = remember { FocusRequester() }
@@ -1552,7 +1552,7 @@ private fun FilterMenuOverlay(
                     itemsIndexed(options) { index, option ->
                         val isFocused = index == uiState.filterOptionIndex
                         val isSelected = when {
-                            isMultiSelect -> option in selectedOptions
+                            isMultiSelect -> index in selectedIndices
                             uiState.currentFilterCategory == FilterCategory.SORT -> index == uiState.selectedSortIndex
                             uiState.currentFilterCategory == FilterCategory.PLAYERS -> index == uiState.selectedPlayersIndex
                             else -> index == uiState.selectedSourceIndex

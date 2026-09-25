@@ -379,21 +379,23 @@ data class LibraryUiState(
     val selectedPlayersIndex: Int
         get() = activeFilters.players?.ordinal ?: -1
 
-    fun selectedOptionsInCurrentCategory(context: Context): Set<String> =
-        when (currentFilterCategory) {
-            FilterCategory.SORT -> {
-                val option = activeFilters.sort.option
-                val indicator = if (activeFilters.sort.descending) " v" else " ^"
-                setOf(context.getString(option.labelRes) + indicator)
+    val selectedIndicesInCurrentCategory: Set<Int>
+        get() = when (currentFilterCategory) {
+            FilterCategory.PLATFORM -> {
+                val ids = activeFilters.platforms.map { it.id }.toSet()
+                filterOptions.platforms.indices.filter { filterOptions.platforms[it].id in ids }.toSet()
             }
-            FilterCategory.SEARCH -> emptySet()
-            FilterCategory.SOURCE -> emptySet()
-            FilterCategory.PLATFORM -> activeFilters.platforms.map { it.label }.toSet()
-            FilterCategory.GENRE -> activeFilters.genres
-            FilterCategory.REGION -> activeFilters.regions
+            FilterCategory.GENRE -> indicesOf(filterOptions.genres, activeFilters.genres)
+            FilterCategory.REGION -> indicesOf(filterOptions.regions, activeFilters.regions)
+            FilterCategory.SERIES -> indicesOf(filterOptions.series, activeFilters.series)
+            FilterCategory.SORT,
+            FilterCategory.SEARCH,
+            FilterCategory.SOURCE,
             FilterCategory.PLAYERS -> emptySet()
-            FilterCategory.SERIES -> activeFilters.series
         }
+
+    private fun indicesOf(options: List<String>, selected: Set<String>): Set<Int> =
+        options.indices.filter { options[it] in selected }.toSet()
 
     val availableCategories: List<FilterCategory>
         get() = FilterCategory.entries.filter { category ->
@@ -1364,7 +1366,7 @@ class LibraryViewModel @Inject constructor(
                     source = filters.source,
                     platforms = platforms,
                     genres = filters.genres,
-                    regions = filters.regions,
+                    regions = emptySet(),
                     series = filters.series,
                     players = filters.players,
                     sort = filters.sort

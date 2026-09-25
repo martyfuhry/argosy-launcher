@@ -236,7 +236,6 @@ private const val KEY_DOWNLOADED_ONLY = "downloadedOnly"
 private const val KEY_NEVER_PLAYED = "neverPlayed"
 private const val KEY_PLATFORM_IDS = "platformIds"
 private const val KEY_GENRES = "genres"
-private const val KEY_REGIONS = "regions"
 private const val KEY_PICKED_GAME_ID = "pickedGameId"
 private const val KEY_SERIES = "series"
 private const val KEY_SOURCE = "source"
@@ -262,7 +261,6 @@ private fun encodeLibraryLink(filters: LibraryLinkFilters): String =
         put(KEY_SOURCE, filters.source.name)
         put(KEY_PLATFORM_IDS, JSONArray(filters.platformIds.toList()))
         put(KEY_GENRES, JSONArray(filters.genres.toList()))
-        put(KEY_REGIONS, JSONArray(filters.regions.toList()))
         put(KEY_SERIES, JSONArray(filters.series.toList()))
         filters.players?.let { put(KEY_PLAYERS, it.name) }
         put(KEY_SORT, filters.sort.option.name)
@@ -276,7 +274,6 @@ private fun decodeLibraryLink(json: JSONObject): LibraryLinkFilters {
         source = SourceFilter.fromString(json.optString(KEY_SOURCE)) ?: SourceFilter.ALL,
         platformIds = json.longSet(KEY_PLATFORM_IDS),
         genres = json.stringSet(KEY_GENRES),
-        regions = json.stringSet(KEY_REGIONS),
         series = json.stringSet(KEY_SERIES),
         players = PlayerCountBucket.entries.find { it.name == json.optString(KEY_PLAYERS) },
         sort = ActiveSort(

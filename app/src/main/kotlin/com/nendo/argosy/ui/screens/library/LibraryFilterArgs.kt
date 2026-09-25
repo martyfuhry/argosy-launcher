@@ -18,7 +18,6 @@ object LibraryFilterArgs {
     private const val SOURCE = "src"
     private const val PLATFORMS = "p"
     private const val GENRES = "g"
-    private const val REGIONS = "r"
     private const val SERIES = "se"
     private const val PLAYERS = "pl"
     private const val SORT = "so"
@@ -35,7 +34,6 @@ object LibraryFilterArgs {
                 add(pair(PLATFORMS, filters.platformIds.sorted().joinToString(VALUE_SEPARATOR)))
             }
             if (filters.genres.isNotEmpty()) add(pair(GENRES, encodeAll(filters.genres)))
-            if (filters.regions.isNotEmpty()) add(pair(REGIONS, encodeAll(filters.regions)))
             if (filters.series.isNotEmpty()) add(pair(SERIES, encodeAll(filters.series)))
             filters.players?.let { add(pair(PLAYERS, it.name)) }
             if (filters.sort.option != SortOption.TITLE ||
@@ -76,10 +74,6 @@ object LibraryFilterArgs {
                 }
                 GENRES -> decodeAll(value).takeIf { it.isNotEmpty() }?.let {
                     filters = filters.copy(genres = it)
-                    matched = true
-                }
-                REGIONS -> decodeAll(value).takeIf { it.isNotEmpty() }?.let {
-                    filters = filters.copy(regions = it)
                     matched = true
                 }
                 SERIES -> decodeAll(value).takeIf { it.isNotEmpty() }?.let {
