@@ -538,4 +538,15 @@ interface SaveCacheDao {
 
     @Query("UPDATE save_cache SET ownerUserId = :ownerUserId WHERE ownerUserId IS NULL")
     suspend fun adoptUnowned(ownerUserId: Long)
+
+    @Query("SELECT * FROM save_cache WHERE channelName IS NOT NULL")
+    suspend fun getRowsWithChannel(): List<SaveCacheEntity>
+
+    @Query(
+        """
+        UPDATE save_cache SET gameId = :gameId, channelName = :channelName, isActive = 0, activeSaveApplied = 0
+        WHERE id = :id
+        """
+    )
+    suspend fun moveToGame(id: Long, gameId: Long, channelName: String?): Int
 }

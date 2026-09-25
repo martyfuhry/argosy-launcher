@@ -2,10 +2,14 @@ package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.GameFileDao
+import com.nendo.argosy.data.local.dao.SaveCacheDao
 import com.nendo.argosy.data.local.dao.SaveSyncDao
+import com.nendo.argosy.data.local.dao.StateCacheDao
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.GameFileEntity
+import com.nendo.argosy.data.local.entity.SaveCacheEntity
 import com.nendo.argosy.data.local.entity.SaveSyncEntity
+import com.nendo.argosy.data.local.entity.StateCacheEntity
 import com.nendo.argosy.data.model.FileOrigin
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.preferences.SyncPreferencesRepository
@@ -26,6 +30,8 @@ class SiblingSplitRepairTest {
     private lateinit var saveSyncDao: SaveSyncDao
     private lateinit var syncPreferences: SyncPreferencesRepository
     private lateinit var carryOver: VariantSaveCarryOver
+    private lateinit var saveCacheDao: SaveCacheDao
+    private lateinit var stateCacheDao: StateCacheDao
     private lateinit var repair: SiblingSplitRepair
 
     private val mergedAddedAt = Instant.parse("2026-01-01T00:00:00Z")
@@ -49,7 +55,17 @@ class SiblingSplitRepairTest {
         saveSyncDao = mockk(relaxed = true)
         syncPreferences = mockk(relaxed = true)
         carryOver = mockk(relaxed = true)
-        repair = SiblingSplitRepair(gameDao, gameFileDao, saveSyncDao, syncPreferences, carryOver)
+        saveCacheDao = mockk(relaxed = true)
+        stateCacheDao = mockk(relaxed = true)
+        repair = SiblingSplitRepair(
+            gameDao, gameFileDao, saveSyncDao, saveCacheDao, stateCacheDao, syncPreferences, carryOver
+        )
+
+        coEvery { saveCacheDao.getRowsWithChannel() } returns emptyList()
+        coEvery { saveCacheDao.moveToGame(any(), any(), any()) } returns 1
+        coEvery { stateCacheDao.getRowsWithChannel() } returns emptyList()
+        coEvery { stateCacheDao.moveToGame(any(), any(), any()) } returns 1
+        coEvery { gameDao.getAllByIgdbIdAndPlatform(any(), any()) } returns emptyList()
 
         coEvery { gameDao.getGamesWithLocalPath() } returns emptyList()
         coEvery { gameDao.getGamesWithFileSelection() } returns emptyList()
@@ -237,6 +253,50 @@ class SiblingSplitRepairTest {
     }
 
     @Test
+    fun `cached saves and states under a regional copy's prefix move to that copy`() = runBlocking {
+        coEvery { gameDao.getById(1L) } returns merged
+        coEvery { gameDao.getAllByIgdbIdAndPlatform(1511L, 5L) } returns listOf(merged, sibling)
+        coEvery { saveCacheDao.getRowsWithChannel() } returns listOf(
+            saveCache(id = 30L, gameId = 1L, channel = "Germany/Slot 1"),
+            saveCache(id = 31L, gameId = 1L, channel = "Slot 2")
+        )
+        coEvery { stateCacheDao.getRowsWithChannel() } returns listOf(stateCache(id = 40L, gameId = 1L, channel = "Germany"))
+
+        val outcome = repair.repair()
+
+        assertEquals(2, outcome.cacheRowsMoved)
+        coVerify { saveCacheDao.moveToGame(30L, 2L, "Slot 1") }
+        coVerify(exactly = 0) { saveCacheDao.moveToGame(31L, any(), any()) }
+        coVerify { stateCacheDao.moveToGame(40L, 2L, null) }
+    }
+
+    @Test
+    fun `a cached row two regional copies could claim stays on the merged game`() = runBlocking {
+        val otherGerman = game(id = 3L, rommId = 300L, localPath = null, regions = "Germany")
+        coEvery { gameDao.getById(1L) } returns merged
+        coEvery { gameDao.getAllByIgdbIdAndPlatform(1511L, 5L) } returns listOf(merged, sibling, otherGerman)
+        coEvery { saveCacheDao.getRowsWithChannel() } returns listOf(saveCache(id = 30L, gameId = 1L, channel = "Germany/Slot 1"))
+
+        val outcome = repair.repair()
+
+        assertEquals(0, outcome.cacheRowsMoved)
+        coVerify(exactly = 0) { saveCacheDao.moveToGame(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a cached row follows the save sync owner when the game has no igdb id`() = runBlocking {
+        coEvery { gameDao.getById(1L) } returns merged.copy(igdbId = null)
+        coEvery { saveSyncDao.getRowsKeyedToAnotherRom() } returns
+            listOf(saveSync(id = 5L, gameId = 1L, rommId = 200L, channel = "Germany"))
+        coEvery { gameDao.getByRommId(200L) } returns sibling
+        coEvery { stateCacheDao.getRowsWithChannel() } returns listOf(stateCache(id = 40L, gameId = 1L, channel = "Germany/Boss"))
+
+        repair.repair()
+
+        coVerify { stateCacheDao.moveToGame(40L, 2L, "Boss") }
+    }
+
+    @Test
     fun `the channel prefix falls back to the rom id when the game has no region`() {
         val unregioned = sibling.copy(regions = null)
 
@@ -313,6 +373,28 @@ class SiblingSplitRepairTest {
         localPath = localPath,
         isLaunchTarget = true,
         versionGroup = "romm:$romId"
+    )
+
+    private fun saveCache(id: Long, gameId: Long, channel: String?) = SaveCacheEntity(
+        id = id,
+        gameId = gameId,
+        emulatorId = "argosy",
+        cachedAt = mergedAddedAt,
+        saveSize = 8192L,
+        cachePath = "saves/$id.srm",
+        channelName = channel
+    )
+
+    private fun stateCache(id: Long, gameId: Long, channel: String?) = StateCacheEntity(
+        id = id,
+        gameId = gameId,
+        platformSlug = "gb",
+        emulatorId = "argosy",
+        slotNumber = 1,
+        channelName = channel,
+        cachedAt = mergedAddedAt,
+        stateSize = 8192L,
+        cachePath = "states/$id.state"
     )
 
     private fun saveSync(id: Long, gameId: Long, rommId: Long, channel: String?) = SaveSyncEntity(

@@ -287,4 +287,10 @@ interface StateCacheDao {
 
     @Query("UPDATE state_cache SET ownerUserId = :ownerUserId WHERE ownerUserId IS NULL")
     suspend fun adoptUnowned(ownerUserId: Long)
+
+    @Query("SELECT * FROM state_cache WHERE channelName IS NOT NULL")
+    suspend fun getRowsWithChannel(): List<StateCacheEntity>
+
+    @Query("UPDATE OR IGNORE state_cache SET gameId = :gameId, channelName = :channelName WHERE id = :id")
+    suspend fun moveToGame(id: Long, gameId: Long, channelName: String?): Int
 }

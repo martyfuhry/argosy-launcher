@@ -2,7 +2,9 @@ package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.local.dao.GameFileDao
+import com.nendo.argosy.data.local.dao.SaveCacheDao
 import com.nendo.argosy.data.local.dao.SaveSyncDao
+import com.nendo.argosy.data.local.dao.StateCacheDao
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.local.entity.GameFileEntity
 import com.nendo.argosy.data.local.entity.SaveSyncEntity
@@ -22,6 +24,7 @@ data class SiblingSplitRepairOutcome(
     val pathsHandedOver: Int,
     val selectionsCleared: Int,
     val saveSyncRowsMoved: Int,
+    val cacheRowsMoved: Int,
     val variantSavesCopied: Int
 )
 
@@ -36,6 +39,8 @@ class SiblingSplitRepair @Inject constructor(
     private val gameDao: GameDao,
     private val gameFileDao: GameFileDao,
     private val saveSyncDao: SaveSyncDao,
+    private val saveCacheDao: SaveCacheDao,
+    private val stateCacheDao: StateCacheDao,
     private val syncPreferences: SyncPreferencesRepository,
     private val variantSaveCarryOver: VariantSaveCarryOver
 ) {
@@ -60,12 +65,15 @@ class SiblingSplitRepair @Inject constructor(
         val pathsHandedOver = handOverForeignLaunchPaths() + releaseSharedPaths() + releaseSharedAdoptedPaths() +
             relinkDownloadsWithoutPath()
         val formerSelections = clearForeignFileSelections()
-        val saveSyncRowsMoved = moveForeignSaveSyncRows()
+        val saveSyncOwners = mutableMapOf<Long, MutableSet<GameEntity>>()
+        val saveSyncRowsMoved = moveForeignSaveSyncRows(saveSyncOwners)
+        val cacheRowsMoved = moveForeignCacheRows(saveSyncOwners)
         val variantSavesCopied = carryOverVariantSaves(formerSelections)
         return SiblingSplitRepairOutcome(
             pathsHandedOver = pathsHandedOver,
             selectionsCleared = formerSelections.values.sumOf { it.size },
             saveSyncRowsMoved = saveSyncRowsMoved,
+            cacheRowsMoved = cacheRowsMoved,
             variantSavesCopied = variantSavesCopied
         )
     }
@@ -192,11 +200,46 @@ class SiblingSplitRepair @Inject constructor(
         return row.gameId != game.id
     }
 
-    private suspend fun moveForeignSaveSyncRows(): Int {
+    private suspend fun moveForeignCacheRows(saveSyncOwners: Map<Long, Set<GameEntity>>): Int {
+        val owners = mutableMapOf<Long, List<GameEntity>>()
+        suspend fun ownerFor(gameId: Long, channel: String?): GameEntity? {
+            val candidates = owners.getOrPut(gameId) { regionalCopies(gameId, saveSyncOwners[gameId].orEmpty()) }
+            return candidates.filter { stripAbsorbedChannelPrefix(channel, it) != channel }.singleOrNull()
+        }
+
+        var moved = 0
+        for (row in saveCacheDao.getRowsWithChannel()) {
+            val owner = ownerFor(row.gameId, row.channelName) ?: continue
+            val channel = stripAbsorbedChannelPrefix(row.channelName, owner)
+            if (saveCacheDao.moveToGame(row.id, owner.id, channel) == 0) continue
+            moved++
+            Logger.info(TAG, "saveCache: row ${row.id} game ${row.gameId} -> ${owner.id}, channel ${row.channelName} -> $channel")
+        }
+        for (row in stateCacheDao.getRowsWithChannel()) {
+            val owner = ownerFor(row.gameId, row.channelName) ?: continue
+            val channel = stripAbsorbedChannelPrefix(row.channelName, owner)
+            if (stateCacheDao.moveToGame(row.id, owner.id, channel) == 0) {
+                Logger.warn(TAG, "stateCache: row ${row.id} left on game ${row.gameId}; game ${owner.id} holds that slot")
+                continue
+            }
+            moved++
+            Logger.info(TAG, "stateCache: row ${row.id} game ${row.gameId} -> ${owner.id}, channel ${row.channelName} -> $channel")
+        }
+        return moved
+    }
+
+    private suspend fun regionalCopies(gameId: Long, saveSyncOwners: Set<GameEntity>): List<GameEntity> {
+        val game = gameDao.getById(gameId) ?: return emptyList()
+        val sameTitle = game.igdbId?.let { gameDao.getAllByIgdbIdAndPlatform(it, game.platformId) }.orEmpty()
+        return (saveSyncOwners + sameTitle).filter { it.id != gameId }.distinctBy { it.id }
+    }
+
+    private suspend fun moveForeignSaveSyncRows(owners: MutableMap<Long, MutableSet<GameEntity>>): Int {
         var moved = 0
         for (row in saveSyncDao.getRowsKeyedToAnotherRom()) {
             val owner = gameDao.getByRommId(row.rommId) ?: continue
             if (owner.id == row.gameId) continue
+            owners.getOrPut(row.gameId) { mutableSetOf() }.add(owner)
             val channel = stripAbsorbedChannelPrefix(row.channelName, owner)
             if (destinationTaken(row, owner.id, channel)) {
                 Logger.warn(

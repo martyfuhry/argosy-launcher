@@ -27,6 +27,10 @@ then repoints what still refers to the merged game:
 - remembered version selections that point at another game's file are cleared;
 - `save_sync` rows keyed to a sibling's rom move to that sibling, with the region prefix the
   merge added to the channel name removed;
+- `save_cache` and `state_cache` rows carry no rom id, so the channel prefix identifies them: a
+  row moves to the one regional copy (same platform and IGDB id, or the owner a moved `save_sync`
+  row named) whose region or `Version <rommId>` prefix it carries. A prefix two copies share
+  identifies nothing and the row stays. A moved save cache row is never the active row;
 - built-in saves kept under `saves/variants/<fileId>` are copied (never moved) into the owning
   game's save directory when nothing is there yet.
 
