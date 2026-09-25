@@ -71,16 +71,15 @@ class SiblingSplitRepair @Inject constructor(
             relinkDownloadsWithoutPath()
         val formerSelections = clearForeignFileSelections()
         val saveSyncOwners = mutableMapOf<Long, MutableSet<GameEntity>>()
-        val saveSyncRowsMoved = moveForeignSaveSyncRows(saveSyncOwners)
+        val saveSync = moveForeignSaveSyncRows(saveSyncOwners)
         val cacheRowsMoved = moveForeignCacheRows(saveSyncOwners)
-        val historyMoved = moveHistoryWithSaves(saveSyncOwners)
         val variantSavesCopied = carryOverVariantSaves(formerSelections)
         return SiblingSplitRepairOutcome(
             pathsHandedOver = pathsHandedOver,
             selectionsCleared = formerSelections.values.sumOf { it.size },
-            saveSyncRowsMoved = saveSyncRowsMoved,
+            saveSyncRowsMoved = saveSync.rowsMoved,
             cacheRowsMoved = cacheRowsMoved,
-            historyMoved = historyMoved,
+            historyMoved = saveSync.historiesMoved,
             variantSavesCopied = variantSavesCopied
         )
     }
@@ -241,13 +240,44 @@ class SiblingSplitRepair @Inject constructor(
         return (saveSyncOwners + sameTitle).filter { it.id != gameId }.distinctBy { it.id }
     }
 
-    private suspend fun moveForeignSaveSyncRows(owners: MutableMap<Long, MutableSet<GameEntity>>): Int {
-        var moved = 0
-        for (row in saveSyncDao.getRowsKeyedToAnotherRom()) {
-            val owner = gameDao.getByRommId(row.rommId) ?: continue
-            if (owner.id == row.gameId) continue
+    private class SaveSyncMove(val row: SaveSyncEntity, val owner: GameEntity, val channel: String?, val blocked: Boolean)
+
+    private class SaveSyncOutcome(val rowsMoved: Int, val historiesMoved: Int)
+
+    private suspend fun moveForeignSaveSyncRows(owners: MutableMap<Long, MutableSet<GameEntity>>): SaveSyncOutcome {
+        val moves = saveSyncDao.getRowsKeyedToAnotherRom().mapNotNull { row ->
+            val owner = gameDao.getByRommId(row.rommId) ?: return@mapNotNull null
+            if (owner.id == row.gameId) return@mapNotNull null
             val channel = stripAbsorbedChannelPrefix(row.channelName, owner)
-            if (destinationTaken(row, owner.id, channel)) {
+            SaveSyncMove(row, owner, channel, destinationTaken(row, owner.id, channel))
+        }
+        var histories = 0
+        var moved = 0
+        for ((mergedId, group) in moves.groupBy { it.row.gameId }) {
+            if (moveHistoryWithSaves(mergedId, group)) histories++
+            moved += moveSaveSyncGroup(group, owners)
+        }
+        return SaveSyncOutcome(rowsMoved = moved, historiesMoved = histories)
+    }
+
+    private suspend fun moveHistoryWithSaves(mergedId: Long, group: List<SaveSyncMove>): Boolean {
+        val target = group.map { it.owner }.distinctBy { it.id }.singleOrNull() ?: return false
+        if (group.any { it.blocked }) return false
+        if (group.distinctBy { Triple(it.row.emulatorId, it.channel, it.row.ownerUserId) }.size != group.size) return false
+        if (saveSyncDao.countForGame(mergedId) != group.size) return false
+        gameUserOverlayDao.movePlayTotals(fromGameId = mergedId, toGameId = target.id)
+        val sessions = playSessionDao.moveToGame(mergedId, target.id)
+        Logger.info(TAG, "history: game $mergedId -> ${target.title} (${target.id}), $sessions sessions")
+        return true
+    }
+
+    private suspend fun moveSaveSyncGroup(group: List<SaveSyncMove>, owners: MutableMap<Long, MutableSet<GameEntity>>): Int {
+        var moved = 0
+        for (move in group) {
+            val row = move.row
+            val owner = move.owner
+            val channel = move.channel
+            if (move.blocked) {
                 Logger.warn(
                     TAG,
                     "saveSync: row ${row.id} (${row.emulatorId}, channel=${row.channelName}) left on game " +
@@ -269,46 +299,6 @@ class SiblingSplitRepair @Inject constructor(
         }
         return moved
     }
-
-    private suspend fun moveHistoryWithSaves(saveSyncOwners: Map<Long, Set<GameEntity>>): Int {
-        var moved = 0
-        for ((mergedId, owners) in saveSyncOwners) {
-            val owner = owners.distinctBy { it.id }.singleOrNull() ?: continue
-            if (saveSyncDao.countForGame(mergedId) > 0) continue
-            val merged = gameDao.getById(mergedId) ?: continue
-            val target = gameDao.getById(owner.id) ?: continue
-            for (row in gameUserOverlayDao.getRowsForGame(mergedId)) {
-                gameUserOverlayDao.ensureRow(row.ownerUserId, target.id)
-                val dest = gameUserOverlayDao.get(row.ownerUserId, target.id) ?: continue
-                gameUserOverlayDao.upsert(
-                    dest.copy(
-                        playCount = dest.playCount + row.playCount,
-                        playTimeMinutes = dest.playTimeMinutes + row.playTimeMinutes,
-                        lastPlayed = latest(dest.lastPlayed, row.lastPlayed)
-                    )
-                )
-                gameUserOverlayDao.upsert(row.copy(playCount = 0, playTimeMinutes = 0, lastPlayed = null))
-            }
-            gameDao.setPlayHistory(
-                target.id,
-                target.playCount + merged.playCount,
-                target.playTimeMinutes + merged.playTimeMinutes,
-                latest(target.lastPlayed, merged.lastPlayed)
-            )
-            gameDao.setPlayHistory(merged.id, 0, 0, null)
-            val sessions = playSessionDao.moveToGame(merged.id, target.id)
-            moved++
-            Logger.info(
-                TAG,
-                "history: ${merged.title} (${merged.id}) -> ${target.title} (${target.id}), " +
-                    "${merged.playTimeMinutes}m, ${merged.playCount} plays, $sessions sessions"
-            )
-        }
-        return moved
-    }
-
-    private fun latest(a: java.time.Instant?, b: java.time.Instant?): java.time.Instant? =
-        listOfNotNull(a, b).maxOrNull()
 
     private suspend fun destinationTaken(row: SaveSyncEntity, gameId: Long, channel: String?): Boolean {
         val existing = if (channel == null) {

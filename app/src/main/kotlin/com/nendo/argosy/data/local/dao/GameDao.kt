@@ -452,10 +452,6 @@ interface GameDao {
 
     @Query("SELECT * FROM games WHERE igdbId = :igdbId AND platformId = :platformId")
     suspend fun getAllByIgdbIdAndPlatform(igdbId: Long, platformId: Long): List<GameEntity>
-
-    @Query("UPDATE games SET playCount = :playCount, playTimeMinutes = :playTimeMinutes, lastPlayed = :lastPlayed WHERE id = :gameId")
-    suspend fun setPlayHistory(gameId: Long, playCount: Int, playTimeMinutes: Int, lastPlayed: Instant?)
-
     @Query("SELECT * FROM games WHERE steamAppId = :steamAppId")
     suspend fun getBySteamAppId(steamAppId: Long): GameEntity?
 

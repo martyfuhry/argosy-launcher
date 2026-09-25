@@ -7,6 +7,12 @@ import androidx.room.Upsert
 import com.nendo.argosy.data.local.entity.GameUserOverlayEntity
 import java.time.Instant
 
+data class MirroredPlayTotals(
+    val playCount: Int,
+    val playTimeMinutes: Int,
+    val lastPlayed: Instant?
+)
+
 /**
  * Per-account game state, with every write mirrored onto the matching `games` column.
  *
@@ -345,6 +351,38 @@ interface GameUserOverlayDao {
         playTimeMinutes: Int,
         lastPlayed: Instant?
     )
+
+    @Query("SELECT playCount, playTimeMinutes, lastPlayed FROM games WHERE id = :gameId")
+    suspend fun mirroredPlayTotals(gameId: Long): MirroredPlayTotals?
+
+    /**
+     * Adds [fromGameId]'s play count, time and last-played onto [toGameId] for every account and
+     * the mirror, then zeroes [fromGameId]. Repeating it after it completed moves nothing.
+     */
+    @Transaction
+    suspend fun movePlayTotals(fromGameId: Long, toGameId: Long) {
+        for (source in getRowsForGame(fromGameId)) {
+            ensureRow(source.ownerUserId, toGameId)
+            val dest = get(source.ownerUserId, toGameId) ?: continue
+            writeMergedPlayTotals(
+                source.ownerUserId,
+                toGameId,
+                dest.playCount + source.playCount,
+                dest.playTimeMinutes + source.playTimeMinutes,
+                listOfNotNull(dest.lastPlayed, source.lastPlayed).maxOrNull()
+            )
+            writeMergedPlayTotals(source.ownerUserId, fromGameId, 0, 0, null)
+        }
+        val from = mirroredPlayTotals(fromGameId) ?: return
+        val to = mirroredPlayTotals(toGameId) ?: return
+        mirrorMergedPlayTotals(
+            toGameId,
+            to.playCount + from.playCount,
+            to.playTimeMinutes + from.playTimeMinutes,
+            listOfNotNull(to.lastPlayed, from.lastPlayed).maxOrNull()
+        )
+        mirrorMergedPlayTotals(fromGameId, 0, 0, null)
+    }
 
     /**
      * Absolute totals rather than increments, for multi-disc consolidation where the figures are
