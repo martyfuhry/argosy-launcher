@@ -52,6 +52,7 @@
 
     <string name="dual_companion_saves_dirty">Новые данные сохранения</string>
     <string name="dual_companion_saves_synced">Сохранения синхронизированы</string>
+    <string name="dual_companion_saves_not_synced">Нет синхронизации сохранений для этого приложения</string>
 
     <string name="dual_companion_app_bar_add_description">Добавить приложение</string>
     <string name="dual_companion_app_drawer_title">Все приложения</string>

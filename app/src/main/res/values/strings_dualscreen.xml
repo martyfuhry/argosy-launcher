@@ -130,6 +130,9 @@
     <!-- Line beside the save indicator when everything is on the server. Statement about the
          saves, past participle, not a command to sync them. -->
     <string name="dual_companion_saves_synced">Saves synced</string>
+    <!-- Line beside the save indicator when the running game or app has no saves Argosy can sync,
+         such as an Android app. Statement, not a command. -->
+    <string name="dual_companion_saves_not_synced">No save sync for this app</string>
 
     <!-- Spoken description of the plus button at the left of the companion app bar. Verb phrase:
          opens the list of every installed app so one can be pinned to the bar. -->

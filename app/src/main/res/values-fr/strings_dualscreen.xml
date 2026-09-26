@@ -56,6 +56,7 @@
 
     <string name="dual_companion_saves_dirty">Nouvelles données de sauvegarde</string>
     <string name="dual_companion_saves_synced">Sauvegardes synchronisées</string>
+    <string name="dual_companion_saves_not_synced">Pas de synchronisation des sauvegardes pour cette app</string>
 
     <string name="dual_companion_app_bar_add_description">Ajouter une application</string>
     <string name="dual_companion_app_drawer_title">Toutes les applications</string>
