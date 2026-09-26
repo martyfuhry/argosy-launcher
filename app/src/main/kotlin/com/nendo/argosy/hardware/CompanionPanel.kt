@@ -29,6 +29,7 @@ data class CompanionInGameState(
     val channelName: String? = null,
     val isHardcore: Boolean = false,
     val isDirty: Boolean = false,
+    val saveSyncApplicable: Boolean = true,
     val isLoaded: Boolean = false,
     val quickActionsAvailable: Boolean = false,
     val backgroundPath: String? = null,
