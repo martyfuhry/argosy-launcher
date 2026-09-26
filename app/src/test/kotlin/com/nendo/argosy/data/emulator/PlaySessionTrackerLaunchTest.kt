@@ -150,6 +150,16 @@ class PlaySessionTrackerLaunchTest {
     }
 
     @Test
+    fun `the last session's game is kept after that session ends`() {
+        prepare(GAME_ID)
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
+
+        tracker.cancelSession()
+
+        assertEquals(GAME_ID, tracker.lastSessionGameId)
+    }
+
+    @Test
     fun `a discarded prepared session is never opened`() {
         prepare(GAME_ID)
 
