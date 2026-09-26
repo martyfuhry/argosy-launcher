@@ -1033,6 +1033,7 @@ class PlaySessionTracker @Inject constructor(
             return
         }
         _activeSession.value = null
+        DualScreenManagerHolder.instance?.setEmulatorDisplay(null)
         GameSessionService.stop(application)
         Logger.debug(TAG, "[SaveSync] SESSION gameId=${session.gameId} | Cancelled (no save backup)")
         scope.launch {
@@ -1122,7 +1123,12 @@ class PlaySessionTracker @Inject constructor(
 
     fun forceStopService() {
         GameSessionService.stop(application)
-        scope.launch { clearSessionAndBroadcast() }
+        if (_activeSession.value == null) DualScreenManagerHolder.instance?.setEmulatorDisplay(null)
+        scope.launch {
+            sessionServiceMutex.withLock {
+                if (_activeSession.value == null) clearSessionAndBroadcast()
+            }
+        }
         Logger.debug(TAG, "[SaveSync] SESSION | Force stopped service (no active session)")
     }
 
