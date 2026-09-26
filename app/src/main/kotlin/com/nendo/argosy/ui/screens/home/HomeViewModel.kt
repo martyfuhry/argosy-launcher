@@ -98,7 +98,7 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
-    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val gameLaunchDispatcher: com.nendo.argosy.ui.screens.common.GameLaunchDispatcher,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
     private val notificationManager: NotificationManager,
@@ -1886,12 +1886,7 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            onLaunch = { intent ->
-                viewModelScope.launch {
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId)
-                    _events.emit(HomeEvent.LaunchIntent(intent, options))
-                }
-            }
+            onLaunch = { intent -> gameLaunchDispatcher.dispatch(gameId, intent) }
         )
     }
 
@@ -1902,15 +1897,7 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
-            onLaunch = { intent ->
-                viewModelScope.launch {
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(
-                        gameId = gameId,
-                        overrideDisplayId = displayId
-                    )
-                    _events.emit(HomeEvent.LaunchIntent(intent, options))
-                }
-            }
+            onLaunch = { intent -> gameLaunchDispatcher.dispatch(gameId, intent, displayId) }
         )
     }
 

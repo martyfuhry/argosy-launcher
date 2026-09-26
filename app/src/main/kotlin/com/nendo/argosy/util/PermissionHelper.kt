@@ -25,6 +25,14 @@ class PermissionHelper @Inject constructor() {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
+    /**
+     * Whether activity lifecycle events can be read at all. False means [presenceEvents] and
+     * [isPackageOnScreen] cannot answer, which callers must not read as "nothing is running".
+     */
+    fun canObservePresence(context: Context): Boolean =
+        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q &&
+            hasUsageStatsPermission(context)
+
     fun openUsageStatsSettings(context: Context) {
         val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK

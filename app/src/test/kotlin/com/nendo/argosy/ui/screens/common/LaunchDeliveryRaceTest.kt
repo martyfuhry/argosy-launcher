@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -44,7 +45,8 @@ import org.junit.Test
  * [SESSION_BROADCAST_MS], which is what makes the tapping host render the dashboard in place of
  * the launcher and so disposes the screen's launch-event collector. Contestant B is the launch
  * placement lookup, held for [OPTIONS_LOOKUP_MS] before the start is handed on. The screen is
- * modelled as a subscriber coroutine cancelled when its host swaps to the dashboard.
+ * modelled as a subscriber coroutine cancelled when its host swaps to the dashboard, which is
+ * where the start was delivered before the dispatcher took it over.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LaunchDeliveryRaceTest {
@@ -203,12 +205,17 @@ class LaunchDeliveryRaceTest {
         )
         DualScreenManagerHolder.instance = dsm
 
+        var sessionPrepared = false
         var sessionStarted = false
         val tracker = mockk<PlaySessionTracker>(relaxed = true) {
-            every { startSession(any(), any(), any(), any(), any(), any(), any(), any()) } answers {
+            every { prepareSession(GAME_ID, APP_PACKAGE, any(), any(), any()) } answers { sessionPrepared = true }
+            every { startPreparedSession(GAME_ID, any()) } answers {
+                if (!sessionPrepared) return@answers null
                 sessionStarted = true
                 launch { broadcastSessionStart(dsm, firstArg(), sessionBroadcastMs) }
+                APP_PACKAGE
             }
+            every { activeSession } returns MutableStateFlow(null)
         }
         val intent = mockk<Intent>(relaxed = true) {
             every { component } returns mockk(relaxed = true) {
@@ -231,10 +238,17 @@ class LaunchDeliveryRaceTest {
             emulatorConfigRepository = emulatorConfigRepository
         )
         val launchGameUseCase = LaunchGameUseCase(gameLauncher, tracker)
+        val dispatcher = GameLaunchDispatcher(
+            context = hostContext,
+            launchTargetResolver = resolver,
+            playSessionTracker = tracker,
+            permissionHelper = mockk(relaxed = true),
+            notificationManager = mockk(relaxed = true),
+            ioDispatcher = testDispatcher
+        )
         val overrideDisplayId = if (entryPoint.choosesDisplay) gameDisplayId else null
 
         val events = MutableSharedFlow<Pair<Intent, Bundle?>>()
-        val viewModelScope = CoroutineScope(coroutineContext + kotlinx.coroutines.SupervisorJob())
         val screen = launch {
             events.collect { (launchIntent, options) -> hostContext.startActivity(launchIntent, options) }
         }
@@ -245,15 +259,11 @@ class LaunchDeliveryRaceTest {
         advanceUntilIdle()
 
         val result = launchGameUseCase(GAME_ID) as LaunchResult.Success
-        viewModelScope.launch {
-            val options = resolver.launchOptionsFor(GAME_ID, overrideDisplayId)
-            events.emit(result.intent to options)
-        }
+        dispatcher.dispatch(GAME_ID, result.intent, overrideDisplayId)
         advanceUntilIdle()
 
         hostJob.cancelAndJoin()
         screen.cancelAndJoin()
-        viewModelScope.coroutineContext[kotlinx.coroutines.Job]?.cancelAndJoin()
         managerScope.coroutineContext[kotlinx.coroutines.Job]?.cancelAndJoin()
         return Outcome(sessionStarted = sessionStarted, dispatched = dispatched.toList())
     }
