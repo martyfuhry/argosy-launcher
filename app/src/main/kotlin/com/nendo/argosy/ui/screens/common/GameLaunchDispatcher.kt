@@ -11,6 +11,7 @@ import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationManager
 import com.nendo.argosy.core.notification.NotificationText
 import com.nendo.argosy.core.notification.showError
+import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.data.emulator.PresenceEventKind
 import com.nendo.argosy.data.emulator.isAlreadyLaunched
@@ -92,40 +93,47 @@ class GameLaunchDispatcher internal constructor(
             notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
             return@launch
         }
-        val watchedPackage = playSessionTracker.startPreparedSession(gameId, packageName.orEmpty(), isNewGame = !wasRunning)
-            ?.takeIf { it.isNotEmpty() }
+        val session = playSessionTracker.startPreparedSession(gameId, packageName.orEmpty(), isNewGame = !wasRunning)
+            ?.takeIf { it.emulatorPackage.isNotEmpty() }
             ?: return@launch
         arrivalWatch?.cancel()
         arrivalWatch = scope.launch {
-            watchArrival(gameId, watchedPackage, intent, options, startedAtMs, retryOnce = wasRunning)
+            watchArrival(session, intent, options, startedAtMs, retryOnce = wasRunning)
         }
     }
 
     private suspend fun watchArrival(
-        gameId: Long,
-        packageName: String,
+        session: ActiveSession,
         intent: Intent,
         options: Bundle?,
         startedAtMs: Long,
         retryOnce: Boolean
     ) {
+        val gameId = session.gameId
+        val packageName = session.emulatorPackage
         delay(ARRIVAL_TIMEOUT_MS)
-        if (playSessionTracker.activeSession.value?.gameId != gameId) return
+        if (!isStillRunning(session)) return
         val arrived = withContext(ioDispatcher) { hasArrived(packageName, startedAtMs) }
         if (arrived != false) return
         if (retryOnce) {
             Logger.warn(TAG, "gameId=$gameId: $packageName not in front after ${ARRIVAL_TIMEOUT_MS}ms, starting it once more")
             delay(RETRY_DELAY_MS)
+            if (!isStillRunning(session)) return
             val retriedAtMs = System.currentTimeMillis()
             if (start(intent, options)) {
-                watchArrival(gameId, packageName, intent, options, retriedAtMs, retryOnce = false)
+                watchArrival(session, intent, options, retriedAtMs, retryOnce = false)
                 return
             }
         }
-        if (playSessionTracker.activeSession.value?.gameId != gameId) return
+        if (!isStillRunning(session)) return
         Logger.error(TAG, "gameId=$gameId: $packageName never came to the front, ending its session")
         playSessionTracker.cancelSession()
         notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+    }
+
+    private fun isStillRunning(session: ActiveSession): Boolean {
+        val running = playSessionTracker.activeSession.value ?: return false
+        return running.gameId == session.gameId && running.startTime == session.startTime
     }
 
     private fun hasArrived(packageName: String, sinceMs: Long): Boolean? {
