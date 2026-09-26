@@ -649,8 +649,8 @@ class PlaySessionTracker @Inject constructor(
     private val preparedSession = java.util.concurrent.atomic.AtomicReference<PreparedSession?>(null)
 
     /**
-     * Holds the session a launch of [gameId] opens once its start has been dispatched, in place of
-     * any earlier launch's. Nothing is recorded or broadcast until [startPreparedSession].
+     * The session a launch of [gameId] opens once its start has been dispatched, in place of any
+     * earlier launch's. Nothing is recorded or broadcast until [startPreparedSession].
      */
     fun prepareSession(
         gameId: Long,
@@ -663,8 +663,8 @@ class PlaySessionTracker @Inject constructor(
     }
 
     /**
-     * Opens the session prepared for [gameId]. Returns its emulator package, or null when no
-     * session was prepared for it or another session is still running.
+     * The emulator package of the session prepared for [gameId], now opened, or null when none was
+     * prepared for it or another session is still running.
      */
     fun startPreparedSession(gameId: Long, isNewGame: Boolean = true): String? {
         val prepared = preparedSession.get()?.takeIf { it.gameId == gameId } ?: return null
