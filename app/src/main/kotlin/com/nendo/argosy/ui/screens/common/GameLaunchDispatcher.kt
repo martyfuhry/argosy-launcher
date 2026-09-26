@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.PowerManager
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationManager
@@ -129,7 +130,12 @@ class GameLaunchDispatcher internal constructor(
 
     private fun hasArrived(packageName: String, sinceMs: Long): Boolean? {
         if (!permissionHelper.canObservePresence(context)) return null
-        val foreignResume = permissionHelper.presenceEvents(context, sinceMs, System.currentTimeMillis())
+        if ((context.getSystemService(Context.POWER_SERVICE) as? PowerManager)?.isInteractive == false) return null
+        val events = permissionHelper.presenceEvents(context, sinceMs, System.currentTimeMillis())
+        if (events.any { it.kind == PresenceEventKind.SCREEN_NON_INTERACTIVE || it.kind == PresenceEventKind.KEYGUARD_SHOWN }) {
+            return null
+        }
+        val foreignResume = events
             .any { it.kind == PresenceEventKind.ACTIVITY_RESUMED && it.packageName != context.packageName }
         return foreignResume || permissionHelper.isPackageOnScreen(context, packageName) == true
     }

@@ -171,6 +171,7 @@ class PermissionHelper @Inject constructor() {
             val kind = when (event.eventType) {
                 UsageEvents.Event.SCREEN_INTERACTIVE -> PresenceEventKind.SCREEN_INTERACTIVE
                 UsageEvents.Event.SCREEN_NON_INTERACTIVE -> PresenceEventKind.SCREEN_NON_INTERACTIVE
+                UsageEvents.Event.KEYGUARD_SHOWN -> PresenceEventKind.KEYGUARD_SHOWN
                 UsageEvents.Event.KEYGUARD_HIDDEN -> PresenceEventKind.KEYGUARD_HIDDEN
                 UsageEvents.Event.ACTIVITY_RESUMED -> PresenceEventKind.ACTIVITY_RESUMED
                 UsageEvents.Event.ACTIVITY_PAUSED -> PresenceEventKind.ACTIVITY_PAUSED
