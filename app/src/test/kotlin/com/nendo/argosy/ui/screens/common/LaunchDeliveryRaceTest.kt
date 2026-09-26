@@ -213,7 +213,7 @@ class LaunchDeliveryRaceTest {
                 if (!sessionPrepared) return@answers null
                 sessionStarted = true
                 launch { broadcastSessionStart(dsm, firstArg(), sessionBroadcastMs) }
-                APP_PACKAGE
+                com.nendo.argosy.data.emulator.ActiveSession(GAME_ID, java.time.Instant.EPOCH, APP_PACKAGE)
             }
             every { activeSession } returns MutableStateFlow(null)
         }
