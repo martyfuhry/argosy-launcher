@@ -1,7 +1,5 @@
 package com.nendo.argosy.ui.screens.common
 
-import android.app.Activity
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -25,7 +23,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.ref.WeakReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -50,28 +47,7 @@ class GameLaunchDispatcher internal constructor(
     ) : this(context, launchTargetResolver, playSessionTracker, permissionHelper, notificationManager, Dispatchers.IO)
 
     private val scope = SafeCoroutineScope(Dispatchers.Main.immediate, TAG)
-    private var resumedHost: WeakReference<Activity>? = null
     private var arrivalWatch: Job? = null
-
-    private val hostTracker = object : Application.ActivityLifecycleCallbacks {
-        override fun onActivityResumed(activity: Activity) {
-            resumedHost = WeakReference(activity)
-        }
-
-        override fun onActivityPaused(activity: Activity) {
-            if (resumedHost?.get() === activity) resumedHost = null
-        }
-
-        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
-        override fun onActivityStarted(activity: Activity) = Unit
-        override fun onActivityStopped(activity: Activity) = Unit
-        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
-        override fun onActivityDestroyed(activity: Activity) = Unit
-    }
-
-    init {
-        (context as? Application)?.registerActivityLifecycleCallbacks(hostTracker)
-    }
 
     /**
      * The start of [intent] for [gameId] on the launcher's own scope, followed by the session its
@@ -150,20 +126,15 @@ class GameLaunchDispatcher internal constructor(
 
     private fun start(intent: Intent, options: Bundle?): Boolean {
         if (intent.isAlreadyLaunched()) return true
-        val host = resumedHost?.get()?.takeUnless { it.isFinishing || it.isDestroyed }
-        if (host != null && startFrom(host, intent, options)) return true
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        return startFrom(context, intent, options)
-    }
-
-    private fun startFrom(launchContext: Context, intent: Intent, options: Bundle?): Boolean =
-        try {
-            launchContext.startActivity(intent, options)
+        return try {
+            context.startActivity(intent, options)
             true
         } catch (e: Exception) {
-            Logger.warn(TAG, "startActivity failed from ${launchContext.javaClass.simpleName}", e)
+            Logger.warn(TAG, "startActivity failed for ${intent.component ?: intent.`package`}", e)
             false
         }
+    }
 
     private companion object {
         const val ARRIVAL_TIMEOUT_MS = 5_000L

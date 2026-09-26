@@ -110,6 +110,20 @@ class GameLaunchDispatcherTest {
     }
 
     @Test
+    fun `every start is a new task carrying the placement it resolved`() = testScope.runTest {
+        val placement = mockk<android.os.Bundle>()
+        coEvery { resolver.launchOptionsFor(GAME_ID, any()) } returns placement
+
+        dispatcher.dispatch(GAME_ID, intent)
+        runCurrent()
+
+        verifyOrder {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent, placement)
+        }
+    }
+
+    @Test
     fun `a start nothing can deliver opens no session and reports the failure`() = testScope.runTest {
         every { context.startActivity(any(), any()) } throws SecurityException("blocked")
 
