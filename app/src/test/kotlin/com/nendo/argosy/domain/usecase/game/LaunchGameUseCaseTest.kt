@@ -28,7 +28,7 @@ class LaunchGameUseCaseTest {
     }
 
     @Test
-    fun `invoke starts play session on success`() = runTest {
+    fun `invoke prepares the play session on success without opening it`() = runTest {
         val component = mockk<android.content.ComponentName>(relaxed = true) {
             coEvery { packageName } returns "com.emulator.test"
         }
@@ -41,13 +41,16 @@ class LaunchGameUseCaseTest {
 
         assertTrue(result is LaunchResult.Success)
         coVerify {
-            playSessionTracker.startSession(
+            playSessionTracker.prepareSession(
                 gameId = 123L,
                 emulatorPackage = "com.emulator.test",
                 coreName = null,
-                isNewGame = true
+                variantFileId = null,
+                origin = LaunchOrigin.INTERNAL
             )
         }
+        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.startPreparedSession(any(), any()) }
     }
 
     @Test
@@ -61,11 +64,12 @@ class LaunchGameUseCaseTest {
         useCase(123L)
 
         coVerify {
-            playSessionTracker.startSession(
+            playSessionTracker.prepareSession(
                 gameId = 123L,
                 emulatorPackage = "",
                 coreName = null,
-                isNewGame = true
+                variantFileId = null,
+                origin = LaunchOrigin.INTERNAL
             )
         }
     }
@@ -83,11 +87,11 @@ class LaunchGameUseCaseTest {
         useCase(123L, origin = LaunchOrigin.EXTERNAL)
 
         coVerify {
-            playSessionTracker.startSession(
+            playSessionTracker.prepareSession(
                 gameId = 123L,
                 emulatorPackage = "com.emulator.test",
                 coreName = null,
-                isNewGame = true,
+                variantFileId = null,
                 origin = LaunchOrigin.EXTERNAL
             )
         }
@@ -146,7 +150,7 @@ class LaunchGameUseCaseTest {
         val result = useCase(123L)
 
         assertTrue(result is LaunchResult.Success)
-        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.prepareSession(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -157,7 +161,7 @@ class LaunchGameUseCaseTest {
         val result = useCase(123L, forResume = true)
 
         assertTrue(result is LaunchResult.Success)
-        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.prepareSession(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -171,12 +175,12 @@ class LaunchGameUseCaseTest {
     }
 
     @Test
-    fun `invoke does not start session on NoEmulator`() = runTest {
+    fun `invoke does not prepare a session on NoEmulator`() = runTest {
         coEvery { gameLauncher.launch(123L, null, any(), any(), any(), any()) } returns LaunchResult.NoEmulator("nes")
 
         useCase(123L)
 
-        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.prepareSession(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -190,12 +194,12 @@ class LaunchGameUseCaseTest {
     }
 
     @Test
-    fun `invoke does not start session on NoRomFile`() = runTest {
+    fun `invoke does not prepare a session on NoRomFile`() = runTest {
         coEvery { gameLauncher.launch(123L, null, any(), any(), any(), any()) } returns LaunchResult.NoRomFile("/path")
 
         useCase(123L)
 
-        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.prepareSession(any(), any(), any(), any(), any()) }
     }
 
     @Test
@@ -209,12 +213,12 @@ class LaunchGameUseCaseTest {
     }
 
     @Test
-    fun `invoke does not start session on Error`() = runTest {
+    fun `invoke does not prepare a session on Error`() = runTest {
         coEvery { gameLauncher.launch(123L, null, any(), any(), any(), any()) } returns LaunchResult.Error("Launch failed")
 
         useCase(123L)
 
-        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.prepareSession(any(), any(), any(), any(), any()) }
     }
 
     @Test
