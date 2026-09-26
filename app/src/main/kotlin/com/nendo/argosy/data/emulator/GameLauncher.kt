@@ -50,6 +50,12 @@ private const val EXTRA_ALREADY_LAUNCHED = "argosy.already_launched"
 private val DISC_TAG_REGEX = Regex("\\(Disc \\d+\\)", RegexOption.IGNORE_CASE)
 private val DISC_NUMBER_REGEX = Regex("\\d+")
 
+/**
+ * Whether this intent stands in for an emulator a shell launch has already started, which must
+ * not be started a second time.
+ */
+fun Intent.isAlreadyLaunched(): Boolean = getBooleanExtra(EXTRA_ALREADY_LAUNCHED, false)
+
 data class DiscOption(
     val fileName: String,
     val filePath: String,

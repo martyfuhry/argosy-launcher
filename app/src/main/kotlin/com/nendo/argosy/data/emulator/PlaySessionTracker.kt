@@ -638,6 +638,52 @@ class PlaySessionTracker @Inject constructor(
         }
     }
 
+    private data class PreparedSession(
+        val gameId: Long,
+        val emulatorPackage: String,
+        val coreName: String?,
+        val variantFileId: Long?,
+        val origin: LaunchOrigin
+    )
+
+    private val preparedSession = java.util.concurrent.atomic.AtomicReference<PreparedSession?>(null)
+
+    /**
+     * Holds the session a launch of [gameId] opens once its start has been dispatched, in place of
+     * any earlier launch's. Nothing is recorded or broadcast until [startPreparedSession].
+     */
+    fun prepareSession(
+        gameId: Long,
+        emulatorPackage: String,
+        coreName: String?,
+        variantFileId: Long?,
+        origin: LaunchOrigin
+    ) {
+        preparedSession.set(PreparedSession(gameId, emulatorPackage, coreName, variantFileId, origin))
+    }
+
+    /**
+     * Opens the session prepared for [gameId]. Returns its emulator package, or null when no
+     * session was prepared for it or another session is still running.
+     */
+    fun startPreparedSession(gameId: Long, isNewGame: Boolean = true): String? {
+        val prepared = preparedSession.get()?.takeIf { it.gameId == gameId } ?: return null
+        if (!preparedSession.compareAndSet(prepared, null)) return null
+        startSession(
+            gameId = prepared.gameId,
+            emulatorPackage = prepared.emulatorPackage,
+            coreName = prepared.coreName,
+            isNewGame = isNewGame,
+            variantFileId = prepared.variantFileId,
+            origin = prepared.origin
+        )
+        return prepared.emulatorPackage.takeIf { _activeSession.value?.gameId == gameId }
+    }
+
+    fun discardPreparedSession(gameId: Long) {
+        preparedSession.get()?.takeIf { it.gameId == gameId }?.let { preparedSession.compareAndSet(it, null) }
+    }
+
     /**
      * Re-tags the running session once RetroAchievements has answered the hardcore request.
      * Every consumer of the flag (session store, companion, watcher service, orphan record) is
