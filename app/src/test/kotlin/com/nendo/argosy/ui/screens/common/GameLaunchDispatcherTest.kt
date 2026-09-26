@@ -254,7 +254,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `an app that just exited is not started again while the screen is off`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
         asAppLaunchIntent()
         interactive = false
 
@@ -319,7 +319,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `an app already running is brought forward and its session attached`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
         every { permissionHelper.isPackageOnScreen(any(), GAME_PACKAGE, any()) } returns true
 
         dispatcher.dispatch(GAME_ID, intent)
@@ -332,7 +332,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `an app that just exited is started once more before its session is given up`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
         asAppLaunchIntent()
 
         dispatcher.dispatch(GAME_ID, intent)
@@ -348,7 +348,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `an app that comes up on the second start keeps its session`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
         asAppLaunchIntent()
         every { context.startActivity(any(), any()) } answers {
             started += firstArg<Intent>()
@@ -366,7 +366,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `a second start of an app never clears its task`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
         asAppLaunchIntent()
 
         dispatcher.dispatch(GAME_ID, intent)
@@ -381,7 +381,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `an emulator that was running is never started a second time`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
 
         dispatcher.dispatch(GAME_ID, intent)
         advanceUntilIdle()
@@ -402,7 +402,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `a shell-started emulator seen running is a new game and is never started again`() = testScope.runTest {
-        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asRecentlyRunning()
         asShellLaunched(atMs = SHELL_LAUNCHED_AT_MS)
         asAppLaunchIntent()
 
@@ -420,6 +420,24 @@ class GameLaunchDispatcherTest {
         every { intent.getLongExtra("argosy.launched_at_ms", any()) } returns atMs
     }
 
+    @Test
+    fun `an app last run for another game opens a new game and is started only once`() = testScope.runTest {
+        asRecentlyRunning()
+        every { tracker.lastSessionGameId } returns OTHER_GAME_ID
+        asAppLaunchIntent()
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        assertEquals(1, started.size)
+        verify { tracker.startPreparedSession(GAME_ID, GAME_PACKAGE, isNewGame = true) }
+    }
+
+    private fun asRecentlyRunning() {
+        every { tracker.lastSessionGameId } returns GAME_ID
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+    }
+
     private fun asAppLaunchIntent() {
         every { intent.action } returns Intent.ACTION_MAIN
         every { intent.hasCategory(Intent.CATEGORY_LAUNCHER) } returns true
@@ -427,6 +445,7 @@ class GameLaunchDispatcherTest {
 
     private companion object {
         const val GAME_ID = 7L
+        const val OTHER_GAME_ID = 8L
         const val GAME_PACKAGE = "com.aure.banjorecomp"
         const val OWN_PACKAGE = "com.nendo.argosy"
         const val WATCHDOG_MS = 5_000L
