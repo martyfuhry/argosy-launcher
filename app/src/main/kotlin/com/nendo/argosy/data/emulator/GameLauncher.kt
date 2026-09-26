@@ -47,6 +47,7 @@ import javax.inject.Singleton
 
 private const val TAG = "GameLauncher"
 private const val EXTRA_ALREADY_LAUNCHED = "argosy.already_launched"
+private const val EXTRA_LAUNCHED_AT_MS = "argosy.launched_at_ms"
 private val DISC_TAG_REGEX = Regex("\\(Disc \\d+\\)", RegexOption.IGNORE_CASE)
 private val DISC_NUMBER_REGEX = Regex("\\d+")
 
@@ -55,6 +56,12 @@ private val DISC_NUMBER_REGEX = Regex("\\d+")
  * not be started a second time.
  */
 fun Intent.isAlreadyLaunched(): Boolean = getBooleanExtra(EXTRA_ALREADY_LAUNCHED, false)
+
+/**
+ * The wall-clock time a shell launch started its emulator, or null for an intent not yet started.
+ */
+fun Intent.alreadyLaunchedAtMs(): Long? =
+    if (isAlreadyLaunched() && hasExtra(EXTRA_LAUNCHED_AT_MS)) getLongExtra(EXTRA_LAUNCHED_AT_MS, 0L) else null
 
 data class DiscOption(
     val fileName: String,
@@ -1596,6 +1603,7 @@ class GameLauncher @Inject constructor(
         val argv = command.toShellArgv()
         Logger.debug(TAG, "Shell command: ${argv.last()}")
 
+        val launchedAtMs = System.currentTimeMillis()
         try {
             val process = ProcessBuilder(*argv).redirectErrorStream(true).start()
             val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
@@ -1618,6 +1626,7 @@ class GameLauncher @Inject constructor(
                 command.activityClass ?: command.packageName
             )
             putExtra(EXTRA_ALREADY_LAUNCHED, true)
+            putExtra(EXTRA_LAUNCHED_AT_MS, launchedAtMs)
         }
         return ShellLaunchOutcome.Success(stub)
     }
