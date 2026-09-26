@@ -1813,8 +1813,8 @@ class DualScreenManager(
             }
             eachCompanion { it.onSessionStarted(gameId, isHardcore, channelName) }
         } else {
-            if (!_swappedIsGameActive.value) return
             emulatorDisplayId = null
+            if (!_swappedIsGameActive.value) return
             _swappedIsGameActive.value = false
             _swappedCompanionState.value = com.nendo.argosy.hardware.CompanionInGameState()
             _sessionControls.value = com.nendo.argosy.ui.dualscreen.dashboard.SessionControls()
