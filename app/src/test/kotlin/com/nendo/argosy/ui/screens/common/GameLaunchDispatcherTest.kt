@@ -221,6 +221,59 @@ class GameLaunchDispatcherTest {
         verify(exactly = 0) { tracker.cancelSession() }
     }
 
+    @Test
+    fun `a new launch opens a new-game session`() = testScope.runTest {
+        dispatcher.dispatch(GAME_ID, intent)
+        runCurrent()
+
+        verify { tracker.startPreparedSession(GAME_ID, isNewGame = true) }
+    }
+
+    @Test
+    fun `an app already running is brought forward and its session attached`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        every { permissionHelper.isPackageOnScreen(any(), GAME_PACKAGE, any()) } returns true
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        assertEquals(listOf(intent), started)
+        verify { tracker.startPreparedSession(GAME_ID, isNewGame = false) }
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `an app that just exited is started once more before its session is given up`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+
+        dispatcher.dispatch(GAME_ID, intent)
+        runCurrent()
+        advanceTimeBy(WATCHDOG_MS + 1)
+        runCurrent()
+        verify(exactly = 0) { tracker.cancelSession() }
+
+        advanceUntilIdle()
+        assertEquals(2, started.size)
+        verify(exactly = 1) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `an app that comes up on the second start keeps its session`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        every { context.startActivity(any(), any()) } answers {
+            started += firstArg<Intent>()
+            if (started.size == 2) {
+                every { permissionHelper.isPackageOnScreen(any(), GAME_PACKAGE, any()) } returns true
+            }
+        }
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        assertEquals(2, started.size)
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
     private companion object {
         const val GAME_ID = 7L
         const val GAME_PACKAGE = "com.aure.banjorecomp"
