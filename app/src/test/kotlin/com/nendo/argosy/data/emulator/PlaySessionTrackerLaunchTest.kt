@@ -82,23 +82,58 @@ class PlaySessionTrackerLaunchTest {
     fun `starting a prepared session opens it once with what the launch prepared`() {
         prepare(GAME_ID, variantFileId = 9L, origin = LaunchOrigin.EXTERNAL)
 
-        assertEquals(PACKAGE, tracker.startPreparedSession(GAME_ID, isNewGame = false))
+        assertEquals(PACKAGE, tracker.startPreparedSession(GAME_ID, PACKAGE, isNewGame = false))
         val session = tracker.activeSession.value!!
         assertEquals(GAME_ID, session.gameId)
         assertEquals(PACKAGE, session.emulatorPackage)
         assertEquals(9L, session.variantFileId)
         assertEquals(LaunchOrigin.EXTERNAL, session.origin)
         assertEquals(false, session.isNewGame)
-        assertNull(tracker.startPreparedSession(GAME_ID))
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
     }
 
     @Test
-    fun `a start for another game does not open the prepared session`() {
+    fun `a start for another game drops the prepared session instead of opening it`() {
         prepare(GAME_ID)
 
-        assertNull(tracker.startPreparedSession(OTHER_GAME_ID))
+        assertNull(tracker.startPreparedSession(OTHER_GAME_ID, PACKAGE))
         assertNull(tracker.activeSession.value)
-        assertEquals(PACKAGE, tracker.startPreparedSession(GAME_ID))
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
+    }
+
+    @Test
+    fun `a start of another package drops a stale prepare instead of opening it`() {
+        prepare(GAME_ID)
+
+        assertNull(tracker.startPreparedSession(GAME_ID, OWN_PACKAGE))
+        assertNull(tracker.activeSession.value)
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
+    }
+
+    @Test
+    fun `an in-process launch leaves no earlier prepare for its own start to open`() = kotlinx.coroutines.test.runTest {
+        val useCase = launchUseCase(
+            LaunchResult.Success(appIntent(PACKAGE)),
+            LaunchResult.Success(appIntent(OWN_PACKAGE), inProcess = true)
+        )
+        useCase(GAME_ID)
+        useCase(GAME_ID)
+
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
+        assertNull(tracker.activeSession.value)
+    }
+
+    @Test
+    fun `a resume leaves no earlier prepare for its own start to open`() = kotlinx.coroutines.test.runTest {
+        val useCase = launchUseCase(
+            LaunchResult.Success(appIntent(PACKAGE)),
+            LaunchResult.Success(appIntent(PACKAGE))
+        )
+        useCase(GAME_ID)
+        useCase(GAME_ID, forResume = true)
+
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
+        assertNull(tracker.activeSession.value)
     }
 
     @Test
@@ -107,7 +142,7 @@ class PlaySessionTrackerLaunchTest {
 
         tracker.discardPreparedSession(GAME_ID)
 
-        assertNull(tracker.startPreparedSession(GAME_ID))
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
         assertNull(tracker.activeSession.value)
     }
 
@@ -116,8 +151,8 @@ class PlaySessionTrackerLaunchTest {
         prepare(GAME_ID)
         prepare(OTHER_GAME_ID)
 
-        assertNull(tracker.startPreparedSession(GAME_ID))
-        assertEquals(PACKAGE, tracker.startPreparedSession(OTHER_GAME_ID))
+        assertEquals(PACKAGE, tracker.startPreparedSession(OTHER_GAME_ID, PACKAGE))
+        assertEquals(OTHER_GAME_ID, tracker.activeSession.value?.gameId)
     }
 
     @Test
@@ -130,7 +165,7 @@ class PlaySessionTrackerLaunchTest {
     @Test
     fun `force stopping leaves a session opened meanwhile its display`() {
         prepare(GAME_ID)
-        tracker.startPreparedSession(GAME_ID)
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
 
         tracker.forceStopService()
 
@@ -140,7 +175,7 @@ class PlaySessionTrackerLaunchTest {
     @Test
     fun `cancelling a session clears the game display at once`() {
         prepare(GAME_ID)
-        tracker.startPreparedSession(GAME_ID)
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
 
         tracker.cancelSession()
 
@@ -153,7 +188,7 @@ class PlaySessionTrackerLaunchTest {
         every { emulatorResolver.resolveEmulatorId(PACKAGE) } returns null
         prepare(GAME_ID)
 
-        tracker.startPreparedSession(GAME_ID)
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
 
         verify(timeout = 5_000) { dsm.updateCompanionSaveSyncApplicable(false) }
     }
@@ -163,9 +198,22 @@ class PlaySessionTrackerLaunchTest {
         every { emulatorResolver.resolveEmulatorId(PACKAGE) } returns "retroarch"
         prepare(GAME_ID)
 
-        tracker.startPreparedSession(GAME_ID)
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
 
         verify(timeout = 5_000) { dsm.updateCompanionSaveSyncApplicable(true) }
+    }
+
+    private fun appIntent(packageName: String) = mockk<android.content.Intent>(relaxed = true) {
+        every { component } returns mockk(relaxed = true) {
+            every { this@mockk.packageName } returns packageName
+        }
+    }
+
+    private fun launchUseCase(vararg results: LaunchResult): com.nendo.argosy.domain.usecase.game.LaunchGameUseCase {
+        val launcher = mockk<GameLauncher>(relaxed = true) {
+            io.mockk.coEvery { launch(any(), any(), any(), any(), any(), any(), any(), any()) } returnsMany results.toList()
+        }
+        return com.nendo.argosy.domain.usecase.game.LaunchGameUseCase(launcher, tracker)
     }
 
     private fun prepare(
@@ -183,5 +231,6 @@ class PlaySessionTrackerLaunchTest {
         const val GAME_ID = 3L
         const val OTHER_GAME_ID = 4L
         const val PACKAGE = "com.aure.banjorecomp"
+        const val OWN_PACKAGE = "com.nendo.argosy"
     }
 }
