@@ -766,12 +766,6 @@ fun ArgosyApp(
     }
 
     LaunchedEffect(viewModel) {
-        viewModel.netplayInviteLaunch.collect { request ->
-            context.startActivity(request.intent, request.options)
-        }
-    }
-
-    LaunchedEffect(viewModel) {
         viewModel.coreCrashLaunch.collect { gameId ->
             navController.navigate(Screen.GameDetail.createRoute(gameId)) {
                 launchSingleTop = true
@@ -782,10 +776,7 @@ fun ArgosyApp(
 
     LaunchedEffect(netplayJoinState) {
         val s = netplayJoinState
-        if (s is NetplayJoinState.LaunchReady) {
-            context.startActivity(s.intent, viewModel.launchOptionsFor(s.gameId))
-            viewModel.resetNetplayJoin()
-        }
+        if (s is NetplayJoinState.LaunchReady) viewModel.launchNetplayJoin(s)
     }
 
 
