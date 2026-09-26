@@ -2,9 +2,9 @@ package com.nendo.argosy.ui.screens.common
 
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
+import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.GameLauncher
 import com.nendo.argosy.data.emulator.LaunchResult
 import com.nendo.argosy.data.emulator.PlaySessionTracker
@@ -12,41 +12,36 @@ import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.repository.EmulatorConfigRepository
 import com.nendo.argosy.domain.usecase.game.LaunchGameUseCase
+import com.nendo.argosy.ui.screens.home.HomeEvent
+import com.nendo.argosy.ui.screens.library.LibraryEvent
 import com.nendo.argosy.util.DisplayAffinityHelper
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 /**
- * The race between a tapped game's start being delivered and the session start swapping the
- * tapping screen for the in-game dashboard.
- *
- * Contestant A is the session start: it marks the game active on the dual-screen manager after
- * [SESSION_BROADCAST_MS], which is what makes the tapping host render the dashboard in place of
- * the launcher and so disposes the screen's launch-event collector. Contestant B is the launch
- * placement lookup, held for [OPTIONS_LOOKUP_MS] before the start is handed on. The screen is
- * modelled as a subscriber coroutine cancelled when its host swaps to the dashboard, which is
- * where the start was delivered before the dispatcher took it over.
+ * The race between a tapped game's start and the dashboard swap that disposes the launch screen's
+ * event collector, driven through the launch screens' view models with the placement lookup held
+ * for [OPTIONS_LOOKUP_MS] and the session start taking [SESSION_BROADCAST_MS].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LaunchDeliveryRaceTest {
@@ -56,21 +51,14 @@ class LaunchDeliveryRaceTest {
         MAIN_TOP(displayId = 0, showcaseDisplayId = 4)
     }
 
-    private enum class EntryPoint(val choosesDisplay: Boolean) {
-        LIBRARY_PLAY(choosesDisplay = false),
-        HOME_PLAY(choosesDisplay = false),
-        HOME_PLAY_ON_DISPLAY(choosesDisplay = true),
-        GAME_DETAIL_PLAY(choosesDisplay = false),
-        GAME_DETAIL_LAUNCH_ON_DISPLAY(choosesDisplay = true)
-    }
+    private enum class LaunchScreen { LIBRARY, HOME }
 
     private data class Outcome(
         val sessionStarted: Boolean,
-        val dispatched: List<Intent>
+        val started: List<Intent>
     )
 
     private val testDispatcher = StandardTestDispatcher()
-    private val testScope = TestScope(testDispatcher)
 
     @Before
     fun setUp() {
@@ -84,76 +72,49 @@ class LaunchDeliveryRaceTest {
     }
 
     @Test
-    fun `a placement lookup outlasting the dashboard swap still starts the game`() = testScope.runTest {
-        val outcome = race(
-            host = Host.COMPANION_BOTTOM,
-            entryPoint = EntryPoint.LIBRARY_PLAY,
-            optionsLookupMs = OPTIONS_LOOKUP_MS,
-            sessionBroadcastMs = SESSION_BROADCAST_MS
-        )
+    fun `a placement lookup outlasting the dashboard swap still starts the game`() {
+        val outcome = race(Host.COMPANION_BOTTOM, LaunchScreen.LIBRARY, OPTIONS_LOOKUP_MS, SESSION_BROADCAST_MS)
 
-        assertDispatchedOnce(outcome, "library tap on the companion, lookup finishing after the swap")
+        assertStartedOnce(outcome, "library tap on the companion, lookup finishing after the swap")
     }
 
     @Test
-    fun `a placement lookup finishing before the dashboard swap starts the game`() = testScope.runTest {
-        val outcome = race(
-            host = Host.COMPANION_BOTTOM,
-            entryPoint = EntryPoint.LIBRARY_PLAY,
-            optionsLookupMs = 0L,
-            sessionBroadcastMs = OPTIONS_LOOKUP_MS
-        )
+    fun `a placement lookup finishing before the dashboard swap starts the game`() {
+        val outcome = race(Host.COMPANION_BOTTOM, LaunchScreen.LIBRARY, 0L, OPTIONS_LOOKUP_MS)
 
-        assertDispatchedOnce(outcome, "library tap on the companion, lookup finishing before the swap")
+        assertStartedOnce(outcome, "library tap on the companion, lookup finishing before the swap")
     }
 
     @Test
-    fun `a tap on the main screen with the game on the companion still starts the game`() = testScope.runTest {
-        val outcome = race(
-            host = Host.MAIN_TOP,
-            entryPoint = EntryPoint.LIBRARY_PLAY,
-            optionsLookupMs = OPTIONS_LOOKUP_MS,
-            sessionBroadcastMs = SESSION_BROADCAST_MS
-        )
+    fun `a tap on the main screen with the game on the companion still starts the game`() {
+        val outcome = race(Host.MAIN_TOP, LaunchScreen.LIBRARY, OPTIONS_LOOKUP_MS, SESSION_BROADCAST_MS)
 
-        assertDispatchedOnce(outcome, "library tap on the main screen, game on the companion")
+        assertStartedOnce(outcome, "library tap on the main screen, game on the companion")
     }
 
     @Test
-    fun `a game landing on the tapping screen keeps the launcher and starts the game`() = testScope.runTest {
+    fun `a game landing on the tapping screen keeps the launcher and starts the game`() {
         val outcome = race(
-            host = Host.MAIN_TOP,
-            entryPoint = EntryPoint.LIBRARY_PLAY,
-            optionsLookupMs = OPTIONS_LOOKUP_MS,
-            sessionBroadcastMs = SESSION_BROADCAST_MS,
+            Host.MAIN_TOP,
+            LaunchScreen.LIBRARY,
+            OPTIONS_LOOKUP_MS,
+            SESSION_BROADCAST_MS,
             gameDisplayId = Host.MAIN_TOP.displayId
         )
 
-        assertDispatchedOnce(outcome, "game on the tapping screen, no dashboard swap")
+        assertStartedOnce(outcome, "game on the tapping screen, no dashboard swap")
     }
 
     @Test
-    fun `an app that is already running is brought forward rather than dropped`() = testScope.runTest {
-        val outcome = race(
-            host = Host.COMPANION_BOTTOM,
-            entryPoint = EntryPoint.HOME_PLAY,
-            optionsLookupMs = OPTIONS_LOOKUP_MS,
-            sessionBroadcastMs = SESSION_BROADCAST_MS
-        )
-
-        assertDispatchedOnce(outcome, "already-running app tapped on Home")
-    }
-
-    @Test
-    fun `every entry point on either screen starts the game whichever contestant wins`() = testScope.runTest {
+    fun `every launch screen on either screen starts the game whichever contestant wins`() {
         val failures = mutableListOf<String>()
         for (host in Host.values()) {
-            for (entryPoint in EntryPoint.values()) {
+            for (screen in LaunchScreen.values()) {
                 for ((lookupMs, broadcastMs) in listOf(OPTIONS_LOOKUP_MS to SESSION_BROADCAST_MS, 0L to OPTIONS_LOOKUP_MS)) {
-                    val outcome = race(host, entryPoint, lookupMs, broadcastMs)
-                    val label = "$host/$entryPoint lookup=${lookupMs}ms session=${broadcastMs}ms"
-                    if (outcome.dispatched.size != 1) {
-                        failures += "$label: started=${outcome.sessionStarted}, dispatched=${outcome.dispatched.size}"
+                    val outcome = race(host, screen, lookupMs, broadcastMs)
+                    if (!outcome.sessionStarted || outcome.started.size != 1) {
+                        failures += "$host/$screen lookup=${lookupMs}ms session=${broadcastMs}ms: " +
+                            "session=${outcome.sessionStarted}, started=${outcome.started.size}"
                     }
                 }
             }
@@ -162,26 +123,25 @@ class LaunchDeliveryRaceTest {
         assertTrue("launches lost:\n" + failures.joinToString("\n"), failures.isEmpty())
     }
 
-    private fun assertDispatchedOnce(outcome: Outcome, label: String) {
-        assertTrue("$label: session marked started", outcome.sessionStarted)
-        assertEquals(
-            "$label: session started but the emulator start was dispatched ${outcome.dispatched.size} times",
-            1,
-            outcome.dispatched.size
-        )
+    private fun assertStartedOnce(outcome: Outcome, label: String) {
+        assertTrue("$label: session opened", outcome.sessionStarted)
+        assertEquals("$label: emulator starts", 1, outcome.started.size)
     }
 
-    private suspend fun TestScope.race(
+    private fun race(
         host: Host,
-        entryPoint: EntryPoint,
+        launchScreen: LaunchScreen,
         optionsLookupMs: Long,
         sessionBroadcastMs: Long,
         gameDisplayId: Int = host.showcaseDisplayId
     ): Outcome {
-        val dispatched = mutableListOf<Intent>()
-        val hostContext = mockk<Context>(relaxed = true) {
-            every { startActivity(any(), any()) } answers { dispatched += firstArg<Intent>() }
-            every { startActivity(any()) } answers { dispatched += firstArg<Intent>() }
+        val started = mutableListOf<Intent>()
+        val appContext = mockk<Context>(relaxed = true) {
+            every { startActivity(any(), any()) } answers { started += firstArg<Intent>() }
+        }
+        val screenContext = mockk<Context>(relaxed = true) {
+            every { startActivity(any(), any()) } answers { started += firstArg<Intent>() }
+            every { startActivity(any()) } answers { started += firstArg<Intent>() }
         }
         val displayAffinityHelper = mockk<DisplayAffinityHelper>(relaxed = true) {
             every { getRoleDisplayIds(any()) } returns (host.displayId to host.showcaseDisplayId)
@@ -189,19 +149,16 @@ class LaunchDeliveryRaceTest {
             every { getDisplayTargetId(any(), any()) } returns gameDisplayId
             every { getActivityOptions(any(), any(), any()) } returns null
         }
-        val gameDao = mockk<GameDao>(relaxed = true) {
-            coEvery { getById(any()) } returns null
-        }
-        val managerScope = CoroutineScope(
-            testDispatcher + kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.CoroutineExceptionHandler { _, _ -> }
-        )
+        val raceScope = CoroutineScope(testDispatcher + SupervisorJob() + CoroutineExceptionHandler { _, _ -> })
         val dsm = launchTestDualScreenManager(
-            scope = managerScope,
+            scope = raceScope,
             displayAffinityHelper = displayAffinityHelper,
             sessionStateStore = mockk<SessionStateStore>(relaxed = true) {
                 every { hasActiveSession() } returns false
             },
-            gameDao = gameDao
+            gameDao = mockk<GameDao>(relaxed = true) {
+                coEvery { getById(any()) } returns null
+            }
         )
         DualScreenManagerHolder.instance = dsm
 
@@ -212,8 +169,8 @@ class LaunchDeliveryRaceTest {
             every { startPreparedSession(GAME_ID, any(), any()) } answers {
                 if (!sessionPrepared) return@answers null
                 sessionStarted = true
-                launch { broadcastSessionStart(dsm, firstArg(), sessionBroadcastMs) }
-                com.nendo.argosy.data.emulator.ActiveSession(GAME_ID, java.time.Instant.EPOCH, APP_PACKAGE)
+                raceScope.launch { broadcastSessionStart(dsm, firstArg(), sessionBroadcastMs) }
+                ActiveSession(GAME_ID, Instant.EPOCH, APP_PACKAGE)
             }
             every { activeSession } returns MutableStateFlow(null)
         }
@@ -226,46 +183,63 @@ class LaunchDeliveryRaceTest {
         val gameLauncher = mockk<GameLauncher>(relaxed = true) {
             coEvery { launch(GAME_ID, any(), any(), any(), any(), any(), any(), any()) } returns LaunchResult.Success(intent)
         }
-        val emulatorConfigRepository = mockk<EmulatorConfigRepository>(relaxed = true) {
-            coEvery { getEffectiveDisplayTarget(any()) } coAnswers {
-                delay(optionsLookupMs)
-                null
-            }
-        }
         val resolver = EmulatorLaunchTargetResolver(
             context = mockk(relaxed = true),
             displayAffinityHelper = displayAffinityHelper,
-            emulatorConfigRepository = emulatorConfigRepository
+            emulatorConfigRepository = mockk<EmulatorConfigRepository>(relaxed = true) {
+                coEvery { getEffectiveDisplayTarget(any()) } coAnswers {
+                    delay(optionsLookupMs)
+                    null
+                }
+            }
         )
         val launchGameUseCase = LaunchGameUseCase(gameLauncher, tracker)
-        val dispatcher = GameLaunchDispatcher(
-            context = hostContext,
+        val gameLaunchDispatcher = GameLaunchDispatcher(
+            context = appContext,
             launchTargetResolver = resolver,
             playSessionTracker = tracker,
             permissionHelper = mockk(relaxed = true),
             notificationManager = mockk(relaxed = true),
             ioDispatcher = testDispatcher
         )
-        val overrideDisplayId = if (entryPoint.choosesDisplay) gameDisplayId else null
-
-        val events = MutableSharedFlow<Pair<Intent, Bundle?>>()
-        val screen = launch {
-            events.collect { (launchIntent, options) -> hostContext.startActivity(launchIntent, options) }
+        val gameLaunchDelegate = launchTestGameLaunchDelegate { _, gameId, onLaunch ->
+            raceScope.launch { (launchGameUseCase(gameId) as? LaunchResult.Success)?.let { onLaunch(it.intent) } }
         }
-        val hostJob = launch {
+
+        val screen: Job
+        val tap: () -> Unit
+        when (launchScreen) {
+            LaunchScreen.LIBRARY -> {
+                val viewModel = launchTestLibraryViewModel(gameLaunchDispatcher, gameLaunchDelegate, resolver)
+                screen = raceScope.launch {
+                    viewModel.events.collect { event ->
+                        if (event is LibraryEvent.LaunchIntent) screenContext.startActivity(event.intent, event.options)
+                    }
+                }
+                tap = { viewModel.launchGame(GAME_ID) }
+            }
+            LaunchScreen.HOME -> {
+                val viewModel = launchTestHomeViewModel(gameLaunchDispatcher, gameLaunchDelegate, resolver)
+                screen = raceScope.launch {
+                    viewModel.events.collect { event ->
+                        if (event is HomeEvent.LaunchIntent) screenContext.startActivity(event.intent, event.options)
+                    }
+                }
+                tap = { viewModel.launchGame(GAME_ID, null) }
+            }
+        }
+        val hostSwap = raceScope.launch {
             dsm.swappedIsGameActive.first { it && dsm.primaryShowsDashboard(host.displayId) }
             screen.cancel()
         }
-        advanceUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        val result = launchGameUseCase(GAME_ID) as LaunchResult.Success
-        dispatcher.dispatch(GAME_ID, result.intent, overrideDisplayId)
-        advanceUntilIdle()
+        tap()
+        testDispatcher.scheduler.advanceUntilIdle()
 
-        hostJob.cancelAndJoin()
-        screen.cancelAndJoin()
-        managerScope.coroutineContext[kotlinx.coroutines.Job]?.cancelAndJoin()
-        return Outcome(sessionStarted = sessionStarted, dispatched = dispatched.toList())
+        raceScope.coroutineContext[Job]?.cancel()
+        testDispatcher.scheduler.advanceUntilIdle()
+        return Outcome(sessionStarted = sessionStarted, started = started.toList())
     }
 
     private suspend fun broadcastSessionStart(dsm: DualScreenManager, gameId: Long, afterMs: Long) {
