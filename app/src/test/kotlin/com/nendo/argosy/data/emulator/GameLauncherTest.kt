@@ -925,7 +925,7 @@ class GameLauncherTest {
             for (overrideDisplayId in listOf(null, bottom)) {
                 val game = createGame(platformSlug = "3ds")
                 val displayId = launcher.shellLaunchDisplayId(game, command, overrideDisplayId)
-                val stub = launcher.shellLaunchStub(command, displayId)
+                val stub = launcher.shellLaunchStub(command, displayId, launchedAtMs = 0L)
 
                 resolverPlacingEverythingOn(elsewhere).launchOptionsFor(game.id, stub, overrideDisplayId)
 
