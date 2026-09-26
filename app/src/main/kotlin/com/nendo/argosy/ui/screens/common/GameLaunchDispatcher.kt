@@ -72,10 +72,14 @@ class GameLaunchDispatcher internal constructor(
     }
 
     /**
-     * Places and starts [intent] for [gameId], then opens the session its launch prepared. Runs on
-     * the launcher's own scope, so the start never depends on the tapping screen still being shown.
+     * Places and starts [intent] for [gameId], then opens the session its launch prepared. An app
+     * already running is brought forward and its session attached rather than counted as new.
      */
     fun dispatch(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Job = scope.launch {
+        val packageName = intent.component?.packageName ?: intent.`package`
+        val wasRunning = packageName != null && withContext(ioDispatcher) {
+            permissionHelper.isPackageOnScreenOrRecent(context, packageName, RECENTLY_RUNNING_MS)
+        }
         val options = launchTargetResolver.launchOptionsFor(gameId, overrideDisplayId)
         val startedAtMs = System.currentTimeMillis()
         if (!start(intent, options)) {
@@ -87,20 +91,37 @@ class GameLaunchDispatcher internal constructor(
             notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
             return@launch
         }
-        val watchedPackage = playSessionTracker.startPreparedSession(gameId)
+        val watchedPackage = playSessionTracker.startPreparedSession(gameId, isNewGame = !wasRunning)
             ?.takeIf { it.isNotEmpty() }
             ?: return@launch
         arrivalWatch?.cancel()
         arrivalWatch = scope.launch {
-            watchArrival(gameId, watchedPackage, startedAtMs)
+            watchArrival(gameId, watchedPackage, intent, options, startedAtMs, retryOnce = wasRunning)
         }
     }
 
-    private suspend fun watchArrival(gameId: Long, packageName: String, startedAtMs: Long) {
+    private suspend fun watchArrival(
+        gameId: Long,
+        packageName: String,
+        intent: Intent,
+        options: Bundle?,
+        startedAtMs: Long,
+        retryOnce: Boolean
+    ) {
         delay(ARRIVAL_TIMEOUT_MS)
         if (playSessionTracker.activeSession.value?.gameId != gameId) return
         val arrived = withContext(ioDispatcher) { hasArrived(packageName, startedAtMs) }
         if (arrived != false) return
+        if (retryOnce) {
+            Logger.warn(TAG, "gameId=$gameId: $packageName not in front after ${ARRIVAL_TIMEOUT_MS}ms, starting it once more")
+            delay(RETRY_DELAY_MS)
+            val retriedAtMs = System.currentTimeMillis()
+            if (start(intent, options)) {
+                watchArrival(gameId, packageName, intent, options, retriedAtMs, retryOnce = false)
+                return
+            }
+        }
+        if (playSessionTracker.activeSession.value?.gameId != gameId) return
         Logger.error(TAG, "gameId=$gameId: $packageName never came to the front, ending its session")
         playSessionTracker.cancelSession()
         notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
@@ -132,5 +153,7 @@ class GameLaunchDispatcher internal constructor(
 
     private companion object {
         const val ARRIVAL_TIMEOUT_MS = 5_000L
+        const val RETRY_DELAY_MS = 750L
+        const val RECENTLY_RUNNING_MS = 10_000L
     }
 }
