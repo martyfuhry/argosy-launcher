@@ -188,6 +188,22 @@ class DualScreenManagerRoleSwapTest {
     }
 
     @Test
+    fun `a layout waiting when a dock blanks the panels is dropped at session end`() {
+        manager = newManager(initialRolesSwapped = false)
+        every { sessionStateStore.hasActiveSession() } returns true
+        manager.setPrimaryDisplayId(android.view.Display.DEFAULT_DISPLAY)
+
+        docked = true
+        every { sessionStateStore.hasActiveSession() } returns false
+        manager.onSessionChanged(-1L)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(false, manager.isRolesSwapped.value)
+    }
+
+    private var docked = false
+
+    @Test
     fun `a live swap commits the roles once the game reaches the other display`() {
         val host = liveSwapReady(FakeGameWindowMover(arrives = true))
 
@@ -283,7 +299,10 @@ class DualScreenManagerRoleSwapTest {
     private fun newManager(
         initialRolesSwapped: Boolean = false,
         displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper =
-            mockk(relaxed = true) { every { getRoleDisplayIds(any()) } returns null },
+            mockk(relaxed = true) {
+                every { getRoleDisplayIds(any()) } returns null
+                every { isDockedDark } answers { docked }
+            },
         gameWindowMover: com.nendo.argosy.hardware.GameWindowMover = FakeGameWindowMover(arrives = false)
     ): DualScreenManager = DualScreenManager(
         context = context,
