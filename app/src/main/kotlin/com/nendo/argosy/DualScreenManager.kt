@@ -385,6 +385,10 @@ class DualScreenManager(
     private var sessionOrigin = LaunchOrigin.INTERNAL
 
     private fun applyDeferredPrimary(refocus: Boolean) {
+        if (displayAffinityHelper.isDockedDark) {
+            deferredPrimaryDisplayId = null
+            return
+        }
         deferredPrimaryDisplayId?.let { setPrimaryDisplayId(it, refocus) }
     }
 
