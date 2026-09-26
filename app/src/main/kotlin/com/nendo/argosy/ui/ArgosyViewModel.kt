@@ -40,7 +40,6 @@ import com.nendo.argosy.data.sync.ConflictInfo
 import com.nendo.argosy.data.sync.ConflictResolution
 import com.nendo.argosy.data.sync.SyncQueueManager
 import com.nendo.argosy.ui.components.SaveConflictInfo
-import com.nendo.argosy.ui.screens.common.GameLaunchRequest
 import com.nendo.argosy.data.preferences.ThemeMode
 import com.nendo.argosy.data.preferences.UserPreferences
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -229,8 +228,7 @@ class ArgosyViewModel @Inject constructor(
     private val homeLibraryDelegate: com.nendo.argosy.ui.screens.home.delegates.HomeLibraryDelegate,
     private val pendingConflictDao: com.nendo.argosy.data.local.dao.PendingConflictDao,
     private val deepLinkLaunchCoordinator: com.nendo.argosy.ui.deeplink.DeepLinkLaunchCoordinator,
-    private val emulatorLaunchTargetResolver:
-        com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val gameLaunchDispatcher: com.nendo.argosy.ui.screens.common.GameLaunchDispatcher,
     connectedControllerTracker: ConnectedControllerTracker
 ) : ViewModel() {
 
@@ -244,6 +242,11 @@ class ArgosyViewModel @Inject constructor(
 
     fun cancelNetplayJoin() = netplayJoinService.cancel()
     fun resetNetplayJoin() = netplayJoinService.reset()
+
+    fun launchNetplayJoin(ready: com.nendo.argosy.data.netplay.NetplayJoinState.LaunchReady) {
+        gameLaunchDispatcher.dispatch(ready.gameId, ready.intent)
+        netplayJoinService.reset()
+    }
     fun netplayJoinService(): com.nendo.argosy.data.netplay.NetplayJoinService = netplayJoinService
 
     private val contentResolver get() = application.contentResolver
@@ -1042,25 +1045,12 @@ class ArgosyViewModel @Inject constructor(
     private val _netplayInviteFocusIndex = MutableStateFlow(0)
     val netplayInviteFocusIndex: StateFlow<Int> = _netplayInviteFocusIndex.asStateFlow()
 
-    private val _netplayInviteLaunch =
-        kotlinx.coroutines.flow.MutableSharedFlow<GameLaunchRequest>(extraBufferCapacity = 4)
-    val netplayInviteLaunch: kotlinx.coroutines.flow.SharedFlow<GameLaunchRequest> = _netplayInviteLaunch
-
-    private val _coreCrashLaunch =
-        kotlinx.coroutines.flow.MutableSharedFlow<GameLaunchRequest>(extraBufferCapacity = 1)
-    val coreCrashLaunch: kotlinx.coroutines.flow.SharedFlow<GameLaunchRequest> = _coreCrashLaunch
-
-    suspend fun launchOptionsFor(gameId: Long, intent: android.content.Intent): android.os.Bundle? =
-        emulatorLaunchTargetResolver.launchOptionsFor(gameId, intent)
-
     fun launchFromCoreCrash() {
         val gameId = coreCrashController.prompt.value?.gameId ?: return
         coreCrashController.dismiss()
         viewModelScope.launch {
             (launchGameUseCase(gameId = gameId, allowVariantPrompt = false) as? LaunchResult.Success)?.let {
-                _coreCrashLaunch.tryEmit(
-                    GameLaunchRequest(it.intent, emulatorLaunchTargetResolver.launchOptionsFor(gameId, it.intent))
-                )
+                gameLaunchDispatcher.dispatch(gameId, it.intent)
             }
         }
     }
@@ -1146,9 +1136,7 @@ class ArgosyViewModel @Inject constructor(
                             putExtra(LibretroActivity.EXTRA_CORE_PATH, preflight.resolvedCorePath)
                         }
                     }
-                    _netplayInviteLaunch.tryEmit(
-                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(gameId, decorated))
-                    )
+                    gameLaunchDispatcher.dispatch(gameId, decorated)
                 }
                 is LaunchResult.Error -> {
                     notificationManager.show(
@@ -1246,9 +1234,7 @@ class ArgosyViewModel @Inject constructor(
                             putExtra(LibretroActivity.EXTRA_CORE_PATH, preflight.resolvedCorePath)
                         }
                     }
-                    _netplayInviteLaunch.tryEmit(
-                        GameLaunchRequest(decorated, emulatorLaunchTargetResolver.launchOptionsFor(game.id, decorated))
-                    )
+                    gameLaunchDispatcher.dispatch(game.id, decorated)
                 }
                 is LaunchResult.Error -> {
                     notificationManager.show(
