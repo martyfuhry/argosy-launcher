@@ -663,10 +663,10 @@ class PlaySessionTracker @Inject constructor(
     }
 
     /**
-     * The emulator package of the session prepared for [gameId] and [targetPackage], now opened, or
-     * null when none was, or another session is still running. A prepare for anything else is dropped.
+     * The session opened from the one prepared for [gameId] and [targetPackage], or null when none
+     * was, or another session is still running. A prepare for anything else is dropped.
      */
-    fun startPreparedSession(gameId: Long, targetPackage: String, isNewGame: Boolean = true): String? {
+    fun startPreparedSession(gameId: Long, targetPackage: String, isNewGame: Boolean = true): ActiveSession? {
         val prepared = preparedSession.get() ?: return null
         if (!preparedSession.compareAndSet(prepared, null)) return null
         if (prepared.gameId != gameId || prepared.emulatorPackage != targetPackage) {
@@ -677,6 +677,7 @@ class PlaySessionTracker @Inject constructor(
             )
             return null
         }
+        val running = _activeSession.value
         startSession(
             gameId = prepared.gameId,
             emulatorPackage = prepared.emulatorPackage,
@@ -685,7 +686,7 @@ class PlaySessionTracker @Inject constructor(
             variantFileId = prepared.variantFileId,
             origin = prepared.origin
         )
-        return prepared.emulatorPackage.takeIf { _activeSession.value?.gameId == gameId }
+        return _activeSession.value?.takeIf { it.gameId == gameId && it.startTime != running?.startTime }
     }
 
     /**
