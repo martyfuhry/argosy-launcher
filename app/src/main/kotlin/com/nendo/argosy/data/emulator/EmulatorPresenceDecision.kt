@@ -3,6 +3,7 @@ package com.nendo.argosy.data.emulator
 enum class PresenceEventKind {
     SCREEN_INTERACTIVE,
     SCREEN_NON_INTERACTIVE,
+    KEYGUARD_SHOWN,
     KEYGUARD_HIDDEN,
     ACTIVITY_RESUMED,
     ACTIVITY_PAUSED,
