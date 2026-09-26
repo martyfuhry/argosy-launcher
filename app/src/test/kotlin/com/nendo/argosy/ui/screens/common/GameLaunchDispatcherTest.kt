@@ -390,6 +390,36 @@ class GameLaunchDispatcherTest {
         verify(exactly = 1) { tracker.cancelSession() }
     }
 
+    @Test
+    fun `a shell-started emulator is timed from its shell start`() = testScope.runTest {
+        asShellLaunched(atMs = SHELL_LAUNCHED_AT_MS)
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        verify { permissionHelper.presenceEvents(any(), SHELL_LAUNCHED_AT_MS, any()) }
+    }
+
+    @Test
+    fun `a shell-started emulator seen running is a new game and is never started again`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asShellLaunched(atMs = SHELL_LAUNCHED_AT_MS)
+        asAppLaunchIntent()
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        assertTrue(started.isEmpty())
+        verify { tracker.startPreparedSession(GAME_ID, GAME_PACKAGE, isNewGame = true) }
+        verify(exactly = 1) { tracker.cancelSession() }
+    }
+
+    private fun asShellLaunched(atMs: Long) {
+        every { intent.getBooleanExtra("argosy.already_launched", false) } returns true
+        every { intent.hasExtra("argosy.launched_at_ms") } returns true
+        every { intent.getLongExtra("argosy.launched_at_ms", any()) } returns atMs
+    }
+
     private fun asAppLaunchIntent() {
         every { intent.action } returns Intent.ACTION_MAIN
         every { intent.hasCategory(Intent.CATEGORY_LAUNCHER) } returns true
@@ -400,5 +430,6 @@ class GameLaunchDispatcherTest {
         const val GAME_PACKAGE = "com.aure.banjorecomp"
         const val OWN_PACKAGE = "com.nendo.argosy"
         const val WATCHDOG_MS = 5_000L
+        const val SHELL_LAUNCHED_AT_MS = 1_234L
     }
 }
