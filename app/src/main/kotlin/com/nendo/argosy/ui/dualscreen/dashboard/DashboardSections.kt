@@ -265,17 +265,23 @@ private fun SessionStatusLine(content: DashboardContent) {
             modifier = Modifier
                 .size(Dimens.iconSm)
                 .clip(CircleShape)
-                .background(if (state.isDirty) semantic.warning else semantic.success),
+                .background(
+                    when {
+                        !state.saveSyncApplicable -> theme.textDim
+                        state.isDirty -> semantic.warning
+                        else -> semantic.success
+                    }
+                ),
             contentAlignment = Alignment.Center
         ) {
-            if (state.isDirty) {
+            if (state.saveSyncApplicable && state.isDirty) {
                 Box(
                     modifier = Modifier
                         .size(Dimens.spacingXs)
                         .clip(CircleShape)
                         .background(Color.White)
                 )
-            } else {
+            } else if (state.saveSyncApplicable) {
                 androidx.compose.material3.Icon(
                     imageVector = androidx.compose.material.icons.Icons.Filled.Check,
                     contentDescription = null,
@@ -285,10 +291,10 @@ private fun SessionStatusLine(content: DashboardContent) {
             }
         }
         Text(
-            text = if (state.isDirty) {
-                stringResource(R.string.dual_companion_saves_dirty)
-            } else {
-                stringResource(R.string.dual_companion_saves_synced)
+            text = when {
+                !state.saveSyncApplicable -> stringResource(R.string.dual_companion_saves_not_synced)
+                state.isDirty -> stringResource(R.string.dual_companion_saves_dirty)
+                else -> stringResource(R.string.dual_companion_saves_synced)
             },
             style = MaterialTheme.typography.bodySmall,
             color = theme.textDim

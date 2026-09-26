@@ -776,6 +776,8 @@ class PlaySessionTracker @Inject constructor(
             }
         } else null
 
+        DualScreenManagerHolder.instance?.updateCompanionSaveSyncApplicable(savePath != null)
+
         val liveHardcore = _activeSession.value?.takeIf { it.gameId == gameId }?.isHardcore ?: isHardcore
         val channelName = if (liveHardcore) null else activeSaveRepository.getActiveChannel(gameId)
 

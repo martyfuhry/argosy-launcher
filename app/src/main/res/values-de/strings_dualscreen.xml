@@ -56,6 +56,7 @@
 
     <string name="dual_companion_saves_dirty">Neue Spielstanddaten</string>
     <string name="dual_companion_saves_synced">Spielstände synchronisiert</string>
+    <string name="dual_companion_saves_not_synced">Keine Spielstand-Synchronisierung für diese App</string>
 
     <string name="dual_companion_app_bar_add_description">App hinzufügen</string>
     <string name="dual_companion_app_drawer_title">Alle Apps</string>

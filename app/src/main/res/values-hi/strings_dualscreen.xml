@@ -56,6 +56,7 @@
 
     <string name="dual_companion_saves_dirty">नया सेव डेटा</string>
     <string name="dual_companion_saves_synced">सेव सिंक हुए</string>
+    <string name="dual_companion_saves_not_synced">इस ऐप के लिए सेव सिंक नहीं</string>
 
     <string name="dual_companion_app_bar_add_description">ऐप जोड़ें</string>
     <string name="dual_companion_app_drawer_title">सभी ऐप</string>
