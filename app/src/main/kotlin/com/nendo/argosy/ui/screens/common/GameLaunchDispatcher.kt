@@ -74,7 +74,7 @@ class GameLaunchDispatcher internal constructor(
             ?: return@launch
         arrivalWatch?.cancel()
         arrivalWatch = scope.launch {
-            watchArrival(session, intent, options, startedAtMs, retryOnce = wasRunning)
+            watchArrival(session, intent, options, startedAtMs, retryOnce = wasRunning && intent.isAppLaunchIntent())
         }
     }
 
@@ -96,6 +96,7 @@ class GameLaunchDispatcher internal constructor(
             delay(RETRY_DELAY_MS)
             if (!isStillRunning(session)) return
             val retriedAtMs = System.currentTimeMillis()
+            intent.removeFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
             if (start(intent, options)) {
                 watchArrival(session, intent, options, retriedAtMs, retryOnce = false)
                 return
@@ -135,6 +136,9 @@ class GameLaunchDispatcher internal constructor(
             false
         }
     }
+
+    private fun Intent.isAppLaunchIntent(): Boolean =
+        action == Intent.ACTION_MAIN && (hasCategory(Intent.CATEGORY_LAUNCHER) || hasCategory(Intent.CATEGORY_INFO))
 
     private companion object {
         const val ARRIVAL_TIMEOUT_MS = 5_000L
