@@ -825,6 +825,14 @@ class DualScreenManager(
         }
     }
 
+    @Volatile
+    private var sessionSaveSyncApplicable = true
+
+    fun updateCompanionSaveSyncApplicable(applicable: Boolean) {
+        sessionSaveSyncApplicable = applicable
+        _swappedCompanionState.update { it.copy(saveSyncApplicable = applicable) }
+    }
+
     fun updateCompanionSaveDirty(isDirty: Boolean) {
         _swappedCompanionState.update { it.copy(isDirty = isDirty) }
     }
@@ -1960,6 +1968,7 @@ class DualScreenManager(
 
     fun onSessionChanged(gameId: Long, isHardcore: Boolean = false, channelName: String? = null) {
         if (gameId > 0) {
+            if (!_swappedIsGameActive.value) sessionSaveSyncApplicable = true
             _swappedIsGameActive.value = true
             swappedSessionTimer?.stop(appContext)
             swappedSessionTimer = com.nendo.argosy.hardware.CompanionSessionTimer().also { it.start(appContext) }
@@ -1989,6 +1998,7 @@ class DualScreenManager(
                         channelName = sessionStateStore.getChannelName(),
                         isHardcore = sessionStateStore.isHardcore(),
                         isDirty = sessionStateStore.isSaveDirty(),
+                        saveSyncApplicable = sessionSaveSyncApplicable,
                         isLoaded = true,
                         backgroundPath = game.displayBackgroundPath,
                         manual = documents.firstOrNull {
