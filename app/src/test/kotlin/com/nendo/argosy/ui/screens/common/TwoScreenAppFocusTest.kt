@@ -1,8 +1,12 @@
 package com.nendo.argosy.ui.screens.common
 
 import com.nendo.argosy.data.preferences.SessionStateStore
+import com.nendo.argosy.hardware.SecondaryHomeActivity
+import com.nendo.argosy.util.SecondaryHomeComponent
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,4 +84,62 @@ class TwoScreenAppFocusTest {
 
         verify(exactly = 0) { store.isForeignAppOnSecondary() }
     }
+
+    @Test
+    fun `a two-screen app still leaves the companion component enabled for later`() {
+        every { store.isDualScreenEnabled() } returns true
+        mockkObject(SecondaryHomeComponent)
+        try {
+            every { SecondaryHomeComponent.setEnabled(any(), any()) } returns Unit
+            val dsm = manager()
+            dsm.setEmulatorDisplay(0)
+
+            dsm.ensureCompanionLaunched(allowDuringSession = true)
+
+            verify { SecondaryHomeComponent.setEnabled(any(), true) }
+        } finally {
+            unmockkObject(SecondaryHomeComponent)
+        }
+    }
+
+    @Test
+    fun `the companion does not take focus back from a two-screen app`() {
+        val dsm = manager()
+        dsm.setEmulatorDisplay(0)
+        val companion = companionOver(dsm)
+
+        companion.refocusSelf()
+
+        verify(exactly = 0) { companion.startActivity(any()) }
+    }
+
+    @Test
+    fun `the companion does not take focus back from a two-screen emulator`() {
+        every { store.getEmulatorPackage() } returns "org.azahar_emu.azahar"
+        val dsm = manager()
+        dsm.setEmulatorDisplay(0)
+        val companion = companionOver(dsm)
+
+        companion.refocusSelf()
+
+        verify(exactly = 0) { companion.startActivity(any()) }
+    }
+
+    @Test
+    fun `the companion takes focus back from a single-screen app`() {
+        every { store.getEmulatorPackage() } returns "com.example.single"
+        val dsm = manager()
+        dsm.setEmulatorDisplay(0)
+        val companion = companionOver(dsm)
+
+        companion.refocusSelf()
+
+        verify(exactly = 1) { companion.startActivity(any()) }
+    }
+
+    private fun companionOver(dsm: com.nendo.argosy.DualScreenManager): SecondaryHomeActivity =
+        mockk<SecondaryHomeActivity>(relaxed = true).also { companion ->
+            every { companion.refocusSelf() } answers { callOriginal() }
+            SecondaryHomeActivity::class.java.getDeclaredField("dsm").apply { isAccessible = true }.set(companion, dsm)
+        }
 }
