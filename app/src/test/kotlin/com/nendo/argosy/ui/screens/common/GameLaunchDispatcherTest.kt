@@ -55,8 +55,7 @@ class GameLaunchDispatcherTest {
     private val tracker = mockk<PlaySessionTracker>(relaxed = true) {
         every { this@mockk.activeSession } returns sessionFlow
         every { startPreparedSession(GAME_ID, any(), any()) } answers {
-            sessionFlow.value = ActiveSession(GAME_ID, Instant.EPOCH, GAME_PACKAGE)
-            GAME_PACKAGE
+            ActiveSession(GAME_ID, Instant.EPOCH, GAME_PACKAGE).also { sessionFlow.value = it }
         }
         every { cancelSession() } answers { sessionFlow.value = null }
     }
@@ -260,6 +259,28 @@ class GameLaunchDispatcherTest {
         advanceUntilIdle()
 
         verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `a later session of the same game outlives an earlier start's watchdog`() = testScope.runTest {
+        dispatcher.dispatch(GAME_ID, intent)
+        runCurrent()
+        sessionFlow.value = ActiveSession(GAME_ID, Instant.EPOCH.plusSeconds(1), GAME_PACKAGE)
+
+        advanceUntilIdle()
+
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `a session updated after its start is still the one watched`() = testScope.runTest {
+        dispatcher.dispatch(GAME_ID, intent)
+        runCurrent()
+        sessionFlow.value = sessionFlow.value?.copy(channelName = "Slot 2", isOnOlderSave = true)
+
+        advanceUntilIdle()
+
+        verify(exactly = 1) { tracker.cancelSession() }
     }
 
     @Test
