@@ -4,6 +4,7 @@ import android.app.ActivityOptions
 import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Display
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import com.nendo.argosy.util.DisplayAffinityHelper.Companion.isWithinPanelWakeWindow
@@ -53,6 +54,8 @@ class LaunchOptionsWithPanelOffTest {
         }
         val context = mockk<Context> {
             every { getSystemService(Context.DISPLAY_SERVICE) } returns displayManager
+            every { getSystemService(DisplayManager::class.java) } returns displayManager
+            every { contentResolver } returns mockk(relaxed = true)
         }
         return DisplayAffinityHelper(context, mockk(relaxed = true)).apply {
             dualScreenEnabled = true
@@ -77,11 +80,14 @@ class LaunchOptionsWithPanelOffTest {
         every { ActivityOptions.makeBasic() } returns options
         every { options.setLaunchDisplayId(any()) } returns options
         every { options.toBundle() } returns bundle
+        mockkStatic(Settings.System::class)
+        every { Settings.System.getInt(any(), any(), any()) } returns 0
     }
 
     @After
     fun tearDown() {
         unmockkStatic(ActivityOptions::class)
+        unmockkStatic(Settings.System::class)
     }
 
     @Test
