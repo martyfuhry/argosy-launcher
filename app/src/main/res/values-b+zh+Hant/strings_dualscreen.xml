@@ -51,6 +51,7 @@
 
     <string name="dual_companion_saves_dirty">有新的存檔資料</string>
     <string name="dual_companion_saves_synced">存檔已同步</string>
+    <string name="dual_companion_saves_not_synced">此應用程式不同步存檔</string>
 
     <string name="dual_companion_app_bar_add_description">新增應用程式</string>
     <string name="dual_companion_app_drawer_title">所有應用程式</string>

@@ -56,6 +56,7 @@
 
     <string name="dual_companion_saves_dirty">Datos de guardado nuevos</string>
     <string name="dual_companion_saves_synced">Partidas guardadas sincronizadas</string>
+    <string name="dual_companion_saves_not_synced">Sin sincronización de partidas para esta app</string>
 
     <string name="dual_companion_app_bar_add_description">Agregar app</string>
     <string name="dual_companion_app_drawer_title">Todas las apps</string>
