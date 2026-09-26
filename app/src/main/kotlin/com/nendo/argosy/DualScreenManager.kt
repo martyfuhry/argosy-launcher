@@ -2337,10 +2337,10 @@ class DualScreenManager(
 
     fun ensureCompanionLaunched(allowDuringSession: Boolean = false) {
         if (!displayAffinityHelper.hasSecondaryDisplay) return
-        if (sessionDrawsBothScreens()) return
         if (sessionStateStore.isDualScreenEnabled() || displayAffinityHelper.isDockedDark) {
             setSecondaryHomeComponentEnabled(true)
         }
+        if (sessionDrawsBothScreens()) return
         if (_isCompanionActive.value) return
         if (!allowDuringSession && sessionStateStore.hasActiveSession()) return
         if (sessionStateStore.isForeignAppOnSecondary()) return
