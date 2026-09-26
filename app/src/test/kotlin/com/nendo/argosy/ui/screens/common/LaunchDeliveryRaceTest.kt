@@ -185,6 +185,7 @@ class LaunchDeliveryRaceTest {
             every { getRoleDisplayIds(any()) } returns (host.displayId to host.showcaseDisplayId)
             every { getEmulatorDisplayId(any()) } returns gameDisplayId
             every { getDisplayTargetId(any(), any()) } returns gameDisplayId
+            every { gameDisplayId(any(), any(), any(), any()) } answers { thirdArg<Int?>() ?: gameDisplayId }
             every { getActivityOptions(any(), any(), any()) } returns null
         }
         val gameDao = mockk<GameDao>(relaxed = true) {
@@ -217,7 +218,7 @@ class LaunchDeliveryRaceTest {
             every { getBooleanExtra(any(), any()) } returns false
         }
         val gameLauncher = mockk<GameLauncher>(relaxed = true) {
-            coEvery { launch(GAME_ID, any(), any(), any(), any(), any(), any(), any()) } returns LaunchResult.Success(intent)
+            coEvery { launch(GAME_ID, any(), any(), any(), any(), any(), any(), any(), any()) } returns LaunchResult.Success(intent)
         }
         val emulatorConfigRepository = mockk<EmulatorConfigRepository>(relaxed = true) {
             coEvery { getEffectiveDisplayTarget(any()) } coAnswers {
@@ -228,7 +229,15 @@ class LaunchDeliveryRaceTest {
         val resolver = EmulatorLaunchTargetResolver(
             context = mockk(relaxed = true),
             displayAffinityHelper = displayAffinityHelper,
-            emulatorConfigRepository = emulatorConfigRepository
+            launchDisplayPlanner = com.nendo.argosy.data.emulator.LaunchDisplayPlanner(
+                context = mockk(relaxed = true),
+                displayAffinityHelper = displayAffinityHelper,
+                emulatorConfigRepository = emulatorConfigRepository
+            ),
+            gameRepository = mockk(relaxed = true) {
+                coEvery { getById(any()) } returns null
+            },
+            appLaunchScreenSettings = mockk(relaxed = true)
         )
         val launchGameUseCase = LaunchGameUseCase(gameLauncher, tracker)
         val overrideDisplayId = if (entryPoint.choosesDisplay) gameDisplayId else null
@@ -246,7 +255,7 @@ class LaunchDeliveryRaceTest {
 
         val result = launchGameUseCase(GAME_ID) as LaunchResult.Success
         viewModelScope.launch {
-            val options = resolver.launchOptionsFor(GAME_ID, overrideDisplayId)
+            val options = resolver.launchOptionsFor(GAME_ID, result.intent, overrideDisplayId)
             events.emit(result.intent to options)
         }
         advanceUntilIdle()
