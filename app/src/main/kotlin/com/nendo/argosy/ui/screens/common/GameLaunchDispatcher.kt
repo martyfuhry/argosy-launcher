@@ -52,14 +52,17 @@ class GameLaunchDispatcher internal constructor(
 
     /**
      * The start of [intent] for [gameId] on the launcher's own scope, followed by the session its
-     * launch prepared: a new game, or an attached one for an app that was already running.
+     * launch prepared: a new game, or an attached one when the same game's app was still running.
      */
     fun dispatch(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Job = scope.launch {
         val packageName = intent.component?.packageName ?: intent.`package`
         val shellLaunchedAtMs = intent.alreadyLaunchedAtMs()
-        val wasRunning = packageName != null && !intent.isAlreadyLaunched() && withContext(ioDispatcher) {
-            permissionHelper.isPackageOnScreenOrRecent(context, packageName, RECENTLY_RUNNING_MS)
-        }
+        val wasRunning = packageName != null &&
+            !intent.isAlreadyLaunched() &&
+            playSessionTracker.lastSessionGameId == gameId &&
+            withContext(ioDispatcher) {
+                permissionHelper.isPackageOnScreenOrRecent(context, packageName, RECENTLY_RUNNING_MS)
+            }
         val options = launchTargetResolver.launchOptionsFor(gameId, intent, overrideDisplayId)
         val startedAtMs = shellLaunchedAtMs ?: System.currentTimeMillis()
         if (!start(intent, options)) {
