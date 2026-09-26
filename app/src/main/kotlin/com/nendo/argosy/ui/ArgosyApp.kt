@@ -2,7 +2,6 @@ package com.nendo.argosy.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
-import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -691,24 +690,9 @@ fun ArgosyApp(
         }
     }
 
-    LaunchedEffect(viewModel) {
-        viewModel.netplayInviteLaunch.collect { request ->
-            if (!request.intent.isAlreadyLaunched()) context.startActivity(request.intent, request.options)
-        }
-    }
-
-    LaunchedEffect(viewModel) {
-        viewModel.coreCrashLaunch.collect { request ->
-            if (!request.intent.isAlreadyLaunched()) context.startActivity(request.intent, request.options)
-        }
-    }
-
     LaunchedEffect(netplayJoinState) {
         val s = netplayJoinState
-        if (s is NetplayJoinState.LaunchReady) {
-            context.startActivity(s.intent, viewModel.launchOptionsFor(s.gameId, s.intent))
-            viewModel.resetNetplayJoin()
-        }
+        if (s is NetplayJoinState.LaunchReady) viewModel.launchNetplayJoin(s)
     }
 
 
