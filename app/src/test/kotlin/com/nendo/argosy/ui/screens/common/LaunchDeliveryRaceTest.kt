@@ -210,7 +210,7 @@ class LaunchDeliveryRaceTest {
         var sessionStarted = false
         val tracker = mockk<PlaySessionTracker>(relaxed = true) {
             every { prepareSession(GAME_ID, APP_PACKAGE, any(), any(), any()) } answers { sessionPrepared = true }
-            every { startPreparedSession(GAME_ID, any()) } answers {
+            every { startPreparedSession(GAME_ID, any(), any()) } answers {
                 if (!sessionPrepared) return@answers null
                 sessionStarted = true
                 launch { broadcastSessionStart(dsm, firstArg(), sessionBroadcastMs) }

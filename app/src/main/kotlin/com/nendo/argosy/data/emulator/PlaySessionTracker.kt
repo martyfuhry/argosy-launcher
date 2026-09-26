@@ -668,12 +668,20 @@ class PlaySessionTracker @Inject constructor(
     }
 
     /**
-     * The emulator package of the session prepared for [gameId], now opened, or null when none was
-     * prepared for it or another session is still running.
+     * The emulator package of the session prepared for [gameId] and [targetPackage], now opened, or
+     * null when none was, or another session is still running. A prepare for anything else is dropped.
      */
-    fun startPreparedSession(gameId: Long, isNewGame: Boolean = true): String? {
-        val prepared = preparedSession.get()?.takeIf { it.gameId == gameId } ?: return null
+    fun startPreparedSession(gameId: Long, targetPackage: String, isNewGame: Boolean = true): String? {
+        val prepared = preparedSession.get() ?: return null
         if (!preparedSession.compareAndSet(prepared, null)) return null
+        if (prepared.gameId != gameId || prepared.emulatorPackage != targetPackage) {
+            Logger.warn(
+                TAG,
+                "[SaveSync] SESSION gameId=$gameId | Dropping a session prepared for gameId=${prepared.gameId} " +
+                    "(emulator=${prepared.emulatorPackage}) on a start of $targetPackage"
+            )
+            return null
+        }
         startSession(
             gameId = prepared.gameId,
             emulatorPackage = prepared.emulatorPackage,
@@ -685,8 +693,14 @@ class PlaySessionTracker @Inject constructor(
         return prepared.emulatorPackage.takeIf { _activeSession.value?.gameId == gameId }
     }
 
-    fun discardPreparedSession(gameId: Long) {
-        preparedSession.get()?.takeIf { it.gameId == gameId }?.let { preparedSession.compareAndSet(it, null) }
+    /**
+     * Removal of the session prepared for [gameId], or of whichever is prepared when [gameId] is
+     * null.
+     */
+    fun discardPreparedSession(gameId: Long? = null) {
+        preparedSession.get()
+            ?.takeIf { gameId == null || it.gameId == gameId }
+            ?.let { preparedSession.compareAndSet(it, null) }
     }
 
     /**
