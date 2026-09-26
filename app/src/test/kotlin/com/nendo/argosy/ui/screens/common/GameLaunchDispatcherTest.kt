@@ -255,6 +255,7 @@ class GameLaunchDispatcherTest {
     @Test
     fun `an app that just exited is not started again while the screen is off`() = testScope.runTest {
         every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asAppLaunchIntent()
         interactive = false
 
         dispatcher.dispatch(GAME_ID, intent)
@@ -332,6 +333,7 @@ class GameLaunchDispatcherTest {
     @Test
     fun `an app that just exited is started once more before its session is given up`() = testScope.runTest {
         every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asAppLaunchIntent()
 
         dispatcher.dispatch(GAME_ID, intent)
         runCurrent()
@@ -347,6 +349,7 @@ class GameLaunchDispatcherTest {
     @Test
     fun `an app that comes up on the second start keeps its session`() = testScope.runTest {
         every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asAppLaunchIntent()
         every { context.startActivity(any(), any()) } answers {
             started += firstArg<Intent>()
             if (started.size == 2) {
@@ -359,6 +362,37 @@ class GameLaunchDispatcherTest {
 
         assertEquals(2, started.size)
         verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `a second start of an app never clears its task`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        asAppLaunchIntent()
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        verifyOrder {
+            context.startActivity(intent, null)
+            intent.removeFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            context.startActivity(intent, null)
+        }
+    }
+
+    @Test
+    fun `an emulator that was running is never started a second time`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        assertEquals(1, started.size)
+        verify(exactly = 1) { tracker.cancelSession() }
+    }
+
+    private fun asAppLaunchIntent() {
+        every { intent.action } returns Intent.ACTION_MAIN
+        every { intent.hasCategory(Intent.CATEGORY_LAUNCHER) } returns true
     }
 
     private companion object {
