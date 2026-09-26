@@ -3,6 +3,7 @@ package com.nendo.argosy.data.emulator
 import android.content.Context
 import android.content.SharedPreferences
 import android.hardware.display.DisplayManager
+import android.provider.Settings
 import android.view.Display
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import com.nendo.argosy.data.repository.EmulatorConfigRepository
@@ -10,8 +11,12 @@ import com.nendo.argosy.util.DisplayAffinityHelper
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 private const val TOP = 0
@@ -28,9 +33,9 @@ class LaunchDisplayPlannerTest {
     private var rolesSwapped = false
     private var storedTarget: String? = null
 
-    private fun panel(id: Int, flags: Int = 0): Display = mockk {
+    private fun panel(id: Int, flags: Int = 0, state: Int = Display.STATE_ON): Display = mockk {
         every { displayId } returns id
-        every { state } returns Display.STATE_ON
+        every { this@mockk.state } returns state
         every { this@mockk.flags } returns flags
     }
 
@@ -43,6 +48,8 @@ class LaunchDisplayPlannerTest {
         }
         val context = mockk<Context> {
             every { getSystemService(Context.DISPLAY_SERVICE) } returns displayManager
+            every { getSystemService(DisplayManager::class.java) } returns displayManager
+            every { contentResolver } returns mockk(relaxed = true)
             every { getSharedPreferences(any(), any()) } returns prefs
         }
         val affinity = DisplayAffinityHelper(context, mockk(relaxed = true)).apply {
@@ -53,6 +60,17 @@ class LaunchDisplayPlannerTest {
             coEvery { getEffectiveDisplayTarget(GAME_ID) } answers { storedTarget }
         }
         return LaunchDisplayPlanner(context, affinity, configRepository)
+    }
+
+    @Before
+    fun setUp() {
+        mockkStatic(Settings.System::class)
+        every { Settings.System.getInt(any(), any(), any()) } returns 0
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic(Settings.System::class)
     }
 
     private fun thor() = planner(panel(TOP), panel(BOTTOM), layout = TOP to BOTTOM)
@@ -104,5 +122,24 @@ class LaunchDisplayPlannerTest {
         rolesSwapped = true
         assertEquals(TV, planner.displayFor(GAME_ID, drawsSecondScreen = true))
         assertEquals(TV, planner.displayFor(GAME_ID, drawsSecondScreen = false))
+    }
+
+    @Test
+    fun `a dock blanking the thor's panels sends every launch to the television`() = runTest {
+        val planner = planner(
+            panel(TOP, state = Display.STATE_OFF),
+            panel(BOTTOM, state = Display.STATE_OFF),
+            panel(TV, flags = Display.FLAG_PRESENTATION),
+            layout = TOP to BOTTOM
+        )
+        for (swapped in listOf(false, true)) {
+            rolesSwapped = swapped
+            for (drawsSecondScreen in listOf(true, false)) {
+                storedTarget = EmulatorDisplayTarget.PRIMARY.name
+                assertEquals(TV, planner.displayFor(GAME_ID, drawsSecondScreen, overrideDisplayId = BOTTOM))
+                storedTarget = null
+                assertEquals(TV, planner.displayFor(GAME_ID, drawsSecondScreen))
+            }
+        }
     }
 }

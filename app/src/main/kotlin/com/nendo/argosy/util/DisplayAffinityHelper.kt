@@ -166,9 +166,10 @@ class DisplayAffinityHelper @Inject constructor(
     }
 
     /**
-     * The display a game launch goes to, or null to leave it on the launching screen. See
-     * [resolveGameDisplayId] for the rules; [target] is the stored screen pin and
-     * [overrideDisplayId] a screen chosen for this launch alone.
+     * The display a game launch goes to, or null to leave it on the launching screen: the
+     * television while a dock blanks the built-in panels, else the screen [resolveGameDisplayId]
+     * picks. [target] is the stored screen pin and [overrideDisplayId] a screen chosen for this
+     * launch alone.
      */
     fun gameDisplayId(
         drawsSecondScreen: Boolean,
@@ -176,6 +177,7 @@ class DisplayAffinityHelper @Inject constructor(
         overrideDisplayId: Int?,
         rolesSwapped: Boolean
     ): Int? {
+        dockedDisplayId?.let { return it }
         val panels = targetablePanels
         val panelIds = panels.map { it.displayId }.toSet()
         val roles = resolveRoleDisplayIds(
