@@ -1047,12 +1047,20 @@ object EmulatorRegistry {
     fun isKnownPackage(packageName: String): Boolean = packageMap.containsKey(packageName)
 
     /**
-     * Whether the emulator installed as [packageName] shows a second screen on a display of its
-     * own, as its definition or its family says. A package neither claims draws a single screen.
+     * Android apps known to show a second screen on a display of their own, by package.
+     */
+    val dualScreenAppPackages: Set<String> = setOf(
+        "com.aure.banjorecomp"
+    )
+
+    /**
+     * Whether the emulator or app installed as [packageName] shows a second screen on a display of
+     * its own, as its definition, its family or [dualScreenAppPackages] says.
      */
     fun drawsSecondScreen(packageName: String): Boolean =
         getByPackage(packageName)?.drawsSecondScreen == true ||
-            findFamilyForPackage(packageName)?.drawsSecondScreen == true
+            findFamilyForPackage(packageName)?.drawsSecondScreen == true ||
+            packageName in dualScreenAppPackages
 
     /**
      * Synthesize an [EmulatorDef] for an ad-hoc app binding. The `id` is deterministic per

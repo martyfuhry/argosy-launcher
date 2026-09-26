@@ -2324,8 +2324,20 @@ class DualScreenManager(
         startupGuardJob = null
     }
 
+    /**
+     * Whether the running session is an emulator or app drawing both screens itself from the
+     * default display, which the companion must neither cover nor take focus from.
+     */
+    fun sessionDrawsBothScreens(): Boolean {
+        if (!sessionStateStore.hasActiveSession()) return false
+        if (emulatorDisplayId != android.view.Display.DEFAULT_DISPLAY) return false
+        val emulatorPackage = sessionStateStore.getEmulatorPackage() ?: return false
+        return com.nendo.argosy.data.emulator.EmulatorRegistry.drawsSecondScreen(emulatorPackage)
+    }
+
     fun ensureCompanionLaunched(allowDuringSession: Boolean = false) {
         if (!displayAffinityHelper.hasSecondaryDisplay) return
+        if (sessionDrawsBothScreens()) return
         if (sessionStateStore.isDualScreenEnabled() || displayAffinityHelper.isDockedDark) {
             setSecondaryHomeComponentEnabled(true)
         }

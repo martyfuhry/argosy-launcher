@@ -689,11 +689,14 @@ class SecondaryHomeActivity :
         if (::dsm.isInitialized) dsm.notifyUserActivity("companionUserInteraction")
     }
 
-    override fun refocusSelf() = startActivity(
-        Intent(this, SecondaryHomeActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        }
-    )
+    override fun refocusSelf() {
+        if (::dsm.isInitialized && dsm.sessionDrawsBothScreens()) return
+        startActivity(
+            Intent(this, SecondaryHomeActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+        )
+    }
 
     override fun onDownloadCompleted(gameId: Long) {
         onLibraryRefresh()

@@ -53,6 +53,23 @@ class SecondScreenCapabilityTest {
     }
 
     @Test
+    fun `a known two-screen Android app draws a second screen and goes to the top panel`() {
+        assertTrue(EmulatorRegistry.drawsSecondScreen("com.aure.banjorecomp"))
+        assertTrue(
+            LaunchDisplayPlanner.drawsSecondScreen(
+                className = "com.aure.banjorecomp.MainActivity",
+                packageName = "com.aure.banjorecomp",
+                coreId = null
+            )
+        )
+    }
+
+    @Test
+    fun `an Android app not known to draw two screens stays single-screen`() {
+        assertFalse(EmulatorRegistry.drawsSecondScreen("com.aure.banjo"))
+    }
+
+    @Test
     fun `a launch with no package draws a single screen`() {
         assertFalse(LaunchDisplayPlanner.drawsSecondScreen(className = null, packageName = null, coreId = null))
     }
