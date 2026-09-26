@@ -50,7 +50,7 @@ class LaunchGameUseCaseTest {
             )
         }
         coVerify(exactly = 0) { playSessionTracker.startSession(any(), any()) }
-        coVerify(exactly = 0) { playSessionTracker.startPreparedSession(any(), any()) }
+        coVerify(exactly = 0) { playSessionTracker.startPreparedSession(any(), any(), any()) }
     }
 
     @Test

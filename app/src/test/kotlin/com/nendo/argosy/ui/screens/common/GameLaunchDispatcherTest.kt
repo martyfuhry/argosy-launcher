@@ -54,7 +54,7 @@ class GameLaunchDispatcherTest {
     private val sessionFlow = MutableStateFlow<ActiveSession?>(null)
     private val tracker = mockk<PlaySessionTracker>(relaxed = true) {
         every { this@mockk.activeSession } returns sessionFlow
-        every { startPreparedSession(GAME_ID, any()) } answers {
+        every { startPreparedSession(GAME_ID, any(), any()) } answers {
             sessionFlow.value = ActiveSession(GAME_ID, Instant.EPOCH, GAME_PACKAGE)
             GAME_PACKAGE
         }
@@ -106,7 +106,7 @@ class GameLaunchDispatcherTest {
 
         verifyOrder {
             context.startActivity(intent, null)
-            tracker.startPreparedSession(GAME_ID, any())
+            tracker.startPreparedSession(GAME_ID, any(), any())
         }
     }
 
@@ -117,7 +117,7 @@ class GameLaunchDispatcherTest {
         dispatcher.dispatch(GAME_ID, intent)
         advanceUntilIdle()
 
-        verify(exactly = 0) { tracker.startPreparedSession(any(), any()) }
+        verify(exactly = 0) { tracker.startPreparedSession(any(), any(), any()) }
         verify { tracker.discardPreparedSession(GAME_ID) }
         verify { dsm.setEmulatorDisplay(null) }
         verify { notificationManager.show(any(), any(), NotificationType.ERROR, any(), any(), any(), any(), any(), any()) }
@@ -131,7 +131,7 @@ class GameLaunchDispatcherTest {
         runCurrent()
 
         assertTrue(started.isEmpty())
-        verify { tracker.startPreparedSession(GAME_ID, any()) }
+        verify { tracker.startPreparedSession(GAME_ID, any(), any()) }
     }
 
     @Test
@@ -264,7 +264,7 @@ class GameLaunchDispatcherTest {
 
     @Test
     fun `a resume with no prepared session is started but not watched`() = testScope.runTest {
-        every { tracker.startPreparedSession(GAME_ID, any()) } returns null
+        every { tracker.startPreparedSession(GAME_ID, any(), any()) } returns null
 
         dispatcher.dispatch(GAME_ID, intent)
         advanceUntilIdle()
@@ -278,7 +278,7 @@ class GameLaunchDispatcherTest {
         dispatcher.dispatch(GAME_ID, intent)
         runCurrent()
 
-        verify { tracker.startPreparedSession(GAME_ID, isNewGame = true) }
+        verify { tracker.startPreparedSession(GAME_ID, GAME_PACKAGE, isNewGame = true) }
     }
 
     @Test
@@ -290,7 +290,7 @@ class GameLaunchDispatcherTest {
         advanceUntilIdle()
 
         assertEquals(listOf(intent), started)
-        verify { tracker.startPreparedSession(GAME_ID, isNewGame = false) }
+        verify { tracker.startPreparedSession(GAME_ID, GAME_PACKAGE, isNewGame = false) }
         verify(exactly = 0) { tracker.cancelSession() }
     }
 
