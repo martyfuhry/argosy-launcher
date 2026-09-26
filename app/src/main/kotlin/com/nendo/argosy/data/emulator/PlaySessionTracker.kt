@@ -568,8 +568,10 @@ class PlaySessionTracker @Inject constructor(
 
         scope.launch {
             sessionServiceMutex.withLock {
+                if (!isRunningSession(gameId, startTime)) return@withLock
                 val game = gameDao.getById(gameId)
                 val activeSave = activeSaveRepository.getActiveRow(gameId)
+                if (!isRunningSession(gameId, startTime)) return@withLock
                 val channelName = if (isHardcore || variantFileId != null) null else activeSave?.channelName
 
                 _activeSession.value = _activeSession.value?.copy(channelName = channelName)
@@ -633,10 +635,14 @@ class PlaySessionTracker @Inject constructor(
                     _activeSession.value = _activeSession.value?.copy(isOnOlderSave = isOnOlderSave)
                     Logger.debug(TAG, "[SaveSync] SESSION gameId=$gameId | isOnOlderSave=$isOnOlderSave | channel=$channelName | activeSaveTs=${activeSaveTimestamp} | latestCacheTs=${latestCache?.cachedAt?.toEpochMilli()} | latestCacheId=${latestCache?.id}")
                 }
+                if (!isRunningSession(gameId, startTime)) return@withLock
                 startGameSessionService(gameId, emulatorPackage, coreName, isHardcore, startTime.toEpochMilli())
             }
         }
     }
+
+    private fun isRunningSession(gameId: Long, startTime: Instant): Boolean =
+        _activeSession.value?.let { it.gameId == gameId && it.startTime == startTime } == true
 
     private data class PreparedSession(
         val gameId: Long,
@@ -1215,7 +1221,12 @@ class PlaySessionTracker @Inject constructor(
                     Logger.error(TAG, "[StateSync] SESSION gameId=${session.gameId} | State flush on cancel failed", e)
                 }
             }
-            clearSessionAndBroadcast()
+            sessionServiceMutex.withLock {
+                if (_activeSession.value == null) {
+                    GameSessionService.stop(application)
+                    clearSessionAndBroadcast()
+                }
+            }
             signalSessionClosed(session)
         }
     }
