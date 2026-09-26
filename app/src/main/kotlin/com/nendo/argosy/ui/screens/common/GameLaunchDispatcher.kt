@@ -12,6 +12,7 @@ import com.nendo.argosy.core.notification.showError
 import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.data.emulator.PresenceEventKind
+import com.nendo.argosy.data.emulator.alreadyLaunchedAtMs
 import com.nendo.argosy.data.emulator.isAlreadyLaunched
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.PermissionHelper
@@ -55,11 +56,12 @@ class GameLaunchDispatcher internal constructor(
      */
     fun dispatch(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Job = scope.launch {
         val packageName = intent.component?.packageName ?: intent.`package`
-        val wasRunning = packageName != null && withContext(ioDispatcher) {
+        val shellLaunchedAtMs = intent.alreadyLaunchedAtMs()
+        val wasRunning = packageName != null && !intent.isAlreadyLaunched() && withContext(ioDispatcher) {
             permissionHelper.isPackageOnScreenOrRecent(context, packageName, RECENTLY_RUNNING_MS)
         }
         val options = launchTargetResolver.launchOptionsFor(gameId, overrideDisplayId)
-        val startedAtMs = System.currentTimeMillis()
+        val startedAtMs = shellLaunchedAtMs ?: System.currentTimeMillis()
         if (!start(intent, options)) {
             Logger.error(TAG, "Nothing could start gameId=$gameId (${intent.component ?: intent.`package`}), dropping its session")
             playSessionTracker.discardPreparedSession(gameId)
