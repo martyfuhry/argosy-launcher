@@ -92,7 +92,7 @@ class GameLaunchDispatcher internal constructor(
             notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
             return@launch
         }
-        val watchedPackage = playSessionTracker.startPreparedSession(gameId, isNewGame = !wasRunning)
+        val watchedPackage = playSessionTracker.startPreparedSession(gameId, packageName.orEmpty(), isNewGame = !wasRunning)
             ?.takeIf { it.isNotEmpty() }
             ?: return@launch
         arrivalWatch?.cancel()

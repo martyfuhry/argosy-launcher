@@ -16,7 +16,8 @@ import javax.inject.Inject
 /**
  * Builds the launch intent, joining the caller's [LaunchProgressTracker] launch or opening one, and
  * prepares the play session an external emulator launch opens once its start is dispatched;
- * LibretroActivity opens in-process sessions and a resume keeps the running one.
+ * LibretroActivity opens in-process sessions and a resume keeps the running one, so
+ * neither prepares a session here and any earlier prepare is dropped.
  */
 class LaunchGameUseCase @Inject constructor(
     private val gameLauncher: GameLauncher,
@@ -83,6 +84,8 @@ class LaunchGameUseCase @Inject constructor(
                 variantFileId = result.variantFileId,
                 origin = origin
             )
+        } else {
+            playSessionTracker.discardPreparedSession()
         }
         return result
     }
