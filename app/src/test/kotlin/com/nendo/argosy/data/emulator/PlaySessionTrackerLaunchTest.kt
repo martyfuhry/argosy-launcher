@@ -36,6 +36,8 @@ class PlaySessionTrackerLaunchTest {
             com.nendo.argosy.data.preferences.UserPreferences()
         )
     }
+    private val saveSyncRepository = mockk<com.nendo.argosy.data.repository.SaveSyncRepository>(relaxed = true)
+    private val savePathAuthority = mockk<com.nendo.argosy.data.emulator.savepath.SavePathAuthority>(relaxed = true)
     private lateinit var tracker: PlaySessionTracker
 
     @Before
@@ -52,7 +54,7 @@ class PlaySessionTrackerLaunchTest {
             syncSaveOnSessionEndUseCase = lazyOf<com.nendo.argosy.domain.usecase.save.SyncSaveOnSessionEndUseCase>(),
             syncStatesOnSessionEndUseCase = lazyOf<com.nendo.argosy.domain.usecase.state.SyncStatesOnSessionEndUseCase>(),
             saveCacheManager = lazyOf<com.nendo.argosy.data.repository.SaveCacheManager>(),
-            saveSyncRepository = lazyOf<com.nendo.argosy.data.repository.SaveSyncRepository>(),
+            saveSyncRepository = dagger.Lazy { saveSyncRepository },
             romMRepository = lazyOf<com.nendo.argosy.data.remote.romm.RomMRepository>(),
             preferencesRepository = preferencesRepository,
             permissionHelper = mockk(relaxed = true),
@@ -63,7 +65,7 @@ class PlaySessionTrackerLaunchTest {
             socialRepository = lazyOf<com.nendo.argosy.data.social.SocialRepository>(),
             saveRecoveryGate = mockk(relaxed = true),
             reconcileAchievementsOnSessionEndUseCase = lazyOf<com.nendo.argosy.domain.usecase.achievement.ReconcileAchievementsOnSessionEndUseCase>(),
-            savePathAuthority = mockk(relaxed = true),
+            savePathAuthority = savePathAuthority,
             saveAccessNotices = mockk(relaxed = true)
         )
     }
@@ -237,6 +239,32 @@ class PlaySessionTrackerLaunchTest {
         tracker.startPreparedSession(GAME_ID, PACKAGE)
 
         verify(timeout = 5_000) { dsm.updateCompanionSaveSyncApplicable(true) }
+    }
+
+    @Test
+    fun `an emulator whose save is not found yet still tells the dashboard its saves sync`() {
+        every { emulatorResolver.resolveEmulatorId(PACKAGE) } returns "retroarch"
+        io.mockk.coEvery { saveSyncRepository.discoverSavePath(any(), any(), any(), any(), any(), any(), any(), any()) } returns null
+        io.mockk.coEvery { saveSyncRepository.predictFolderSavePath(any(), any(), any(), any(), any(), any(), any()) } returns null
+        every { savePathAuthority.configFor(any()) } returns mockk()
+        prepare(GAME_ID)
+
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
+
+        verify(timeout = 5_000) { dsm.updateCompanionSaveSyncApplicable(true) }
+    }
+
+    @Test
+    fun `an emulator with no save layout for the platform tells the dashboard its saves do not sync`() {
+        every { emulatorResolver.resolveEmulatorId(PACKAGE) } returns "retroarch"
+        io.mockk.coEvery { saveSyncRepository.discoverSavePath(any(), any(), any(), any(), any(), any(), any(), any()) } returns null
+        io.mockk.coEvery { saveSyncRepository.predictFolderSavePath(any(), any(), any(), any(), any(), any(), any()) } returns null
+        every { savePathAuthority.configFor(any()) } returns null
+        prepare(GAME_ID)
+
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
+
+        verify(timeout = 5_000) { dsm.updateCompanionSaveSyncApplicable(false) }
     }
 
     private fun appIntent(packageName: String) = mockk<android.content.Intent>(relaxed = true) {

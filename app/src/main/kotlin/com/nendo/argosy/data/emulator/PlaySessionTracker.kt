@@ -802,7 +802,16 @@ class PlaySessionTracker @Inject constructor(
             }
         } else null
 
-        DualScreenManagerHolder.instance?.updateCompanionSaveSyncApplicable(savePath != null)
+        val saveSyncApplicable = savePath != null || (
+            !isVariant && emulatorId != null && savePathAuthority.configFor(
+                com.nendo.argosy.data.emulator.savepath.SavePathRequest(
+                    platformSlug = game.platformSlug,
+                    emulatorId = emulatorId,
+                    emulatorPackage = emulatorPackage
+                )
+            ) != null
+        )
+        DualScreenManagerHolder.instance?.updateCompanionSaveSyncApplicable(saveSyncApplicable)
 
         val liveHardcore = _activeSession.value?.takeIf { it.gameId == gameId }?.isHardcore ?: isHardcore
         val channelName = if (liveHardcore) null else activeSaveRepository.getActiveChannel(gameId)
