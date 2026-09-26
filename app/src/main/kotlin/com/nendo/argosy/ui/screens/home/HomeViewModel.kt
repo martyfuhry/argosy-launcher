@@ -94,7 +94,7 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
-    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val gameLaunchDispatcher: com.nendo.argosy.ui.screens.common.GameLaunchDispatcher,
     private val appLaunchScreenSettings: com.nendo.argosy.ui.screens.common.AppLaunchScreenSettings,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
@@ -1827,12 +1827,7 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            onLaunch = { intent ->
-                viewModelScope.launch {
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(gameId, intent)
-                    _events.emit(HomeEvent.LaunchIntent(intent, options))
-                }
-            }
+            onLaunch = { intent -> gameLaunchDispatcher.dispatch(gameId, intent) }
         )
     }
 
@@ -1845,15 +1840,8 @@ class HomeViewModel @Inject constructor(
             allowVariantPrompt = false,
             overrideDisplayId = displayId,
             onLaunch = { intent ->
-                viewModelScope.launch {
-                    if (isAndroidApp) appLaunchScreenSettings.store(gameId, displayId)
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(
-                        gameId = gameId,
-                        intent = intent,
-                        overrideDisplayId = displayId
-                    )
-                    _events.emit(HomeEvent.LaunchIntent(intent, options))
-                }
+                if (isAndroidApp) viewModelScope.launch { appLaunchScreenSettings.store(gameId, displayId) }
+                gameLaunchDispatcher.dispatch(gameId, intent, displayId)
             }
         )
     }

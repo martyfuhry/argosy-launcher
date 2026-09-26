@@ -9,11 +9,9 @@ import com.nendo.argosy.data.local.entity.GameEntity
 import javax.inject.Inject
 
 /**
- * Builds the launch intent and opens the play session for an external emulator launch.
- *
- * An in-process launch opens its session from LibretroActivity, which alone knows the confirmed
- * hardcore mode, the loaded core and the netplay role. A resume keeps the session that is already
- * running. Neither opens a session here.
+ * The launch intent for a game, with the play session an external emulator launch opens once its
+ * start is dispatched. An in-process launch opens its session from LibretroActivity and a resume
+ * keeps the running one, so neither prepares a session here.
  */
 class LaunchGameUseCase @Inject constructor(
     private val gameLauncher: GameLauncher,
@@ -36,14 +34,12 @@ class LaunchGameUseCase @Inject constructor(
             prefetchedGame, overrideDisplayId
         )
         if (result is LaunchResult.Success && !result.inProcess && !forResume) {
-            val coreName = extractCoreName(result.intent)
-            playSessionTracker.startSession(
+            playSessionTracker.prepareSession(
                 gameId = gameId,
                 emulatorPackage = result.intent.component?.packageName
                     ?: result.intent.`package`
                     ?: "",
-                coreName = coreName,
-                isNewGame = true,
+                coreName = extractCoreName(result.intent),
                 variantFileId = variantFileId,
                 origin = origin
             )

@@ -111,7 +111,7 @@ class GameDetailViewModel @Inject constructor(
     private val repairImageCacheUseCase: RepairImageCacheUseCase,
     private val modalResetSignal: ModalResetSignal,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
-    private val emulatorLaunchTargetResolver: com.nendo.argosy.ui.screens.common.EmulatorLaunchTargetResolver,
+    private val gameLaunchDispatcher: com.nendo.argosy.ui.screens.common.GameLaunchDispatcher,
     private val gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader,
     private val documentHighlightStore: com.nendo.argosy.data.repository.DocumentHighlightStore,
     private val appLaunchScreenSettings: com.nendo.argosy.ui.screens.common.AppLaunchScreenSettings,
@@ -1204,16 +1204,7 @@ class GameDetailViewModel @Inject constructor(
         overrideDisplayId: Int? = null
     ): com.nendo.argosy.ui.screens.common.LaunchResultCallbacks =
         com.nendo.argosy.ui.screens.common.LaunchResultCallbacks(
-            onLaunch = { intent ->
-                viewModelScope.launch {
-                    val options = emulatorLaunchTargetResolver.launchOptionsFor(
-                        gameId = currentGameId,
-                        intent = intent,
-                        overrideDisplayId = overrideDisplayId
-                    )
-                    _launchEvents.emit(LaunchEvent.LaunchIntent(intent, options))
-                }
-            },
+            onLaunch = { intent -> gameLaunchDispatcher.dispatch(currentGameId, intent, overrideDisplayId) },
             onSelectDisc = { discs -> pickerModalDelegate.showDiscPicker(discs) },
             onSelectVariant = { variants -> pickerModalDelegate.showVariantPicker(variants) },
             onNoEmulator = { showEmulatorPicker() },
