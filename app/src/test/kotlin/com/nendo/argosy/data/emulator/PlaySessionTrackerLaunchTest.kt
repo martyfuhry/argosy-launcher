@@ -28,15 +28,21 @@ class PlaySessionTrackerLaunchTest {
         )
     }
     private val emulatorResolver = mockk<EmulatorResolver>(relaxed = true)
+    private val application = mockk<Application>(relaxed = true) {
+        every { packageName } returns "com.nendo.argosy"
+    }
+    private val preferencesRepository = mockk<com.nendo.argosy.data.preferences.UserPreferencesRepository>(relaxed = true) {
+        every { userPreferences } returns kotlinx.coroutines.flow.flowOf(
+            com.nendo.argosy.data.preferences.UserPreferences()
+        )
+    }
     private lateinit var tracker: PlaySessionTracker
 
     @Before
     fun setUp() {
         DualScreenManagerHolder.instance = dsm
         tracker = PlaySessionTracker(
-            application = mockk<Application>(relaxed = true) {
-                every { packageName } returns "com.nendo.argosy"
-            },
+            application = application,
             gameDao = gameDao,
             overlayWriter = mockk(relaxed = true),
             activeSaveRepository = mockk(relaxed = true),
@@ -48,11 +54,7 @@ class PlaySessionTrackerLaunchTest {
             saveCacheManager = lazyOf<com.nendo.argosy.data.repository.SaveCacheManager>(),
             saveSyncRepository = lazyOf<com.nendo.argosy.data.repository.SaveSyncRepository>(),
             romMRepository = lazyOf<com.nendo.argosy.data.remote.romm.RomMRepository>(),
-            preferencesRepository = mockk(relaxed = true) {
-                every { userPreferences } returns kotlinx.coroutines.flow.flowOf(
-                    com.nendo.argosy.data.preferences.UserPreferences()
-                )
-            },
+            preferencesRepository = preferencesRepository,
             permissionHelper = mockk(relaxed = true),
             gameUpdateBus = mockk(relaxed = true),
             emulatorResolver = emulatorResolver,
@@ -193,6 +195,31 @@ class PlaySessionTrackerLaunchTest {
     }
 
     @Test
+    fun `a session cancelled while its start is still settling is never recorded or watched`() {
+        val game = kotlinx.coroutines.runBlocking { gameDao.getById(GAME_ID) }?.copy(id = CANCELLED_GAME_ID)
+        val entered = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val release = kotlinx.coroutines.CompletableDeferred<Unit>()
+        io.mockk.coEvery { gameDao.getById(any()) } coAnswers {
+            entered.complete(Unit)
+            release.await()
+            game
+        }
+        prepare(CANCELLED_GAME_ID)
+        tracker.startPreparedSession(CANCELLED_GAME_ID, PACKAGE)
+        kotlinx.coroutines.runBlocking { kotlinx.coroutines.withTimeout(5_000) { entered.await() } }
+
+        tracker.cancelSession()
+        release.complete(Unit)
+
+        io.mockk.coVerify(timeout = 5_000) { preferencesRepository.clearActiveSession() }
+        Thread.sleep(SETTLE_MS)
+        io.mockk.coVerify(exactly = 0) { preferencesRepository.persistActiveSession(CANCELLED_GAME_ID, any(), any(), any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { dsm.onSessionChanged(CANCELLED_GAME_ID, any(), any()) }
+        verify(exactly = 0) { application.startForegroundService(any()) }
+        assertNull(tracker.activeSession.value)
+    }
+
+    @Test
     fun `an app with no save location tells the dashboard its saves do not sync`() {
         every { emulatorResolver.resolveEmulatorId(PACKAGE) } returns null
         prepare(GAME_ID)
@@ -239,7 +266,9 @@ class PlaySessionTrackerLaunchTest {
     private companion object {
         const val GAME_ID = 3L
         const val OTHER_GAME_ID = 4L
+        const val CANCELLED_GAME_ID = 5L
         const val PACKAGE = "com.aure.banjorecomp"
         const val OWN_PACKAGE = "com.nendo.argosy"
+        const val SETTLE_MS = 300L
     }
 }
