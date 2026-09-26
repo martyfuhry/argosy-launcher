@@ -72,8 +72,8 @@ class GameLaunchDispatcher internal constructor(
     }
 
     /**
-     * Places and starts [intent] for [gameId], then opens the session its launch prepared. An app
-     * already running is brought forward and its session attached rather than counted as new.
+     * The start of [intent] for [gameId] on the launcher's own scope, followed by the session its
+     * launch prepared: a new game, or an attached one for an app that was already running.
      */
     fun dispatch(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Job = scope.launch {
         val packageName = intent.component?.packageName ?: intent.`package`
