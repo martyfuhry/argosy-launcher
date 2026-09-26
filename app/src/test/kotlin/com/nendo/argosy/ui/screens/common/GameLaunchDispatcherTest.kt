@@ -112,7 +112,7 @@ class GameLaunchDispatcherTest {
     @Test
     fun `every start is a new task carrying the placement it resolved`() = testScope.runTest {
         val placement = mockk<android.os.Bundle>()
-        coEvery { resolver.launchOptionsFor(GAME_ID, any()) } returns placement
+        coEvery { resolver.launchOptionsFor(GAME_ID, any(), any()) } returns placement
 
         dispatcher.dispatch(GAME_ID, intent)
         runCurrent()
