@@ -82,7 +82,7 @@ class PlaySessionTrackerLaunchTest {
     fun `starting a prepared session opens it once with what the launch prepared`() {
         prepare(GAME_ID, variantFileId = 9L, origin = LaunchOrigin.EXTERNAL)
 
-        assertEquals(PACKAGE, tracker.startPreparedSession(GAME_ID, PACKAGE, isNewGame = false))
+        assertEquals(PACKAGE, tracker.startPreparedSession(GAME_ID, PACKAGE, isNewGame = false)?.emulatorPackage)
         val session = tracker.activeSession.value!!
         assertEquals(GAME_ID, session.gameId)
         assertEquals(PACKAGE, session.emulatorPackage)
@@ -137,6 +137,15 @@ class PlaySessionTrackerLaunchTest {
     }
 
     @Test
+    fun `a start refused behind a running session hands back no session to watch`() {
+        prepare(GAME_ID)
+        tracker.startPreparedSession(GAME_ID, PACKAGE)
+        prepare(GAME_ID)
+
+        assertNull(tracker.startPreparedSession(GAME_ID, PACKAGE))
+    }
+
+    @Test
     fun `a discarded prepared session is never opened`() {
         prepare(GAME_ID)
 
@@ -151,7 +160,7 @@ class PlaySessionTrackerLaunchTest {
         prepare(GAME_ID)
         prepare(OTHER_GAME_ID)
 
-        assertEquals(PACKAGE, tracker.startPreparedSession(OTHER_GAME_ID, PACKAGE))
+        assertEquals(PACKAGE, tracker.startPreparedSession(OTHER_GAME_ID, PACKAGE)?.emulatorPackage)
         assertEquals(OTHER_GAME_ID, tracker.activeSession.value?.gameId)
     }
 
