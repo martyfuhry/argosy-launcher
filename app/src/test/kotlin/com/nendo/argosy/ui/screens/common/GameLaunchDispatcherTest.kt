@@ -2,6 +2,7 @@ package com.nendo.argosy.ui.screens.common
 
 import android.content.Context
 import android.content.Intent
+import android.os.PowerManager
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.core.notification.NotificationManager
@@ -41,8 +42,13 @@ class GameLaunchDispatcherTest {
     private val testScope = TestScope(testDispatcher)
 
     private val started = mutableListOf<Intent>()
+    private var interactive = true
+    private val powerManager = mockk<PowerManager> {
+        every { isInteractive } answers { interactive }
+    }
     private val context = mockk<Context>(relaxed = true) {
         every { packageName } returns OWN_PACKAGE
+        every { getSystemService(Context.POWER_SERVICE) } returns powerManager
         every { startActivity(any(), any()) } answers { started += firstArg<Intent>() }
     }
     private val sessionFlow = MutableStateFlow<ActiveSession?>(null)
@@ -196,6 +202,52 @@ class GameLaunchDispatcherTest {
         dispatcher.dispatch(GAME_ID, intent)
         advanceUntilIdle()
 
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `a screen turned off during the start leaves the session alone`() = testScope.runTest {
+        every { permissionHelper.presenceEvents(any(), any(), any()) } returns listOf(
+            PresenceEvent(1L, PresenceEventKind.SCREEN_NON_INTERACTIVE)
+        )
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `a keyguard shown during the start leaves the session alone`() = testScope.runTest {
+        every { permissionHelper.presenceEvents(any(), any(), any()) } returns listOf(
+            PresenceEvent(1L, PresenceEventKind.KEYGUARD_SHOWN)
+        )
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `a screen that is off when the watchdog looks leaves the session alone`() = testScope.runTest {
+        interactive = false
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        verify(exactly = 0) { tracker.cancelSession() }
+    }
+
+    @Test
+    fun `an app that just exited is not started again while the screen is off`() = testScope.runTest {
+        every { permissionHelper.isPackageOnScreenOrRecent(any(), GAME_PACKAGE, any()) } returns true
+        interactive = false
+
+        dispatcher.dispatch(GAME_ID, intent)
+        advanceUntilIdle()
+
+        assertEquals(1, started.size)
         verify(exactly = 0) { tracker.cancelSession() }
     }
 
