@@ -153,6 +153,13 @@ class PlaySessionTracker @Inject constructor(
 
     private val _activeSession = MutableStateFlow<ActiveSession?>(null)
     val activeSession: StateFlow<ActiveSession?> = _activeSession.asStateFlow()
+
+    /**
+     * The game of the most recently opened session, kept after that session has ended.
+     */
+    @Volatile
+    var lastSessionGameId: Long? = null
+        private set
     val hasActiveSession: StateFlow<Boolean> = _activeSession
         .map { it != null }
         .stateIn(scope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
@@ -410,6 +417,7 @@ class PlaySessionTracker @Inject constructor(
         marathonSegmentDuration = Duration.ZERO
         longestMarathonSegment = Duration.ZERO
 
+        lastSessionGameId = persisted.gameId
         _activeSession.value = ActiveSession(
             gameId = persisted.gameId,
             startTime = persisted.startTime,
@@ -558,6 +566,7 @@ class PlaySessionTracker @Inject constructor(
         longestMarathonSegment = Duration.ZERO
 
         val startTime = Instant.now()
+        lastSessionGameId = gameId
         _activeSession.value = ActiveSession(
             gameId = gameId,
             startTime = startTime,
