@@ -44,7 +44,7 @@ class ArgosyViewModelLaunchTest {
     private val gameLaunchDispatcher = mockk<GameLaunchDispatcher>(relaxed = true)
     private val intent = mockk<Intent>(relaxed = true)
     private val launchGameUseCase = mockk<LaunchGameUseCase> {
-        coEvery { this@mockk.invoke(GAME_ID, any(), any(), any(), any(), any(), any(), any(), any()) } returns
+        coEvery { this@mockk.invoke(GAME_ID, any(), any(), any(), any(), any(), any(), any(), any(), any()) } returns
             LaunchResult.Success(intent)
     }
     private val netplayJoinService = mockk<NetplayJoinService>(relaxed = true)
@@ -148,7 +148,10 @@ class ArgosyViewModelLaunchTest {
         netplayJoinService,
         socialRepository,
         playSessionTracker,
-        SyncQueueManager()
+        SyncQueueManager(),
+        mockk<com.nendo.argosy.core.input.ConnectedControllerTracker>(relaxed = true) {
+            every { connectedSystemButtons } returns MutableStateFlow(emptySet())
+        }
     )
 
     private companion object {

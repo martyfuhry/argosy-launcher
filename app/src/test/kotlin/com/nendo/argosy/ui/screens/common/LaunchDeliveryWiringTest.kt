@@ -60,9 +60,9 @@ class LaunchDeliveryWiringTest {
         val viewModel = launchTestHomeViewModel(gameLaunchDispatcher, gameLaunchDelegate)
 
         HomeViewModel::class.java
-            .getDeclaredMethod("playGameOnDisplay", Long::class.java, Int::class.java)
+            .getDeclaredMethod("playGameOnDisplay", Long::class.java, Int::class.java, Boolean::class.java)
             .apply { isAccessible = true }
-            .invoke(viewModel, GAME_ID, CHOSEN_DISPLAY_ID)
+            .invoke(viewModel, GAME_ID, CHOSEN_DISPLAY_ID, false)
 
         verify { gameLaunchDispatcher.dispatch(GAME_ID, intent, CHOSEN_DISPLAY_ID) }
     }

@@ -18,8 +18,8 @@ import kotlinx.coroutines.cancel
 internal fun launchTestGameLaunchDelegate(
     launch: (scope: CoroutineScope, gameId: Long, onLaunch: (Intent) -> Unit) -> Unit
 ): GameLaunchDelegate = mockk(relaxed = true) {
-    every { launchGame(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
-        launch(arg(0), arg(1), arg(8))
+    every { launchGame(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
+        launch(arg(0), arg(1), arg(9))
     }
     every { launchSimple(any(), any(), any(), any(), any(), any(), any(), any(), any(), any()) } answers {
         launch(arg(0), arg(1), lastArg<LaunchResultCallbacks>().onLaunch)

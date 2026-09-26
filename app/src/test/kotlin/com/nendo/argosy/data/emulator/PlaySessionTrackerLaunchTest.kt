@@ -226,7 +226,7 @@ class PlaySessionTrackerLaunchTest {
         io.mockk.coVerify(timeout = 5_000) { preferencesRepository.clearActiveSession() }
         Thread.sleep(SETTLE_MS)
         io.mockk.coVerify(exactly = 0) { preferencesRepository.persistActiveSession(CANCELLED_GAME_ID, any(), any(), any(), any(), any(), any(), any()) }
-        verify(exactly = 0) { dsm.onSessionChanged(CANCELLED_GAME_ID, any(), any()) }
+        verify(exactly = 0) { dsm.onSessionChanged(CANCELLED_GAME_ID, any(), any(), any()) }
         verify(exactly = 0) { application.startForegroundService(any()) }
         assertNull(tracker.activeSession.value)
     }
@@ -285,7 +285,7 @@ class PlaySessionTrackerLaunchTest {
 
     private fun launchUseCase(vararg results: LaunchResult): com.nendo.argosy.domain.usecase.game.LaunchGameUseCase {
         val launcher = mockk<GameLauncher>(relaxed = true) {
-            io.mockk.coEvery { launch(any(), any(), any(), any(), any(), any(), any(), any()) } returnsMany results.toList()
+            io.mockk.coEvery { launch(any(), any(), any(), any(), any(), any(), any(), any(), any()) } returnsMany results.toList()
         }
         return com.nendo.argosy.domain.usecase.game.LaunchGameUseCase(launcher, tracker)
     }
