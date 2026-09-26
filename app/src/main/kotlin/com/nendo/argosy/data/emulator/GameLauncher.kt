@@ -51,6 +51,7 @@ import javax.inject.Singleton
 private const val TAG = "GameLauncher"
 private const val EXTRA_ALREADY_LAUNCHED = "argosy.already_launched"
 private const val EXTRA_LAUNCH_DISPLAY_ID = "argosy.launch_display_id"
+private const val EXTRA_LAUNCHED_AT_MS = "argosy.launched_at_ms"
 private val DISC_TAG_REGEX = Regex("\\(Disc \\d+\\)", RegexOption.IGNORE_CASE)
 private val DISC_NUMBER_REGEX = Regex("\\d+")
 
@@ -65,6 +66,12 @@ fun Intent.isAlreadyLaunched(): Boolean = getBooleanExtra(EXTRA_ALREADY_LAUNCHED
  */
 fun Intent.launchedDisplayId(): Int? =
     if (hasExtra(EXTRA_LAUNCH_DISPLAY_ID)) getIntExtra(EXTRA_LAUNCH_DISPLAY_ID, Display.DEFAULT_DISPLAY) else null
+
+/**
+ * The wall-clock time a shell launch started its emulator, or null for an intent not yet started.
+ */
+fun Intent.alreadyLaunchedAtMs(): Long? =
+    if (isAlreadyLaunched() && hasExtra(EXTRA_LAUNCHED_AT_MS)) getLongExtra(EXTRA_LAUNCHED_AT_MS, 0L) else null
 
 data class DiscOption(
     val fileName: String,
@@ -1623,13 +1630,14 @@ class GameLauncher @Inject constructor(
         )
     }
 
-    internal fun shellLaunchStub(command: EffectiveLaunchCommand, displayId: Int?): Intent =
+    internal fun shellLaunchStub(command: EffectiveLaunchCommand, displayId: Int?, launchedAtMs: Long): Intent =
         Intent(Intent.ACTION_VIEW).apply {
             this.component = ComponentName(
                 command.packageName,
                 command.activityClass ?: command.packageName
             )
             putExtra(EXTRA_ALREADY_LAUNCHED, true)
+            putExtra(EXTRA_LAUNCHED_AT_MS, launchedAtMs)
             displayId?.let { putExtra(EXTRA_LAUNCH_DISPLAY_ID, it) }
         }
 
@@ -1660,6 +1668,7 @@ class GameLauncher @Inject constructor(
         val argv = command.toShellArgv(displayId)
         Logger.debug(TAG, "Shell command: ${argv.last()}")
 
+        val launchedAtMs = System.currentTimeMillis()
         try {
             val process = ProcessBuilder(*argv).redirectErrorStream(true).start()
             val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
@@ -1676,7 +1685,7 @@ class GameLauncher @Inject constructor(
             return ShellLaunchOutcome.Rejected
         }
 
-        return ShellLaunchOutcome.Success(shellLaunchStub(command, displayId))
+        return ShellLaunchOutcome.Success(shellLaunchStub(command, displayId, launchedAtMs))
     }
 
     private fun commandForCustomScheme(
