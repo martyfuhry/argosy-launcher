@@ -71,7 +71,7 @@ class AppLaunchScreenSettings @Inject constructor(
     ): String? {
         val raw = emulatorConfigRepository.getDisplayTargetForGame(gameId) ?: return null
         val key = legacyScreenKeyOf(raw)
-            ?: displayAffinityHelper.getDisplayTargetId(
+            ?: displayAffinityHelper.takeUnless { it.isDockedDark }?.getDisplayTargetId(
                 EmulatorDisplayTarget.fromString(raw),
                 sessionStateStore.isRolesSwapped()
             )?.let { id -> choices.find { it.displayId == id }?.screenKey }

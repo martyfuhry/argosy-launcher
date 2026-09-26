@@ -49,7 +49,9 @@ class AppLaunchScreenSettingsTest {
         every { attachedScreens() } answers { attached }
         every { screenFor(any()) } answers { attached.find { it.displayId == firstArg<Int>() } }
     }
+    private var docked = false
     private val displayAffinityHelper = mockk<DisplayAffinityHelper> {
+        every { isDockedDark } answers { docked }
         every { getDisplayTargetId(any(), any()) } answers {
             val roles = resolveRoleDisplayIds(
                 layoutPair,
@@ -185,6 +187,16 @@ class AppLaunchScreenSettingsTest {
 
         assertNull(settings.storedChoice(GAME_ID))
         assertEquals("PRESENTATION", legacyTarget)
+        assertEquals(emptyMap<String, String>(), appTargets)
+    }
+
+    @Test
+    fun `a role name stored by an earlier build waits while a dock blanks the panels`() = runTest {
+        legacyTarget = "PRIMARY"
+        docked = true
+
+        assertNull(settings.storedChoice(GAME_ID))
+        assertEquals("PRIMARY", legacyTarget)
         assertEquals(emptyMap<String, String>(), appTargets)
     }
 
