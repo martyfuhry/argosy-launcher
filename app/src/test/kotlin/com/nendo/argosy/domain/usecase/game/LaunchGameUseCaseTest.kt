@@ -106,13 +106,10 @@ class LaunchGameUseCaseTest {
         useCase(123L, variantFileId = 50L)
 
         coVerify {
-            playSessionTracker.startSession(
+            playSessionTracker.prepareSession(
                 gameId = 123L,
                 emulatorPackage = any(),
                 coreName = any(),
-                isHardcore = any(),
-                isNewGame = true,
-                isNetplayGuest = any(),
                 variantFileId = null,
                 origin = any()
             )
@@ -128,13 +125,10 @@ class LaunchGameUseCaseTest {
         useCase(123L, variantFileId = 50L)
 
         coVerify {
-            playSessionTracker.startSession(
+            playSessionTracker.prepareSession(
                 gameId = 123L,
                 emulatorPackage = any(),
                 coreName = any(),
-                isHardcore = any(),
-                isNewGame = true,
-                isNetplayGuest = any(),
                 variantFileId = 50L,
                 origin = any()
             )
