@@ -267,11 +267,6 @@ suspend fun LazyListState.keepFocusedVisible(
 private fun LazyGridState.focusedItem(index: Int): LazyGridItemInfo? =
     layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
 
-/**
- * The scroll offset that parks an item of [itemExtent] with its end against the viewport's safe
- * end, [bottomInset] short of [viewportEnd]. An item that does not fit the band is aligned to the
- * start instead.
- */
 internal fun bottomAlignedOffset(viewportEnd: Int, bottomInset: Int, itemExtent: Int): Int =
     -(viewportEnd - bottomInset - itemExtent).coerceAtLeast(0)
 
