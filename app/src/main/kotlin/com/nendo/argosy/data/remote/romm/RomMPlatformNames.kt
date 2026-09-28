@@ -2,11 +2,6 @@ package com.nendo.argosy.data.remote.romm
 
 import com.nendo.argosy.data.platform.PlatformDefinitions
 
-/**
- * Display name and short name for a RomM platform, as `name to shortName`.
- *
- * The folder name (`fs_slug`) only names a platform whose slug the registry does not know.
- */
 internal fun RomMPlatform.resolvePlatformNames(effectiveSlug: String): Pair<String, String> {
     val platformDef = PlatformDefinitions.getBySlug(effectiveSlug)
     val isSubPlatform = !effectiveSlug.equals(slug, ignoreCase = true)
