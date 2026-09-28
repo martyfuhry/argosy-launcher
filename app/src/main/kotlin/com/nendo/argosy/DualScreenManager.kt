@@ -358,8 +358,9 @@ class DualScreenManager(
     /**
      * Moves the PRIMARY role onto [displayId]. A layout that already matches the live arrangement
      * changes nothing and takes nobody's focus. While a session runs the role moves only when the
-     * game can follow it to its new display, and the game keeps the pad; otherwise the move is
-     * made when the session ends. [refocus] false leaves focus where it is.
+     * game can follow it to its new display, and the game keeps the pad. A game that cannot
+     * follow keeps its screen, and the move is made when the session ends. [refocus] false leaves
+     * focus where it is.
      */
     fun setPrimaryDisplayId(displayId: Int, refocus: Boolean = true) {
         val swapped = displayId == android.view.Display.DEFAULT_DISPLAY
