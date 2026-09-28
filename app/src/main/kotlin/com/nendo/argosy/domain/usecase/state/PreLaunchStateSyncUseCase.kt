@@ -35,16 +35,12 @@ internal data class ReconciledState(
 /**
  * Whether a downloaded state belongs in the live directory for this launch. The live directory
  * holds one channel at a time and its file names carry no channel, so loading another channel's
- * slot there overwrites the active one.
+ * slot there overwrites the active one. Null and empty both mean the default channel, and the
+ * comparison ignores case because the server round-trips the name through a file name.
  */
 internal fun belongsToChannel(stateChannel: String?, activeChannel: String?): Boolean =
     liveChannelKey(stateChannel) == liveChannelKey(activeChannel)
 
-/**
- * The channel a state is filed under for a launch. A launch without a channel, a state without
- * one, and the literal autosave slot are the one autosave channel, as they are for saves. Other
- * names compare without case.
- */
 internal fun liveChannelKey(channelName: String?): String {
     val name = channelName.orEmpty().lowercase()
     return when (name) {
@@ -55,10 +51,6 @@ internal fun liveChannelKey(channelName: String?): String {
     }
 }
 
-/**
- * The cached row a server state is measured against when none is linked to it by id: a row with
- * unsent changes, else the newest.
- */
 internal fun localForSlot(candidates: List<StateCacheEntity>): StateCacheEntity? =
     candidates.firstOrNull { hasUnsentChanges(it) } ?: candidates.maxByOrNull { it.cachedAt }
 
