@@ -68,10 +68,6 @@ internal fun routeStartAtSection(vm: SettingsViewModel, section: SettingsSection
     routeApplySectionEntry(vm, section)
 }
 
-/**
- * Re-enters the section path recorded in [handle] by an earlier instance of this screen, and
- * answers whether one was re-entered.
- */
 internal fun routeResumeSectionPath(vm: SettingsViewModel, handle: SavedStateHandle): Boolean {
     val path = resumableSectionPath(
         names = handle.get<ArrayList<String>>(SECTION_PATH_KEY).orEmpty(),
