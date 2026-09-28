@@ -16,12 +16,11 @@ private const val BOTTOM = 4
 private const val DETACHED = 7
 private const val TV = 2
 
-private enum class TargetKind(val className: String?, val packageName: String?, val coreId: String?) {
-    DUAL_SCREEN_EMULATOR(null, "org.azahar_emu.azahar.thor", null),
-    SINGLE_SCREEN_EMULATOR(null, "com.github.stenzek.duckstation", null),
-    LIBRETRO_DS_CORE(LibretroActivity::class.java.name, null, "melonds"),
-    LIBRETRO_SINGLE_SCREEN_CORE(LibretroActivity::class.java.name, null, "snes9x"),
-    ANDROID_APP(null, "com.example.banjo", null)
+private enum class TargetKind(val className: String?, val packageName: String?) {
+    DUAL_SCREEN_EMULATOR(null, "org.azahar_emu.azahar.thor"),
+    SINGLE_SCREEN_EMULATOR(null, "com.github.stenzek.duckstation"),
+    LIBRETRO(LibretroActivity::class.java.name, null),
+    ANDROID_APP(null, "com.example.banjo")
 }
 
 private enum class Pin(val displayId: Int?) { NONE(null), TOP_SCREEN(TOP), BOTTOM_SCREEN(BOTTOM), DETACHED_SCREEN(DETACHED) }
@@ -37,7 +36,7 @@ class GameLaunchDisplayTableTest {
     private fun expected(kind: TargetKind, pin: Pin, launcherOnTop: Boolean): Int = when {
         pin == Pin.TOP_SCREEN -> TOP
         pin == Pin.BOTTOM_SCREEN -> BOTTOM
-        kind == TargetKind.DUAL_SCREEN_EMULATOR || kind == TargetKind.LIBRETRO_DS_CORE -> TOP
+        kind == TargetKind.DUAL_SCREEN_EMULATOR -> TOP
         launcherOnTop -> BOTTOM
         else -> TOP
     }
@@ -55,8 +54,7 @@ class GameLaunchDisplayTableTest {
                     for (pin in Pin.entries) {
                         val drawsSecondScreen = LaunchDisplayPlanner.drawsSecondScreen(
                             kind.className,
-                            kind.packageName,
-                            kind.coreId
+                            kind.packageName
                         )
                         val resolved = resolveGameDisplayId(
                             drawsSecondScreen = drawsSecondScreen,
@@ -84,7 +82,7 @@ class GameLaunchDisplayTableTest {
             val secondary = resolveSecondaryDisplayId(layoutPair, attached, BOTTOM)
             val roles = resolveRoleDisplayIds(layoutPair, attached, secondary, rolesSwapped)!!
             for (kind in TargetKind.entries) {
-                val drawsSecondScreen = LaunchDisplayPlanner.drawsSecondScreen(kind.className, kind.packageName, kind.coreId)
+                val drawsSecondScreen = LaunchDisplayPlanner.drawsSecondScreen(kind.className, kind.packageName)
                 for (target in listOf(EmulatorDisplayTarget.PRIMARY, EmulatorDisplayTarget.PRESENTATION)) {
                     val pinned = resolveDisplayTargetId(target, roles, appScreenDisplayId = null)
                     val resolved = resolveGameDisplayId(

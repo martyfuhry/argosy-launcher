@@ -5,7 +5,6 @@ import android.content.Intent
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.repository.EmulatorConfigRepository
-import com.nendo.argosy.libretro.DualScreenOutput
 import com.nendo.argosy.libretro.LibretroActivity
 import com.nendo.argosy.util.DisplayAffinityHelper
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -39,17 +38,17 @@ class LaunchDisplayPlanner @Inject constructor(
 
     companion object {
         /**
-         * Whether what [intent] launches shows a console's second screen on a display of its
-         * own: the built-in emulator with a core that splits its frame, or such an emulator app.
+         * Whether the emulator app [intent] launches shows a console's second screen on a display
+         * of its own. The built-in emulator is not one: it follows the screen roles, and the
+         * screen swap moves it while it runs.
          */
         fun drawsSecondScreen(intent: Intent): Boolean = drawsSecondScreen(
             className = intent.component?.className,
-            packageName = intent.component?.packageName ?: intent.`package`,
-            coreId = intent.getStringExtra(LibretroActivity.EXTRA_CORE_NAME)
+            packageName = intent.component?.packageName ?: intent.`package`
         )
 
-        internal fun drawsSecondScreen(className: String?, packageName: String?, coreId: String?): Boolean {
-            if (className == LibretroActivity::class.java.name) return DualScreenOutput.forCore(coreId) != null
+        internal fun drawsSecondScreen(className: String?, packageName: String?): Boolean {
+            if (className == LibretroActivity::class.java.name) return false
             return packageName != null && EmulatorRegistry.drawsSecondScreen(packageName)
         }
     }

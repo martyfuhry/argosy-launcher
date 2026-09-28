@@ -44,17 +44,15 @@ class SecondScreenCapabilityTest {
     }
 
     @Test
-    fun `the built-in emulator draws a second screen only with a core that splits its frame`() {
-        assertTrue(LaunchDisplayPlanner.drawsSecondScreen(libretro, "com.nendo.argosy", "melonds"))
-        assertTrue(LaunchDisplayPlanner.drawsSecondScreen(libretro, "com.nendo.argosy", "azahar"))
-        assertFalse(LaunchDisplayPlanner.drawsSecondScreen(libretro, "com.nendo.argosy", "desmume"))
-        assertFalse(LaunchDisplayPlanner.drawsSecondScreen(libretro, "com.nendo.argosy", "snes9x"))
-        assertFalse(LaunchDisplayPlanner.drawsSecondScreen(libretro, "com.nendo.argosy", null))
+    fun `the built-in emulator follows the screen roles whatever its core`() {
+        listOf("melonds", "azahar", "desmume", "snes9x").forEach {
+            assertFalse(it, LaunchDisplayPlanner.drawsSecondScreen(libretro, "com.nendo.argosy"))
+        }
     }
 
     @Test
     fun `a launch with no package draws a single screen`() {
-        assertFalse(LaunchDisplayPlanner.drawsSecondScreen(className = null, packageName = null, coreId = null))
+        assertFalse(LaunchDisplayPlanner.drawsSecondScreen(className = null, packageName = null))
     }
 
     @Test
