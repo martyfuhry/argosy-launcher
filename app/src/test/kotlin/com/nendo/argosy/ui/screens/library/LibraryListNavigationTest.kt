@@ -182,10 +182,10 @@ class LibraryListNavigationTest {
         steamContentManager = mockk(relaxed = true),
         steamDownloadPromptController = mockk(relaxed = true),
         downloadFileStatusRepository = mockk(relaxed = true),
-        emulatorLaunchTargetResolver = mockk(relaxed = true),
         siblingChoice = mockk(relaxed = true),
         socialRepository = mockk(relaxed = true),
         saveListStatusRepository = mockk(relaxed = true),
-        libraryDefaultPlatformMigration = mockk(relaxed = true)
+        libraryDefaultPlatformMigration = mockk(relaxed = true),
+        gameLaunchDispatcher = mockk(relaxed = true)
     )
 }
