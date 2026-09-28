@@ -3133,6 +3133,7 @@ class LibretroActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean =
         dispatchKeyFrom(event, KeyPressGate.Source.Key, coreBound = true)
 
