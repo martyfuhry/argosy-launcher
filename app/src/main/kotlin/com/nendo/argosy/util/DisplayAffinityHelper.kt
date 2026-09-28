@@ -462,11 +462,6 @@ class DisplayAffinityHelper @Inject constructor(
             return candidates.firstOrNull { it != occupiedDisplayId } ?: candidates.firstOrNull()
         }
 
-        /**
-         * Where a game launch lands: a chosen screen while attached, the default display for a
-         * game drawing a second screen on a device with two built-in panels, else the presentation
-         * screen while two screens are in use, or null to leave it where it started.
-         */
         internal fun resolveGameDisplayId(
             drawsSecondScreen: Boolean,
             explicitDisplayId: Int?,
