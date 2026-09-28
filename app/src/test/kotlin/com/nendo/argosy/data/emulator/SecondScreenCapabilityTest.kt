@@ -56,8 +56,7 @@ class SecondScreenCapabilityTest {
         assertTrue(
             LaunchDisplayPlanner.drawsSecondScreen(
                 className = "com.aure.banjorecomp.MainActivity",
-                packageName = "com.aure.banjorecomp",
-                coreId = null
+                packageName = "com.aure.banjorecomp"
             )
         )
     }
