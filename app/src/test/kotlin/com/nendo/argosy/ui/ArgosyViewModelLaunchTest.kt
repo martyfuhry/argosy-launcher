@@ -148,7 +148,10 @@ class ArgosyViewModelLaunchTest {
         netplayJoinService,
         socialRepository,
         playSessionTracker,
-        SyncQueueManager()
+        SyncQueueManager(),
+        mockk<com.nendo.argosy.core.input.ConnectedControllerTracker>(relaxed = true) {
+            every { connectedSystemButtons } returns MutableStateFlow(emptySet())
+        }
     )
 
     private companion object {
