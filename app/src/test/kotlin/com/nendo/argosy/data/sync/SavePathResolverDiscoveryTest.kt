@@ -554,6 +554,38 @@ class SavePathResolverDiscoveryTest {
     }
 
     @Test
+    fun `a Minarch Link save is found by ROM name in the shared folder`() = runTest {
+        val romFile = File(tempDir, "roms/gba/Pokemon - LeafGreen Version (USA, Europe) (Rev 1).gba")
+            .apply { parentFile?.mkdirs(); writeBytes(byteArrayOf(0)) }
+        val saveDir = File(tempDir, "MinarchLink/Saves/GBA").apply { mkdirs() }
+        val saveFile = File(saveDir, "Pokemon - LeafGreen Version (USA, Europe) (Rev 1).sav")
+            .apply { writeBytes(byteArrayOf(1)) }
+
+        val result = resolver.discoverSavePath(
+            emulatorId = "minarch_link", gameTitle = "Pokemon LeafGreen", platformSlug = "gba",
+            romPath = romFile.absolutePath, emulatorPackage = "farm.fuhry.minarch", gameId = 1L,
+        )
+
+        assertEquals(saveFile.absolutePath, result)
+    }
+
+    @Test
+    fun `a Minarch Link download is written to the shared folder under the ROM name`() = runTest {
+        val romFile = File(tempDir, "roms/gba/Pokemon - LeafGreen Version (USA, Europe) (Rev 1).gba")
+            .apply { parentFile?.mkdirs(); writeBytes(byteArrayOf(0)) }
+
+        val result = resolver.constructSavePath(
+            emulatorId = "minarch_link", gameTitle = "Pokemon LeafGreen", platformSlug = "gba",
+            romPath = romFile.absolutePath, gameId = 1L,
+        )
+
+        assertEquals(
+            File(tempDir, "MinarchLink/Saves/GBA/Pokemon - LeafGreen Version (USA, Europe) (Rev 1).sav").absolutePath,
+            result
+        )
+    }
+
+    @Test
     fun `per-game path yields identical discover and construct results for a file-based config`() = runTest {
         val perGameDir = File(tempDir, "custom/gba-saves").apply { mkdirs() }
         coEvery { emulatorConfigDao.getSavePathForGame(1L) } returns perGameDir.absolutePath
