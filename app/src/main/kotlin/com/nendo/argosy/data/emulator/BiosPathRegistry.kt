@@ -389,6 +389,11 @@ object BiosPathRegistry {
             ),
             supportedPlatforms = setOf("gba")
         ),
+        "minarch_link" to BiosPathConfig(
+            emulatorId = "minarch_link",
+            defaultPaths = listOf("$primaryRoot/MinarchLink/Bios/GBA"),
+            supportedPlatforms = setOf("gba")
+        ),
         "nethersx2" to BiosPathConfig(
             emulatorId = "nethersx2",
             defaultPaths = listOf(
