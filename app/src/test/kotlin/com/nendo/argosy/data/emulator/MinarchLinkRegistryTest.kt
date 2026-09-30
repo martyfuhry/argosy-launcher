@@ -35,7 +35,7 @@ class MinarchLinkRegistryTest {
 
         assertEquals("minarch_link", config?.emulatorId)
         assertEquals(listOf("sav"), config!!.saveExtensions)
-        assertEquals(listOf("{anyStorage}/MinarchLink/Saves/GBA"), config.defaultPaths)
+        assertEquals(listOf("{extStorage}/MinarchLink/Saves/GBA"), config.defaultPaths)
     }
 
     @Test
