@@ -39,6 +39,21 @@ class MinarchLinkRegistryTest {
     }
 
     @Test
+    fun `states resolve to the shared MinarchLink folder as name and slot files`() {
+        val config = StatePathRegistry.getConfig("minarch_link")
+        requireNotNull(config)
+        val pattern = config.slotPattern
+        val rom = "Pokemon - LeafGreen Version (USA, Europe) (Rev 1)"
+
+        assertEquals(listOf("{extStorage}/MinarchLink/States/GBA"), config.defaultPaths)
+        assertEquals(10, config.maxSlots)
+        assertEquals("${rom}_3.state", pattern.buildFileName(rom, 3))
+        assertEquals(0, pattern.parseSlotNumber("${rom}_0.state", rom))
+        assertEquals(9, pattern.parseSlotNumber("${rom}_9.state", rom))
+        assertEquals(null, pattern.parseSlotNumber("$rom.sav", rom))
+    }
+
+    @Test
     fun `a forked build resolves through the family to the same save config`() {
         val family = EmulatorRegistry.findFamilyForPackage("farm.fuhry.minarch.thor")
         requireNotNull(family)
@@ -48,5 +63,6 @@ class MinarchLinkRegistryTest {
         assertEquals(setOf("gba"), variant.supportedPlatforms)
         assertEquals("minarch_link", SavePathRegistry.canonicalConfigId(variant.id, variant.packageName))
         assertEquals("minarch_link", SavePathRegistry.getConfigForPlatform(variant.id, "gba")?.emulatorId)
+        assertEquals("minarch_link", StatePathRegistry.getConfig(variant.id)?.emulatorId)
     }
 }
