@@ -694,6 +694,12 @@ object EmulatorRegistry {
             downloadUrl = "https://play.google.com/store/apps/details?id=com.pixelrespawn.linkboy"
         ),
         EmulatorDef(
+            id = "minarch_link",
+            packageName = "farm.fuhry.minarch",
+            displayName = "Minarch Link",
+            supportedPlatforms = setOf("gba")
+        ),
+        EmulatorDef(
             id = "super_zsnes",
             packageName = "com.zsnes.superzsnes",
             displayName = "SUPER ZSNES",
@@ -1084,7 +1090,7 @@ object EmulatorRegistry {
         "wii" to listOf("dolphin", "dolphin_handheld", "dolphin_cs", "retroarch", "retroarch_64", "retroarch_32"),
         "wiiu" to listOf("cemu", "cemu_dualscreen"),
         "switch" to listOf("eden", "citron", "sudachi", "ryujinx", "yuzu", "strato", "skyline"),
-        "gba" to listOf(BUILTIN_ID, "pizza_boy_gba", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
+        "gba" to listOf(BUILTIN_ID, "minarch_link", "pizza_boy_gba", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
         "gb" to listOf(BUILTIN_ID, "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
         "gbc" to listOf(BUILTIN_ID, "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32"),
         "nes" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
@@ -1690,6 +1696,12 @@ object EmulatorRegistry {
                 intentExtras = mapOf("SelectedGame" to ExtraValue.FilePath)
             ),
             downloadUrl = "https://github.com/azahar-emu/azahar/releases"
+        ),
+        EmulatorFamily(
+            baseId = "minarch_link",
+            displayNamePrefix = "Minarch Link",
+            packagePatterns = listOf("farm.fuhry.minarch*"),
+            supportedPlatforms = setOf("gba")
         ),
         EmulatorFamily(
             baseId = "borked3ds",
