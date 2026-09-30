@@ -1819,12 +1819,6 @@ object EmulatorRegistry {
             downloadUrl = "https://github.com/azahar-emu/azahar/releases"
         ),
         EmulatorFamily(
-            baseId = "minarch_link",
-            displayNamePrefix = "Minarch Link",
-            packagePatterns = listOf("farm.fuhry.minarch*"),
-            supportedPlatforms = setOf("gba")
-        ),
-        EmulatorFamily(
             baseId = "borked3ds",
             displayNamePrefix = "Borked3DS",
             packagePatterns = listOf("io.github.borked3ds.*"),
