@@ -2,6 +2,7 @@ package com.nendo.argosy.data.emulator
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -33,8 +34,9 @@ class MinarchLinkRegistryTest {
     fun `saves resolve to the shared MinarchLink folder as sav files`() {
         val config = SavePathRegistry.getConfigForPlatformByPackage("farm.fuhry.minarch", "gba")
 
-        assertEquals("minarch_link", config?.emulatorId)
-        assertEquals(listOf("sav"), config!!.saveExtensions)
+        requireNotNull(config)
+        assertEquals("minarch_link", config.emulatorId)
+        assertEquals(listOf("sav"), config.saveExtensions)
         assertEquals(listOf("{extStorage}/MinarchLink/Saves/GBA"), config.defaultPaths)
     }
 
@@ -50,7 +52,7 @@ class MinarchLinkRegistryTest {
         assertEquals("${rom}_3.state", pattern.buildFileName(rom, 3))
         assertEquals(0, pattern.parseSlotNumber("${rom}_0.state", rom))
         assertEquals(9, pattern.parseSlotNumber("${rom}_9.state", rom))
-        assertEquals(null, pattern.parseSlotNumber("$rom.sav", rom))
+        assertNull(pattern.parseSlotNumber("$rom.sav", rom))
     }
 
     @Test
