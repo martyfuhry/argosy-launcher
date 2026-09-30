@@ -379,6 +379,11 @@ object SavePathRegistry {
             ),
             saveExtensions = listOf("sav")
         ),
+        "minarch_link" to SavePathConfig(
+            emulatorId = "minarch_link",
+            defaultPaths = listOf("{anyStorage}/MinarchLink/Saves/GBA"),
+            saveExtensions = listOf("sav")
+        ),
         "pizza_boy_gb" to SavePathConfig(
             emulatorId = "pizza_boy_gb",
             defaultPaths = listOf(
@@ -742,6 +747,7 @@ object SavePathRegistry {
         "it.dbtecno.pizzaboy" to "pizza_boy_gb",
         "it.dbtecno.pizzaboygbapro" to "pizza_boy_gba_pro",
         "it.dbtecno.pizzaboypro" to "pizza_boy_gb_pro",
+        "farm.fuhry.minarch" to "minarch_link",
         "info.cemu.cemu" to "cemu",
         "org.vita3k.emulator" to "vita3k",
         "org.vita3k.emulator.ikhoeyZX" to "vita3k-zx",
