@@ -52,4 +52,16 @@ class MinarchLinkRegistryTest {
         assertEquals(9, pattern.parseSlotNumber("${rom}_9.state", rom))
         assertEquals(null, pattern.parseSlotNumber("$rom.sav", rom))
     }
+
+    @Test
+    fun `the gba bios goes to the folder minarch hands gpSP as its system directory`() {
+        val config = BiosPathRegistry.getEmulatorBiosPaths("minarch_link")
+        requireNotNull(config)
+
+        assertEquals(1, config.defaultPaths.size)
+        assertTrue(config.defaultPaths.single().endsWith("/MinarchLink/Bios/GBA"))
+        assertTrue(config.actsUnprompted("gba"))
+        assertFalse(config.supports("gb"))
+        assertTrue(BiosPathRegistry.getUnpromptedEmulatorsForPlatform("gba").any { it.emulatorId == "minarch_link" })
+    }
 }
