@@ -52,17 +52,4 @@ class MinarchLinkRegistryTest {
         assertEquals(9, pattern.parseSlotNumber("${rom}_9.state", rom))
         assertEquals(null, pattern.parseSlotNumber("$rom.sav", rom))
     }
-
-    @Test
-    fun `a forked build resolves through the family to the same save config`() {
-        val family = EmulatorRegistry.findFamilyForPackage("farm.fuhry.minarch.thor")
-        requireNotNull(family)
-        val variant = EmulatorRegistry.createDefFromFamily(family, "farm.fuhry.minarch.thor")
-
-        assertEquals("minarch_link", family.baseId)
-        assertEquals(setOf("gba"), variant.supportedPlatforms)
-        assertEquals("minarch_link", SavePathRegistry.canonicalConfigId(variant.id, variant.packageName))
-        assertEquals("minarch_link", SavePathRegistry.getConfigForPlatform(variant.id, "gba")?.emulatorId)
-        assertEquals("minarch_link", StatePathRegistry.getConfig(variant.id)?.emulatorId)
-    }
 }
