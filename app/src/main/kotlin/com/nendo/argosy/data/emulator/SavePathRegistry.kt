@@ -374,7 +374,7 @@ object SavePathRegistry {
         ),
         "minarch_link" to SavePathConfig(
             emulatorId = "minarch_link",
-            defaultPaths = listOf("{anyStorage}/MinarchLink/Saves/GBA"),
+            defaultPaths = listOf("{extStorage}/MinarchLink/Saves/GBA"),
             saveExtensions = listOf("sav")
         ),
         "pizza_boy_gb" to SavePathConfig(
