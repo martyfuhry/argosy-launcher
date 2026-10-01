@@ -99,6 +99,8 @@ class PreLaunchStateSyncOriginTest {
         coEvery {
             manager.buildStateTargetPath(any(), any(), any(), any(), any(), any(), any(), any())
         } answers { File(statesDir, "${arg<String>(2)}_${arg<Int>(3)}.state").absolutePath }
+        coEvery { manager.deleteState(any()) } answers { Unit }
+        coEvery { manager.clearServerLink(any()) } returns Unit
         coEvery { manager.restoreState(any(), any()) } answers {
             File(secondArg<String>()).writeText(firstArg<Long>().toString())
             true
@@ -206,6 +208,45 @@ class PreLaunchStateSyncOriginTest {
     }
 
     @Test
+    fun `a synced copy of another emulator's state is dropped and the slot takes the emulator's own`() = runTest {
+        serverHas(
+            serverState(id = 1L, emulator = STANDALONE_ID, fileName = "$ROM_BASE [2026-09-20_08-00-00].state.auto"),
+            serverState(id = 2L, emulator = "mgba", fileName = "$ROM_BASE [2026-09-30_16-52-23].state.auto")
+        )
+        localHas(linkedRow(rommSaveId = 2L, syncStatus = StateCacheEntity.STATUS_SYNCED))
+
+        useCase(GAME_ID, STANDALONE_PACKAGE, channelName = null)
+
+        coVerify(exactly = 1) { manager.deleteState(9L) }
+        coVerify(exactly = 0) { manager.clearServerLink(any()) }
+        assertEquals(listOf(1L), downloaded)
+    }
+
+    @Test
+    fun `an unsent row linked to another emulator's state is unlinked instead of overwriting it`() = runTest {
+        serverHas(serverState(id = 2L, emulator = "mgba", fileName = "$ROM_BASE [2026-09-30_16-52-23].state.auto"))
+        localHas(linkedRow(rommSaveId = 2L, syncStatus = StateCacheEntity.STATUS_LOCAL_NEWER))
+
+        useCase(GAME_ID, STANDALONE_PACKAGE, channelName = null)
+
+        coVerify(exactly = 1) { manager.clearServerLink(9L) }
+        coVerify(exactly = 0) { manager.deleteState(any()) }
+        assertTrue(downloaded.isEmpty())
+    }
+
+    @Test
+    fun `a built-in row linked to another core's state is left to the core check`() = runTest {
+        launchEmulatorId = EmulatorRegistry.BUILTIN_ID
+        serverHas(serverState(id = 2L, emulator = "gpsp", fileName = "$ROM_BASE [2026-09-30_16-52-23].state.auto"))
+        localHas(linkedRow(rommSaveId = 2L, syncStatus = StateCacheEntity.STATUS_SYNCED, emulatorId = EmulatorRegistry.BUILTIN_ID))
+
+        useCase(GAME_ID, EmulatorRegistry.BUILTIN_PACKAGE, channelName = null)
+
+        coVerify(exactly = 0) { manager.deleteState(any()) }
+        coVerify(exactly = 0) { manager.clearServerLink(any()) }
+    }
+
+    @Test
     fun `a download of another emulator's state is refused before anything is cached`() = runTest {
         val plain = newManager(gameDao, saveSyncApiClient)
         val foreign = serverState(id = 1L, emulator = "mgba", fileName = "$ROM_BASE [2026-09-30_16-52-23].autosave.state.auto")
@@ -248,6 +289,25 @@ class PreLaunchStateSyncOriginTest {
             stateOwnershipTracker = mockk(relaxed = true)
         )
     }
+
+    private fun localHas(vararg rows: StateCacheEntity) {
+        coEvery { manager.getByGameAndEmulator(GAME_ID, any()) } returns rows.toList()
+    }
+
+    private fun linkedRow(rommSaveId: Long, syncStatus: String, emulatorId: String = STANDALONE_ID) = StateCacheEntity(
+        id = 9L,
+        gameId = GAME_ID,
+        platformSlug = "gba",
+        emulatorId = emulatorId,
+        slotNumber = -1,
+        cachedAt = java.time.Instant.EPOCH,
+        stateSize = 1,
+        cachePath = "cached/9",
+        coreId = emulatorId,
+        rommSaveId = rommSaveId,
+        syncStatus = syncStatus,
+        serverUpdatedAt = java.time.Instant.parse("2026-09-30T00:00:00Z")
+    )
 
     private fun serverHas(vararg states: RomMState) {
         coEvery { manager.checkServerStates(ROMM_ID, any()) } returns states.toList()
