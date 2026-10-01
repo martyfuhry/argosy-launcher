@@ -36,7 +36,7 @@ class MinarchLinkRegistryTest {
     }
 
     @Test
-    fun `states resolve to the shared MinarchLink folder as name and slot files`() {
+    fun `states resolve to the shared MinarchLink folder with an auto-resume slot`() {
         val config = StatePathRegistry.getConfig("minarch_link")
         requireNotNull(config)
         val pattern = config.slotPattern
@@ -44,10 +44,16 @@ class MinarchLinkRegistryTest {
 
         assertEquals(listOf("{extStorage}/MinarchLink/States/GBA"), config.defaultPaths)
         assertEquals(10, config.maxSlots)
-        assertEquals("${rom}_3.state", pattern.buildFileName(rom, 3))
-        assertEquals(0, pattern.parseSlotNumber("${rom}_0.state", rom))
-        assertEquals(9, pattern.parseSlotNumber("${rom}_9.state", rom))
+        assertEquals("$rom.state", pattern.buildFileName(rom, 0))
+        assertEquals("$rom.state3", pattern.buildFileName(rom, 3))
+        assertEquals("$rom.state.auto", pattern.buildFileName(rom, -1))
+        assertEquals(0, pattern.parseSlotNumber("$rom.state", rom))
+        assertEquals(7, pattern.parseSlotNumber("$rom.state7", rom))
+        assertEquals(-1, pattern.parseSlotNumber("$rom.state.auto", rom))
         assertEquals(null, pattern.parseSlotNumber("$rom.sav", rom))
+        assertEquals(null, pattern.parseSlotNumber("$rom.state.auto.tmp", rom))
+        assertEquals(null, pattern.parseSlotNumber("Pokemon - LeafGreen Version (USA, Europe).state", "Pokemon - LeafGreen Version (USA, Europe) (Rev 1)"))
+        assertEquals(null, pattern.parseSlotNumber("$rom (Rev 2).state", rom))
     }
 
     @Test

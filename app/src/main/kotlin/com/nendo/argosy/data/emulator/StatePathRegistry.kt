@@ -303,9 +303,10 @@ object StatePathRegistry {
         "minarch_link" to StatePathConfig(
             emulatorId = "minarch_link",
             defaultPaths = listOf("{extStorage}/MinarchLink/States/GBA"),
-            slotPattern = StateSlotPattern.NameAndSlot(
-                separator = "_",
-                extension = "state"
+            // <rom>.state, <rom>.state1..9 and the auto-resume state <rom>.state.auto (slot -1)
+            slotPattern = StateSlotPattern.SuffixNumber(
+                extension = "state",
+                autoSlotSuffix = "auto"
             ),
             maxSlots = 10
         ),
