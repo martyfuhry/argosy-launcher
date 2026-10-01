@@ -172,7 +172,13 @@ class PreLaunchStateSyncUseCase @Inject constructor(
         var downloadedCount = 0
         var restorePointSelected: Boolean? = null
 
-        for (serverState in newestPerSlot(serverStates)) {
+        val loadable = serverStates.filter { serverState ->
+            stateCacheManager.isMadeBy(serverState, gameId, emulatorId, coreId).also { made ->
+                if (!made) Log.d(TAG, "Skipping ${serverState.fileName}: written by ${serverState.emulator}, not $emulatorId")
+            }
+        }
+
+        for (serverState in newestPerSlot(loadable)) {
             val parsed = stateCacheManager.parseStateFileName(serverState.fileName)
             val slotNumber = parsed.slotNumber
             val linked = localByRommId[serverState.id]
