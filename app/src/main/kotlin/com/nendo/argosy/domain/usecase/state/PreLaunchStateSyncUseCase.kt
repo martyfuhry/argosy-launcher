@@ -2,7 +2,9 @@ package com.nendo.argosy.domain.usecase.state
 
 import android.util.Log
 import com.nendo.argosy.data.emulator.CoreVersionExtractor
+import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.EmulatorResolver
+import com.nendo.argosy.data.emulator.RetroArchPathResolver
 import com.nendo.argosy.data.emulator.StatePathRegistry
 import com.nendo.argosy.data.local.dao.EmulatorConfigDao
 import com.nendo.argosy.data.local.dao.GameDao
@@ -135,6 +137,12 @@ class PreLaunchStateSyncUseCase @Inject constructor(
 
         Log.d(TAG, "Found ${serverStates.size} server states for ${game.title}")
 
+        val loadable = serverStates.filter { serverState ->
+            stateCacheManager.isMadeBy(serverState, gameId, emulatorId, coreId).also { made ->
+                if (!made) Log.d(TAG, "Skipping ${serverState.fileName}: written by ${serverState.emulator}, not $emulatorId")
+            }
+        }
+
         val localStates = stateCacheManager.getByGameAndEmulator(gameId, emulatorId)
         val reconciled = reconcileDeadServerLinks(localStates, serverStates.map { it.id }.toSet())
         reconciled.filter { it.linkWasDropped }.forEach {
@@ -146,17 +154,12 @@ class PreLaunchStateSyncUseCase @Inject constructor(
             stateCacheManager.clearServerLink(it.state.id)
         }
 
-        val repaired = reconciled.map { it.state }
+        val foreignIds = serverStates.map { it.id }.toSet() - loadable.map { it.id }.toSet()
+        val repaired = dropForeignLinks(reconciled.map { it.state }, foreignIds)
         val localByRommId = repaired.filter { it.rommSaveId != null }.associateBy { it.rommSaveId }
         val localBySlot = repaired.associateBy { it.slotNumber to it.channelName }
 
         var downloadedCount = 0
-
-        val loadable = serverStates.filter { serverState ->
-            stateCacheManager.isMadeBy(serverState, gameId, emulatorId, coreId).also { made ->
-                if (!made) Log.d(TAG, "Skipping ${serverState.fileName}: written by ${serverState.emulator}, not $emulatorId")
-            }
-        }
 
         for (serverState in newestPerSlot(loadable)) {
             val parsed = stateCacheManager.parseStateFileName(serverState.fileName)
@@ -248,6 +251,37 @@ class PreLaunchStateSyncUseCase @Inject constructor(
             Result.Ready
         }
     }
+
+    private suspend fun dropForeignLinks(
+        states: List<StateCacheEntity>,
+        foreignIds: Set<Long>
+    ): List<StateCacheEntity> = states.mapNotNull { state ->
+        val id = state.rommSaveId
+        when {
+            id == null || id !in foreignIds || !hasOneCore(state.emulatorId) -> state
+            state.syncStatus == StateCacheEntity.STATUS_PENDING_UPLOAD ||
+                state.syncStatus == StateCacheEntity.STATUS_LOCAL_NEWER -> {
+                Log.w(TAG, "Slot ${state.slotNumber} is linked to another emulator's server state $id, unlinking it")
+                stateCacheManager.clearServerLink(state.id)
+                state.copy(
+                    rommSaveId = null,
+                    syncStatus = StateCacheEntity.STATUS_PENDING_UPLOAD,
+                    serverUpdatedAt = null,
+                    lastUploadedHash = null
+                )
+            }
+            else -> {
+                Log.w(TAG, "Slot ${state.slotNumber} holds another emulator's server state $id, dropping the cached copy")
+                stateCacheManager.deleteState(state.id)
+                null
+            }
+        }
+    }
+
+    private fun hasOneCore(emulatorId: String): Boolean =
+        emulatorId != EmulatorRegistry.BUILTIN_ID &&
+            emulatorId != EmulatorRegistry.LEGACY_BUILTIN_ID &&
+            !RetroArchPathResolver.isRetroArch(emulatorId)
 
     /**
      * The one state per slot worth bringing down: the newest.
