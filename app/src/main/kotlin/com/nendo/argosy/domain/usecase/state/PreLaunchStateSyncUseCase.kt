@@ -150,7 +150,13 @@ class PreLaunchStateSyncUseCase @Inject constructor(
 
         var downloadedCount = 0
 
-        for (serverState in newestPerSlot(serverStates)) {
+        val loadable = serverStates.filter { serverState ->
+            stateCacheManager.isMadeBy(serverState, gameId, emulatorId, coreId).also { made ->
+                if (!made) Log.d(TAG, "Skipping ${serverState.fileName}: written by ${serverState.emulator}, not $emulatorId")
+            }
+        }
+
+        for (serverState in newestPerSlot(loadable)) {
             val parsed = stateCacheManager.parseStateFileName(serverState.fileName)
             if (!belongsToChannel(parsed.channelName, channelName)) continue
             val slotNumber = parsed.slotNumber
