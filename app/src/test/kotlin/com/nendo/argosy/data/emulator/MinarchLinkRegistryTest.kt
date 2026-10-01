@@ -20,14 +20,11 @@ class MinarchLinkRegistryTest {
     }
 
     @Test
-    fun `it is recommended for gba only after every dedicated upstream emulator`() {
+    fun `it is offered for gba after every emulator gba already recommends`() {
         val gba = EmulatorRegistry.getRecommendedEmulators().getValue("gba")
-        val minarch = gba.indexOf("minarch_link")
-        val dedicated = gba.filterNot { it == "minarch_link" || it.startsWith("retroarch") }
 
         assertEquals(EmulatorRegistry.BUILTIN_ID, gba.first())
-        assertTrue(minarch > gba.indexOf("linkboy"))
-        assertTrue(dedicated.all { gba.indexOf(it) < minarch })
+        assertEquals("minarch_link", gba.last())
     }
 
     @Test
