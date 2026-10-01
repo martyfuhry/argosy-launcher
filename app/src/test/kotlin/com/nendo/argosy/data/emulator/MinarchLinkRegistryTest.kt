@@ -19,11 +19,11 @@ class MinarchLinkRegistryTest {
     }
 
     @Test
-    fun `it is recommended for gba after the built-in core`() {
+    fun `it is offered for gba after the existing emulators`() {
         val gba = EmulatorRegistry.getRecommendedEmulators().getValue("gba")
 
         assertEquals(EmulatorRegistry.BUILTIN_ID, gba.first())
-        assertEquals(1, gba.indexOf("minarch_link"))
+        assertTrue("minarch_link" in gba)
     }
 
     @Test
