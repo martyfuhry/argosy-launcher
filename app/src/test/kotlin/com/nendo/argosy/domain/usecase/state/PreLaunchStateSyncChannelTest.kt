@@ -13,6 +13,7 @@ import com.nendo.argosy.data.preferences.UserPreferences
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
 import com.nendo.argosy.data.remote.romm.RomMApi
 import com.nendo.argosy.data.remote.romm.RomMState
+import com.nendo.argosy.data.repository.SaveSyncApiClient
 import com.nendo.argosy.data.repository.SaveSyncRepository
 import com.nendo.argosy.data.repository.StateCacheManager
 import com.nendo.argosy.libretro.LibretroStateSlots
@@ -72,7 +73,9 @@ class PreLaunchStateSyncChannelTest {
                 retroArchConfigParser = mockk(relaxed = true),
                 retroArchPathResolver = mockk(relaxed = true),
                 libretroStatePathResolver = mockk(relaxed = true),
-                saveSyncApiClient = mockk(relaxed = true),
+                saveSyncApiClient = mockk<SaveSyncApiClient>(relaxed = true) {
+                    coEvery { resolveCoreForGame(any<GameEntity>(), EmulatorRegistry.BUILTIN_ID) } returns "mgba"
+                },
                 payloadCodec = mockk(relaxed = true),
                 attributionRepository = mockk(relaxed = true),
                 stateOwnershipTracker = mockk(relaxed = true)
