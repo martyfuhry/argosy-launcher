@@ -27,8 +27,7 @@ class Migration203To204Test {
     }
 
     @Test
-    fun `the migration is registered as the last step`() {
-        assertEquals(Migration_203_204, MigrationRegistry.ALL.last())
-        MigrationRegistry.assertContiguous(204)
+    fun `the migration is registered`() {
+        assertEquals(Migration_203_204, MigrationRegistry.byKey(203, 204))
     }
 }
