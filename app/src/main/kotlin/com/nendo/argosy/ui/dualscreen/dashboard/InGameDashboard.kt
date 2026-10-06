@@ -206,11 +206,21 @@ fun InGameDashboard(
                     }
                 )
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    when (section) {
-                        DashboardSection.SESSION -> SessionSection(content, wide)
-                        DashboardSection.STATES -> StatesSection(content, wide)
-                        DashboardSection.TROPHIES -> TrophiesSection(content)
-                        DashboardSection.MANUAL, DashboardSection.GUIDE -> Unit
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        com.nendo.argosy.ui.components.SystemStatusBar(
+                            modifier = Modifier
+                                .align(Alignment.End)
+                                .padding(top = Dimens.spacingSm, end = Dimens.spacingLg),
+                            scrim = false
+                        )
+                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                            when (section) {
+                                DashboardSection.SESSION -> SessionSection(content, wide)
+                                DashboardSection.STATES -> StatesSection(content, wide)
+                                DashboardSection.TROPHIES -> TrophiesSection(content)
+                                DashboardSection.MANUAL, DashboardSection.GUIDE -> Unit
+                            }
+                        }
                     }
                     if (wide && readerOpen) {
                         DashboardReader(reader, Modifier.fillMaxSize().padding(bottom = footerHeight))
