@@ -178,6 +178,34 @@ class PreLaunchStateSyncOriginTest {
     }
 
     @Test
+    fun `a cached row linked to another emulator's state is not placed`() = runTest {
+        serverHas(serverState(id = 1L, emulator = "mgba", fileName = "$ROM_BASE [2026-09-30_16-52-23].autosave.state.auto"))
+        val stale = StateCacheEntity(
+            id = 9L,
+            gameId = GAME_ID,
+            platformSlug = "gba",
+            emulatorId = STANDALONE_ID,
+            slotNumber = -1,
+            channelName = "autosave",
+            cachedAt = java.time.Instant.now(),
+            stateSize = 1,
+            cachePath = "cached/9",
+            coreId = STANDALONE_ID,
+            rommSaveId = 1L,
+            syncStatus = StateCacheEntity.STATUS_SYNCED,
+            serverUpdatedAt = java.time.Instant.parse("2026-09-30T00:00:00Z")
+        )
+        cachedRows[1L] = stale
+        coEvery { manager.getByGameAndEmulator(GAME_ID, STANDALONE_ID) } returns listOf(stale)
+        every { manager.getCacheFile(any()) } returns temp.newFile("cache-9").apply { writeText("mgba") }
+
+        useCase(GAME_ID, STANDALONE_PACKAGE, channelName = null)
+
+        assertTrue(downloaded.isEmpty())
+        assertTrue(statesDir.listFiles().isNullOrEmpty())
+    }
+
+    @Test
     fun `a download of another emulator's state is refused before anything is cached`() = runTest {
         val plain = newManager(gameDao, saveSyncApiClient)
         val foreign = serverState(id = 1L, emulator = "mgba", fileName = "$ROM_BASE [2026-09-30_16-52-23].autosave.state.auto")
