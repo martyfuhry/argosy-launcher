@@ -291,7 +291,7 @@ class GameLaunchDispatcherTest {
     fun `a session updated after its start is still the one watched`() = testScope.runTest {
         dispatcher.dispatch(GAME_ID, intent)
         runCurrent()
-        sessionFlow.value = sessionFlow.value?.copy(channelName = "Slot 2", isOnOlderSave = true)
+        sessionFlow.value = sessionFlow.value?.copy(channelName = "Slot 2", coreName = "updated")
 
         advanceUntilIdle()
 

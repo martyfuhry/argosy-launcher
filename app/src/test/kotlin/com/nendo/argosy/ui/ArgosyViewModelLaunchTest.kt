@@ -14,8 +14,6 @@ import com.nendo.argosy.data.social.SocialConnectionState
 import com.nendo.argosy.data.social.SocialRepository
 import com.nendo.argosy.data.sync.SyncQueueManager
 import com.nendo.argosy.domain.usecase.game.LaunchGameUseCase
-import com.nendo.argosy.libretro.CoreCrashController
-import com.nendo.argosy.ui.components.CoreCrashPrompt
 import com.nendo.argosy.ui.screens.common.GameLaunchDispatcher
 import com.nendo.argosy.ui.screens.common.relaxedInstance
 import io.mockk.coEvery
@@ -104,28 +102,6 @@ class ArgosyViewModelLaunchTest {
         testDispatcher.scheduler.runCurrent()
 
         verify { gameLaunchDispatcher.dispatch(GAME_ID, any(), null) }
-    }
-
-    @Test
-    fun `a relaunch after a core crash is started by the dispatcher`() {
-        val coreCrashController = mockk<CoreCrashController>(relaxed = true) {
-            every { prompt } returns MutableStateFlow(
-                CoreCrashPrompt(
-                    coreId = "snes9x",
-                    gameId = GAME_ID,
-                    displayName = "Snes9x",
-                    platformId = 1L,
-                    platformSlug = "snes",
-                    options = emptyList()
-                )
-            )
-        }
-        val viewModel = viewModel(coreCrashController)
-
-        viewModel.launchFromCoreCrash()
-        testDispatcher.scheduler.runCurrent()
-
-        verify { gameLaunchDispatcher.dispatch(GAME_ID, intent, null) }
     }
 
     private fun invite() = NetplayInvitePayload(

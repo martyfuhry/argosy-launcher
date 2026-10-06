@@ -2,7 +2,6 @@ package com.nendo.argosy.ui.screens.common
 
 import android.content.Context
 import com.nendo.argosy.DualScreenManager
-import com.nendo.argosy.data.emulator.EmulatorResolver
 import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.data.local.dao.GameDao
 import com.nendo.argosy.data.preferences.SessionStateStore
@@ -18,8 +17,7 @@ internal fun launchTestDualScreenManager(
     gameDao: GameDao,
     context: Context = mockk(relaxed = true),
     preferencesRepository: UserPreferencesRepository = mockk(relaxed = true),
-    playSessionTracker: PlaySessionTracker = mockk(relaxed = true),
-    emulatorResolver: EmulatorResolver = mockk(relaxed = true)
+    playSessionTracker: PlaySessionTracker = mockk(relaxed = true)
 ): DualScreenManager = DualScreenManager(
     context = context,
     scope = scope,
@@ -38,20 +36,6 @@ internal fun launchTestDualScreenManager(
     platformSyncQueue = mockk(relaxed = true),
     gameLaunchDelegate = mockk(relaxed = true),
     saveCacheManager = mockk(relaxed = true),
-    getUnifiedSavesUseCase = mockk(relaxed = true),
-    getUnifiedStatesUseCase = mockk(relaxed = true),
-    stateCacheManager = mockk(relaxed = true),
-    restoreCachedSaveUseCase = mockk(relaxed = true),
-    activateSaveChannelUseCase = mockk(relaxed = true),
-    restoreSaveChannelPointUseCase = mockk(relaxed = true),
-    createSaveChannelUseCase = mockk(relaxed = true),
-    copySaveChannelUseCase = mockk(relaxed = true),
-    renameSaveChannelUseCase = mockk(relaxed = true),
-    deleteSaveChannelUseCase = mockk(relaxed = true),
-    restoreStateUseCase = mockk(relaxed = true),
-    emulatorResolver = emulatorResolver,
-    coreVersionExtractor = mockk(relaxed = true),
-    fetchAchievementsUseCase = mockk(relaxed = true),
     raRepository = mockk(relaxed = true),
     raTileContentRepository = mockk(relaxed = true),
     achievementUpdateBus = mockk(relaxed = true),

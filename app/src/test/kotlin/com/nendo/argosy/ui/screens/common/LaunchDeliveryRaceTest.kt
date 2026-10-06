@@ -193,7 +193,14 @@ class LaunchDeliveryRaceTest {
                 }
             }
         )
-        val launchGameUseCase = LaunchGameUseCase(gameLauncher, tracker)
+        val launchGameUseCase = LaunchGameUseCase(
+            gameLauncher,
+            tracker,
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            com.nendo.argosy.data.emulator.LaunchProgressTracker(raceScope),
+            mockk(relaxed = true)
+        )
         val gameLaunchDispatcher = GameLaunchDispatcher(
             context = appContext,
             launchTargetResolver = resolver,

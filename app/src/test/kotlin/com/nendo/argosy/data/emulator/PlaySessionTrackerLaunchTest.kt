@@ -49,9 +49,6 @@ class PlaySessionTrackerLaunchTest {
             overlayWriter = mockk(relaxed = true),
             activeSaveRepository = mockk(relaxed = true),
             playSessionDao = mockk(relaxed = true),
-            saveCacheDao = mockk(relaxed = true),
-            pendingSyncQueueDao = mockk(relaxed = true),
-            syncSaveOnSessionEndUseCase = lazyOf<com.nendo.argosy.domain.usecase.save.SyncSaveOnSessionEndUseCase>(),
             syncStatesOnSessionEndUseCase = lazyOf<com.nendo.argosy.domain.usecase.state.SyncStatesOnSessionEndUseCase>(),
             saveCacheManager = lazyOf<com.nendo.argosy.data.repository.SaveCacheManager>(),
             saveSyncRepository = dagger.Lazy { saveSyncRepository },
@@ -63,10 +60,11 @@ class PlaySessionTrackerLaunchTest {
             notificationManager = mockk(relaxed = true),
             fileAccessLayer = mockk(relaxed = true),
             socialRepository = lazyOf<com.nendo.argosy.data.social.SocialRepository>(),
-            saveRecoveryGate = mockk(relaxed = true),
+            saveRecoveryGate = mockk(relaxed = true) { every { tryClaimSessionEnd() } returns true },
             reconcileAchievementsOnSessionEndUseCase = lazyOf<com.nendo.argosy.domain.usecase.achievement.ReconcileAchievementsOnSessionEndUseCase>(),
             savePathAuthority = savePathAuthority,
-            saveAccessNotices = mockk(relaxed = true)
+            sessionSaveFinalizer = mockk(relaxed = true),
+            gameArtDao = mockk(relaxed = true)
         )
     }
 
@@ -227,7 +225,7 @@ class PlaySessionTrackerLaunchTest {
         Thread.sleep(SETTLE_MS)
         io.mockk.coVerify(exactly = 0) { preferencesRepository.persistActiveSession(CANCELLED_GAME_ID, any(), any(), any(), any(), any(), any(), any()) }
         verify(exactly = 0) { dsm.onSessionChanged(CANCELLED_GAME_ID, any(), any()) }
-        verify(exactly = 0) { application.startForegroundService(any()) }
+        verify(exactly = 0) { dsm.updateCompanionSaveSyncApplicable(any()) }
         assertNull(tracker.activeSession.value)
     }
 
@@ -287,7 +285,14 @@ class PlaySessionTrackerLaunchTest {
         val launcher = mockk<GameLauncher>(relaxed = true) {
             io.mockk.coEvery { launch(any(), any(), any(), any(), any(), any(), any(), any()) } returnsMany results.toList()
         }
-        return com.nendo.argosy.domain.usecase.game.LaunchGameUseCase(launcher, tracker)
+        return com.nendo.argosy.domain.usecase.game.LaunchGameUseCase(
+            launcher,
+            tracker,
+            mockk(relaxed = true),
+            mockk(relaxed = true),
+            com.nendo.argosy.data.emulator.LaunchProgressTracker(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined)),
+            mockk(relaxed = true)
+        )
     }
 
     private fun prepare(
