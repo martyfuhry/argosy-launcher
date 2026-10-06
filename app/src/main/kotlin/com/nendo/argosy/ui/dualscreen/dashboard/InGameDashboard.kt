@@ -105,6 +105,7 @@ private const val SCRIM_ALPHA = 0.35f
 private const val PANEL_ALPHA = 0.78f
 private const val SELECTED_ALPHA = 0.16f
 private const val CONFIRM_WINDOW_MS = 3000L
+private const val SESSION_TICK_MS = 60_000L
 
 /**
  * The touch-only dashboard shown on the screen the game is not on: a rail of sections over
@@ -132,7 +133,7 @@ fun InGameDashboard(
         if (sessionTimer == null) return@LaunchedEffect
         while (true) {
             sessionMillis = sessionTimer.getActiveMillis()
-            delay(1000)
+            delay(SESSION_TICK_MS)
         }
     }
     LaunchedEffect(readerOpen) {
