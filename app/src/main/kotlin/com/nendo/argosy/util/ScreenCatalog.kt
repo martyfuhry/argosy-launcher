@@ -46,6 +46,8 @@ class ScreenCatalog @Inject constructor(
         private const val DISPLAY_TYPE_EXTERNAL = 2
 
         private fun Display.displayType(): Int? = try {
+            // REPRO TEST SHIM: the Android emulator's second screen is a VIRTUAL display; treat it as a built-in panel like the Thor's bottom screen.
+            if (name == "Emulator 2D Display") 1 else
             Display::class.java.getMethod("getType").invoke(this) as? Int
         } catch (_: Exception) { null }
 

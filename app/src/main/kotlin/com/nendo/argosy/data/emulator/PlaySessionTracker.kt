@@ -755,6 +755,7 @@ class PlaySessionTracker @Inject constructor(
     }
 
     suspend fun endSession(stopService: Boolean = true, skipSaveSync: Boolean = false): SessionEndResult {
+        android.util.Log.d("ReproTrace", "endSession(active=${_activeSession.value?.gameId})", Throwable("endSession caller"))
         if (!saveRecoveryGate.tryClaimSessionEnd()) {
             Logger.debug(TAG, "[SaveSync] SESSION | endSession already in progress, skipping")
             return SessionEndResult.Skipped
@@ -1068,6 +1069,7 @@ class PlaySessionTracker @Inject constructor(
      * it until some later, longer session for the same game happens to run.
      */
     fun cancelSession() {
+        android.util.Log.d("ReproTrace", "cancelSession(active=${_activeSession.value?.gameId})", Throwable("cancelSession caller"))
         val session = _activeSession.value ?: return
         if (!saveRecoveryGate.tryClaimSessionEnd()) {
             Logger.debug(TAG, "[SaveSync] SESSION | cancelSession skipped: endSession already in progress")
@@ -1099,8 +1101,10 @@ class PlaySessionTracker @Inject constructor(
      * Ends the session on the tracker's own scope. A caller whose scope dies with the watcher
      * service passes stopService=false and stops the service itself once the job completes.
      */
-    fun endSessionInBackground(skipSaveSync: Boolean = false, stopService: Boolean = true): Job =
-        scope.launch { endSession(stopService = stopService, skipSaveSync = skipSaveSync) }
+    fun endSessionInBackground(skipSaveSync: Boolean = false, stopService: Boolean = true): Job {
+        android.util.Log.d("ReproTrace", "endSessionInBackground(active=${_activeSession.value?.gameId})", Throwable("endSessionInBackground caller"))
+        return scope.launch { endSession(stopService = stopService, skipSaveSync = skipSaveSync) }
+    }
 
     private fun reconcileAchievementsInBackground(gameId: Long) {
         scope.launch {
