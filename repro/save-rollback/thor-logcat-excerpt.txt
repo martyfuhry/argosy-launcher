@@ -1,0 +1,20 @@
+# AYN Thor (dual screen), Argosy 2.19.4 debug (smoke/v2194 d2b012332), 2026-10-11.
+# Excerpt of logcat.txt, scrubbed. Line numbers are from the original capture. game 352 = LeafGreen.
+# 11:42:15 Argosy pre-launch disk check had already restored the stale active cache over the disk save (that line is
+# before the start of this buffer; the rollback cache entry is timestamped 20261011_114215).
+
+ 16157: 10-11 11:42:16.995 V/WallpaperManagerService( 2134): updateWallpaperBitmapLocked() : id=7 name= file=wallpaper_lock_orig
+ 16163: 10-11 11:42:17.388 D/WallpaperManagerService( 2134): WPMS.saveSettingsLocked-0
+ 16164: 10-11 11:42:17.461 D/WallpaperManagerService( 2134): WPMS.saveSettingsLocked-0
+ 16165: 10-11 11:42:17.560 I/ActivityTaskManager( 2134): Config changes=80000000 {1.0 ?mcc?mnc [en_US] ldltr sw468dp w833dp h444dp 369dpi nrml long hdr widecg land night finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1920, 1080) mAppBounds=Rect(0, 0 - 1920, 1025) mMaxBounds=Rect(0, 0 - 1920, 1080) mDisplayRotation=ROTAT
+ 16206: 10-11 11:42:17.813 V/ActivityThread( 2531): getPackageInfo() caused update to cached ApplicationInfo for package com.nendo.argosy.debug
+ 16236: 10-11 11:42:17.847 I/ActivityManager( 2134): Start proc 15458:farm.fuhry.minarch/u0a130 for next-top-activity {farm.fuhry.minarch/farm.fuhry.minarch.OpenRomActivity}
+ 16291: 10-11 11:42:18.223 I/ActivityManager( 2134): Start proc 15512:farm.fuhry.minarch:game/u0a130 for next-top-activity {farm.fuhry.minarch/farm.fuhry.minarch.MinarchActivity}
+ 16407: 10-11 11:42:18.304 D/SyncStatesOnSessionEnd(21651): Cached state slot 0 for game 352
+ 16527: 10-11 11:42:18.381 E/ActivityTaskManager( 2134): Displayed farm.fuhry.minarch/.MinarchActivity: +172ms
+ 16696: 10-11 11:42:18.687 I/MainActivity(21651): Migrating flat image cache to sharded directories
+ 16714: 10-11 11:42:18.828 D/PlaySessionTracker(21651): Cached 2 states for game 352
+ 16715: 10-11 11:42:18.829 D/PlaySessionTracker(21651): [SaveSync] SESSION gameId=352 | Sync result: NO_CHANGE
+ 16740: 10-11 11:42:18.947 D/GameSessionService(21651): Stop requested | awaitingForeground=false
+ 16741: 10-11 11:42:18.948 D/PlaySessionTracker(21651): [SaveSync] SESSION | Force stopped service (no active session)
+ 18289: 10-11 11:42:59.782 D/PlaySessionTracker(21651): [SaveSync] SESSION | Force stopped service (no active session)

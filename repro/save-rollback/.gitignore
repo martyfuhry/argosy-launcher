@@ -1,0 +1,6 @@
+out/
+library/
+apk/
+*.sav
+*.apk
+.env

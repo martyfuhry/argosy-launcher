@@ -1,0 +1,35 @@
+# Throwaway local RomM for the save-rollback reproduction. Bound to 127.0.0.1 only.
+# Credentials come from the environment (or a local, untracked .env next to this file):
+#   REPRO_DB_ROOT_PW, REPRO_DB_PW   any throwaway values
+#   ROMM_AUTH_SECRET_KEY            e.g. `openssl rand -hex 32`
+name: argosy-repro
+services:
+  db:
+    image: mariadb:11
+    environment:
+      - MARIADB_ROOT_PASSWORD=${REPRO_DB_ROOT_PW:?set REPRO_DB_ROOT_PW}
+      - MARIADB_DATABASE=romm
+      - MARIADB_USER=romm
+      - MARIADB_PASSWORD=${REPRO_DB_PW:?set REPRO_DB_PW}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      start_interval: 5s
+      interval: 10s
+      retries: 10
+  romm:
+    image: rommapp/romm:5.3.1
+    environment:
+      - DB_HOST=db
+      - DB_NAME=romm
+      - DB_USER=romm
+      - DB_PASSWD=${REPRO_DB_PW:?set REPRO_DB_PW}
+      - ROMM_AUTH_SECRET_KEY=${ROMM_AUTH_SECRET_KEY:?set ROMM_AUTH_SECRET_KEY}
+      - HASHEOUS_API_ENABLED=false
+    volumes:
+      - ${REPRO_LIBRARY:-./library}:/romm/library:ro
+    ports:
+      - "127.0.0.1:8095:8080"
+    depends_on:
+      db:
+        condition: service_healthy
