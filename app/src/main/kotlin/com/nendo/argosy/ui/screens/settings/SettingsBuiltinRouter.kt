@@ -17,6 +17,7 @@ import com.nendo.argosy.libretro.shader.ShaderPreviewRenderer
 import com.nendo.argosy.core.notification.NotificationText
 import com.nendo.argosy.core.notification.NotificationType
 import com.nendo.argosy.core.notification.showError
+import com.nendo.argosy.core.emulator.GbColorStyles
 import com.nendo.argosy.core.emulator.LibretroSettingDef
 import com.nendo.argosy.R
 import com.nendo.argosy.ui.screens.settings.sections.BuiltinEmulatorItem
@@ -753,6 +754,7 @@ internal fun routeUpdatePlatformLibretroSetting(vm: SettingsViewModel, setting: 
             LibretroSettingDef.AutoRestoreState -> current.copy(autoRestoreState = value?.toBooleanStrictOrNull())
             LibretroSettingDef.PreferNewerServerSave -> current.copy(preferNewerServerSave = value?.toBooleanStrictOrNull())
             LibretroSettingDef.HwCoreSaveStates -> current.copy(hwCoreSaveStates = value?.toBooleanStrictOrNull())
+            LibretroSettingDef.GbColorStyle -> current.copy(gbColorStyle = value?.takeIf { it != GbColorStyles.CUSTOM })
         }
 
         if (updated.hasAnyOverrides()) {
@@ -772,7 +774,7 @@ internal fun routeResetAllPlatformLibretroSettings(vm: SettingsViewModel) {
             overscanCrop = null, frame = null, blackFrameInsertion = null, fastForwardEnabled = null, fastForwardSpeed = null,
             rewindEnabled = null, rewindSpeed = null, rewindBufferDuration = null,
             skipDuplicateFrames = null, lowLatencyAudio = null, audioVolume = null, vsync = null,
-            graphicsApi = null, gpuDriver = null
+            graphicsApi = null, gpuDriver = null, gbColorStyle = null
         )
         if (updated.hasAnyOverrides()) {
             vm.libretroSettingsRepo.upsert(updated)
