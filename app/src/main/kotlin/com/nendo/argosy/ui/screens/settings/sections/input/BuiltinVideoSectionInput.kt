@@ -151,7 +151,8 @@ internal class BuiltinVideoSectionInput(
         LibretroSettingDef.AutoSaveState,
         LibretroSettingDef.AutoRestoreState,
         LibretroSettingDef.PreferNewerServerSave,
-        LibretroSettingDef.HwCoreSaveStates -> InputResult.UNHANDLED
+        LibretroSettingDef.HwCoreSaveStates,
+        LibretroSettingDef.GbColorStyle -> InputResult.UNHANDLED
     }
 
     private fun confirmPlatform(

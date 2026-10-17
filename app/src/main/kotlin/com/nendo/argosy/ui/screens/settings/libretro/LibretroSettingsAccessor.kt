@@ -2,6 +2,7 @@ package com.nendo.argosy.ui.screens.settings.libretro
 
 import androidx.annotation.StringRes
 import com.nendo.argosy.R
+import com.nendo.argosy.core.emulator.GbColorStyles
 import com.nendo.argosy.core.emulator.LibretroSettingDef
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.data.local.entity.PlatformLibretroSettingsEntity
@@ -89,6 +90,7 @@ class GlobalLibretroSettingsAccessor(
         LibretroSettingDef.AutoRestoreState -> state.autoRestoreState.toString()
         LibretroSettingDef.PreferNewerServerSave -> state.preferNewerServerSave.toString()
         LibretroSettingDef.HwCoreSaveStates -> state.hwCoreSaveStatesEnabled.toString()
+        LibretroSettingDef.GbColorStyle -> GbColorStyles.CUSTOM
     }
 
     override fun hasOverride(setting: LibretroSettingDef): Boolean = false
@@ -184,6 +186,7 @@ class PlatformLibretroSettingsAccessor(
         LibretroSettingDef.AutoRestoreState -> globalState.autoRestoreState.toString()
         LibretroSettingDef.PreferNewerServerSave -> globalState.preferNewerServerSave.toString()
         LibretroSettingDef.HwCoreSaveStates -> globalState.hwCoreSaveStatesEnabled.toString()
+        LibretroSettingDef.GbColorStyle -> GbColorStyles.CUSTOM
     }
 
     override fun hasOverride(setting: LibretroSettingDef): Boolean {
@@ -243,6 +246,7 @@ class PlatformLibretroSettingsAccessor(
             LibretroSettingDef.AutoRestoreState -> ps.autoRestoreState?.toString()
             LibretroSettingDef.PreferNewerServerSave -> ps.preferNewerServerSave?.toString()
             LibretroSettingDef.HwCoreSaveStates -> ps.hwCoreSaveStates?.toString()
+            LibretroSettingDef.GbColorStyle -> ps.gbColorStyle
         }
     }
 

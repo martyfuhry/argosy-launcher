@@ -35,7 +35,8 @@ private const val SAVING_SECTION = "saving"
 data class LibretroVisibilityState(
     val platformSlug: String?,
     val canEnableBFI: Boolean,
-    val scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO
+    val scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO,
+    val showColorStyle: Boolean = true
 )
 
 private val libretroSettingsLayout = SettingsLayout<LibretroSettingDef, LibretroVisibilityState>(
@@ -43,6 +44,7 @@ private val libretroSettingsLayout = SettingsLayout<LibretroSettingDef, Libretro
     isFocusable = { true },
     visibleWhen = { item, state ->
         val inScope = (item.section == SAVING_SECTION) == (state.scope == LibretroSettingsScope.SAVES)
+        if (item == LibretroSettingDef.GbColorStyle && !state.showColorStyle) return@SettingsLayout false
         inScope && PlatformWeightRegistry.isSettingVisible(item, state.platformSlug, state.canEnableBFI)
     },
     sectionOf = { it.section }
@@ -55,6 +57,7 @@ fun LibretroSettingsSection(
     platformSlug: String? = null,
     canEnableBFI: Boolean = false,
     scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO,
+    showColorStyle: Boolean = true,
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier,
     enablePicker: Boolean = true,
@@ -69,8 +72,8 @@ fun LibretroSettingsSection(
     val isPerPlatform = platformSlug != null
     val leadingListCount = if (leadingFocusCount > 0) leadingFocusCount + 1 else 0
 
-    val visibilityState = remember(platformSlug, canEnableBFI, scope) {
-        LibretroVisibilityState(platformSlug, canEnableBFI, scope)
+    val visibilityState = remember(platformSlug, canEnableBFI, scope, showColorStyle) {
+        LibretroVisibilityState(platformSlug, canEnableBFI, scope, showColorStyle)
     }
 
     val visibleSettings = remember(visibilityState) {
@@ -265,9 +268,10 @@ private fun buildFlatItemSections(
 fun libretroSettingsMaxFocusIndex(
     platformSlug: String?,
     canEnableBFI: Boolean,
-    scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO
+    scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO,
+    showColorStyle: Boolean = true
 ): Int =
-    libretroSettingsLayout.maxFocusIndex(LibretroVisibilityState(platformSlug, canEnableBFI, scope))
+    libretroSettingsLayout.maxFocusIndex(LibretroVisibilityState(platformSlug, canEnableBFI, scope, showColorStyle))
 
 /**
  * Resolves a focus index to a libretro setting. [scope] must match the value the matching
@@ -277,9 +281,10 @@ fun libretroSettingsItemAtFocusIndex(
     index: Int,
     platformSlug: String?,
     canEnableBFI: Boolean,
-    scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO
+    scope: LibretroSettingsScope = LibretroSettingsScope.VIDEO,
+    showColorStyle: Boolean = true
 ): LibretroSettingDef? =
     libretroSettingsLayout.itemAtFocusIndex(
         index,
-        LibretroVisibilityState(platformSlug, canEnableBFI, scope)
+        LibretroVisibilityState(platformSlug, canEnableBFI, scope, showColorStyle)
     )
