@@ -4,6 +4,7 @@ import android.content.Context
 import android.hardware.input.InputManager
 import android.view.InputDevice
 import android.view.InputEvent
+import android.view.KeyEvent
 import com.nendo.argosy.util.SafeCoroutineScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,11 @@ import javax.inject.Singleton
 fun controllerIdOf(device: InputDevice): String =
     "${device.vendorId}:${device.productId}:${device.descriptor}"
 
+private val SYSTEM_BUTTON_KEYCODES = intArrayOf(
+    KeyEvent.KEYCODE_BUTTON_START,
+    KeyEvent.KEYCODE_BUTTON_SELECT
+)
+
 @Singleton
 class ConnectedControllerTracker @Inject constructor(
     @ApplicationContext private val context: Context
@@ -31,6 +37,14 @@ class ConnectedControllerTracker @Inject constructor(
 
     private val _connectedControllerIds = MutableStateFlow(readConnectedControllerIds())
     val connectedControllerIds: StateFlow<Set<String>> = _connectedControllerIds.asStateFlow()
+
+    private val _connectedSystemButtons = MutableStateFlow(readConnectedSystemButtons())
+
+    /**
+     * Start and Select keycodes that at least one connected physical gamepad reports having.
+     * Empty when no pad is connected or none exposes either button.
+     */
+    val connectedSystemButtons: StateFlow<Set<Int>> = _connectedSystemButtons.asStateFlow()
 
     val activeController: StateFlow<ActiveController?> = activeState.active
 
@@ -66,6 +80,7 @@ class ConnectedControllerTracker @Inject constructor(
 
     fun refresh() {
         _connectedControllerIds.value = readConnectedControllerIds()
+        _connectedSystemButtons.value = readConnectedSystemButtons()
         activeState.onPadsChanged(connectedPads().map { it.toActiveController() })
         deviceGeneration.value++
     }
@@ -82,10 +97,18 @@ class ConnectedControllerTracker @Inject constructor(
             .mapNotNull { InputDevice.getDevice(it) }
             .filter { it.actsAsGamepad() }
 
-    private fun readConnectedControllerIds(): Set<String> =
+    private fun physicalGamepads(): List<InputDevice> =
         InputDevice.getDeviceIds()
             .toList()
             .mapNotNull { InputDevice.getDevice(it) }
             .filter { it.isPhysicalGamepad() }
-            .mapTo(mutableSetOf()) { controllerIdOf(it) }
+
+    private fun readConnectedControllerIds(): Set<String> =
+        physicalGamepads().mapTo(mutableSetOf()) { controllerIdOf(it) }
+
+    private fun readConnectedSystemButtons(): Set<Int> =
+        physicalGamepads().flatMapTo(mutableSetOf()) { device ->
+            val present = device.hasKeys(*SYSTEM_BUTTON_KEYCODES)
+            SYSTEM_BUTTON_KEYCODES.filterIndexed { index, _ -> present[index] }
+        }
 }
