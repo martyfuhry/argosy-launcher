@@ -105,6 +105,8 @@ class RomMRepository @Inject constructor(
 
     fun buildMediaUrlPublic(path: String?): String? = apiClient.buildMediaUrl(path)
 
+    fun isServerOrigin(url: String): Boolean = apiClient.isServerOrigin(url)
+
     fun buildCoverUrls(rom: RomMRom): List<String> = apiClient.buildCoverUrls(rom)
 
     fun buildResourceUrlPublic(path: String?): String? = apiClient.buildResourceUrl(path)
