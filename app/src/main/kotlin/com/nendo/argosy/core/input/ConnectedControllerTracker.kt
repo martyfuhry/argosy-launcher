@@ -38,11 +38,14 @@ class ConnectedControllerTracker @Inject constructor(
     private val _connectedControllerIds = MutableStateFlow(readConnectedControllerIds())
     val connectedControllerIds: StateFlow<Set<String>> = _connectedControllerIds.asStateFlow()
 
+    private var systemButtonsCountVirtualPad = false
     private val _connectedSystemButtons = MutableStateFlow(readConnectedSystemButtons())
 
     /**
-     * Start and Select keycodes that at least one connected physical gamepad reports having.
-     * Empty when no pad is connected or none exposes either button.
+     * Start and Select keycodes that at least one connected pad has. A physical pad answers through
+     * hasKeys; the firmware virtual pad counts as having both once it has sent pad input, since
+     * Android's virtual device has no key bitmask to answer from. Empty when no pad is connected or
+     * none exposes either button.
      */
     val connectedSystemButtons: StateFlow<Set<Int>> = _connectedSystemButtons.asStateFlow()
 
@@ -67,7 +70,10 @@ class ConnectedControllerTracker @Inject constructor(
         inputManager.registerInputDeviceListener(listener, null)
     }
 
-    fun noteInput(event: InputEvent) = activeState.noteInput(event)
+    fun noteInput(event: InputEvent) {
+        activeState.noteInput(event)
+        if (VirtualPad.seen && !systemButtonsCountVirtualPad) refresh()
+    }
 
     /**
      * Freezes [activeController] against input while a mapping capture waits for its press.
@@ -97,18 +103,21 @@ class ConnectedControllerTracker @Inject constructor(
             .mapNotNull { InputDevice.getDevice(it) }
             .filter { it.actsAsGamepad() }
 
-    private fun physicalGamepads(): List<InputDevice> =
+    private fun readConnectedControllerIds(): Set<String> =
         InputDevice.getDeviceIds()
             .toList()
             .mapNotNull { InputDevice.getDevice(it) }
             .filter { it.isPhysicalGamepad() }
+            .mapTo(mutableSetOf()) { controllerIdOf(it) }
 
-    private fun readConnectedControllerIds(): Set<String> =
-        physicalGamepads().mapTo(mutableSetOf()) { controllerIdOf(it) }
+    private fun readConnectedSystemButtons(): Set<Int> {
+        systemButtonsCountVirtualPad = VirtualPad.seen
+        return connectedPads().flatMapTo(mutableSetOf()) { device -> device.systemButtons() }
+    }
 
-    private fun readConnectedSystemButtons(): Set<Int> =
-        physicalGamepads().flatMapTo(mutableSetOf()) { device ->
-            val present = device.hasKeys(*SYSTEM_BUTTON_KEYCODES)
-            SYSTEM_BUTTON_KEYCODES.filterIndexed { index, _ -> present[index] }
-        }
+    private fun InputDevice.systemButtons(): List<Int> {
+        if (isVirtual) return SYSTEM_BUTTON_KEYCODES.toList()
+        val present = hasKeys(*SYSTEM_BUTTON_KEYCODES)
+        return SYSTEM_BUTTON_KEYCODES.filterIndexed { index, _ -> present[index] }
+    }
 }
