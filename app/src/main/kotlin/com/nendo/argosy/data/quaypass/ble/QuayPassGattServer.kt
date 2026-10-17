@@ -90,6 +90,9 @@ class QuayPassGattServer(
         Log.d(TAG, "GATT server stopped")
     }
 
+    val hasConnectedPeers: Boolean
+        get() = connectedDevices.isNotEmpty()
+
     @SuppressLint("MissingPermission")
     private fun armWatchdog(device: BluetoothDevice) {
         val address = device.address

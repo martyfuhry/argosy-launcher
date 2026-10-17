@@ -66,7 +66,7 @@ sealed class StateSlotPattern {
             if (!ext.equals(extension, ignoreCase = true)) return null
 
             val pattern = Regex("${Regex.escape(baseName)}${Regex.escape(separator)}(\\d+)", RegexOption.IGNORE_CASE)
-            return pattern.find(name)?.groupValues?.get(1)?.toIntOrNull()
+            return pattern.matchEntire(name)?.groupValues?.get(1)?.toIntOrNull()
         }
 
         override fun buildFileName(baseName: String, slotNumber: Int): String {
@@ -297,6 +297,15 @@ object StatePathRegistry {
             slotPattern = StateSlotPattern.NameAndSlot(
                 separator = "_",
                 extension = "state"
+            ),
+            maxSlots = 10
+        ),
+        "minarch_link" to StatePathConfig(
+            emulatorId = "minarch_link",
+            defaultPaths = listOf("{extStorage}/MinarchLink/States/GBA"),
+            slotPattern = StateSlotPattern.SuffixNumber(
+                extension = "state",
+                autoSlotSuffix = "auto"
             ),
             maxSlots = 10
         ),
