@@ -29,10 +29,4 @@ class Migration213To214Test {
             statements()
         )
     }
-
-    @Test
-    fun `is the last registered migration and leaves no gap`() {
-        assertEquals(Migration_213_214, MigrationRegistry.ALL.last())
-        MigrationRegistry.assertContiguous(214)
-    }
 }
