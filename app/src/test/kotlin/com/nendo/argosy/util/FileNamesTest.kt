@@ -2,6 +2,7 @@ package com.nendo.argosy.util
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.io.File
 
 /**
  * Pins the folding rules a downloaded name goes through. The cases that matter are the ones a
@@ -48,6 +49,42 @@ class FileNamesTest {
     fun `refuses to climb out of the extraction folder`() {
         assertEquals("etc/passwd", FileNames.sanitizeRelativePath("../../etc/passwd"))
         assertEquals("rom.bin", FileNames.sanitizeRelativePath("./rom.bin"))
+    }
+
+    @Test
+    fun `folds a climbing name into one that stays in its directory`() {
+        assertEquals("file", FileNames.sanitize(".."))
+        assertEquals("file", FileNames.sanitize("../"))
+        val dir = File("/roms/nes")
+        val placed = File(dir, FileNames.sanitize("../../x")).toPath().normalize()
+        assertEquals(dir.toPath(), placed.parent)
+    }
+
+    @Test
+    fun `refuses the entries a directory already holds`() {
+        assertEquals("file", FileNames.entryName("."))
+        assertEquals("file", FileNames.entryName(".."))
+        assertEquals("file", FileNames.entryName(""))
+        assertEquals("Donkey Kong Jr.", FileNames.entryName("Donkey Kong Jr."))
+        assertEquals("...", FileNames.entryName("..."))
+    }
+
+    @Test
+    fun `keeps a blank slug blank and folds a climbing one`() {
+        assertEquals("", FileNames.sanitizeSlug(""))
+        assertEquals(" ", FileNames.sanitizeSlug(" "))
+        assertEquals("file", FileNames.sanitizeSlug(".."))
+        assertEquals("....x", FileNames.sanitizeSlug("../../x"))
+        assertEquals("gba", FileNames.sanitizeSlug("gba"))
+        assertEquals("sega-cd", FileNames.sanitizeSlug("sega-cd"))
+    }
+
+    @Test
+    fun `a relative path made only of separators folds to nothing`() {
+        assertEquals("", FileNames.sanitizeRelativePath("/"))
+        assertEquals("", FileNames.sanitizeRelativePath("\\"))
+        assertEquals("", FileNames.sanitizeRelativePath("//"))
+        assertEquals("", FileNames.sanitizeRelativePath("../."))
     }
 
     @Test

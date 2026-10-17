@@ -6,6 +6,7 @@ import com.nendo.argosy.data.model.ArtProvider
 import com.nendo.argosy.data.model.ArtSlot
 import com.nendo.argosy.data.model.ServerArt
 import com.nendo.argosy.data.platform.PlatformDefinitions
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -127,6 +128,13 @@ class RomMApiClient @Inject constructor(
                 screenshots.map { ServerArt(it, ArtProvider.ROMM) }
             ).distinctBy { it.url }
     }
+
+    /**
+     * Whether an absolute url addresses the connected RomM server by scheme, host and port.
+     * False while disconnected, which keeps the session token off every request.
+     */
+    fun isServerOrigin(url: String): Boolean =
+        RomMMusicLibraryService.sameOrigin(url, connectionManager.getBaseUrl())
 
     fun isVersionAtLeast(minVersion: String): Boolean =
         connectionManager.isVersionAtLeast(minVersion)
@@ -428,8 +436,8 @@ class RomMApiClient @Inject constructor(
                     val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
                     PlatformEntity(
                         id = remote.id,
-                        slug = effectiveSlug,
-                        fsSlug = remote.fsSlug,
+                        slug = FileNames.sanitizeSlug(effectiveSlug),
+                        fsSlug = remote.fsSlug?.let(FileNames::sanitizeSlug),
                         name = normalizedName,
                         shortName = resolvedShortName,
                         romExtensions = platformDef?.extensions?.joinToString(",") ?: "",
