@@ -32,6 +32,7 @@ import com.nendo.argosy.data.remote.romm.RomMState
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
 import com.nendo.argosy.util.AppPaths
+import com.nendo.argosy.util.parseTimestamp as parseTimestampMillis
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -1094,6 +1095,10 @@ class StateCacheManager @Inject constructor(
         serverState: RomMState
     ): StateCloudResult = withContext(Dispatchers.IO) {
         Log.d(TAG, "[StateSync] DOWNLOAD rommStateId=$rommStateId gameId=$gameId")
+        if (!isMadeBy(serverState, gameId, emulatorId, coreId)) {
+            Log.w(TAG, "[StateSync] DOWNLOAD rommStateId=$rommStateId | Skipped: written by ${serverState.emulator}, not $emulatorId")
+            return@withContext StateCloudResult.NoStateFound
+        }
         val ownerUserId = syncPreferencesRepository.getRommUserId()
 
         try {
@@ -1402,6 +1407,24 @@ class StateCacheManager @Inject constructor(
         cached.length() == file.length() && calculateFileHash(cached) == calculateFileHash(file)
     }
 
+    /**
+     * Whether [serverState] was written by [emulatorId] with the core this game runs on it. A state
+     * with no `emulator` tag, or one tagged with [emulatorId] itself, counts as written by it.
+     */
+    suspend fun isMadeBy(serverState: RomMState, gameId: Long, emulatorId: String, coreId: String?): Boolean {
+        val origin = serverState.emulator?.trim()?.takeIf { it.isNotEmpty() }?.let(::canonicalEmulatorId)
+            ?: return true
+        val launchEmulator = canonicalEmulatorId(emulatorId)
+        if (origin.equals(launchEmulator, ignoreCase = true)) return true
+        val game = gameDao.getById(gameId)
+        val launchCore = game?.let { saveSyncApiClient.resolveCoreForGame(it, launchEmulator) }
+            ?: coreId?.takeIf { it != emulatorId && it != launchEmulator }
+        return origin.equals(EmulatorRegistry.toServerEmulator(launchEmulator, launchCore), ignoreCase = true)
+    }
+
+    private fun canonicalEmulatorId(emulatorId: String): String =
+        if (emulatorId == EmulatorRegistry.LEGACY_BUILTIN_ID) EmulatorRegistry.BUILTIN_ID else emulatorId
+
     internal suspend fun serverEmulatorTag(state: StateCacheEntity): String {
         val emulatorId = if (state.emulatorId == EmulatorRegistry.LEGACY_BUILTIN_ID) {
             EmulatorRegistry.BUILTIN_ID
@@ -1432,23 +1455,16 @@ class StateCacheManager @Inject constructor(
         val match = Regex("""\[(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})]""").find(fileName) ?: return null
         return try {
             java.time.LocalDateTime.parse(match.groupValues[1], UPLOAD_TIMESTAMP_FORMAT)
-                .atZone(java.time.ZoneId.systemDefault()).toInstant()
+                .atZone(java.time.ZoneOffset.UTC).toInstant()
         } catch (e: Exception) {
             null
         }
     }
 
     fun parseTimestamp(timestamp: String): Instant? {
-        return try {
-            ZonedDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME).toInstant()
-        } catch (e: Exception) {
-            try {
-                Instant.parse(timestamp)
-            } catch (e2: Exception) {
-                Log.w(TAG, "Failed to parse timestamp: $timestamp")
-                null
-            }
-        }
+        val millis = parseTimestampMillis(timestamp)
+        if (millis == null) Log.w(TAG, "Failed to parse timestamp: $timestamp")
+        return millis?.let(Instant::ofEpochMilli)
     }
 
     fun buildUploadFileName(state: StateCacheEntity, romBaseName: String): String {
