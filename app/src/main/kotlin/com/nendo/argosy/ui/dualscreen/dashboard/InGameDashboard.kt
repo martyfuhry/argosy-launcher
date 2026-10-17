@@ -232,10 +232,6 @@ fun InGameDashboard(
     }
 }
 
-/**
- * Clock, battery and network above the dashboard sections, following the Interface status bar
- * toggles through [com.nendo.argosy.ui.components.LocalStatusBarItems] like every other surface.
- */
 @Composable
 private fun ColumnScope.DashboardStatusRow() {
     com.nendo.argosy.ui.components.SystemStatusBar(
