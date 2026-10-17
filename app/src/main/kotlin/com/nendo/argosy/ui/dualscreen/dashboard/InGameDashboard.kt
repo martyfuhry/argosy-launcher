@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -105,6 +106,7 @@ private const val SCRIM_ALPHA = 0.35f
 private const val PANEL_ALPHA = 0.78f
 private const val SELECTED_ALPHA = 0.16f
 private const val CONFIRM_WINDOW_MS = 3000L
+private const val SESSION_TICK_MS = 60_000L
 
 /**
  * The touch-only dashboard shown on the screen the game is not on: a rail of sections over
@@ -132,7 +134,7 @@ fun InGameDashboard(
         if (sessionTimer == null) return@LaunchedEffect
         while (true) {
             sessionMillis = sessionTimer.getActiveMillis()
-            delay(1000)
+            delay(SESSION_TICK_MS)
         }
     }
     LaunchedEffect(readerOpen) {
@@ -205,11 +207,16 @@ fun InGameDashboard(
                 }
             )
             Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                when (section) {
-                    DashboardSection.SESSION -> SessionSection(content, wide)
-                    DashboardSection.STATES -> StatesSection(content, wide)
-                    DashboardSection.TROPHIES -> TrophiesSection(content)
-                    DashboardSection.MANUAL, DashboardSection.GUIDE -> Unit
+                Column(modifier = Modifier.fillMaxSize()) {
+                    DashboardStatusRow()
+                    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                        when (section) {
+                            DashboardSection.SESSION -> SessionSection(content, wide)
+                            DashboardSection.STATES -> StatesSection(content, wide)
+                            DashboardSection.TROPHIES -> TrophiesSection(content)
+                            DashboardSection.MANUAL, DashboardSection.GUIDE -> Unit
+                        }
+                    }
                 }
                 if (wide && readerOpen) {
                     DashboardReader(reader, Modifier.fillMaxSize().padding(bottom = footerHeight))
@@ -223,6 +230,20 @@ fun InGameDashboard(
         )
         if (!wide && readerOpen) DashboardReader(reader, Modifier.fillMaxSize())
     }
+}
+
+/**
+ * Clock, battery and network above the dashboard sections, following the Interface status bar
+ * toggles through [com.nendo.argosy.ui.components.LocalStatusBarItems] like every other surface.
+ */
+@Composable
+private fun ColumnScope.DashboardStatusRow() {
+    com.nendo.argosy.ui.components.SystemStatusBar(
+        modifier = Modifier
+            .align(Alignment.End)
+            .padding(top = Dimens.spacingSm, end = Dimens.spacingLg),
+        scrim = false
+    )
 }
 
 /**

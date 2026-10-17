@@ -4,6 +4,7 @@ import android.content.Context
 import android.hardware.input.InputManager
 import android.view.InputDevice
 import android.view.InputEvent
+import android.view.KeyEvent
 import com.nendo.argosy.util.SafeCoroutineScope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,11 @@ import javax.inject.Singleton
 fun controllerIdOf(device: InputDevice): String =
     "${device.vendorId}:${device.productId}:${device.descriptor}"
 
+private val SYSTEM_BUTTON_KEYCODES = intArrayOf(
+    KeyEvent.KEYCODE_BUTTON_START,
+    KeyEvent.KEYCODE_BUTTON_SELECT
+)
+
 @Singleton
 class ConnectedControllerTracker @Inject constructor(
     @ApplicationContext private val context: Context
@@ -31,6 +37,17 @@ class ConnectedControllerTracker @Inject constructor(
 
     private val _connectedControllerIds = MutableStateFlow(readConnectedControllerIds())
     val connectedControllerIds: StateFlow<Set<String>> = _connectedControllerIds.asStateFlow()
+
+    private var systemButtonsCountVirtualPad = false
+    private val _connectedSystemButtons = MutableStateFlow(readConnectedSystemButtons())
+
+    /**
+     * Start and Select keycodes that at least one connected pad has. A physical pad answers through
+     * hasKeys; the firmware virtual pad counts as having both once it has sent pad input, since
+     * Android's virtual device has no key bitmask to answer from. Empty when no pad is connected or
+     * none exposes either button.
+     */
+    val connectedSystemButtons: StateFlow<Set<Int>> = _connectedSystemButtons.asStateFlow()
 
     val activeController: StateFlow<ActiveController?> = activeState.active
 
@@ -53,7 +70,10 @@ class ConnectedControllerTracker @Inject constructor(
         inputManager.registerInputDeviceListener(listener, null)
     }
 
-    fun noteInput(event: InputEvent) = activeState.noteInput(event)
+    fun noteInput(event: InputEvent) {
+        activeState.noteInput(event)
+        if (VirtualPad.seen && !systemButtonsCountVirtualPad) refresh()
+    }
 
     /**
      * Freezes [activeController] against input while a mapping capture waits for its press.
@@ -66,6 +86,7 @@ class ConnectedControllerTracker @Inject constructor(
 
     fun refresh() {
         _connectedControllerIds.value = readConnectedControllerIds()
+        _connectedSystemButtons.value = readConnectedSystemButtons()
         activeState.onPadsChanged(connectedPads().map { it.toActiveController() })
         deviceGeneration.value++
     }
@@ -88,4 +109,15 @@ class ConnectedControllerTracker @Inject constructor(
             .mapNotNull { InputDevice.getDevice(it) }
             .filter { it.isPhysicalGamepad() }
             .mapTo(mutableSetOf()) { controllerIdOf(it) }
+
+    private fun readConnectedSystemButtons(): Set<Int> {
+        systemButtonsCountVirtualPad = VirtualPad.seen
+        return connectedPads().flatMapTo(mutableSetOf()) { device -> device.systemButtons() }
+    }
+
+    private fun InputDevice.systemButtons(): List<Int> {
+        if (isVirtual) return SYSTEM_BUTTON_KEYCODES.toList()
+        val present = hasKeys(*SYSTEM_BUTTON_KEYCODES)
+        return SYSTEM_BUTTON_KEYCODES.filterIndexed { index, _ -> present[index] }
+    }
 }
