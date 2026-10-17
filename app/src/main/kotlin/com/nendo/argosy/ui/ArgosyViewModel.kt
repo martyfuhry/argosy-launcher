@@ -49,6 +49,8 @@ import com.nendo.argosy.ui.input.HapticFeedbackManager
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import com.nendo.argosy.ui.input.buttonGlyphSwaps
+import com.nendo.argosy.ui.input.isLeftEdgeDrawerEnabled
+import com.nendo.argosy.ui.input.leftEdgeDrawerEnabled
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.ui.navigation.NavBarVisibility
@@ -461,6 +463,18 @@ class ArgosyViewModel @Inject constructor(
 
     private val _isDrawerOpen = MutableStateFlow(false)
     val isDrawerOpen: StateFlow<Boolean> = _isDrawerOpen.asStateFlow()
+
+    val leftEdgeOpensDrawer: StateFlow<Boolean> = leftEdgeDrawerEnabled(
+        connectedControllerTracker.connectedSystemButtons,
+        uiState.map { it.swapStartSelect }
+    ).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = isLeftEdgeDrawerEnabled(
+            connectedControllerTracker.connectedSystemButtons.value,
+            swapStartSelect = uiState.value.swapStartSelect
+        )
+    )
 
     fun setDrawerOpen(open: Boolean) {
         _isDrawerOpen.value = open
