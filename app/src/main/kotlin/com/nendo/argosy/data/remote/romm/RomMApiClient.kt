@@ -128,6 +128,13 @@ class RomMApiClient @Inject constructor(
             ).distinctBy { it.url }
     }
 
+    /**
+     * Whether an absolute url addresses the connected RomM server by scheme, host and port.
+     * False while disconnected, which keeps the session token off every request.
+     */
+    fun isServerOrigin(url: String): Boolean =
+        RomMMusicLibraryService.sameOrigin(url, connectionManager.getBaseUrl())
+
     fun isVersionAtLeast(minVersion: String): Boolean =
         connectionManager.isVersionAtLeast(minVersion)
 
