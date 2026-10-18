@@ -86,6 +86,7 @@ class SecondaryHomeActivity :
     var isArgosyForeground by mutableStateOf(false)
         private set
     var isGameActive by mutableStateOf(false)
+    private var keysYieldedToSession = false
         private set
     private var currentChannelName by mutableStateOf<String?>(null)
     private var isHardcore by mutableStateOf(false)
@@ -245,6 +246,7 @@ class SecondaryHomeActivity :
         isGameActive = store.hasActiveSession()
         isHardcore = store.isHardcore()
         currentChannelName = store.getChannelName()
+        yieldKeysToSession()
     }
 
     override fun onStop() {
@@ -314,7 +316,7 @@ class SecondaryHomeActivity :
 
     private fun refocusAfterTouch() {
         if (isGameActive && ::dsm.isInitialized) {
-            window.decorView.post { dsm.refocusSession() }
+            if (!keysYieldedToSession) window.decorView.post { dsm.refocusSession() }
         } else if (isShowcaseRole) {
             window.decorView.post { dsm.onRefocusUpper() }
         }
@@ -450,6 +452,16 @@ class SecondaryHomeActivity :
         return dsm.emulatorDisplayId?.let { it != Display.DEFAULT_DISPLAY } ?: false
     }
 
+    private fun yieldKeysToSession() {
+        keysYieldedToSession = isGameActive && !isShowcaseRole &&
+            (dsm.emulatorDisplayId ?: Display.DEFAULT_DISPLAY) != hostDisplayId()
+        if (keysYieldedToSession) {
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        } else {
+            window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
+        }
+    }
+
     override fun onSessionStarted(
         gameId: Long, isHardcore: Boolean, channelName: String?
     ) {
@@ -461,6 +473,7 @@ class SecondaryHomeActivity :
             it.start(applicationContext)
         }
         isInitialized = true
+        runOnUiThread { yieldKeysToSession() }
     }
 
     override fun onSessionHardcoreChanged(isHardcore: Boolean, channelName: String?) {
@@ -477,6 +490,7 @@ class SecondaryHomeActivity :
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = null
         isInitialized = true
+        runOnUiThread { yieldKeysToSession() }
     }
 
     override fun onLibraryRefresh() = Unit
@@ -728,6 +742,7 @@ class SecondaryHomeActivity :
             }
         }
         isInitialized = true
+        yieldKeysToSession()
     }
 
     /**
