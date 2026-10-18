@@ -21,6 +21,7 @@ object DatabaseFactory {
             ALauncherDatabase::class.java,
             "alauncher.db"
         )
+            .openHelperFactory(ForkSchemaBridge.openHelperFactory())
             .addMigrations(*MigrationRegistry.ARRAY)
             .enableMultiInstanceInvalidation()
             .build()
