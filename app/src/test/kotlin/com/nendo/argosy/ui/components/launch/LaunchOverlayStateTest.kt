@@ -258,7 +258,7 @@ class LaunchOverlayStateTest {
     }
 
     @Test
-    fun `no cover gives a title-only column`() {
+    fun `a launch with no game id still maps to a quiet cancellable column`() {
         val ui = map(progress(save, gameId = null), 0L)
         assertTrue(ui.cancellable)
         assertNull(ui.line)
