@@ -27,7 +27,8 @@ data class FooterEntry(
     val variant: FooterVariant,
     val onHintClick: ((InputButton) -> Unit)?,
     val trailingContent: (@Composable () -> Unit)?,
-    val forced: Boolean = false
+    val forced: Boolean = false,
+    val reservesSpace: Boolean = true
 )
 
 /** Singleton hint stack backing the app-root guide bar; the most recently registered active surface wins. */
@@ -48,7 +49,9 @@ class FooterHostController {
 
     val top: FooterEntry? get() = stack.lastOrNull()?.second
 
-    val isBarVisible: Boolean get() = top?.let { it.forced || it.hints.isNotEmpty() } == true
+    val isBarVisible: Boolean
+        get() = stack.lastOrNull { it.second.reservesSpace }?.second
+            ?.let { it.forced || it.hints.isNotEmpty() } == true
 }
 
 val LocalFooterHost = staticCompositionLocalOf { FooterHostController() }
@@ -66,14 +69,16 @@ fun FooterHints(
     variant: FooterVariant = FooterVariant.STANDARD,
     onHintClick: ((InputButton) -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
-    forced: Boolean = false
+    forced: Boolean = false,
+    reservesSpace: Boolean = true
 ) {
     FooterHintsWithState(
         hints = remember(hints) { hints.map { FooterHintItem(it.first, it.second) } },
         variant = variant,
         onHintClick = onHintClick,
         trailingContent = trailingContent,
-        forced = forced
+        forced = forced,
+        reservesSpace = reservesSpace
     )
 }
 
@@ -84,12 +89,13 @@ fun FooterHintsWithState(
     variant: FooterVariant = FooterVariant.STANDARD,
     onHintClick: ((InputButton) -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
-    forced: Boolean = false
+    forced: Boolean = false,
+    reservesSpace: Boolean = true
 ) {
     val controller = LocalFooterHost.current
     val style = LocalFooterStyle.current
     val id = remember(controller) { controller.allocateId() }
-    val entry = FooterEntry(hints, style, variant, onHintClick, trailingContent, forced)
+    val entry = FooterEntry(hints, style, variant, onHintClick, trailingContent, forced, reservesSpace)
     SideEffect { controller.set(id, entry) }
     DisposableEffect(controller, id) {
         onDispose { controller.remove(id) }

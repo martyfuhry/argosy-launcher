@@ -240,7 +240,7 @@ class GameLaunchDelegate @Inject constructor(
                 onLaunchFailed()
                 return@launch
             }
-            val ticket = launchProgressTracker.begin(game.title) ?: run {
+            val ticket = launchProgressTracker.begin(gameId, game.title) ?: run {
                 android.util.Log.d("GameLaunchDelegate", "launchGame: another launch is in progress")
                 onLaunchFailed()
                 return@launch
@@ -293,10 +293,9 @@ class GameLaunchDelegate @Inject constructor(
                 )
                 android.util.Log.d("GameLaunchDelegate", "launchGame: emulatorPackage=$emulatorPackage, emulatorId=$emulatorId, canSync=$canSync")
 
-                val syncStartTime = if (canSync) {
+                if (canSync) {
                     ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.CheckingSave(channelName)))
-                    System.currentTimeMillis()
-                } else null
+                }
 
                 var hardcoreConflictInfo: SyncProgress.HardcoreConflict? = null
                 var hardcoreConflictChoice: HardcoreConflictChoice? = null
@@ -413,13 +412,6 @@ class GameLaunchDelegate @Inject constructor(
                     }
                 }
 
-                syncStartTime?.let { startTime ->
-                    val elapsed = System.currentTimeMillis() - startTime
-                    val minDisplayTime = 1500L
-                    if (elapsed < minDisplayTime) {
-                        delay(minDisplayTime - elapsed)
-                    }
-                }
                 if (ticket.isCancelled) {
                     onLaunchFailed()
                     return@launch
@@ -654,7 +646,7 @@ class GameLaunchDelegate @Inject constructor(
     ) {
         scope.launch {
             val game = gameRepository.getById(gameId)
-            val ticket = launchProgressTracker.begin(game?.title) ?: run {
+            val ticket = launchProgressTracker.begin(game?.id, game?.title) ?: run {
                 android.util.Log.d("GameLaunchDelegate", "launchSimple: another launch is in progress")
                 callbacks.onLaunchFailed()
                 return@launch

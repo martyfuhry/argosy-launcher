@@ -1415,15 +1415,38 @@
     <string name="ui_sync_overlay_hardcore_skip">Skip Sync</string>
     <!-- Second line under that choice. -->
     <string name="ui_sync_overlay_hardcore_skip_subtitle">Launch without syncing</string>
-    <string name="ui_launch_overlay_step_finishing_previous">Finishing previous launch</string>
-    <!-- "Core" is the emulator core that runs the game -->
-    <string name="ui_launch_overlay_step_downloading_core">Downloading core</string>
-    <string name="ui_launch_overlay_step_preparing_system_files">Preparing system files</string>
-    <string name="ui_launch_overlay_step_preparing_ui">Preparing UI</string>
-    <string name="ui_launch_overlay_step_launching">Launching</string>
     <string name="ui_launch_overlay_cancel">Cancel</string>
     <string name="ui_launch_overlay_cancel_option">Cancel launch</string>
     <string name="ui_launch_overlay_cancel_option_subtitle">Go back without starting the game</string>
+    <!-- Line under the game title when the launch is still waiting for the previous launch to end. -->
+    <string name="ui_launch_overlay_wait_previous">Still finishing the previous launch</string>
+    <!-- Line under the game title when the summary of the player's last session is slow to load. -->
+    <string name="ui_launch_overlay_wait_recap">Still loading your last session</string>
+    <!-- Line under the game title when the save sync with the server runs long. "Save" is the noun: the game's save file. -->
+    <string name="ui_launch_overlay_wait_save">Still syncing your save</string>
+    <!-- Line under the game title when the emulator core download runs long. "Core" is the emulator core that runs the game. -->
+    <string name="ui_launch_overlay_wait_core">Still downloading the emulator core</string>
+    <!-- Same line with the download size. %1$s is a size such as "12.3 MB". -->
+    <string name="ui_launch_overlay_wait_core_sized">Still downloading the emulator core &#183; %1$s</string>
+    <!-- Line under the game title when the emulator setup runs long. -->
+    <string name="ui_launch_overlay_wait_prepare">Still preparing the emulator</string>
+    <!-- Shown when the RomM server did not answer; the game still starts. "RomM" is a product name; leave it untranslated. -->
+    <string name="ui_launch_overlay_failed_connect">RomM didn\'t answer. Starting with the save on this device.</string>
+    <!-- Shown when the RomM server is reachable but did not answer within the pre-launch budget; the game still starts. "RomM" is a product name; leave it untranslated. -->
+    <string name="ui_launch_overlay_failed_timeout">RomM took too long to answer. Starting with the save on this device.</string>
+    <!-- Shown when the save on the server could not be downloaded; the game still starts with the local save. -->
+    <string name="ui_launch_overlay_failed_download">Your save couldn\'t be downloaded. Starting with the save on this device.</string>
+    <!-- Shown when the downloaded save could not be written to the device; the game still starts with the local save. -->
+    <string name="ui_launch_overlay_failed_write">Your save couldn\'t be written. Starting with the save on this device.</string>
+    <!-- Download progress. %1$d is a whole percent from 0 to 100. -->
+    <string name="ui_launch_overlay_percent">%1$d%%</string>
+    <!-- Download progress with the time left. %1$d is a whole percent, %2$d the seconds left. -->
+    <plurals name="ui_launch_overlay_percent_eta">
+        <item quantity="one">%1$d%% &#183; about %2$d second left</item>
+        <item quantity="other">%1$d%% &#183; about %2$d seconds left</item>
+    </plurals>
+    <!-- Footer hint beside the cancel button glyph while a game launches. -->
+    <string name="ui_launch_overlay_hint_cancel">Cancel</string>
     <!-- Title of the question shown when two installed Steam launchers both have this game installed. -->
     <string name="ui_launch_overlay_launcher_choice_title">Choose a Launcher</string>
     <!-- Body of that question. %1$s is the game title. "Change Launcher" must match the translation
@@ -1431,8 +1454,6 @@
     <string name="ui_launch_overlay_launcher_choice_message">%1$s is installed in more than one launcher. Pin one with Change Launcher on the game\'s page to stop this question.</string>
     <!-- Second line under each launcher choice. %1$s is the launcher's product name (GameNative, DroidDeck); leave it untranslated. -->
     <string name="ui_launch_overlay_launcher_choice_option_subtitle">Start the game in %1$s</string>
-    <!-- Launch step shown while the summary of the player's last session of this game loads. -->
-    <string name="ui_launch_overlay_step_loading_recap">Loading your last session</string>
     <!-- Line under the game title in the summary shown before a game starts. %1$s is when the
          player's last session of this game ended, such as "Yesterday" or "2 weeks ago". -->
     <string name="ui_launch_recap_meta">Last session &#183; %1$s</string>

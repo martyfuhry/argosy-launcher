@@ -6,6 +6,7 @@
     <string name="sync_prelaunch_connecting">Подключение...</string>
     <string name="sync_prelaunch_connected">Подключено</string>
     <string name="sync_prelaunch_connect_failed">Ошибка подключения</string>
+    <string name="sync_prelaunch_timed_out">Сервер слишком долго не отвечал</string>
     <string name="sync_prelaunch_downloading">Загрузка...</string>
     <string name="sync_prelaunch_download_complete">Загрузка завершена</string>
     <string name="sync_prelaunch_download_failed">Ошибка загрузки</string>

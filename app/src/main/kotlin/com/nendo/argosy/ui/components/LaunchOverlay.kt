@@ -1,18 +1,11 @@
 package com.nendo.argosy.ui.components
 
 import android.content.Context
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,11 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -58,7 +45,8 @@ import com.nendo.argosy.domain.model.LaunchPromptOption
 import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.domain.model.SyncProgress
-import com.nendo.argosy.ui.common.statusMessage
+import com.nendo.argosy.ui.components.launch.CalmLaunchContent
+import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
 import com.nendo.argosy.ui.components.recap.LaunchRecapCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCompactCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCursor
@@ -67,7 +55,6 @@ import com.nendo.argosy.ui.components.recap.RecapSurface
 import com.nendo.argosy.ui.components.recap.rememberRecapFullCardSurface
 import com.nendo.argosy.ui.input.ModalInputEffect
 import com.nendo.argosy.ui.primitives.ActionButton
-import com.nendo.argosy.ui.primitives.ArgosyProgressBar
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
 import com.nendo.argosy.ui.theme.LocalMotionTier
@@ -92,7 +79,8 @@ private fun launchProgressEntryPoint(context: Context): LaunchProgressEntryPoint
 
 /**
  * The launch in progress over the surface that starts launches. It holds the input stack while a
- * launch runs and ends the launch once that surface stops.
+ * launch runs. A launch that has opened its game ends once that surface stops, once the overlay
+ * leaves composition (the in-game dashboard takes the surface), and when the overlay comes back.
  */
 @Composable
 fun LaunchOverlay(
@@ -107,12 +95,21 @@ fun LaunchOverlay(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) viewModel.hostStopped()
         }
+        viewModel.hostStopped()
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.hostStopped()
+        }
     }
     ModalInputEffect(active = progress != null, handler = viewModel.inputHandler)
-    if (progress?.step is LaunchStep.Recap) {
-        FooterHints(hints = emptyList())
+    progress?.step?.let { step ->
+        val cancelHint = stringResource(R.string.ui_launch_overlay_hint_cancel)
+        val showsCancelHint = step !is LaunchStep.Recap && step != LaunchStep.Launching
+        FooterHints(
+            hints = if (showsCancelHint) listOf(InputButton.B to cancelHint) else emptyList(),
+            reservesSpace = false
+        )
     }
 
     LaunchOverlayContent(
@@ -136,7 +133,7 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
     val progress by tracker.progress.collectAsState()
     val recapCursor by cursorStore.state.collectAsState()
     LaunchOverlayContent(
-        progress = progress,
+        progress = progress?.takeIf { it.step.mirrorsToPresentation },
         promptFocus = NO_PROMPT_FOCUS,
         recapCursor = recapCursor,
         surface = RecapSurface.PRESENTATION,
@@ -242,76 +239,11 @@ private fun LaunchOverlayContent(
                         onCancel = onCancel
                     )
                 }
-                else -> StepContent(
-                    gameTitle = shown.gameTitle,
-                    step = step,
+                else -> CalmLaunchContent(
+                    progress = shown,
                     onCancel = onCancel
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun StepContent(
-    gameTitle: String?,
-    step: LaunchStep,
-    onCancel: () -> Unit
-) {
-    val rotation by rememberInfiniteTransition(label = "launch_spin").animateFloat(
-        initialValue = 0f,
-        targetValue = -360f,
-        animationSpec = infiniteRepeatable(
-            tween(ComponentDefaults.LaunchOverlay.spinMs, easing = LinearEasing),
-            RepeatMode.Restart
-        ),
-        label = "launch_rotation"
-    )
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Sync,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .size(ComponentDefaults.LaunchOverlay.iconSizeDp.dp)
-                .rotate(rotation)
-        )
-        Spacer(modifier = Modifier.height(Dimens.spacingLg))
-        AnimatedContent(
-            targetState = step.message(),
-            transitionSpec = {
-                fadeIn(tween(ComponentDefaults.LaunchOverlay.stepFadeInMs)) togetherWith
-                    fadeOut(tween(ComponentDefaults.LaunchOverlay.stepFadeOutMs))
-            },
-            label = "launchStep"
-        ) { message ->
-            Text(
-                text = message,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        if (gameTitle != null) {
-            Spacer(modifier = Modifier.height(Dimens.spacingSm))
-            Text(
-                text = gameTitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        if (step is LaunchStep.DownloadingCore) {
-            Spacer(modifier = Modifier.height(Dimens.spacingMd))
-            ArgosyProgressBar(
-                progress = step.fraction,
-                modifier = Modifier.width(ComponentDefaults.LaunchOverlay.progressWidthDp.dp)
-            )
-        }
-        if (step != LaunchStep.Launching) {
-            Spacer(modifier = Modifier.height(Dimens.spacingLg))
-            LaunchCancelButton(onClick = onCancel)
         }
     }
 }
@@ -375,20 +307,6 @@ private fun PromptContent(
         )
         else -> Unit
     }
-}
-
-@Composable
-private fun LaunchStep.message(): String = when (this) {
-    LaunchStep.FinishingPrevious -> stringResource(R.string.ui_launch_overlay_step_finishing_previous)
-    LaunchStep.RecapLoading -> stringResource(R.string.ui_launch_overlay_step_loading_recap)
-    is LaunchStep.Recap -> ""
-    is LaunchStep.Save -> progress.statusMessage()
-    is LaunchStep.DownloadingCore -> stringResource(R.string.ui_launch_overlay_step_downloading_core)
-    LaunchStep.PreparingSystemFiles -> stringResource(R.string.ui_launch_overlay_step_preparing_system_files)
-    LaunchStep.PreparingUi -> stringResource(R.string.ui_launch_overlay_step_preparing_ui)
-    LaunchStep.Launching -> stringResource(R.string.ui_launch_overlay_step_launching)
-    is LaunchStep.Prompt -> ""
-    is LaunchStep.ChooseLauncher -> ""
 }
 
 @Composable

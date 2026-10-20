@@ -6,6 +6,7 @@
     <string name="sync_prelaunch_connecting">正在连接...</string>
     <string name="sync_prelaunch_connected">已连接</string>
     <string name="sync_prelaunch_connect_failed">连接失败</string>
+    <string name="sync_prelaunch_timed_out">服务器响应超时</string>
     <string name="sync_prelaunch_downloading">正在下载...</string>
     <string name="sync_prelaunch_download_complete">下载完成</string>
     <string name="sync_prelaunch_download_failed">下载失败</string>

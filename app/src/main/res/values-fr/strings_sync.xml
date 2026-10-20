@@ -6,6 +6,7 @@
     <string name="sync_prelaunch_connecting">Connexion...</string>
     <string name="sync_prelaunch_connected">Connecté</string>
     <string name="sync_prelaunch_connect_failed">Échec de la connexion</string>
+    <string name="sync_prelaunch_timed_out">Le serveur a mis trop de temps</string>
     <string name="sync_prelaunch_downloading">Téléchargement...</string>
     <string name="sync_prelaunch_download_complete">Téléchargement terminé</string>
     <string name="sync_prelaunch_download_failed">Échec du téléchargement</string>

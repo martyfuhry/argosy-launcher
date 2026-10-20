@@ -131,11 +131,11 @@ class LibretroCoreManager @Inject constructor(
     suspend fun downloadCoreForPlatform(
         platformSlug: String,
         selectedCoreId: String?,
-        onProgress: ((Float) -> Unit)? = null
+        onProgress: ((fraction: Float, zipBytes: Long) -> Unit)? = null
     ): Result<String> {
         val coreInfo = resolveCoreForPlatform(platformSlug, selectedCoreId)
             ?: return Result.failure(IllegalArgumentException("No core registered for platform $platformSlug"))
-        return downloadCore(coreInfo, onProgress).map { it.absolutePath }
+        return downloadSizedCore(coreInfo, onProgress).map { it.absolutePath }
     }
 
     suspend fun downloadCoreById(coreId: String): Result<File> {
@@ -180,6 +180,11 @@ class LibretroCoreManager @Inject constructor(
     suspend fun downloadCore(
         coreInfo: LibretroCoreRegistry.CoreInfo,
         onProgress: ((Float) -> Unit)? = null
+    ): Result<File> = downloadSizedCore(coreInfo, onProgress?.let { report -> { fraction, _ -> report(fraction) } })
+
+    private suspend fun downloadSizedCore(
+        coreInfo: LibretroCoreRegistry.CoreInfo,
+        onProgress: ((fraction: Float, zipBytes: Long) -> Unit)?
     ): Result<File> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -222,7 +227,7 @@ class LibretroCoreManager @Inject constructor(
                         val n = super.read(b, off, len)
                         if (n > 0 && zipLength > 0) {
                             read += n
-                            onProgress?.invoke((read.toFloat() / zipLength).coerceIn(0f, 1f))
+                            onProgress?.invoke((read.toFloat() / zipLength).coerceIn(0f, 1f), zipLength)
                         }
                         return n
                     }

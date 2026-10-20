@@ -101,6 +101,8 @@ object ComponentDefaults {
         const val stripeWidth = 7
         const val stripeGap = 5
         const val gradientShiftRatio = 0.1f
+        const val sweepMs = 1400
+        const val sweepWidthRatio = 0.35f
     }
 
     object DownloadItem {
@@ -331,12 +333,16 @@ object ComponentDefaults {
     object LaunchOverlay {
         const val scrimAlphaDark = 0.8f
         const val scrimAlphaLight = 0.55f
-        const val iconSizeDp = 56
         const val progressWidthDp = 280
         const val fadeMs = 300
-        const val spinMs = 1000
-        const val stepFadeInMs = 200
-        const val stepFadeOutMs = 150
+        const val patienceMs = 2500
+        const val reflowMs = 900
+        const val statusFadeMs = 700
+        const val statusFadeDelayMs = 500
+        const val etaTickMs = 250
+        const val artHeightDp = 240
+        const val artHeightRatio = 0.4f
+        const val titleMaxLines = 2
     }
 
     object UnlockRecap {
