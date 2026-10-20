@@ -1,5 +1,6 @@
 package com.nendo.argosy.ui.components.launch
 
+import android.os.SystemClock
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -73,7 +74,7 @@ fun CalmLaunchContent(
     modifier: Modifier = Modifier
 ) {
     val reducedMotion = LocalMotionTier.current == MotionTier.Reduced
-    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var nowMs by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
     val ui = LaunchOverlayState.from(
         progress = progress,
         nowMs = nowMs,
@@ -85,17 +86,17 @@ fun CalmLaunchContent(
         sweepMs = ComponentDefaults.ProgressBar.sweepMs
     )
     LaunchedEffect(progress.stepStartedAtMs, progress.step.phase) {
-        nowMs = System.currentTimeMillis()
+        nowMs = SystemClock.elapsedRealtime()
         val revealAtMs = ui.revealAtMs ?: return@LaunchedEffect
-        val waitMs = revealAtMs - System.currentTimeMillis()
+        val waitMs = revealAtMs - SystemClock.elapsedRealtime()
         if (waitMs > 0) delay(waitMs)
-        nowMs = System.currentTimeMillis()
+        nowMs = SystemClock.elapsedRealtime()
     }
     val ticking = ui.bar == CalmLaunchBar.DETERMINATE
     LaunchedEffect(ticking) {
         while (ticking) {
             delay(Defaults.etaTickMs.toLong())
-            nowMs = System.currentTimeMillis()
+            nowMs = SystemClock.elapsedRealtime()
         }
     }
 

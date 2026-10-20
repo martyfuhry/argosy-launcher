@@ -1,5 +1,6 @@
 package com.nendo.argosy.data.emulator
 
+import android.os.SystemClock
 import com.nendo.argosy.domain.model.LaunchFailure
 import com.nendo.argosy.domain.model.LaunchPhase
 import com.nendo.argosy.domain.model.LaunchProgress
@@ -37,7 +38,7 @@ private const val PREVIOUS_LAUNCH_WAIT_MS = 15_000L
 @Singleton
 class LaunchProgressTracker internal constructor(
     private val scope: CoroutineScope,
-    private val clock: () -> Long = System::currentTimeMillis
+    private val clock: () -> Long = SystemClock::elapsedRealtime
 ) {
 
     @Inject constructor() : this(SafeCoroutineScope(Dispatchers.Default, TAG))
