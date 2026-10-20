@@ -104,7 +104,7 @@ class LaunchGameUseCaseTest {
     fun `a launch the caller opened stays open for the caller to finish`() = runTest {
         val intent = mockk<Intent>(relaxed = true)
         coEvery { gameLauncher.launch(123L, null, any(), any(), any(), any(), any(), any()) } returns LaunchResult.Success(intent)
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(123L, "Game")!!
 
         useCase(123L)
 

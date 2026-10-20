@@ -31,7 +31,10 @@ private const val PREVIOUS_LAUNCH_WAIT_MS = 15_000L
  * never opens the game; a launch started while it drains waits for it before doing anything.
  */
 @Singleton
-class LaunchProgressTracker internal constructor(private val scope: CoroutineScope) {
+class LaunchProgressTracker internal constructor(
+    private val scope: CoroutineScope,
+    private val clock: () -> Long = System::currentTimeMillis
+) {
 
     @Inject constructor() : this(SafeCoroutineScope(Dispatchers.Default, TAG))
 
@@ -46,7 +49,7 @@ class LaunchProgressTracker internal constructor(private val scope: CoroutineSco
     val current: Ticket?
         get() = synchronized(lock) { live?.takeUnless { it.isFinished } }
 
-    inner class Ticket internal constructor(val gameTitle: String?) {
+    inner class Ticket internal constructor(val gameId: Long?, val gameTitle: String?) {
         @Volatile
         var isCancelled = false
             private set
@@ -109,13 +112,13 @@ class LaunchProgressTracker internal constructor(private val scope: CoroutineSco
      * Opens a launch, waiting out a cancelled one that is still finishing. Null when another
      * launch is already in progress, or this one was cancelled while it waited.
      */
-    suspend fun begin(gameTitle: String?): Ticket? {
+    suspend fun begin(gameId: Long?, gameTitle: String?): Ticket? {
         val ticket: Ticket
         val previous: Ticket?
         synchronized(lock) {
             if (live?.isFinished == false) return null
             launchingHold?.cancel()
-            ticket = Ticket(gameTitle)
+            ticket = Ticket(gameId, gameTitle)
             live = ticket
             previous = draining?.takeUnless { it.isFinished }
             draining = null
@@ -166,7 +169,7 @@ class LaunchProgressTracker internal constructor(private val scope: CoroutineSco
             if (draining === ticket) draining = null
             if (live !== ticket) return
             if (launched && !ticket.isCancelled) {
-                _progress.value = LaunchProgress(ticket.gameTitle, LaunchStep.Launching)
+                _progress.value = LaunchProgress(ticket.gameTitle, LaunchStep.Launching, ticket.gameId, clock())
                 launchingHold?.cancel()
                 launchingHold = scope.launch {
                     delay(LAUNCHING_HOLD_MS)
@@ -194,7 +197,7 @@ class LaunchProgressTracker internal constructor(private val scope: CoroutineSco
     private fun publish(ticket: Ticket, step: LaunchStep) {
         synchronized(lock) {
             if (live !== ticket || ticket.isCancelled) return
-            _progress.value = LaunchProgress(ticket.gameTitle, step)
+            _progress.value = LaunchProgress(ticket.gameTitle, step, ticket.gameId, clock())
         }
     }
 }

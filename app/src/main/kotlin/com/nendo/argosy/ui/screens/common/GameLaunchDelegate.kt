@@ -240,7 +240,7 @@ class GameLaunchDelegate @Inject constructor(
                 onLaunchFailed()
                 return@launch
             }
-            val ticket = launchProgressTracker.begin(game.title) ?: run {
+            val ticket = launchProgressTracker.begin(gameId, game.title) ?: run {
                 android.util.Log.d("GameLaunchDelegate", "launchGame: another launch is in progress")
                 onLaunchFailed()
                 return@launch
@@ -654,7 +654,7 @@ class GameLaunchDelegate @Inject constructor(
     ) {
         scope.launch {
             val game = gameRepository.getById(gameId)
-            val ticket = launchProgressTracker.begin(game?.title) ?: run {
+            val ticket = launchProgressTracker.begin(game?.id, game?.title) ?: run {
                 android.util.Log.d("GameLaunchDelegate", "launchSimple: another launch is in progress")
                 callbacks.onLaunchFailed()
                 return@launch

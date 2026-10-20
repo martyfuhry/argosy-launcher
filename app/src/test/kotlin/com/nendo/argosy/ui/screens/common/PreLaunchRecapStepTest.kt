@@ -60,7 +60,7 @@ class PreLaunchRecapStepTest {
     private fun step(overrides: Set<PreLaunchRecapOverride> = emptySet()) =
         PreLaunchRecapStep(recapGate, getSessionUnlocks, overrides)
 
-    private suspend fun ticket(tracker: LaunchProgressTracker) = tracker.begin("Game")!!
+    private suspend fun ticket(tracker: LaunchProgressTracker) = tracker.begin(1L, "Game")!!
 
     private suspend fun LaunchProgressTracker.awaitRecap(): LaunchRecap =
         (progress.first { it?.step is LaunchStep.Recap }!!.step as LaunchStep.Recap).recap

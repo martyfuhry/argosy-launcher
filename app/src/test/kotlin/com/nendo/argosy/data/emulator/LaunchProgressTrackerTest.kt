@@ -26,7 +26,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a launch reports its steps under the game title`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("F-Zero GX")!!
+        val ticket = tracker.begin(1L, "F-Zero GX")!!
 
         ticket.step(LaunchStep.PreparingSystemFiles)
 
@@ -37,15 +37,15 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a second launch is refused while one is in progress`() = runTest {
         val tracker = tracker()
-        tracker.begin("First")
+        tracker.begin(1L, "First")
 
-        assertNull(tracker.begin("Second"))
+        assertNull(tracker.begin(1L, "Second"))
     }
 
     @Test
     fun `cancelling hides the launch and stops its later steps from showing`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
 
         assertTrue(tracker.cancel())
         ticket.step(LaunchStep.PreparingUi)
@@ -57,7 +57,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `cancelling a prompt answers it with nothing`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
         val answer = async { ticket.ask(conflict, listOf(LaunchPromptOption.APPLY_LOCAL)) }
         runCurrent()
 
@@ -69,7 +69,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a prompt answer reaches the launch`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
         val answer = async { ticket.ask(conflict, listOf(LaunchPromptOption.APPLY_LOCAL, LaunchPromptOption.RESTORE_SERVER)) }
         runCurrent()
 
@@ -81,7 +81,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `starting from the recap continues the launch`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
         val started = async { ticket.offerRecap(recap) }
         runCurrent()
 
@@ -94,7 +94,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `cancelling from the recap stops the launch`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
         val started = async { ticket.offerRecap(recap) }
         runCurrent()
 
@@ -107,7 +107,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a recap offered after a cancel is never shown`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
         tracker.cancel()
 
         assertFalse(ticket.offerRecap(recap))
@@ -117,10 +117,10 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a new launch waits for a cancelled one to finish before it starts`() = runTest {
         val tracker = tracker()
-        val cancelled = tracker.begin("First")!!
+        val cancelled = tracker.begin(1L, "First")!!
         tracker.cancel()
 
-        val next = async { tracker.begin("Second") }
+        val next = async { tracker.begin(1L, "Second") }
         runCurrent()
 
         assertFalse(next.isCompleted)
@@ -135,10 +135,10 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a cancelled launch that never finishes holds the next one for a bounded time`() = runTest {
         val tracker = tracker()
-        tracker.begin("Stuck")!!
+        tracker.begin(1L, "Stuck")!!
         tracker.cancel()
 
-        val next = async { tracker.begin("Second") }
+        val next = async { tracker.begin(1L, "Second") }
         advanceTimeBy(14_000)
         assertFalse(next.isCompleted)
         advanceTimeBy(2_000)
@@ -150,22 +150,22 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a launch cancelled while it waits never starts, and the next one does not wait on it`() = runTest {
         val tracker = tracker()
-        val first = tracker.begin("First")!!
+        val first = tracker.begin(1L, "First")!!
         tracker.cancel()
-        val second = async { tracker.begin("Second") }
+        val second = async { tracker.begin(1L, "Second") }
         runCurrent()
 
         tracker.cancel()
         tracker.finish(first, launched = false)
 
         assertNull(second.await())
-        assertEquals("Third", tracker.begin("Third")?.gameTitle)
+        assertEquals("Third", tracker.begin(1L, "Third")?.gameTitle)
     }
 
     @Test
     fun `a launch that opened its game shows until the screen that started it stops`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
 
         tracker.finish(ticket, launched = true)
         assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
@@ -178,7 +178,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a launch whose screen never stops clears on its own`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
 
         tracker.finish(ticket, launched = true)
         advanceTimeBy(10_000)
@@ -189,7 +189,7 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a launch that failed clears at once`() = runTest {
         val tracker = tracker()
-        val ticket = tracker.begin("Game")!!
+        val ticket = tracker.begin(1L, "Game")!!
 
         tracker.finish(ticket, launched = false)
 
@@ -200,9 +200,9 @@ class LaunchProgressTrackerTest {
     @Test
     fun `a launch may start while the last one is still showing its game opening`() = runTest {
         val tracker = tracker()
-        tracker.finish(tracker.begin("First")!!, launched = true)
+        tracker.finish(tracker.begin(1L, "First")!!, launched = true)
 
-        val second = tracker.begin("Second")
+        val second = tracker.begin(1L, "Second")
 
         assertEquals(second, tracker.current)
     }

@@ -42,6 +42,7 @@ class LaunchGameUseCase @Inject constructor(
     ): LaunchResult {
         val joined = launchProgressTracker.current
         val ticket = joined ?: launchProgressTracker.begin(
+            gameId,
             prefetchedGame?.title ?: gameRepository.getById(gameId)?.title
         ) ?: return LaunchResult.Cancelled
         var result: LaunchResult = LaunchResult.Cancelled
