@@ -85,7 +85,6 @@ class PreLaunchRecapStepTest {
         tracker.answer(LaunchPromptOption.START_GAME)
 
         assertTrue(result.await())
-        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
     }
 
     @Test
@@ -108,7 +107,7 @@ class PreLaunchRecapStepTest {
         coEvery { getSessionUnlocks.inWindow(any(), any(), any(), any(), any()) } returns emptyList()
 
         assertTrue(step().run(ticket(tracker), 1L, "Game"))
-        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+        assertFalse(tracker.progress.value?.step is LaunchStep.Recap)
     }
 
     @Test
@@ -164,7 +163,31 @@ class PreLaunchRecapStepTest {
         val tracker = LaunchProgressTracker(backgroundScope)
 
         assertTrue(step(setOf(Requested(null, 1L))).run(ticket(tracker), 1L, "Game"))
-        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+        assertFalse(tracker.progress.value?.step is LaunchStep.Recap)
         coVerify(exactly = 0) { recapGate.preLaunchRecap(any(), any()) }
+    }
+
+    @Test
+    fun `starting from the recap publishes no step of its own`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        coEvery { recapGate.preLaunchRecap(1L, any()) } returns due()
+        coEvery { getSessionUnlocks.inWindow(1L, 50L, 7L, start, end) } returns listOf(unlock)
+
+        val result = async { step().run(ticket(tracker), 1L, "Game") }
+        val shown = tracker.awaitRecap()
+        tracker.answer(LaunchPromptOption.START_GAME)
+
+        assertTrue(result.await())
+        assertEquals(LaunchStep.Recap(shown), tracker.progress.value?.step)
+    }
+
+    @Test
+    fun `a due recap with nothing to show publishes no step`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        coEvery { recapGate.preLaunchRecap(1L, any()) } returns due()
+        coEvery { getSessionUnlocks.inWindow(any(), any(), any(), any(), any()) } returns emptyList()
+
+        assertTrue(step().run(ticket(tracker), 1L, "Game"))
+        assertEquals(LaunchStep.RecapLoading, tracker.progress.value?.step)
     }
 }

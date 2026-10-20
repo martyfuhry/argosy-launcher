@@ -1,10 +1,14 @@
 package com.nendo.argosy.data.emulator
 
+import com.nendo.argosy.domain.model.LaunchFailure
+import com.nendo.argosy.domain.model.LaunchPhase
 import com.nendo.argosy.domain.model.LaunchProgress
 import com.nendo.argosy.domain.model.LaunchRecap
 import com.nendo.argosy.domain.model.LaunchPromptOption
 import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SyncProgress
+import com.nendo.argosy.domain.model.failure
+import com.nendo.argosy.domain.model.phase
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.CompletableDeferred
@@ -53,6 +57,9 @@ class LaunchProgressTracker internal constructor(
         @Volatile
         var isCancelled = false
             private set
+
+        var failure: LaunchFailure? = null
+            internal set
 
         private val finished = CompletableDeferred<Unit>()
         private var pendingAnswer: CompletableDeferred<LaunchPromptOption?>? = null
@@ -169,7 +176,9 @@ class LaunchProgressTracker internal constructor(
             if (draining === ticket) draining = null
             if (live !== ticket) return
             if (launched && !ticket.isCancelled) {
-                _progress.value = LaunchProgress(ticket.gameTitle, LaunchStep.Launching, ticket.gameId, clock())
+                _progress.value = LaunchProgress(
+                    ticket.gameTitle, LaunchStep.Launching, ticket.gameId, clock(), ticket.failure
+                )
                 launchingHold?.cancel()
                 launchingHold = scope.launch {
                     delay(LAUNCHING_HOLD_MS)
@@ -197,7 +206,16 @@ class LaunchProgressTracker internal constructor(
     private fun publish(ticket: Ticket, step: LaunchStep) {
         synchronized(lock) {
             if (live !== ticket || ticket.isCancelled) return
-            _progress.value = LaunchProgress(ticket.gameTitle, step, ticket.gameId, clock())
+            ticket.failure = step.failure ?: ticket.failure
+            _progress.value = LaunchProgress(
+                ticket.gameTitle, step, ticket.gameId, startedAt(_progress.value, step), ticket.failure
+            )
         }
+    }
+
+    private fun startedAt(shown: LaunchProgress?, step: LaunchStep): Long {
+        val shownPhase = shown?.step?.phase
+        val keepsClock = shownPhase == step.phase && shownPhase != LaunchPhase.QUESTION
+        return if (shown != null && keepsClock) shown.stepStartedAtMs else clock()
     }
 }
