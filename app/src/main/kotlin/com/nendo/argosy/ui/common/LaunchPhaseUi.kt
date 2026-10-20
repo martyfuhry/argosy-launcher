@@ -5,10 +5,6 @@ import com.nendo.argosy.R
 import com.nendo.argosy.domain.model.LaunchFailure
 import com.nendo.argosy.domain.model.LaunchPhase
 
-/**
- * The line the launch overlay shows once a phase has run past its patience, or null for the
- * phases that never wait on screen.
- */
 @get:StringRes
 val LaunchPhase.waitLabelRes: Int?
     get() = when (this) {
