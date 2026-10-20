@@ -335,6 +335,7 @@ object ComponentDefaults {
         const val scrimAlphaLight = 0.55f
         const val progressWidthDp = 280
         const val fadeMs = 300
+        const val veilMs = 700
         const val patienceMs = 2500
         const val reflowMs = 900
         const val statusFadeMs = 700
