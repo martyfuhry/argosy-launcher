@@ -341,6 +341,8 @@ object ComponentDefaults {
         const val statusFadeDelayMs = 500
         const val etaTickMs = 250
         const val artHeightDp = 240
+        const val artHeightRatio = 0.4f
+        const val titleMaxLines = 2
     }
 
     object UnlockRecap {

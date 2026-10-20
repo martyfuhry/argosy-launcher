@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -33,7 +34,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import coil.compose.AsyncImage
 import com.nendo.argosy.R
 import com.nendo.argosy.domain.model.LaunchProgress
@@ -104,47 +107,52 @@ fun CalmLaunchContent(
     val enter = reflowEnter(ui)
     val exit = reflowExit(ui)
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.padding(horizontal = Dimens.spacingXl)
-    ) {
-        AnimatedVisibility(visible = hasArt, enter = enter, exit = exit) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                AsyncImage(
-                    model = cover,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    onError = { coverFailed = true },
-                    modifier = Modifier
-                        .height(Defaults.artHeightDp.dp)
-                        .aspectRatio(COVER_ASPECT_RATIO, matchHeightConstraintsFirst = true)
-                        .clip(RoundedCornerShape(Dimens.radiusLg))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+    BoxWithConstraints(modifier = modifier) {
+        val artHeight = min(Defaults.artHeightDp.dp, maxHeight * Defaults.artHeightRatio)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = Dimens.spacingXl)
+        ) {
+            AnimatedVisibility(visible = hasArt, enter = enter, exit = exit) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AsyncImage(
+                        model = cover,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        onError = { coverFailed = true },
+                        modifier = Modifier
+                            .height(artHeight)
+                            .aspectRatio(COVER_ASPECT_RATIO, matchHeightConstraintsFirst = true)
+                            .clip(RoundedCornerShape(Dimens.radiusLg))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
+                    if (title != null) Spacer(Modifier.height(gap))
+                }
+            }
+            if (title != null) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = Defaults.titleMaxLines,
+                    overflow = TextOverflow.Ellipsis
                 )
-                if (title != null) Spacer(Modifier.height(gap))
             }
-        }
-        if (title != null) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center
-            )
-        }
-        val statusShown = ui.line != null || ui.bar != CalmLaunchBar.NONE
-        val status = rememberLastShown(ui, statusShown)
-        AnimatedVisibility(visible = statusShown, enter = enter, exit = exit) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (hasLead) Spacer(Modifier.height(gap))
-                CalmLaunchStatus(status, enter, exit)
-                if (!hasLead) Spacer(Modifier.height(gap))
+            val statusShown = ui.line != null || ui.bar != CalmLaunchBar.NONE
+            val status = rememberLastShown(ui, statusShown)
+            AnimatedVisibility(visible = statusShown, enter = enter, exit = exit) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (hasLead) Spacer(Modifier.height(gap))
+                    CalmLaunchStatus(status, enter, exit)
+                    if (!hasLead) Spacer(Modifier.height(gap))
+                }
             }
-        }
-        AnimatedVisibility(visible = ui.cancellable, enter = enter, exit = exit) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (hasLead) Spacer(Modifier.height(gap))
-                LaunchCancelButton(onClick = onCancel)
+            AnimatedVisibility(visible = ui.cancellable, enter = enter, exit = exit) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (hasLead) Spacer(Modifier.height(gap))
+                    LaunchCancelButton(onClick = onCancel)
+                }
             }
         }
     }
