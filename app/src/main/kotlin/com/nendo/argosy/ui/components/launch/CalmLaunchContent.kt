@@ -3,6 +3,7 @@ package com.nendo.argosy.ui.components.launch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -29,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.pluralStringResource
@@ -106,6 +108,13 @@ fun CalmLaunchContent(
     val gap = Dimens.spacingLg
     val enter = reflowEnter(ui)
     val exit = reflowExit(ui)
+    var cancelSlot by remember { mutableStateOf(ui.cancellable) }
+    SideEffect { if (ui.cancellable) cancelSlot = true }
+    val cancelAlpha by animateFloatAsState(
+        targetValue = if (ui.cancellable) 1f else 0f,
+        animationSpec = tween(durationMillis = ui.statusFadeMs, easing = Motion.argosyEase),
+        label = "launchCancelFade"
+    )
 
     BoxWithConstraints(modifier = modifier) {
         val artHeight = min(Defaults.artHeightDp.dp, maxHeight * Defaults.artHeightRatio)
@@ -148,10 +157,13 @@ fun CalmLaunchContent(
                     if (!hasLead) Spacer(Modifier.height(gap))
                 }
             }
-            AnimatedVisibility(visible = ui.cancellable, enter = enter, exit = exit) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            AnimatedVisibility(visible = cancelSlot, enter = enter, exit = ExitTransition.None) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.alpha(cancelAlpha)
+                ) {
                     if (hasLead) Spacer(Modifier.height(gap))
-                    LaunchCancelButton(onClick = onCancel)
+                    LaunchCancelButton(onClick = { if (ui.cancellable) onCancel() })
                 }
             }
         }
