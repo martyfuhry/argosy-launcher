@@ -100,7 +100,10 @@ fun LaunchOverlay(
     progress?.step?.let { step ->
         val cancelHint = stringResource(R.string.ui_launch_overlay_hint_cancel)
         val showsCancelHint = step !is LaunchStep.Recap && step != LaunchStep.Launching
-        FooterHints(hints = if (showsCancelHint) listOf(InputButton.B to cancelHint) else emptyList())
+        FooterHints(
+            hints = if (showsCancelHint) listOf(InputButton.B to cancelHint) else emptyList(),
+            reservesSpace = false
+        )
     }
 
     LaunchOverlayContent(
