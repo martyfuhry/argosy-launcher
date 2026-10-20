@@ -59,6 +59,7 @@ import com.nendo.argosy.ui.components.FooterHints
 import com.nendo.argosy.ui.components.revealOnBottomEdgeTouch
 import com.nendo.argosy.ui.components.FooterHost
 import com.nendo.argosy.ui.components.FooterHostController
+import com.nendo.argosy.ui.components.isBarVisible
 import com.nendo.argosy.ui.components.LocalFooterHost
 import com.nendo.argosy.ui.components.LocalFooterHostVisible
 import com.nendo.argosy.ui.components.LocalNavBarClearance

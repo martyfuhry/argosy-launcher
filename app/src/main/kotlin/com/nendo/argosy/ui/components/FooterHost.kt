@@ -47,8 +47,6 @@ class FooterHostController {
     }
 
     val top: FooterEntry? get() = stack.lastOrNull()?.second
-
-    val isBarVisible: Boolean get() = top?.let { it.forced || it.hints.isNotEmpty() } == true
 }
 
 val LocalFooterHost = staticCompositionLocalOf { FooterHostController() }
