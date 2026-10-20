@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import coil.compose.AsyncImage
 import com.nendo.argosy.R
+import com.nendo.argosy.data.preferences.BoxArtShape
 import com.nendo.argosy.domain.model.LaunchProgress
 import com.nendo.argosy.domain.model.phase
 import com.nendo.argosy.ui.common.rememberFileImageModel
@@ -59,8 +60,6 @@ import com.nendo.argosy.util.formatBytes
 import kotlinx.coroutines.delay
 
 private val Defaults = ComponentDefaults.LaunchOverlay
-
-private const val COVER_ASPECT_RATIO = 2f / 3f
 
 /**
  * The quiet launch column: cover art, title and Cancel at equal spacing. The status block (bar,
@@ -129,7 +128,7 @@ fun CalmLaunchContent(
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .height(artHeight)
-                        .aspectRatio(COVER_ASPECT_RATIO, matchHeightConstraintsFirst = true)
+                        .aspectRatio(BoxArtShape.TALL.aspectRatio, matchHeightConstraintsFirst = true)
                         .clip(RoundedCornerShape(Dimens.radiusLg))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
