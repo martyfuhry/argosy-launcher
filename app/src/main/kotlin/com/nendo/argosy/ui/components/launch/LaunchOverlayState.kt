@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.nendo.argosy.R
 import com.nendo.argosy.domain.model.LaunchPhase
 import com.nendo.argosy.domain.model.LaunchProgress
+import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.failure
 import com.nendo.argosy.domain.model.fraction
 import com.nendo.argosy.domain.model.phase
@@ -14,6 +15,13 @@ import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 enum class CalmLaunchBar { NONE, INDETERMINATE, DETERMINATE }
+
+/**
+ * Whether the presentation display draws this step. It draws only what asks the player
+ * something; every other step leaves the game showcase up.
+ */
+val LaunchStep.mirrorsToPresentation: Boolean
+    get() = this is LaunchStep.Question || this is LaunchStep.Recap
 
 data class CalmLaunchUi(
     @StringRes val line: Int?,

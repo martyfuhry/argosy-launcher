@@ -233,6 +233,23 @@ class LaunchOverlayStateTest {
     }
 
     @Test
+    fun `the presentation display draws only the steps that ask something`() {
+        val recap = LaunchRecap(gameTitle = "Game", lastSession = null, unlocks = emptyList())
+        val mirrored = listOf(
+            LaunchStep.Prompt(SyncProgress.Error("x"), listOf(LaunchPromptOption.APPLY_LOCAL)),
+            LaunchStep.ChooseLauncher(listOf(LaunchPromptOption.LAUNCH_WITH_GAMENATIVE)),
+            LaunchStep.Recap(recap)
+        )
+        for (step in mirrored) assertTrue("$step", step.mirrorsToPresentation)
+        val kept = quietSteps + listOf(
+            LaunchStep.Save(SyncProgress.PreLaunch.Connecting(null, success = false)),
+            LaunchStep.Save(SyncProgress.Error("x")),
+            LaunchStep.DownloadingCore(fraction = 0.5f)
+        )
+        for (step in kept) assertFalse("$step", step.mirrorsToPresentation)
+    }
+
+    @Test
     fun `no cover gives a title-only column`() {
         val ui = map(progress(save, gameId = null), 0L)
         assertTrue(ui.showsCalmColumn)

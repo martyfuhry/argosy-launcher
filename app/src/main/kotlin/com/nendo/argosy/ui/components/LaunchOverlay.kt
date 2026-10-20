@@ -46,6 +46,7 @@ import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.domain.model.SyncProgress
 import com.nendo.argosy.ui.components.launch.CalmLaunchContent
+import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
 import com.nendo.argosy.ui.components.recap.LaunchRecapCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCompactCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCursor
@@ -127,7 +128,7 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
     val progress by tracker.progress.collectAsState()
     val recapCursor by cursorStore.state.collectAsState()
     LaunchOverlayContent(
-        progress = progress?.takeIf { it.step.mirrorsToPresentation() },
+        progress = progress?.takeIf { it.step.mirrorsToPresentation },
         promptFocus = NO_PROMPT_FOCUS,
         recapCursor = recapCursor,
         surface = RecapSurface.PRESENTATION,
@@ -140,9 +141,6 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
         modifier = modifier
     )
 }
-
-private fun LaunchStep.mirrorsToPresentation(): Boolean =
-    this is LaunchStep.Question || this is LaunchStep.Recap
 
 /**
  * The blur the screen behind the launch overlay takes while a recap shows, for the surface's
