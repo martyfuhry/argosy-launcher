@@ -42,6 +42,13 @@ object LidSleepDecision {
     fun armsOnScreenOff(closedAt: Long, screenOffAt: Long): Boolean =
         closedAt > 0L && screenOffAt - closedAt in 0L..ARM_WINDOW_MS
 
+    /**
+     * Whether a reading arriving now is the first since the last screen-on, given when the
+     * reading before it was taken. Always false before any screen-on has been recorded.
+     */
+    fun readingResolvesStale(previousReadAt: Long, screenOnAt: Long): Boolean =
+        screenOnAt > 0L && previousReadAt < screenOnAt
+
     fun decide(state: LidSleepState): LidSleepVerdict = when {
         !state.enabled || !state.lidClosed || !state.closeConfirmed || !state.interactive -> LidSleepVerdict.IDLE
         state.lidReadAt < state.screenOnAt ->
