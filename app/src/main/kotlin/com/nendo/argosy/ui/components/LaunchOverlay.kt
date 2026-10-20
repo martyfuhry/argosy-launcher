@@ -46,7 +46,9 @@ import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.domain.model.SyncProgress
 import com.nendo.argosy.ui.components.launch.CalmLaunchContent
+import com.nendo.argosy.ui.components.launch.LaunchVeil
 import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
+import com.nendo.argosy.ui.components.launch.veilsDisplay
 import com.nendo.argosy.ui.components.recap.LaunchRecapCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCompactCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCursor
@@ -143,6 +145,26 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
             val count = (tracker.progress.value?.step as? LaunchStep.Recap)?.recap?.unlocks?.size
             if (count != null) cursorStore.centered(index, count)
         },
+        modifier = modifier
+    )
+}
+
+/**
+ * The black veil a presentation surface on [displayId] draws while the game opens on it or runs
+ * on it, lifting back to the showcase once the session ends.
+ */
+@Composable
+fun LaunchVeilMirror(
+    gameActive: Boolean,
+    gameDisplayId: Int?,
+    displayId: Int?,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val tracker = remember { launchProgressEntryPoint(context).launchProgressTracker() }
+    val progress by tracker.progress.collectAsState()
+    LaunchVeil(
+        veiled = veilsDisplay(progress, gameActive, gameDisplayId, displayId),
         modifier = modifier
     )
 }

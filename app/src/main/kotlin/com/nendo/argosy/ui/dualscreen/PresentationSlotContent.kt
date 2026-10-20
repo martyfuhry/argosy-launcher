@@ -102,7 +102,7 @@ fun PresentationSlotContent(
             lastActivityAtMs = lastActivity,
             onWake = { manager?.notifyUserActivity("presentationDimmerTap") }
         ) {
-            PresentationSlotBody(slot, showControlHints, showsNotifications)
+            PresentationSlotBody(slot, showControlHints, showsNotifications, gameActive)
         }
     }
 }
@@ -111,11 +111,14 @@ fun PresentationSlotContent(
 private fun PresentationSlotBody(
     slot: PresentationSlot,
     showControlHints: Boolean,
-    showsNotifications: Boolean
+    showsNotifications: Boolean,
+    gameActive: Boolean
 ) {
     val density = LocalDensity.current
-    val hints = com.nendo.argosy.DualScreenManagerHolder.instance
-        ?.controlHints?.collectAsState()?.value.orEmpty()
+    val manager = com.nendo.argosy.DualScreenManagerHolder.instance
+    val hints = manager?.controlHints?.collectAsState()?.value.orEmpty()
+    val gameDisplayId = manager?.emulatorDisplay?.collectAsState()?.value
+    val displayId = ContextCompat.getDisplayOrDefault(LocalContext.current).displayId
     var measuredHintsHeight by remember { mutableStateOf(0.dp) }
     val hintsHeight = if (!showControlHints || hints.isEmpty()) 0.dp else measuredHintsHeight
     val recapBlur = maxOf(
@@ -145,10 +148,16 @@ private fun PresentationSlotBody(
                     PresentationControlHints(hints)
                 }
             }
+        }
+        com.nendo.argosy.ui.components.LaunchVeilMirror(
+            gameActive = gameActive,
+            gameDisplayId = gameDisplayId,
+            displayId = displayId
+        )
+        if (slot !is PresentationSlot.InGame) {
             com.nendo.argosy.ui.components.recap.MonthlyRecapMirror()
             com.nendo.argosy.ui.components.LaunchOverlayMirror()
         }
-        val manager = com.nendo.argosy.DualScreenManagerHolder.instance
         if (showsNotifications && manager != null) {
             val mutedKeys by manager.mutedNotificationKeys.collectAsState()
             com.nendo.argosy.core.notification.NotificationHost(
