@@ -277,6 +277,7 @@ class LaunchWithSyncUseCase @Inject constructor(
                 emit(SyncProgress.Skipped)
             }
             is PreLaunchSyncResult.TimedOut -> {
+                emit(SyncProgress.PreLaunch.Connecting(channelName, success = false))
                 emit(SyncProgress.Skipped)
             }
             is PreLaunchSyncResult.NoServerSave -> {

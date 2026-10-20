@@ -14,7 +14,10 @@ import com.nendo.argosy.data.repository.SaveSyncRepository
 import com.nendo.argosy.data.repository.SaveSyncResult
 import com.nendo.argosy.data.repository.SiblingGroupRepository
 import com.nendo.argosy.data.sync.CrossEmulatorSaveMigrator
+import com.nendo.argosy.domain.model.LaunchFailure
+import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SyncProgress
+import com.nendo.argosy.domain.model.failure
 import com.nendo.argosy.domain.usecase.state.PreLaunchStateSyncUseCase
 import io.mockk.coEvery
 import io.mockk.every
@@ -113,7 +116,7 @@ class LaunchWithSyncUseCaseTest {
     }
 
     @Test
-    fun `a pre-launch sync past its budget launches with local data without reporting a failed connection`() = runTest {
+    fun `a sync that gets no answer tells the launch the server did not answer`() = runTest {
         coEvery {
             saveSyncRepository.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
         } coAnswers {
@@ -123,10 +126,13 @@ class LaunchWithSyncUseCaseTest {
 
         val progress = useCase.invokeWithProgress(gameId).toList()
 
-        assertTrue("Expected Skipped, got $progress", progress.last() is SyncProgress.Skipped)
-        assertTrue(
-            "A timeout is not a connection failure: $progress",
-            progress.none { it is SyncProgress.PreLaunch.Connecting && it.success == false }
+        assertEquals(
+            listOf(SyncProgress.PreLaunch.Connecting(null, success = false), SyncProgress.Skipped),
+            progress.takeLast(2)
+        )
+        assertEquals(
+            LaunchFailure.SERVER_UNREACHABLE,
+            progress.mapNotNull { LaunchStep.Save(it).failure }.lastOrNull()
         )
     }
 
