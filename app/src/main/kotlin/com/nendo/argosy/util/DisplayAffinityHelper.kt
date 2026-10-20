@@ -76,6 +76,11 @@ class DisplayAffinityHelper @Inject constructor(
     val isDockedDark: Boolean
         get() = dockedDisplayId != null
 
+    val hasLitExternalDisplay: Boolean
+        get() = displayManager.displays.any {
+            it.displayType() == DISPLAY_TYPE_EXTERNAL && it.state == Display.STATE_ON
+        }
+
     val hasSecondaryDisplay: Boolean
         get() = when {
             isDesktopMode -> false

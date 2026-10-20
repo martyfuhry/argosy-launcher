@@ -118,6 +118,7 @@ data class DisplayPreferences(
     val screenDimmerEnabled: Boolean = true,
     val screenDimmerTimeoutMinutes: Int = 2,
     val screenDimmerLevel: Int = 50,
+    val lidSleepEnabled: Boolean = true,
     val dualScreenEnabled: Boolean = false,
     val displayRoleOverride: DisplayRoleOverride = DisplayRoleOverride.AUTO,
     val gamesDisplayTarget: EmulatorDisplayTarget = EmulatorDisplayTarget.PRESENTATION,
@@ -229,6 +230,7 @@ class DisplayPreferencesRepository @Inject constructor(
         val SCREEN_DIMMER_ENABLED = booleanPreferencesKey("screen_dimmer_enabled")
         val SCREEN_DIMMER_TIMEOUT_MINUTES = intPreferencesKey("screen_dimmer_timeout_minutes")
         val SCREEN_DIMMER_LEVEL = intPreferencesKey("screen_dimmer_level")
+        val LID_SLEEP_ENABLED = booleanPreferencesKey("lid_sleep_enabled")
         val DUAL_SCREEN_ENABLED = booleanPreferencesKey("dual_screen_enabled")
         val DISPLAY_ROLE_OVERRIDE = stringPreferencesKey("display_role_override")
         val GAMES_DISPLAY_TARGET = stringPreferencesKey("games_display_target")
@@ -343,6 +345,7 @@ class DisplayPreferencesRepository @Inject constructor(
             screenDimmerEnabled = prefs[Keys.SCREEN_DIMMER_ENABLED] ?: true,
             screenDimmerTimeoutMinutes = prefs[Keys.SCREEN_DIMMER_TIMEOUT_MINUTES] ?: 2,
             screenDimmerLevel = prefs[Keys.SCREEN_DIMMER_LEVEL] ?: 50,
+            lidSleepEnabled = prefs[Keys.LID_SLEEP_ENABLED] ?: true,
             dualScreenEnabled = prefs[Keys.DUAL_SCREEN_ENABLED] ?: DisplayAffinityHelper.isKnownDualScreenDevice(),
             displayRoleOverride = DisplayRoleOverride.fromString(prefs[Keys.DISPLAY_ROLE_OVERRIDE]),
             gamesDisplayTarget = EmulatorDisplayTarget.gamesDefaultFrom(prefs[Keys.GAMES_DISPLAY_TARGET]),
@@ -795,6 +798,10 @@ class DisplayPreferencesRepository @Inject constructor(
 
     suspend fun setScreenDimmerLevel(level: Int) {
         dataStore.edit { it[Keys.SCREEN_DIMMER_LEVEL] = level.coerceIn(40, 70) }
+    }
+
+    suspend fun setLidSleepEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.LID_SLEEP_ENABLED] = enabled }
     }
 
     suspend fun setDualScreenEnabled(enabled: Boolean) {

@@ -2780,4 +2780,11 @@
     <string name="settings_builtin_gpu_driver_reason_core_system_only">%1$s usa el controlador del sistema</string>
     <string name="settings_builtin_gpu_driver_reason_backend">Se aplica cuando el motor de renderizado es Vulkan</string>
     <string name="settings_builtin_gpu_driver_reason_device">Los controladores personalizados requieren una GPU Adreno</string>
+    <string name="settings_displays_lid_sleep_title">Suspender al cerrar la tapa</string>
+    <string name="settings_displays_lid_sleep_subtitle">Vuelve a suspender el dispositivo si una pulsación de botón lo despierta con la tapa cerrada</string>
+    <string name="settings_displays_lid_sleep_subtitle_needs_service">Necesita el servicio de accesibilidad de Argosy, que está desactivado</string>
+    <string name="settings_displays_lid_sleep_service_title">Activar el servicio de accesibilidad</string>
+    <string name="settings_displays_lid_sleep_service_subtitle">Abre los ajustes de accesibilidad de Android; activa Argosy ahí</string>
+    <string name="settings_permissions_accessibility_title">Servicio de accesibilidad</string>
+    <string name="settings_permissions_accessibility_description">Vuelve a suspender el dispositivo al cerrar la tapa y mantiene el enfoque del mando en la pantalla de juego en modo de dos pantallas.</string>
 </resources>

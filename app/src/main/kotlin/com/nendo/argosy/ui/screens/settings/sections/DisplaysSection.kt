@@ -23,6 +23,7 @@ import com.nendo.argosy.R
 import com.nendo.argosy.data.preferences.DisplayRoleOverride
 import com.nendo.argosy.data.preferences.EmulatorDisplayTarget
 import com.nendo.argosy.hardware.DisplayBadgeSize
+import com.nendo.argosy.ui.components.ActionPreference
 import com.nendo.argosy.ui.components.CyclePreference
 import com.nendo.argosy.ui.components.NavigationPreference
 import com.nendo.argosy.ui.components.SliderPreference
@@ -73,6 +74,16 @@ internal sealed class DisplaysItem(
     data object ScreenDimmer : DisplaysItem("screenDimmer", "screenSafety")
     data object DimAfter : DisplaysItem("dimAfter", "screenSafety")
     data object DimLevel : DisplaysItem("dimLevel", "screenSafety")
+    data object LidSleep : DisplaysItem(
+        key = "lidSleep",
+        section = "screenSafety",
+        visibleWhen = { it.display.hasLidSensor }
+    )
+    data object LidSleepService : DisplaysItem(
+        key = "lidSleepService",
+        section = "screenSafety",
+        visibleWhen = { it.display.hasLidSensor && it.display.lidSleepEnabled && !it.display.lidSleepServiceReady }
+    )
 
     data object DualScreenEnabled : DisplaysItem("dualScreenEnabled", "displays")
     data object DisplayRoles : DisplaysItem(
@@ -128,7 +139,7 @@ internal sealed class DisplaysItem(
         val ALL: List<DisplaysItem>
             get() = listOf(
                 ScreenSafetyHeader,
-                ScreenDimmer, DimAfter, DimLevel,
+                ScreenDimmer, DimAfter, DimLevel, LidSleep, LidSleepService,
                 DisplaysSpacer, DisplaysHeader,
                 DualScreenEnabled, DisplayRoles, ScreenLayout,
                 AmbientLedSettings,
@@ -228,7 +239,10 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
         display.ambientLedAvailable,
         display.hasPhysicalSecondaryDisplay,
         display.dualScreenEnabled,
-        display.secondaryDisplayUnsupported
+        display.secondaryDisplayUnsupported,
+        display.hasLidSensor,
+        display.lidSleepEnabled,
+        display.lidSleepServiceReady
     ) {
         DisplaysLayoutState(
             display,
@@ -310,6 +324,25 @@ fun DisplaysSection(uiState: SettingsUiState, viewModel: SettingsViewModel) {
                 isFocused = isFocused(item),
                 step = 10,
                 onAdjust = { viewModel.adjustScreenDimmerLevel(if (it < 0) -1 else 1) }
+            )
+
+            DisplaysItem.LidSleep -> SwitchPreference(
+                title = stringResource(R.string.settings_displays_lid_sleep_title),
+                subtitle = if (display.lidSleepEnabled && !display.lidSleepServiceReady) {
+                    stringResource(R.string.settings_displays_lid_sleep_subtitle_needs_service)
+                } else {
+                    stringResource(R.string.settings_displays_lid_sleep_subtitle)
+                },
+                isEnabled = display.lidSleepEnabled,
+                isFocused = isFocused(item),
+                onToggle = { viewModel.setLidSleepEnabled(it) }
+            )
+
+            DisplaysItem.LidSleepService -> ActionPreference(
+                title = stringResource(R.string.settings_displays_lid_sleep_service_title),
+                subtitle = stringResource(R.string.settings_displays_lid_sleep_service_subtitle),
+                isFocused = isFocused(item),
+                onClick = { viewModel.openAccessibilitySettings() }
             )
 
             DisplaysItem.DualScreenEnabled -> SwitchPreference(
