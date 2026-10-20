@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private const val STOP_TIMEOUT_MS = 5_000L
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class LaunchOverlayViewModel @Inject constructor(
@@ -50,7 +52,7 @@ class LaunchOverlayViewModel @Inject constructor(
         .flatMapLatest { it?.hasPresentationScreen ?: flowOf(false) }
         .stateIn(
             viewModelScope,
-            SharingStarted.Eagerly,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
             DualScreenManagerHolder.instance?.hasPresentationScreen?.value ?: false
         )
 
