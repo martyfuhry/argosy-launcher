@@ -181,6 +181,37 @@ class LaunchProgressTrackerTest {
     }
 
     @Test
+    fun `a launched game's screen taking over ends the launching hold`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+
+        tracker.finish(ticket, launched = true)
+        advanceTimeBy(3_000)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+
+        tracker.hostStopped()
+        assertNull(tracker.progress.value)
+        advanceTimeBy(10_000)
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
+    fun `a screen that leaves before the game opens keeps the launch running and its hold`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        ticket.step(LaunchStep.PreparingUi)
+
+        tracker.hostStopped()
+        assertEquals(LaunchStep.PreparingUi, tracker.progress.value?.step)
+        assertEquals(ticket, tracker.current)
+
+        tracker.finish(ticket, launched = true)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+        tracker.hostStopped()
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
     fun `a launch whose screen never stops clears on its own`() = runTest {
         val tracker = tracker()
         val ticket = tracker.begin(1L, "Game")!!

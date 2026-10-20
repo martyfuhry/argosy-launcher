@@ -79,7 +79,8 @@ private fun launchProgressEntryPoint(context: Context): LaunchProgressEntryPoint
 
 /**
  * The launch in progress over the surface that starts launches. It holds the input stack while a
- * launch runs and ends the launch once that surface stops.
+ * launch runs. A launch that has opened its game ends once that surface stops, once the overlay
+ * leaves composition (the in-game dashboard takes the surface), and when the overlay comes back.
  */
 @Composable
 fun LaunchOverlay(
@@ -94,8 +95,12 @@ fun LaunchOverlay(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) viewModel.hostStopped()
         }
+        viewModel.hostStopped()
         lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.hostStopped()
+        }
     }
     ModalInputEffect(active = progress != null, handler = viewModel.inputHandler)
     progress?.step?.let { step ->
