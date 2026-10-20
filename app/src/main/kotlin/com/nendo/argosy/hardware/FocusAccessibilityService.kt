@@ -10,6 +10,8 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
@@ -21,13 +23,20 @@ class FocusAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        _connected.value = true
         Log.d(TAG, "Accessibility service connected")
     }
 
     override fun onDestroy() {
         instance = null
+        _connected.value = false
         Log.d(TAG, "Accessibility service destroyed")
         super.onDestroy()
+    }
+
+    fun lockScreen(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return false
+        return performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
     }
 
     @SuppressLint("NewApi")
@@ -80,5 +89,7 @@ class FocusAccessibilityService : AccessibilityService() {
         private const val TAG = "FocusA11y"
         var instance: FocusAccessibilityService? = null
             private set
+        private val _connected = MutableStateFlow(false)
+        val connected: StateFlow<Boolean> = _connected
     }
 }

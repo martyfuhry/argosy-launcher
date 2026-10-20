@@ -759,6 +759,8 @@ private fun routeDisplaysConfirm(vm: SettingsViewModel, state: SettingsUiState):
             return InputResult.handled(SoundType.OPEN_MODAL)
         }
         DisplaysItem.DimLevel -> vm.cycleScreenDimmerLevel()
+        DisplaysItem.LidSleep -> vm.setLidSleepEnabled(!state.display.lidSleepEnabled)
+        DisplaysItem.LidSleepService -> vm.openAccessibilitySettings()
         DisplaysItem.DualScreenEnabled -> vm.setDualScreenEnabled(!state.display.dualScreenEnabled)
         DisplaysItem.DisplayRoles -> {
             vm.requestEnumPicker(DisplaysItem.DisplayRoles.key)

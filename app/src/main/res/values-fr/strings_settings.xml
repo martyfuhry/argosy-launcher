@@ -2768,4 +2768,11 @@
     <string name="settings_builtin_gpu_driver_reason_core_system_only">%1$s utilise le pilote système</string>
     <string name="settings_builtin_gpu_driver_reason_backend">S\'applique quand le moteur de rendu est Vulkan</string>
     <string name="settings_builtin_gpu_driver_reason_device">Les pilotes personnalisés exigent un GPU Adreno</string>
+    <string name="settings_displays_lid_sleep_title">Mise en veille à la fermeture de l\'écran</string>
+    <string name="settings_displays_lid_sleep_subtitle">Remet l\'appareil en veille si une pression de bouton le réveille avec l\'écran fermé</string>
+    <string name="settings_displays_lid_sleep_subtitle_needs_service">Nécessite le service d\'accessibilité Argosy, qui est désactivé</string>
+    <string name="settings_displays_lid_sleep_service_title">Activer le service d\'accessibilité</string>
+    <string name="settings_displays_lid_sleep_service_subtitle">Ouvre les paramètres d\'accessibilité Android ; activez-y Argosy</string>
+    <string name="settings_permissions_accessibility_title">Service d\'accessibilité</string>
+    <string name="settings_permissions_accessibility_description">Remet l\'appareil en veille à la fermeture de l\'écran et garde le focus de la manette sur l\'écran de jeu en mode double écran.</string>
 </resources>

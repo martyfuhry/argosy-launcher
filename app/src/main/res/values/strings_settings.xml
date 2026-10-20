@@ -532,6 +532,16 @@
     </plurals>
     <!-- Row title. Noun phrase: how dark the screen goes. -->
     <string name="settings_displays_dim_level_title">Dim Level</string>
+    <!-- Row title. Verb phrase: put the device to sleep when its clamshell lid is closed. -->
+    <string name="settings_displays_lid_sleep_title">Sleep When Lid Closes</string>
+    <!-- Second line of that row. A button pressed as the lid closes can wake the device again. -->
+    <string name="settings_displays_lid_sleep_subtitle">Puts the device back to sleep if a button press wakes it with the lid closed</string>
+    <!-- Second line of that row while the Argosy accessibility service, which performs the sleep, is turned off in Android settings. -->
+    <string name="settings_displays_lid_sleep_subtitle_needs_service">Needs the Argosy accessibility service, which is off</string>
+    <!-- Row that opens Android's accessibility settings so the Argosy service can be turned on. -->
+    <string name="settings_displays_lid_sleep_service_title">Turn On Accessibility Service</string>
+    <!-- Second line of that row. "Argosy" is the app name and stays untranslated; it is the entry to switch on in that Android screen. -->
+    <string name="settings_displays_lid_sleep_service_subtitle">Opens Android accessibility settings; enable Argosy there</string>
 
     <!-- Row title. Verb phrase: turn on use of a second screen. -->
     <string name="settings_displays_dual_screen_title">Enable Dual-screen Mode</string>
@@ -1240,6 +1250,10 @@
     <string name="settings_permissions_screen_capture_title">Screen Capture</string>
     <!-- Body of that card. "LED" is the light strip on some handhelds. -->
     <string name="settings_permissions_screen_capture_description">Enables ambient LED lighting to sample screen colors while playing games.</string>
+    <!-- Card title. Noun phrase naming the Android accessibility service Argosy ships. -->
+    <string name="settings_permissions_accessibility_title">Accessibility Service</string>
+    <!-- Body of that card. "Lid" is the clamshell lid of a folding handheld. -->
+    <string name="settings_permissions_accessibility_description">Puts the device back to sleep when the lid closes, and keeps gamepad focus on the game screen on dual-screen devices.</string>
     <!-- Card title. Noun phrase naming Android's permission to draw on top of other apps. -->
     <string name="settings_permissions_display_overlay_title">Display Over Other Apps</string>
     <!-- Body of that card. -->

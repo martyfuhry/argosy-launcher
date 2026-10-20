@@ -2628,4 +2628,11 @@
     <string name="settings_builtin_gpu_driver_reason_core_system_only">%1$s 使用系统驱动</string>
     <string name="settings_builtin_gpu_driver_reason_backend">渲染后端为 Vulkan 时生效</string>
     <string name="settings_builtin_gpu_driver_reason_device">自定义驱动需要 Adreno GPU</string>
+    <string name="settings_displays_lid_sleep_title">合盖时休眠</string>
+    <string name="settings_displays_lid_sleep_subtitle">若合盖后按键将设备唤醒，则让其重新休眠</string>
+    <string name="settings_displays_lid_sleep_subtitle_needs_service">需要 Argosy 无障碍服务，当前已关闭</string>
+    <string name="settings_displays_lid_sleep_service_title">开启无障碍服务</string>
+    <string name="settings_displays_lid_sleep_service_subtitle">打开 Android 无障碍设置，在其中启用 Argosy</string>
+    <string name="settings_permissions_accessibility_title">无障碍服务</string>
+    <string name="settings_permissions_accessibility_description">合盖时让设备重新休眠，并在双屏模式下让手柄焦点保持在游戏画面上。</string>
 </resources>

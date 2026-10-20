@@ -2839,4 +2839,11 @@
     <string name="settings_builtin_gpu_driver_reason_core_system_only">%1$s использует системный драйвер</string>
     <string name="settings_builtin_gpu_driver_reason_backend">Действует, когда рендерер Vulkan</string>
     <string name="settings_builtin_gpu_driver_reason_device">Свои драйверы требуют GPU Adreno</string>
+    <string name="settings_displays_lid_sleep_title">Сон при закрытии крышки</string>
+    <string name="settings_displays_lid_sleep_subtitle">Снова усыпляет устройство, если нажатие кнопки разбудило его с закрытой крышкой</string>
+    <string name="settings_displays_lid_sleep_subtitle_needs_service">Нужна служба специальных возможностей Argosy, она выключена</string>
+    <string name="settings_displays_lid_sleep_service_title">Включить службу специальных возможностей</string>
+    <string name="settings_displays_lid_sleep_service_subtitle">Открывает настройки специальных возможностей Android; включите там Argosy</string>
+    <string name="settings_permissions_accessibility_title">Служба специальных возможностей</string>
+    <string name="settings_permissions_accessibility_description">Снова усыпляет устройство при закрытой крышке и удерживает фокус геймпада на экране игры в двухэкранном режиме.</string>
 </resources>

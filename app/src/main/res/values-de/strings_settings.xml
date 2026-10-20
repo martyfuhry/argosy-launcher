@@ -2707,5 +2707,12 @@
     <string name="settings_builtin_gpu_driver_reason_core_system_only">%1$s nutzt den Systemtreiber</string>
     <string name="settings_builtin_gpu_driver_reason_backend">Gilt, wenn das Backend Vulkan ist</string>
     <string name="settings_builtin_gpu_driver_reason_device">Eigene Treiber benötigen eine Adreno-GPU</string>
+    <string name="settings_displays_lid_sleep_title">Bei geschlossenem Deckel in den Ruhezustand</string>
+    <string name="settings_displays_lid_sleep_subtitle">Versetzt das Gerät wieder in den Ruhezustand, wenn ein Tastendruck es bei geschlossenem Deckel aufweckt</string>
+    <string name="settings_displays_lid_sleep_subtitle_needs_service">Benötigt den Argosy-Bedienungshilfedienst, der ausgeschaltet ist</string>
+    <string name="settings_displays_lid_sleep_service_title">Bedienungshilfedienst einschalten</string>
+    <string name="settings_displays_lid_sleep_service_subtitle">Öffnet die Android-Bedienungshilfen; dort Argosy aktivieren</string>
+    <string name="settings_permissions_accessibility_title">Bedienungshilfedienst</string>
+    <string name="settings_permissions_accessibility_description">Versetzt das Gerät bei geschlossenem Deckel wieder in den Ruhezustand und hält den Controller-Fokus bei zwei Bildschirmen auf der Spielanzeige.</string>
 </resources>
 

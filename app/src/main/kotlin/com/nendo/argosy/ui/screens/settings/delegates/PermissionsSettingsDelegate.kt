@@ -32,7 +32,8 @@ class PermissionsSettingsDelegate @Inject constructor(
     private val screenCaptureManager: ScreenCaptureManager,
     private val ledController: LEDController,
     private val fanController: FanController,
-    private val displayPreferences: DisplayPreferencesRepository
+    private val displayPreferences: DisplayPreferencesRepository,
+    private val lidSleepGuard: com.nendo.argosy.hardware.LidSleepGuard
 ) {
     private val _state = MutableStateFlow(PermissionsState())
     val state: StateFlow<PermissionsState> = _state.asStateFlow()
@@ -74,6 +75,8 @@ class PermissionsSettingsDelegate @Inject constructor(
                 isWriteSettingsRelevant = isDeviceWithFanControl,
                 hasScreenCapture = hasScreenCapture,
                 isScreenCaptureRelevant = isLedAvailable,
+                hasAccessibilityService = lidSleepGuard.isServiceReady,
+                isAccessibilityServiceRelevant = lidSleepGuard.isSupported,
                 hasDisplayOverlay = hasDisplayOverlay,
                 hasLiveWallpaper = LockScreenScenes.isLiveActive(application),
                 isLiveWallpaperRelevant = LockScreenScenes.canOffer(application, lockScreenArt)
@@ -104,6 +107,13 @@ class PermissionsSettingsDelegate @Inject constructor(
     fun openNotificationSettings() {
         val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
             putExtra(Settings.EXTRA_APP_PACKAGE, application.packageName)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        application.startActivity(intent)
+    }
+
+    fun openAccessibilitySettings() {
+        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         application.startActivity(intent)
