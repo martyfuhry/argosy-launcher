@@ -1,0 +1,235 @@
+package com.nendo.argosy.ui.components.launch
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.nendo.argosy.R
+import com.nendo.argosy.domain.model.LaunchProgress
+import com.nendo.argosy.domain.model.phase
+import com.nendo.argosy.ui.common.rememberFileImageModel
+import com.nendo.argosy.ui.common.rememberResolvedCoverPath
+import com.nendo.argosy.ui.components.LaunchCancelButton
+import com.nendo.argosy.ui.primitives.ArgosyIndeterminateProgressBar
+import com.nendo.argosy.ui.primitives.ArgosyProgressBar
+import com.nendo.argosy.ui.theme.Dimens
+import com.nendo.argosy.ui.theme.LocalLauncherTheme
+import com.nendo.argosy.ui.theme.LocalMotionTier
+import com.nendo.argosy.ui.theme.Motion
+import com.nendo.argosy.ui.theme.MotionTier
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
+import com.nendo.argosy.util.formatBytes
+import kotlinx.coroutines.delay
+
+private val Defaults = ComponentDefaults.LaunchOverlay
+
+private const val COVER_ASPECT_RATIO = 2f / 3f
+
+/**
+ * The quiet launch column: cover art, title and Cancel at equal spacing. The status block (bar,
+ * line, percent) makes room and fades in only once [LaunchOverlayState] says the step has waited
+ * out its patience or a failure needs saying, and leaves by the reverse motion.
+ */
+@Composable
+fun CalmLaunchContent(
+    progress: LaunchProgress,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val reducedMotion = LocalMotionTier.current == MotionTier.Reduced
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    val ui = LaunchOverlayState.from(
+        progress = progress,
+        nowMs = nowMs,
+        reducedMotion = reducedMotion,
+        patienceMs = Defaults.patienceMs,
+        reflowMs = Defaults.reflowMs,
+        statusFadeMs = Defaults.statusFadeMs,
+        statusFadeDelayMs = Defaults.statusFadeDelayMs,
+        sweepMs = ComponentDefaults.ProgressBar.sweepMs
+    )
+    LaunchedEffect(progress.stepStartedAtMs, progress.step.phase) {
+        nowMs = System.currentTimeMillis()
+        val revealAtMs = ui.revealAtMs ?: return@LaunchedEffect
+        val waitMs = revealAtMs - System.currentTimeMillis()
+        if (waitMs > 0) delay(waitMs)
+        nowMs = System.currentTimeMillis()
+    }
+    val ticking = ui.bar == CalmLaunchBar.DETERMINATE
+    LaunchedEffect(ticking) {
+        while (ticking) {
+            delay(Defaults.etaTickMs.toLong())
+            nowMs = System.currentTimeMillis()
+        }
+    }
+
+    val coverPath = progress.gameId?.let { rememberResolvedCoverPath(it, null) }
+    val cover = rememberFileImageModel(coverPath)
+    var coverFailed by remember(cover) { mutableStateOf(false) }
+    val hasArt = cover != null && !coverFailed
+    val title = progress.gameTitle
+    val hasLead = hasArt || title != null
+    val gap = Dimens.spacingLg
+    val enter = reflowEnter(ui)
+    val exit = reflowExit(ui)
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.padding(horizontal = Dimens.spacingXl)
+    ) {
+        AnimatedVisibility(visible = hasArt, enter = enter, exit = exit) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                AsyncImage(
+                    model = cover,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    onError = { coverFailed = true },
+                    modifier = Modifier
+                        .height(Defaults.artHeightDp.dp)
+                        .aspectRatio(COVER_ASPECT_RATIO, matchHeightConstraintsFirst = true)
+                        .clip(RoundedCornerShape(Dimens.radiusLg))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+                if (title != null) Spacer(Modifier.height(gap))
+            }
+        }
+        if (title != null) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+        }
+        val statusShown = ui.line != null || ui.bar != CalmLaunchBar.NONE
+        val status = rememberLastShown(ui, statusShown)
+        AnimatedVisibility(visible = statusShown, enter = enter, exit = exit) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (hasLead) Spacer(Modifier.height(gap))
+                CalmLaunchStatus(status, enter, exit)
+                if (!hasLead) Spacer(Modifier.height(gap))
+            }
+        }
+        AnimatedVisibility(visible = ui.cancellable, enter = enter, exit = exit) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (hasLead) Spacer(Modifier.height(gap))
+                LaunchCancelButton(onClick = onCancel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalmLaunchStatus(
+    status: CalmLaunchUi,
+    enter: EnterTransition,
+    exit: ExitTransition
+) {
+    val lineGap = Dimens.spacingSm
+    val barWidth = Defaults.progressWidthDp.dp
+    AnimatedVisibility(visible = status.bar != CalmLaunchBar.NONE, enter = enter, exit = exit) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (status.bar == CalmLaunchBar.DETERMINATE) {
+                ArgosyProgressBar(progress = status.fraction, modifier = Modifier.width(barWidth))
+            } else {
+                ArgosyIndeterminateProgressBar(modifier = Modifier.width(barWidth), sweepMs = status.sweepMs)
+            }
+            if (status.line != null || status.percent != null) Spacer(Modifier.height(lineGap))
+        }
+    }
+    status.line?.let { line ->
+        val size = status.sizeBytes
+        Text(
+            text = if (line == R.string.ui_launch_overlay_wait_core_sized && size != null) {
+                stringResource(line, formatBytes(size))
+            } else {
+                stringResource(line)
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (status.lineIsFailure) {
+                LocalLauncherTheme.current.semanticColors.warning
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            textAlign = TextAlign.Center
+        )
+    }
+    val percent = rememberLastShown(status.percent, status.percent != null)
+    val eta = status.etaSeconds
+    AnimatedVisibility(visible = status.percent != null, enter = enter, exit = exit) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(Modifier.height(lineGap))
+            Text(
+                text = when {
+                    percent == null -> ""
+                    eta != null -> pluralStringResource(R.plurals.ui_launch_overlay_percent_eta, eta, percent, eta)
+                    else -> stringResource(R.string.ui_launch_overlay_percent, percent)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun <T> rememberLastShown(value: T, shown: Boolean): T {
+    var last by remember { mutableStateOf(value) }
+    SideEffect { if (shown) last = value }
+    return if (shown) value else last
+}
+
+private fun reflowEnter(ui: CalmLaunchUi): EnterTransition =
+    expandVertically(
+        animationSpec = tween(durationMillis = ui.reflowMs, easing = Motion.argosyEase),
+        expandFrom = Alignment.Top
+    ) + fadeIn(
+        animationSpec = tween(
+            durationMillis = ui.statusFadeMs,
+            delayMillis = ui.statusFadeDelayMs,
+            easing = Motion.argosyEase
+        )
+    )
+
+private fun reflowExit(ui: CalmLaunchUi): ExitTransition =
+    fadeOut(
+        animationSpec = tween(durationMillis = ui.statusFadeMs, easing = Motion.argosyEase)
+    ) + shrinkVertically(
+        animationSpec = tween(
+            durationMillis = ui.reflowMs,
+            delayMillis = (ui.statusFadeDelayMs + ui.statusFadeMs - ui.reflowMs).coerceAtLeast(0),
+            easing = Motion.argosyEase
+        ),
+        shrinkTowards = Alignment.Top
+    )
