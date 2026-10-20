@@ -19,6 +19,7 @@ sealed interface LaunchStep {
     data class Prompt(val conflict: SyncProgress, override val options: List<LaunchPromptOption>) : Question
     data class ChooseLauncher(override val options: List<LaunchPromptOption>) : Question
     data class DownloadingCore(val fraction: Float?, val totalBytes: Long? = null) : LaunchStep
+    data object Starting : LaunchStep
     data object PreparingSystemFiles : LaunchStep
     data object PreparingUi : LaunchStep
     data object Launching : LaunchStep
@@ -43,6 +44,7 @@ val LaunchStep.phase: LaunchPhase
         is LaunchStep.Question -> LaunchPhase.QUESTION
         is LaunchStep.Save -> LaunchPhase.SAVE
         is LaunchStep.DownloadingCore -> LaunchPhase.CORE
+        LaunchStep.Starting -> LaunchPhase.PREPARE
         LaunchStep.PreparingSystemFiles -> LaunchPhase.PREPARE
         LaunchStep.PreparingUi -> LaunchPhase.PREPARE
         LaunchStep.Launching -> LaunchPhase.LAUNCHING

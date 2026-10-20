@@ -1,12 +1,14 @@
 package com.nendo.argosy.ui.screens.common
 
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
+import com.nendo.argosy.domain.model.LaunchPhase
 import com.nendo.argosy.domain.model.LaunchPromptOption
 import com.nendo.argosy.domain.model.LaunchRecap
 import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.PreLaunchRecap
 import com.nendo.argosy.domain.model.RecapLastSession
 import com.nendo.argosy.domain.model.SessionUnlock
+import com.nendo.argosy.domain.model.phase
 import com.nendo.argosy.domain.usecase.recap.GetSessionUnlocksUseCase
 import com.nendo.argosy.domain.usecase.recap.PreLaunchRecapOverride
 import com.nendo.argosy.domain.usecase.recap.RecapGate
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -163,31 +166,34 @@ class PreLaunchRecapStepTest {
         val tracker = LaunchProgressTracker(backgroundScope)
 
         assertTrue(step(setOf(Requested(null, 1L))).run(ticket(tracker), 1L, "Game"))
-        assertFalse(tracker.progress.value?.step is LaunchStep.Recap)
+        assertEquals(LaunchStep.Starting, tracker.progress.value?.step)
         coVerify(exactly = 0) { recapGate.preLaunchRecap(any(), any()) }
     }
 
     @Test
-    fun `starting from the recap publishes no step of its own`() = runTest {
+    fun `starting from the recap takes the card down and hands the launch to a cancellable step`() = runTest {
         val tracker = LaunchProgressTracker(backgroundScope)
         coEvery { recapGate.preLaunchRecap(1L, any()) } returns due()
         coEvery { getSessionUnlocks.inWindow(1L, 50L, 7L, start, end) } returns listOf(unlock)
 
         val result = async { step().run(ticket(tracker), 1L, "Game") }
-        val shown = tracker.awaitRecap()
+        tracker.awaitRecap()
         tracker.answer(LaunchPromptOption.START_GAME)
 
         assertTrue(result.await())
-        assertEquals(LaunchStep.Recap(shown), tracker.progress.value?.step)
+        val step = tracker.progress.value?.step
+        assertEquals(LaunchStep.Starting, step)
+        assertNotEquals(LaunchPhase.QUESTION, step?.phase)
+        assertNotEquals(LaunchPhase.LAUNCHING, step?.phase)
     }
 
     @Test
-    fun `a due recap with nothing to show publishes no step`() = runTest {
+    fun `a due recap with nothing to show ends the recap loading line`() = runTest {
         val tracker = LaunchProgressTracker(backgroundScope)
         coEvery { recapGate.preLaunchRecap(1L, any()) } returns due()
         coEvery { getSessionUnlocks.inWindow(any(), any(), any(), any(), any()) } returns emptyList()
 
         assertTrue(step().run(ticket(tracker), 1L, "Game"))
-        assertEquals(LaunchStep.RecapLoading, tracker.progress.value?.step)
+        assertEquals(LaunchStep.Starting, tracker.progress.value?.step)
     }
 }

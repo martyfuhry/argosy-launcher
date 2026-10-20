@@ -26,6 +26,7 @@ class LaunchOverlayStateTest {
         save,
         LaunchStep.DownloadingCore(fraction = null),
         LaunchStep.DownloadingCore(fraction = 0.5f, totalBytes = 1_000_000L),
+        LaunchStep.Starting,
         LaunchStep.PreparingSystemFiles,
         LaunchStep.PreparingUi,
         LaunchStep.Launching
@@ -80,6 +81,7 @@ class LaunchOverlayStateTest {
             LaunchStep.RecapLoading to R.string.ui_launch_overlay_wait_recap,
             save to R.string.ui_launch_overlay_wait_save,
             LaunchStep.DownloadingCore(fraction = null) to R.string.ui_launch_overlay_wait_core,
+            LaunchStep.Starting to R.string.ui_launch_overlay_wait_prepare,
             LaunchStep.PreparingSystemFiles to R.string.ui_launch_overlay_wait_prepare,
             LaunchStep.PreparingUi to R.string.ui_launch_overlay_wait_prepare
         )

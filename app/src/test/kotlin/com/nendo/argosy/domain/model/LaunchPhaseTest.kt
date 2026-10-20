@@ -67,6 +67,7 @@ class LaunchPhaseTest {
         LaunchStep.DownloadingCore(0.5f),
         LaunchStep.DownloadingCore(0.5f, totalBytes = 4_000_000L),
         LaunchStep.DownloadingCore(null, totalBytes = 4_000_000L),
+        LaunchStep.Starting,
         LaunchStep.PreparingSystemFiles,
         LaunchStep.PreparingUi,
         LaunchStep.Launching
@@ -114,6 +115,11 @@ class LaunchPhaseTest {
     fun `preparing system files and the UI share the prepare phase`() {
         assertEquals(LaunchPhase.PREPARE, LaunchStep.PreparingSystemFiles.phase)
         assertEquals(LaunchPhase.PREPARE, LaunchStep.PreparingUi.phase)
+    }
+
+    @Test
+    fun `starting after the recap is the prepare phase`() {
+        assertEquals(LaunchPhase.PREPARE, LaunchStep.Starting.phase)
     }
 
     @Test
