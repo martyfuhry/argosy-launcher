@@ -69,7 +69,6 @@ class LaunchOverlayStateTest {
                 assertEquals("$step at $elapsed", CalmLaunchBar.NONE, ui.bar)
                 assertNull("$step at $elapsed", ui.percent)
                 assertNull("$step at $elapsed", ui.etaSeconds)
-                assertTrue("$step at $elapsed", ui.showsCalmColumn)
             }
         }
     }
@@ -167,7 +166,7 @@ class LaunchOverlayStateTest {
     }
 
     @Test
-    fun `a question step shows no calm column`() {
+    fun `a question step never waits on screen`() {
         val questions = listOf(
             LaunchStep.ChooseLauncher(listOf(LaunchPromptOption.LAUNCH_WITH_GAMENATIVE)),
             LaunchStep.Prompt(SyncProgress.Error("x"), listOf(LaunchPromptOption.APPLY_LOCAL)),
@@ -175,7 +174,7 @@ class LaunchOverlayStateTest {
         )
         for (step in questions) {
             val ui = map(progress(step), 60_000L)
-            assertFalse("$step", ui.showsCalmColumn)
+            assertNull("$step", ui.line)
             assertEquals("$step", CalmLaunchBar.NONE, ui.bar)
             assertNull("$step", ui.revealAtMs)
         }
@@ -252,7 +251,6 @@ class LaunchOverlayStateTest {
     @Test
     fun `no cover gives a title-only column`() {
         val ui = map(progress(save, gameId = null), 0L)
-        assertTrue(ui.showsCalmColumn)
         assertTrue(ui.cancellable)
         assertNull(ui.line)
         assertEquals(CalmLaunchBar.NONE, ui.bar)
