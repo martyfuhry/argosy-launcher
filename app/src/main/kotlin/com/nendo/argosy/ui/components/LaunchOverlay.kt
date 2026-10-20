@@ -47,6 +47,7 @@ import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.domain.model.SyncProgress
 import com.nendo.argosy.ui.components.launch.CalmLaunchContent
 import com.nendo.argosy.ui.components.launch.LaunchVeil
+import com.nendo.argosy.ui.components.launch.darkensForLaunch
 import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
 import com.nendo.argosy.ui.components.launch.veilsDisplay
 import com.nendo.argosy.ui.components.recap.LaunchRecapCard
@@ -92,6 +93,7 @@ fun LaunchOverlay(
     val progress by viewModel.progress.collectAsState()
     val promptFocus by viewModel.promptFocus.collectAsState()
     val recapCursor by viewModel.recapCursorState.collectAsState()
+    val hasPresentationSurface by viewModel.hasPresentationSurface.collectAsState()
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -119,6 +121,7 @@ fun LaunchOverlay(
         promptFocus = promptFocus,
         recapCursor = recapCursor,
         surface = RecapSurface.CONTROL,
+        hasPresentationSurface = hasPresentationSurface,
         onAnswer = viewModel::answer,
         onCancel = { viewModel.cancel() },
         onRecapCurrent = viewModel::recapCurrent,
@@ -139,6 +142,7 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
         promptFocus = NO_PROMPT_FOCUS,
         recapCursor = recapCursor,
         surface = RecapSurface.PRESENTATION,
+        hasPresentationSurface = true,
         onAnswer = tracker::answer,
         onCancel = { tracker.cancel() },
         onRecapCurrent = { index ->
@@ -201,6 +205,7 @@ private fun LaunchOverlayContent(
     promptFocus: Int,
     recapCursor: RecapCursor,
     surface: RecapSurface,
+    hasPresentationSurface: Boolean,
     onAnswer: (LaunchPromptOption) -> Unit,
     onCancel: () -> Unit,
     onRecapCurrent: (Int) -> Unit,
@@ -266,6 +271,7 @@ private fun LaunchOverlayContent(
                     onCancel = onCancel
                 )
             }
+            LaunchVeil(veiled = darkensForLaunch(shown, hasPresentationSurface))
         }
     }
 }

@@ -82,4 +82,25 @@ class LaunchVeilStateTest {
     fun sessionEndLiftsTheVeilOnTheGameDisplay() {
         assertFalse(veilsDisplay(null, false, gameDisplay, gameDisplay))
     }
+
+    @Test
+    fun singleScreenOverlayDarkensOnceTheGameIsLaunching() {
+        assertTrue(darkensForLaunch(progress(LaunchStep.Launching), hasPresentationSurface = false))
+    }
+
+    @Test
+    fun singleScreenOverlayStaysCalmBeforeLaunching() {
+        quietSteps.forEach { step ->
+            assertFalse("$step", darkensForLaunch(progress(step), hasPresentationSurface = false))
+        }
+        assertFalse(darkensForLaunch(null, hasPresentationSurface = false))
+    }
+
+    @Test
+    fun overlayBesideAPresentationSurfaceNeverDarkens() {
+        assertFalse(darkensForLaunch(progress(LaunchStep.Launching), hasPresentationSurface = true))
+        quietSteps.forEach { step ->
+            assertFalse("$step", darkensForLaunch(progress(step), hasPresentationSurface = true))
+        }
+    }
 }

@@ -2,6 +2,7 @@ package com.nendo.argosy.ui.components
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import com.nendo.argosy.domain.model.LaunchProgress
@@ -13,15 +14,21 @@ import com.nendo.argosy.ui.components.recap.RecapCursor
 import com.nendo.argosy.ui.input.InputHandler
 import com.nendo.argosy.ui.input.InputResult
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class LaunchOverlayViewModel @Inject constructor(
     private val tracker: LaunchProgressTracker,
@@ -34,6 +41,18 @@ class LaunchOverlayViewModel @Inject constructor(
     val promptFocus: StateFlow<Int> = _promptFocus.asStateFlow()
 
     val recapCursorState: StateFlow<RecapCursor> = recapCursor.state
+
+    /**
+     * Whether the screen layout gives the launcher a presentation surface, followed across a
+     * dual-screen manager created or replaced after this ViewModel.
+     */
+    val hasPresentationSurface: StateFlow<Boolean> = DualScreenManagerHolder.instanceFlow
+        .flatMapLatest { it?.hasPresentationScreen ?: flowOf(false) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            DualScreenManagerHolder.instance?.hasPresentationScreen?.value ?: false
+        )
 
     init {
         viewModelScope.launch {

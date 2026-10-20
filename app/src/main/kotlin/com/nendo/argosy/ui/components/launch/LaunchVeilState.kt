@@ -22,3 +22,10 @@ fun veilsDisplay(
     gameDisplayId: Int?,
     displayId: Int?
 ): Boolean = gameDisplayId != null && gameDisplayId == displayId && veilFor(progress, gameActive)
+
+/**
+ * Whether the control surface's launch overlay fades to black as the game opens: only once the
+ * launch is LAUNCHING, and only with no presentation surface to take the cut instead.
+ */
+fun darkensForLaunch(progress: LaunchProgress?, hasPresentationSurface: Boolean): Boolean =
+    !hasPresentationSurface && progress?.step?.phase == LaunchPhase.LAUNCHING
