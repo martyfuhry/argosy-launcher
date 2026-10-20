@@ -196,7 +196,14 @@ class LaunchOverlayStateTest {
         val quarter = progress(LaunchStep.DownloadingCore(fraction = 0.25f))
         assertEquals(9, map(quarter, 3000L).etaSeconds)
         assertEquals(10, map(quarter, 3100L).etaSeconds)
-        assertEquals(0, map(progress(LaunchStep.DownloadingCore(fraction = 1f)), 3000L).etaSeconds)
+    }
+
+    @Test
+    fun `a finished download shows its percent with no time left`() {
+        val done = map(progress(LaunchStep.DownloadingCore(fraction = 1f)), 3000L)
+        assertEquals(100, done.percent)
+        assertNull(done.etaSeconds)
+        assertNull(map(progress(LaunchStep.DownloadingCore(fraction = 1.2f)), 3000L).etaSeconds)
     }
 
     @Test

@@ -93,8 +93,8 @@ object LaunchOverlayState {
         }
 
     private fun etaSeconds(fraction: Float, elapsedMs: Long): Int? {
-        if (fraction < ETA_MIN_FRACTION || elapsedMs < ETA_MIN_ELAPSED_MS) return null
+        if (fraction < ETA_MIN_FRACTION || fraction >= 1f || elapsedMs < ETA_MIN_ELAPSED_MS) return null
         val remainingMs = elapsedMs * (1.0 - fraction) / fraction
-        return ceil(remainingMs / MS_PER_SECOND).toInt()
+        return ceil(remainingMs / MS_PER_SECOND).toInt().takeIf { it > 0 }
     }
 }
