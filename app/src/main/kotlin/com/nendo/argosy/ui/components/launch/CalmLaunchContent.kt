@@ -101,8 +101,7 @@ fun CalmLaunchContent(
 
     val coverPath = progress.gameId?.let { rememberResolvedCoverPath(it, null) }
     val cover = rememberFileImageModel(coverPath)
-    var coverFailed by remember(cover) { mutableStateOf(false) }
-    val hasArt = cover != null && !coverFailed
+    val hasArt = remember(progress.gameId) { cover != null }
     val title = progress.gameTitle
     val hasLead = hasArt || title != null
     val gap = Dimens.spacingLg
@@ -122,21 +121,18 @@ fun CalmLaunchContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = Dimens.spacingXl)
         ) {
-            AnimatedVisibility(visible = hasArt, enter = enter, exit = exit) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    AsyncImage(
-                        model = cover,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        onError = { coverFailed = true },
-                        modifier = Modifier
-                            .height(artHeight)
-                            .aspectRatio(COVER_ASPECT_RATIO, matchHeightConstraintsFirst = true)
-                            .clip(RoundedCornerShape(Dimens.radiusLg))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                    )
-                    if (title != null) Spacer(Modifier.height(gap))
-                }
+            if (hasArt) {
+                AsyncImage(
+                    model = cover,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .height(artHeight)
+                        .aspectRatio(COVER_ASPECT_RATIO, matchHeightConstraintsFirst = true)
+                        .clip(RoundedCornerShape(Dimens.radiusLg))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                )
+                if (title != null) Spacer(Modifier.height(gap))
             }
             if (title != null) {
                 Text(
