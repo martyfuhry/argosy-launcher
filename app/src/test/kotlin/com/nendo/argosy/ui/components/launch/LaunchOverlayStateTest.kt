@@ -134,6 +134,7 @@ class LaunchOverlayStateTest {
     fun `a failure shows at once without a bar`() {
         val expected = mapOf(
             LaunchFailure.SERVER_UNREACHABLE to R.string.ui_launch_overlay_failed_connect,
+            LaunchFailure.SERVER_TIMED_OUT to R.string.ui_launch_overlay_failed_timeout,
             LaunchFailure.SAVE_DOWNLOAD_FAILED to R.string.ui_launch_overlay_failed_download,
             LaunchFailure.SAVE_WRITE_FAILED to R.string.ui_launch_overlay_failed_write
         )
@@ -143,6 +144,14 @@ class LaunchOverlayStateTest {
             assertTrue("$failure", ui.lineIsFailure)
             assertEquals("$failure", CalmLaunchBar.NONE, ui.bar)
         }
+    }
+
+    @Test
+    fun `a slow server's line shows at once without a bar`() {
+        val ui = map(progress(LaunchStep.Save(SyncProgress.PreLaunch.TimedOut(null))), 0L)
+        assertEquals(R.string.ui_launch_overlay_failed_timeout, ui.line)
+        assertTrue(ui.lineIsFailure)
+        assertEquals(CalmLaunchBar.NONE, ui.bar)
     }
 
     @Test

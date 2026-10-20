@@ -1432,6 +1432,8 @@
     <string name="ui_launch_overlay_wait_prepare">Still preparing the emulator</string>
     <!-- Shown when the RomM server did not answer; the game still starts. "RomM" is a product name; leave it untranslated. -->
     <string name="ui_launch_overlay_failed_connect">RomM didn\'t answer. Starting with the save on this device.</string>
+    <!-- Shown when the RomM server is reachable but did not answer within the pre-launch budget; the game still starts. "RomM" is a product name; leave it untranslated. -->
+    <string name="ui_launch_overlay_failed_timeout">RomM took too long to answer. Starting with the save on this device.</string>
     <!-- Shown when the save on the server could not be downloaded; the game still starts with the local save. -->
     <string name="ui_launch_overlay_failed_download">Your save couldn\'t be downloaded. Starting with the save on this device.</string>
     <!-- Shown when the downloaded save could not be written to the device; the game still starts with the local save. -->

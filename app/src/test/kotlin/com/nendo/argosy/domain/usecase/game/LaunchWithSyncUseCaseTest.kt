@@ -116,7 +116,25 @@ class LaunchWithSyncUseCaseTest {
     }
 
     @Test
-    fun `a sync that gets no answer tells the launch the server did not answer`() = runTest {
+    fun `a pre-launch sync past its budget launches with local data without reporting a failed connection`() = runTest {
+        coEvery {
+            saveSyncRepository.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
+        } coAnswers {
+            kotlinx.coroutines.delay(60_000)
+            PreLaunchSyncResult.NoServerSave
+        }
+
+        val progress = useCase.invokeWithProgress(gameId).toList()
+
+        assertTrue("Expected Skipped, got $progress", progress.last() is SyncProgress.Skipped)
+        assertTrue(
+            "A timeout is not a connection failure: $progress",
+            progress.none { it is SyncProgress.PreLaunch.Connecting && it.success == false }
+        )
+    }
+
+    @Test
+    fun `a sync that gets no answer in time tells the launch the server was slow`() = runTest {
         coEvery {
             saveSyncRepository.preLaunchSyncForGame(gameId, rommId, emulatorId, channelName = null, secureSaves = true)
         } coAnswers {
@@ -127,11 +145,11 @@ class LaunchWithSyncUseCaseTest {
         val progress = useCase.invokeWithProgress(gameId).toList()
 
         assertEquals(
-            listOf(SyncProgress.PreLaunch.Connecting(null, success = false), SyncProgress.Skipped),
+            listOf(SyncProgress.PreLaunch.TimedOut(null), SyncProgress.Skipped),
             progress.takeLast(2)
         )
         assertEquals(
-            LaunchFailure.SERVER_UNREACHABLE,
+            LaunchFailure.SERVER_TIMED_OUT,
             progress.mapNotNull { LaunchStep.Save(it).failure }.lastOrNull()
         )
     }

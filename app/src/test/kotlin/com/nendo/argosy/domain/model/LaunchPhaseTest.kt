@@ -37,7 +37,7 @@ class LaunchPhaseTest {
             SyncProgress.PreLaunch.Downloading(null, success = flag),
             SyncProgress.PreLaunch.Writing(null, success = flag)
         )
-    } + SyncProgress.PreLaunch.Launching(null)
+    } + SyncProgress.PreLaunch.Launching(null) + SyncProgress.PreLaunch.TimedOut(null)
 
     private fun otherSyncValues(): List<SyncProgress> = listOf(
         SyncProgress.Idle,
@@ -142,6 +142,15 @@ class LaunchPhaseTest {
     }
 
     @Test
+    fun `a sync with no answer in time is a slow server`() {
+        val timedOut = LaunchStep.Save(SyncProgress.PreLaunch.TimedOut(null))
+        assertEquals(LaunchPhase.SAVE, timedOut.phase)
+        assertEquals(LaunchFailure.SERVER_TIMED_OUT, timedOut.failure)
+        assertNull(timedOut.fraction)
+        assertNull(timedOut.sizeBytes)
+    }
+
+    @Test
     fun `a sync error is a failed save download`() {
         assertEquals(LaunchFailure.SAVE_DOWNLOAD_FAILED, LaunchStep.Save(SyncProgress.Error("download failed")).failure)
     }
@@ -154,10 +163,11 @@ class LaunchPhaseTest {
     }
 
     @Test
-    fun `no step outside those three carries a failure`() {
+    fun `no step outside those four carries a failure`() {
         val failing: Set<LaunchStep> = setOf(
             LaunchStep.Save(SyncProgress.PreLaunch.Connecting(null, success = false)),
             LaunchStep.Save(SyncProgress.PreLaunch.Writing(null, success = false)),
+            LaunchStep.Save(SyncProgress.PreLaunch.TimedOut(null)),
             LaunchStep.Save(SyncProgress.Error("download failed"))
         )
         everyStep().filterNot { it in failing }.forEach { step ->

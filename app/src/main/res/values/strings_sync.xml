@@ -26,6 +26,8 @@
     <string name="sync_prelaunch_connected">Connected</string>
     <!-- Outcome: the connection could not be opened. Noun phrase, not a command. -->
     <string name="sync_prelaunch_connect_failed">Connection failed</string>
+    <!-- Outcome: the server was reachable but did not answer in time. Noun phrase, not a command. -->
+    <string name="sync_prelaunch_timed_out">Server took too long</string>
     <!-- Step in progress: fetching the save from the server. Present participle. -->
     <string name="sync_prelaunch_downloading">Downloading...</string>
     <!-- Outcome: the save arrived. Adjective phrase describing the download. -->

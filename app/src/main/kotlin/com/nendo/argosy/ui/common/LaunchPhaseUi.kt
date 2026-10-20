@@ -25,6 +25,7 @@ val LaunchPhase.waitLabelRes: Int?
 val LaunchFailure.labelRes: Int
     get() = when (this) {
         LaunchFailure.SERVER_UNREACHABLE -> R.string.ui_launch_overlay_failed_connect
+        LaunchFailure.SERVER_TIMED_OUT -> R.string.ui_launch_overlay_failed_timeout
         LaunchFailure.SAVE_DOWNLOAD_FAILED -> R.string.ui_launch_overlay_failed_download
         LaunchFailure.SAVE_WRITE_FAILED -> R.string.ui_launch_overlay_failed_write
     }

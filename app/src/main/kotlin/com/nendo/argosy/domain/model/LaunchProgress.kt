@@ -34,7 +34,7 @@ enum class LaunchPhase { PREVIOUS, RECAP_LOADING, SAVE, CORE, PREPARE, LAUNCHING
 /**
  * A fault the launch survives: the game still opens, with the save already on the device.
  */
-enum class LaunchFailure { SERVER_UNREACHABLE, SAVE_DOWNLOAD_FAILED, SAVE_WRITE_FAILED }
+enum class LaunchFailure { SERVER_UNREACHABLE, SERVER_TIMED_OUT, SAVE_DOWNLOAD_FAILED, SAVE_WRITE_FAILED }
 
 val LaunchStep.phase: LaunchPhase
     get() = when (this) {
@@ -63,6 +63,7 @@ private val SyncProgress.launchFailure: LaunchFailure?
     get() = when (this) {
         is SyncProgress.PreLaunch.Connecting -> LaunchFailure.SERVER_UNREACHABLE.takeIf { success == false }
         is SyncProgress.PreLaunch.Writing -> LaunchFailure.SAVE_WRITE_FAILED.takeIf { success == false }
+        is SyncProgress.PreLaunch.TimedOut -> LaunchFailure.SERVER_TIMED_OUT
         is SyncProgress.Error -> LaunchFailure.SAVE_DOWNLOAD_FAILED
         else -> null
     }
