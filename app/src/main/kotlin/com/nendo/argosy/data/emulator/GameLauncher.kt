@@ -702,8 +702,8 @@ class GameLauncher @Inject constructor(
             }
             Logger.info(TAG, "[BuiltIn] Core not downloaded for ${game.platformSlug} (selected=$selectedCoreId), attempting download...")
             launchProgressTracker.report(LaunchStep.DownloadingCore(fraction = null))
-            val downloadResult = libretroCoreMgr.downloadCoreForPlatform(game.platformSlug, selectedCoreId) { fraction ->
-                launchProgressTracker.report(LaunchStep.DownloadingCore(fraction))
+            val downloadResult = libretroCoreMgr.downloadCoreForPlatform(game.platformSlug, selectedCoreId) { fraction, zipBytes ->
+                launchProgressTracker.report(LaunchStep.DownloadingCore(fraction, zipBytes))
             }
             corePath = downloadResult.getOrElse { err ->
                 val reason = err.message ?: "Unknown error"

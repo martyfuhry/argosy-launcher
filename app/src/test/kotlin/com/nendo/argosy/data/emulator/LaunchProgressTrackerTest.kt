@@ -1,5 +1,6 @@
 package com.nendo.argosy.data.emulator
 
+import com.nendo.argosy.domain.model.LaunchFailure
 import com.nendo.argosy.domain.model.LaunchPromptOption
 import com.nendo.argosy.domain.model.LaunchRecap
 import com.nendo.argosy.domain.model.LaunchStep
@@ -18,6 +19,10 @@ import org.junit.Test
 class LaunchProgressTrackerTest {
 
     private fun TestScope.tracker() = LaunchProgressTracker(backgroundScope)
+
+    private var now = 0L
+
+    private fun TestScope.timedTracker() = LaunchProgressTracker(backgroundScope) { now }
 
     private val conflict = SyncProgress.LocalModified(gameId = 1L, localSavePath = "/save", channelName = null)
 
@@ -205,5 +210,111 @@ class LaunchProgressTrackerTest {
         val second = tracker.begin(1L, "Second")
 
         assertEquals(second, tracker.current)
+    }
+
+    @Test
+    fun `a step in the same phase keeps the moment the phase started`() = runTest {
+        val tracker = timedTracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        now = 1_000L
+        ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.CheckingSave(null)))
+
+        now = 4_000L
+        ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.Connecting(null)))
+        now = 6_000L
+        ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.Connecting(null)))
+
+        assertEquals(1_000L, tracker.progress.value?.stepStartedAtMs)
+    }
+
+    @Test
+    fun `a step in a new phase starts its own clock`() = runTest {
+        val tracker = timedTracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        now = 1_000L
+        ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.CheckingSave(null)))
+
+        now = 4_000L
+        ticket.step(LaunchStep.DownloadingCore(fraction = null))
+        now = 5_000L
+        ticket.step(LaunchStep.DownloadingCore(fraction = 0.5f, totalBytes = 2_048L))
+
+        assertEquals(4_000L, tracker.progress.value?.stepStartedAtMs)
+    }
+
+    @Test
+    fun `the first step after a question starts its own clock`() = runTest {
+        val tracker = timedTracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        now = 1_000L
+        val answer = async { ticket.ask(conflict, listOf(LaunchPromptOption.APPLY_LOCAL)) }
+        runCurrent()
+        tracker.answer(LaunchPromptOption.APPLY_LOCAL)
+        answer.await()
+
+        now = 7_000L
+        async { ticket.chooseLauncher(listOf(LaunchPromptOption.LAUNCH_WITH_GAMENATIVE)) }
+        runCurrent()
+
+        assertTrue(tracker.progress.value?.step is LaunchStep.ChooseLauncher)
+        assertEquals(7_000L, tracker.progress.value?.stepStartedAtMs)
+        tracker.cancel()
+    }
+
+    @Test
+    fun `a server that did not answer stays on the launch until its game opens`() = runTest {
+        val tracker = timedTracker()
+        val ticket = tracker.begin(1L, "Game")!!
+
+        ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.Connecting(null, success = false)))
+        assertEquals(LaunchFailure.SERVER_UNREACHABLE, tracker.progress.value?.failure)
+        ticket.step(LaunchStep.PreparingUi)
+        assertEquals(LaunchFailure.SERVER_UNREACHABLE, tracker.progress.value?.failure)
+
+        now = 9_000L
+        tracker.finish(ticket, launched = true)
+
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+        assertEquals(LaunchFailure.SERVER_UNREACHABLE, tracker.progress.value?.failure)
+        assertEquals(9_000L, tracker.progress.value?.stepStartedAtMs)
+    }
+
+    @Test
+    fun `a failed save download stays on the launch`() = runTest {
+        val tracker = timedTracker()
+        val ticket = tracker.begin(1L, "Game")!!
+
+        ticket.step(LaunchStep.Save(SyncProgress.Error("download failed")))
+        ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.Launching(null)))
+        ticket.step(LaunchStep.DownloadingCore(fraction = 0.25f))
+
+        assertEquals(LaunchFailure.SAVE_DOWNLOAD_FAILED, tracker.progress.value?.failure)
+        assertEquals(LaunchFailure.SAVE_DOWNLOAD_FAILED, ticket.failure)
+    }
+
+    @Test
+    fun `a new launch starts without the last launch's failure`() = runTest {
+        val tracker = timedTracker()
+        val first = tracker.begin(1L, "First")!!
+        first.step(LaunchStep.Save(SyncProgress.Error("download failed")))
+        tracker.finish(first, launched = true)
+
+        val second = tracker.begin(2L, "Second")!!
+        second.step(LaunchStep.PreparingUi)
+
+        assertNull(second.failure)
+        assertNull(tracker.progress.value?.failure)
+    }
+
+    @Test
+    fun `a launch reports its game id with its steps`() = runTest {
+        val tracker = timedTracker()
+        val ticket = tracker.begin(42L, "Game")!!
+
+        ticket.step(LaunchStep.PreparingSystemFiles)
+        assertEquals(42L, tracker.progress.value?.gameId)
+
+        tracker.finish(ticket, launched = true)
+        assertEquals(42L, tracker.progress.value?.gameId)
     }
 }

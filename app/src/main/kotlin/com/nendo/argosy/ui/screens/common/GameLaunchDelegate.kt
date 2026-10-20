@@ -293,10 +293,9 @@ class GameLaunchDelegate @Inject constructor(
                 )
                 android.util.Log.d("GameLaunchDelegate", "launchGame: emulatorPackage=$emulatorPackage, emulatorId=$emulatorId, canSync=$canSync")
 
-                val syncStartTime = if (canSync) {
+                if (canSync) {
                     ticket.step(LaunchStep.Save(SyncProgress.PreLaunch.CheckingSave(channelName)))
-                    System.currentTimeMillis()
-                } else null
+                }
 
                 var hardcoreConflictInfo: SyncProgress.HardcoreConflict? = null
                 var hardcoreConflictChoice: HardcoreConflictChoice? = null
@@ -413,13 +412,6 @@ class GameLaunchDelegate @Inject constructor(
                     }
                 }
 
-                syncStartTime?.let { startTime ->
-                    val elapsed = System.currentTimeMillis() - startTime
-                    val minDisplayTime = 1500L
-                    if (elapsed < minDisplayTime) {
-                        delay(minDisplayTime - elapsed)
-                    }
-                }
                 if (ticket.isCancelled) {
                     onLaunchFailed()
                     return@launch
