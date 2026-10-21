@@ -3450,6 +3450,7 @@ class LibretroActivity : ComponentActivity() {
         val presentation = SecondScreenPresentation(
             context = this,
             display = display,
+            arrivesCovered = !arrivalRevealed,
             onSurfaceChanged = { surface ->
                 if (::retroView.isInitialized) retroView.setSecondaryOutput(surface)
             },
@@ -3468,6 +3469,12 @@ class LibretroActivity : ComponentActivity() {
             .isSuccess
         secondScreen = presentation.takeIf { shown }
         Log.i(TAG, "Second screen: show on display ${display.displayId} shown=$shown")
+        if (shown && !arrivalRevealed) {
+            lifecycleScope.launch {
+                snapshotFlow { arrivalRevealed }.first { it }
+                if (secondScreen === presentation) presentation.reveal()
+            }
+        }
     }
 
     private fun hideSecondScreen() {

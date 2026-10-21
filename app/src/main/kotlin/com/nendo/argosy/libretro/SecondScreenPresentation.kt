@@ -1,5 +1,8 @@
 package com.nendo.argosy.libretro
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.app.Presentation
 import android.content.Context
 import android.os.Bundle
@@ -10,6 +13,8 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.animation.LinearInterpolator
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.util.hideSystemBars
 
 /**
@@ -28,16 +33,24 @@ import com.nendo.argosy.util.hideSystemBars
  * otherwise dismiss it mid-game, and touching it would move focus off the emulator so the pad went
  * dead until the game's own display was tapped again. Not being focusable still delivers touches
  * inside its bounds; only the keys go elsewhere, which is where they belong.
+ *
+ * Built with [arrivesCovered] before the game's first frame, it opens black and fades the game in
+ * on [reveal] over [ComponentDefaults.LaunchOverlay.arrivalMs], in step with the main screen's
+ * GameArrival. No View can draw over a surface ordered on top, so the cover is the window itself:
+ * a full dim behind it holds the display black while the window's alpha, which its surface
+ * inherits, rises from 0. Built after the first frame, it shows the game at once.
  */
 class SecondScreenPresentation(
     context: Context,
     display: Display,
+    private val arrivesCovered: Boolean,
     private val onSurfaceChanged: (Surface?) -> Unit,
     private val onTouch: (x: Float, y: Float, width: Int, height: Int) -> Unit,
     private val onTouchReleased: () -> Unit
 ) : Presentation(context, display) {
 
     private lateinit var surfaceView: SurfaceView
+    private var arrival: ValueAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +60,10 @@ class SecondScreenPresentation(
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
         )
+        if (arrivesCovered) {
+            window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            setWindowAlpha(0f, dimAmount = 1f)
+        }
 
         surfaceView = SurfaceView(context).apply {
             setZOrderOnTop(true)
@@ -83,7 +100,32 @@ class SecondScreenPresentation(
         })
     }
 
+    fun reveal() {
+        if (!arrivesCovered || arrival != null || !isShowing) return
+        arrival = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = ComponentDefaults.LaunchOverlay.arrivalMs.toLong()
+            interpolator = LinearInterpolator()
+            addUpdateListener { setWindowAlpha(it.animatedValue as Float) }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                    setWindowAlpha(1f)
+                }
+            })
+            start()
+        }
+    }
+
+    private fun setWindowAlpha(alpha: Float, dimAmount: Float? = null) {
+        val window = window ?: return
+        window.attributes = window.attributes.also { params ->
+            params.alpha = alpha
+            if (dimAmount != null) params.dimAmount = dimAmount
+        }
+    }
+
     override fun onStop() {
+        arrival?.cancel()
         onSurfaceChanged(null)
         super.onStop()
     }
