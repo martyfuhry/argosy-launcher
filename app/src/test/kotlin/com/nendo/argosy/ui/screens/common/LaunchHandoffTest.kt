@@ -11,6 +11,7 @@ import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -119,6 +120,51 @@ class LaunchHandoffTest {
         advanceTimeBy(holdMs)
         runCurrent()
         verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
+    }
+
+    @Test
+    fun `the game is placed before launching is published and the start uses that placement`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+        var stepWhenPlaced: LaunchStep? = LaunchStep.Launching
+        coEvery { resolver.launchOptionsFor(gameId, 2) } answers {
+            stepWhenPlaced = tracker.progress.value?.step
+            options
+        }
+
+        launch { handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it, overrideDisplayId = 2) } }
+        runCurrent()
+
+        assertNull(stepWhenPlaced)
+        coVerify(exactly = 1) { resolver.launchOptionsFor(gameId, 2) }
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+        verify(exactly = 0) { manager.startGame(any()) }
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        coVerify(exactly = 1) { resolver.launchOptionsFor(any(), any()) }
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
+    }
+
+    @Test
+    fun `a launch cancelled while its placement resolves opens nothing`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+        coEvery { resolver.launchOptionsFor(gameId, any()) } answers {
+            tracker.cancel()
+            options
+        }
+
+        launch { handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it) } }
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        assertNull(tracker.progress.value)
+        verify(exactly = 0) { soundManager.play(SoundType.LAUNCH_GAME) }
+        verify(exactly = 0) { manager.startGame(any()) }
     }
 
     @Test

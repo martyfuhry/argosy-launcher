@@ -85,22 +85,44 @@ class LaunchVeilStateTest {
 
     @Test
     fun singleScreenOverlayDarkensOnceTheGameIsLaunching() {
-        assertTrue(darkensForLaunch(progress(LaunchStep.Launching), hasPresentationSurface = false))
+        assertTrue(darkensForLaunch(progress(LaunchStep.Launching), gameOpensHere = true))
     }
 
     @Test
     fun singleScreenOverlayStaysCalmBeforeLaunching() {
         quietSteps.forEach { step ->
-            assertFalse("$step", darkensForLaunch(progress(step), hasPresentationSurface = false))
+            assertFalse("$step", darkensForLaunch(progress(step), gameOpensHere = true))
         }
-        assertFalse(darkensForLaunch(null, hasPresentationSurface = false))
+        assertFalse(darkensForLaunch(null, gameOpensHere = true))
     }
 
     @Test
-    fun overlayBesideAPresentationSurfaceNeverDarkens() {
-        assertFalse(darkensForLaunch(progress(LaunchStep.Launching), hasPresentationSurface = true))
+    fun overlayOnASurfaceTheGameDoesNotOpenOnNeverDarkens() {
+        assertFalse(darkensForLaunch(progress(LaunchStep.Launching), gameOpensHere = false))
         quietSteps.forEach { step ->
-            assertFalse("$step", darkensForLaunch(progress(step), hasPresentationSurface = true))
+            assertFalse("$step", darkensForLaunch(progress(step), gameOpensHere = false))
         }
+    }
+
+    @Test
+    fun gameOpensOnTheOnlySurface() {
+        assertTrue(opensOnSurface(hasPresentationSurface = false, gameDisplayId = null, surfaceDisplayId = otherDisplay))
+        assertTrue(opensOnSurface(hasPresentationSurface = false, gameDisplayId = gameDisplay, surfaceDisplayId = otherDisplay))
+    }
+
+    @Test
+    fun gamePlacedOnTheControlDisplayOpensOnTheControlSurface() {
+        assertTrue(opensOnSurface(hasPresentationSurface = true, gameDisplayId = otherDisplay, surfaceDisplayId = otherDisplay))
+    }
+
+    @Test
+    fun gamePlacedOnThePresentationDisplayLeavesTheControlSurfaceCalm() {
+        assertFalse(opensOnSurface(hasPresentationSurface = true, gameDisplayId = gameDisplay, surfaceDisplayId = otherDisplay))
+    }
+
+    @Test
+    fun unplacedGameBesideAPresentationSurfaceLeavesTheControlSurfaceCalm() {
+        assertFalse(opensOnSurface(hasPresentationSurface = true, gameDisplayId = null, surfaceDisplayId = otherDisplay))
+        assertFalse(opensOnSurface(hasPresentationSurface = true, gameDisplayId = gameDisplay, surfaceDisplayId = null))
     }
 }

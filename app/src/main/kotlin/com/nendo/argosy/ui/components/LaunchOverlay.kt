@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -49,6 +50,7 @@ import com.nendo.argosy.ui.components.launch.CalmLaunchContent
 import com.nendo.argosy.ui.components.launch.LaunchVeil
 import com.nendo.argosy.ui.components.launch.darkensForLaunch
 import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
+import com.nendo.argosy.ui.components.launch.opensOnSurface
 import com.nendo.argosy.ui.components.launch.veilsDisplay
 import com.nendo.argosy.ui.components.recap.LaunchRecapCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCompactCard
@@ -94,6 +96,8 @@ fun LaunchOverlay(
     val promptFocus by viewModel.promptFocus.collectAsState()
     val recapCursor by viewModel.recapCursorState.collectAsState()
     val hasPresentationSurface by viewModel.hasPresentationSurface.collectAsState()
+    val gameDisplayId by viewModel.gameDisplayId.collectAsState()
+    val surfaceDisplayId = ContextCompat.getDisplayOrDefault(LocalContext.current).displayId
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -121,7 +125,7 @@ fun LaunchOverlay(
         promptFocus = promptFocus,
         recapCursor = recapCursor,
         surface = RecapSurface.CONTROL,
-        hasPresentationSurface = hasPresentationSurface,
+        gameOpensHere = opensOnSurface(hasPresentationSurface, gameDisplayId, surfaceDisplayId),
         onAnswer = viewModel::answer,
         onCancel = { viewModel.cancel() },
         onRecapCurrent = viewModel::recapCurrent,
@@ -142,7 +146,7 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
         promptFocus = NO_PROMPT_FOCUS,
         recapCursor = recapCursor,
         surface = RecapSurface.PRESENTATION,
-        hasPresentationSurface = true,
+        gameOpensHere = false,
         onAnswer = tracker::answer,
         onCancel = { tracker.cancel() },
         onRecapCurrent = { index ->
@@ -205,7 +209,7 @@ private fun LaunchOverlayContent(
     promptFocus: Int,
     recapCursor: RecapCursor,
     surface: RecapSurface,
-    hasPresentationSurface: Boolean,
+    gameOpensHere: Boolean,
     onAnswer: (LaunchPromptOption) -> Unit,
     onCancel: () -> Unit,
     onRecapCurrent: (Int) -> Unit,
@@ -271,7 +275,7 @@ private fun LaunchOverlayContent(
                     onCancel = onCancel
                 )
             }
-            LaunchVeil(veiled = darkensForLaunch(shown, hasPresentationSurface))
+            LaunchVeil(veiled = darkensForLaunch(shown, gameOpensHere))
         }
     }
 }
