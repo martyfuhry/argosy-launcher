@@ -56,6 +56,17 @@ class LaunchOverlayViewModel @Inject constructor(
             DualScreenManagerHolder.instance?.hasPresentationScreen?.value ?: false
         )
 
+    /**
+     * The display the launch placed the game on, null with no dual-screen manager.
+     */
+    val gameDisplayId: StateFlow<Int?> = DualScreenManagerHolder.instanceFlow
+        .flatMapLatest { it?.emulatorDisplay ?: flowOf(null) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+            DualScreenManagerHolder.instance?.emulatorDisplay?.value
+        )
+
     init {
         viewModelScope.launch {
             tracker.progress

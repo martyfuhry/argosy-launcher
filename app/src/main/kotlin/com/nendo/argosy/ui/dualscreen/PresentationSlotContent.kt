@@ -102,7 +102,7 @@ fun PresentationSlotContent(
             lastActivityAtMs = lastActivity,
             onWake = { manager?.notifyUserActivity("presentationDimmerTap") }
         ) {
-            PresentationSlotBody(slot, showControlHints, showsNotifications, gameActive)
+            PresentationSlotBody(slot, showControlHints, showsNotifications)
         }
     }
 }
@@ -111,8 +111,7 @@ fun PresentationSlotContent(
 private fun PresentationSlotBody(
     slot: PresentationSlot,
     showControlHints: Boolean,
-    showsNotifications: Boolean,
-    gameActive: Boolean
+    showsNotifications: Boolean
 ) {
     val density = LocalDensity.current
     val manager = com.nendo.argosy.DualScreenManagerHolder.instance
@@ -150,7 +149,6 @@ private fun PresentationSlotBody(
             }
         }
         com.nendo.argosy.ui.components.LaunchVeilMirror(
-            gameActive = gameActive,
             gameDisplayId = gameDisplayId,
             displayId = displayId
         )

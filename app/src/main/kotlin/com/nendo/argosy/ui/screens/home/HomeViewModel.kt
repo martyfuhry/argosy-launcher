@@ -27,6 +27,7 @@ import com.nendo.argosy.core.event.AchievementUpdateBus
 import com.nendo.argosy.ui.screens.common.CollectionModalDelegate
 import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.common.GameLaunchDelegate
+import com.nendo.argosy.ui.screens.common.GameStart
 import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.hardware.AmbientLedContext
 import com.nendo.argosy.hardware.AmbientLedManager
@@ -2022,7 +2023,9 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            start = GameStart(gameId, onFailure = {
+                notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+            })
         )
     }
 
@@ -2034,9 +2037,7 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
-            onLaunch = { intent ->
-                gameStartRouter.start(gameId = gameId, intent = intent, overrideDisplayId = displayId)
-            }
+            start = GameStart(gameId = gameId, overrideDisplayId = displayId)
         )
     }
 

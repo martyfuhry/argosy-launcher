@@ -77,6 +77,7 @@ import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.common.RefreshAndroidResult
 import com.nendo.argosy.ui.screens.common.DiscPickerState
 import com.nendo.argosy.ui.screens.common.GameLaunchDelegate
+import com.nendo.argosy.ui.screens.common.GameStart
 import com.nendo.argosy.ui.screens.common.PendingSiblingFocus
 import com.nendo.argosy.ui.screens.common.SyncOverlayState
 import com.nendo.argosy.ui.screens.gamedetail.CollectionItemUi
@@ -2148,7 +2149,9 @@ class LibraryViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             channelName = channelName,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            start = GameStart(gameId, onFailure = {
+                notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+            })
         )
     }
 

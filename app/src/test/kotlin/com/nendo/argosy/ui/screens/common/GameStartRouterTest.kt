@@ -6,6 +6,7 @@ import android.os.Bundle
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
@@ -13,8 +14,10 @@ import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class GameStartRouterTest {
@@ -75,6 +78,35 @@ class GameStartRouterTest {
         advanceUntilIdle()
 
         assertSame(refusal, failure)
+    }
+
+    @Test
+    fun `placing resolves the display without starting the game`() = runTest {
+        val manager = mockk<DualScreenManager>(relaxed = true)
+        DualScreenManagerHolder.instance = manager
+        coEvery { resolver.launchOptionsFor(7L, 2) } returns options
+        val router = GameStartRouter(appContext, resolver, this)
+
+        val placed = router.place(gameId = 7L, intent = intent, overrideDisplayId = 2)
+
+        assertEquals(GameLaunchRequest(intent, options), placed.getOrNull())
+        coVerify(exactly = 1) { resolver.launchOptionsFor(7L, 2) }
+        verify(exactly = 0) { manager.startGame(any()) }
+    }
+
+    @Test
+    fun `a placed request starts through the manager`() = runTest {
+        val manager = mockk<DualScreenManager> {
+            every { startGame(any()) } returns Result.success(Unit)
+        }
+        DualScreenManagerHolder.instance = manager
+        val router = GameStartRouter(appContext, resolver, this)
+
+        val result = router.startPlaced(GameLaunchRequest(intent, options))
+
+        assertTrue(result.isSuccess)
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
+        coVerify(exactly = 0) { resolver.launchOptionsFor(any(), any()) }
     }
 
     @Test

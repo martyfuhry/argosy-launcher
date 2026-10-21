@@ -1165,7 +1165,7 @@ class GameDetailViewModel @Inject constructor(
                 discId = discId,
                 allowVariantPrompt = false,
                 origin = pendingLaunchOrigin,
-                onLaunch = callbacks.onLaunch,
+                start = callbacks.start,
                 onLaunchFailed = { callbacks.onLaunchFailed() }
             )
         }
@@ -1230,7 +1230,7 @@ class GameDetailViewModel @Inject constructor(
                 overrideLaunchMode = launchMode,
                 allowVariantPrompt = false,
                 origin = pendingLaunchOrigin,
-                onLaunch = callbacks.onLaunch,
+                start = callbacks.start,
                 onLaunchFailed = { callbacks.onLaunchFailed() }
             )
         } else {
@@ -1249,22 +1249,18 @@ class GameDetailViewModel @Inject constructor(
         overrideDisplayId: Int? = null
     ): com.nendo.argosy.ui.screens.common.LaunchResultCallbacks =
         com.nendo.argosy.ui.screens.common.LaunchResultCallbacks(
-            onLaunch = { intent ->
-                val notices = notificationManager
-                gameStartRouter.start(
-                    gameId = currentGameId,
-                    intent = intent,
-                    overrideDisplayId = overrideDisplayId,
-                    onFailure = { e ->
-                        notices.showError(
-                            NotificationText.Res(
-                                R.string.gamedetail_notice_launch_failed,
-                                listOf(e.message ?: "null")
-                            )
+            start = com.nendo.argosy.ui.screens.common.GameStart(
+                gameId = currentGameId,
+                overrideDisplayId = overrideDisplayId,
+                onFailure = { e ->
+                    notificationManager.showError(
+                        NotificationText.Res(
+                            R.string.gamedetail_notice_launch_failed,
+                            listOf(e.message ?: "null")
                         )
-                    }
-                )
-            },
+                    )
+                }
+            ),
             onSelectDisc = { discs -> pickerModalDelegate.showDiscPicker(discs) },
             onSelectVariant = { variants -> pickerModalDelegate.showVariantPicker(variants) },
             onNoEmulator = { showEmulatorPicker() },
@@ -1358,7 +1354,7 @@ class GameDetailViewModel @Inject constructor(
             gameId = currentGameId,
             allowVariantPrompt = false,
             origin = pendingLaunchOrigin,
-            onLaunch = callbacks.onLaunch,
+            start = callbacks.start,
             onLaunchFailed = { callbacks.onLaunchFailed() }
         )
     }

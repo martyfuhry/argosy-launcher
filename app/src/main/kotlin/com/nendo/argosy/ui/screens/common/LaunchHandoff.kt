@@ -16,27 +16,39 @@ import javax.inject.Inject
 class LaunchHandoff internal constructor(
     private val tracker: LaunchProgressTracker,
     private val soundManager: SoundFeedbackManager,
+    private val startRouter: GameStartRouter,
     private val holdMs: Long
 ) {
 
     @Inject constructor(
         tracker: LaunchProgressTracker,
-        soundManager: SoundFeedbackManager
-    ) : this(tracker, soundManager, ComponentDefaults.LaunchOverlay.veilMs.toLong())
+        soundManager: SoundFeedbackManager,
+        startRouter: GameStartRouter
+    ) : this(tracker, soundManager, startRouter, ComponentDefaults.LaunchOverlay.veilMs.toLong())
 
     /**
-     * Finishes [ticket] as launched, then hands [intent] to [onLaunch] after the hold. A null
-     * ticket is a launch continued from a picker, where LaunchGameUseCase opened and finished its
-     * own ticket and so has already published Launching; it still holds.
+     * Places [start]'s game, which records its display, then finishes [ticket] as launched and
+     * requests [intent]'s window with that placement after the hold. A ticket cancelled while the
+     * placement resolves opens nothing. A start that fails clears Launching at once and reaches
+     * [GameStart.onFailure]. A null ticket is a launch continued from a picker, where
+     * LaunchGameUseCase opened and finished its own ticket and so has already published Launching;
+     * it still holds.
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket?,
         intent: Intent,
-        onLaunch: (Intent) -> Unit
+        start: GameStart
     ) {
+        val request = startRouter.place(start.gameId, intent, start.overrideDisplayId)
+        if (ticket?.isCancelled == true) return
         if (ticket != null) tracker.finish(ticket, launched = true)
         soundManager.play(SoundType.LAUNCH_GAME)
         delay(holdMs)
-        onLaunch(intent)
+        request.fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
+            .exceptionOrNull()
+            ?.let { failure ->
+                tracker.openFailed()
+                start.onFailure?.invoke(failure)
+            }
     }
 }
