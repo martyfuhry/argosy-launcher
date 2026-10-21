@@ -1,5 +1,6 @@
 package com.nendo.argosy.ui.input
 
+import android.util.Log
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -9,6 +10,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.data.preferences.MenuWrapMode
+
+private const val TAG = "InputDispatcher"
 
 @Stable
 class InputDispatcher(
@@ -106,6 +109,7 @@ class InputDispatcher(
      * keeps the slot it parked before the route was published. A null [keepRoute] drops all.
      */
     fun clearPendingViewSubscription(keepRoute: String? = null) {
+        if (pendingViewSubscriptions.isNotEmpty()) Log.d(TAG, "clearPendingViewSubscription: pending=${pendingViewSubscriptions.keys} keepRoute=$keepRoute")
         pendingViewSubscriptions.keys.retainAll { isRouteMatch(it, keepRoute) }
     }
 
@@ -207,6 +211,7 @@ class InputDispatcher(
             return InputResult.HANDLED
         }
         val handler = overlay ?: viewHandler
+        Log.d(TAG, "dispatch: event=${input.event} overlay=${overlay?.javaClass?.simpleName} view=${viewHandler?.javaClass?.simpleName} viewRoute=$viewRoute currentRoute=$currentRoute pending=${pendingViewSubscriptions.keys}")
         if (handler == null) {
             pendingInput = input
             return InputResult.UNHANDLED
