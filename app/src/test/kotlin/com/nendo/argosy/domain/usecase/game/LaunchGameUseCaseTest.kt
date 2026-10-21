@@ -92,6 +92,21 @@ class LaunchGameUseCaseTest {
     }
 
     @Test
+    fun `a launch cancelled while its intent resolves never reaches the lock screen art`() = runTest {
+        val intent = mockk<Intent>(relaxed = true)
+        coEvery { gameLauncher.launch(123L, null, any(), any(), any(), any(), any(), any()) } answers {
+            tracker.cancel()
+            LaunchResult.Success(intent)
+        }
+
+        val result = useCase(123L)
+
+        assertEquals(LaunchResult.Cancelled, result)
+        coVerify(exactly = 0) { lockScreenArtManager.showBeforeLaunch(any()) }
+        coVerify(exactly = 0) { playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `a launch the use case opened ends on its game screen`() = runTest {
         val intent = mockk<Intent>(relaxed = true)
         coEvery { gameLauncher.launch(123L, null, any(), any(), any(), any(), any(), any()) } returns LaunchResult.Success(intent)
