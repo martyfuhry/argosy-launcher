@@ -62,6 +62,9 @@ class LaunchProgressTracker internal constructor(
         var failure: LaunchFailure? = null
             internal set
 
+        @Volatile
+        internal var awaitsWindow = false
+
         private val finished = CompletableDeferred<Unit>()
         private var pendingAnswer: CompletableDeferred<LaunchPromptOption?>? = null
 
@@ -169,7 +172,7 @@ class LaunchProgressTracker internal constructor(
 
     /**
      * Ends [ticket]. A launch that opened its game keeps showing until the screen that started it
-     * stops, or briefly when it never does.
+     * stops outside a [holdForWindow] hold, or briefly when it never does.
      */
     fun finish(ticket: Ticket, launched: Boolean) {
         synchronized(lock) {
@@ -192,17 +195,30 @@ class LaunchProgressTracker internal constructor(
         }
     }
 
-    fun hostStopped() = clearOpened()
+    /**
+     * Keeps [ticket]'s Launching through a stop of the screen that started it until
+     * [windowRequested] or [openFailed]. The Launching hold timeout still ends it.
+     */
+    fun holdForWindow(ticket: Ticket) {
+        synchronized(lock) { ticket.awaitsWindow = true }
+    }
+
+    fun windowRequested(ticket: Ticket) {
+        synchronized(lock) { ticket.awaitsWindow = false }
+    }
 
     /**
-     * Ends a launch whose game screen was asked for but never opened. A launch begun since is left
-     * alone.
+     * Ends the finished live launch unless [holdForWindow] still holds it.
      */
-    fun openFailed() = clearOpened()
-
-    private fun clearOpened() {
-        synchronized(lock) { live?.takeIf { it.isFinished } }?.let(::clearIfLive)
+    fun hostStopped() {
+        synchronized(lock) { live?.takeIf { it.isFinished && !it.awaitsWindow } }?.let(::clearIfLive)
     }
+
+    /**
+     * Ends [ticket], a launch whose game screen was asked for but never opened. A launch begun
+     * since is left alone.
+     */
+    fun openFailed(ticket: Ticket) = clearIfLive(ticket)
 
     private fun clearIfLive(ticket: Ticket) {
         synchronized(lock) {

@@ -29,26 +29,32 @@ class LaunchHandoff internal constructor(
     /**
      * Places [start]'s game, which records its display, then finishes [ticket] as launched and
      * requests [intent]'s window with that placement after the hold. A ticket cancelled while the
-     * placement resolves opens nothing. A start that fails clears Launching at once and reaches
-     * [GameStart.onFailure]. A null ticket is a launch continued from a picker, where
-     * LaunchGameUseCase opened and finished its own ticket and so has already published Launching;
-     * it still holds.
+     * placement resolves opens nothing. A game that cannot be placed fails at once, with no sound
+     * and no hold. A start that fails clears Launching at once. Both reach [GameStart.onFailure].
+     * Launching outlasts a stop of the launching screen until the window has been requested.
      */
     suspend fun handOff(
-        ticket: LaunchProgressTracker.Ticket?,
+        ticket: LaunchProgressTracker.Ticket,
         intent: Intent,
         start: GameStart
     ) {
         val request = startRouter.place(start.gameId, intent, start.overrideDisplayId)
-        if (ticket?.isCancelled == true) return
-        if (ticket != null) tracker.finish(ticket, launched = true)
+        if (ticket.isCancelled) return
+        tracker.holdForWindow(ticket)
+        val placed = request.getOrElse { return fail(ticket, it, start) }
+        tracker.finish(ticket, launched = true)
         soundManager.play(SoundType.LAUNCH_GAME)
         delay(holdMs)
-        request.fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
-            .exceptionOrNull()
-            ?.let { failure ->
-                tracker.openFailed()
-                start.onFailure?.invoke(failure)
-            }
+        val failure = startRouter.startPlaced(placed).exceptionOrNull()
+        if (failure == null) {
+            tracker.windowRequested(ticket)
+            return
+        }
+        fail(ticket, failure, start)
+    }
+
+    private fun fail(ticket: LaunchProgressTracker.Ticket, failure: Throwable, start: GameStart) {
+        tracker.openFailed(ticket)
+        start.onFailure?.invoke(failure)
     }
 }

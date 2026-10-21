@@ -79,6 +79,40 @@ class LaunchHandoffTest {
     }
 
     @Test
+    fun `the launching screen stopping during the hold leaves launching up and the window still opens`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        runCurrent()
+        tracker.hostStopped()
+
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+    }
+
+    @Test
+    fun `the launching screen stopping after the window is requested clears launching`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        advanceTimeBy(holdMs)
+        runCurrent()
+        verify(exactly = 1) { manager.startGame(any()) }
+
+        tracker.hostStopped()
+
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
     fun `the ticket is finished exactly once as launched`() = runTest {
         val tracker: LaunchProgressTracker = mockk(relaxed = true)
         val ticket: LaunchProgressTracker.Ticket = mockk(relaxed = true)
@@ -100,26 +134,6 @@ class LaunchHandoffTest {
         runCurrent()
 
         verify(exactly = 1) { soundManager.play(SoundType.LAUNCH_GAME) }
-    }
-
-    @Test
-    fun `a picker launch whose ticket is already finished still holds for the veil`() = runTest {
-        val tracker = LaunchProgressTracker(backgroundScope)
-        val router = router(backgroundScope)
-        val useCaseTicket = tracker.begin(gameId, "Game")!!
-        tracker.finish(useCaseTicket, launched = true)
-        val published = tracker.progress.value
-
-        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
-        runCurrent()
-
-        assertSame(published, tracker.progress.value)
-        verify(exactly = 0) { manager.startGame(any()) }
-        verify(exactly = 1) { soundManager.play(SoundType.LAUNCH_GAME) }
-
-        advanceTimeBy(holdMs)
-        runCurrent()
-        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
     }
 
     @Test
@@ -189,37 +203,55 @@ class LaunchHandoffTest {
     }
 
     @Test
-    fun `a picker launch that fails to start clears the launching the use case published`() = runTest {
-        every { manager.startGame(any()) } returns Result.failure(IllegalStateException("gone"))
+    fun `a refused start leaves a launch that finished during its hold showing`() = runTest {
+        every { manager.startGame(any()) } returns Result.failure(SecurityException("denied"))
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
-        val useCaseTicket = tracker.begin(gameId, "Game")!!
-        tracker.finish(useCaseTicket, launched = true)
+        val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        runCurrent()
+        val newer = tracker.begin(8L, "Newer")!!
+        tracker.finish(newer, launched = true)
         advanceTimeBy(holdMs)
         runCurrent()
 
-        assertNull(tracker.progress.value)
+        verify(exactly = 1) { manager.startGame(any()) }
+        assertEquals(8L, tracker.progress.value?.gameId)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
     }
 
     @Test
-    fun `an unplaceable game clears launching and reaches the failure callback without a start`() = runTest {
+    fun `an unplaceable game fails at once with no sound, no hold and no launching`() = runTest {
         val broken = IllegalStateException("db closed")
         coEvery { resolver.launchOptionsFor(gameId, any()) } throws broken
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
         var failure: Throwable? = null
+        var progressWhenFailed: Any? = Unit
 
         launch {
-            handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, onFailure = { e -> failure = e }))
+            handoff(tracker, router).handOff(
+                ticket,
+                intent,
+                GameStart(gameId, onFailure = { e ->
+                    failure = e
+                    progressWhenFailed = tracker.progress.value
+                })
+            )
         }
-        advanceTimeBy(holdMs)
         runCurrent()
 
         assertSame(broken, failure)
+        assertNull(progressWhenFailed)
         assertNull(tracker.progress.value)
+        assertEquals(0L, testScheduler.currentTime)
+        verify(exactly = 0) { soundManager.play(SoundType.LAUNCH_GAME) }
+        verify(exactly = 0) { manager.startGame(any()) }
+
+        advanceTimeBy(holdMs)
+        runCurrent()
         verify(exactly = 0) { manager.startGame(any()) }
     }
 }

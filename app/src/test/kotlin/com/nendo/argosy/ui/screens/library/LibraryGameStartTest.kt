@@ -35,8 +35,6 @@ class LibraryGameStartTest {
         mockk<com.nendo.argosy.ui.screens.common.CollectionModalDelegate>(relaxed = true)
     private val gradientExtractionDelegate =
         mockk<com.nendo.argosy.ui.screens.common.GradientExtractionDelegate>(relaxed = true)
-    private val gameStartRouter =
-        mockk<com.nendo.argosy.ui.screens.common.GameStartRouter>(relaxed = true)
     private val gameStart = slot<com.nendo.argosy.ui.screens.common.GameStart>()
     private val notificationManager =
         mockk<com.nendo.argosy.core.notification.NotificationManager>(relaxed = true)
@@ -136,7 +134,6 @@ class LibraryGameStartTest {
         steamContentManager = mockk(relaxed = true),
         steamDownloadPromptController = mockk(relaxed = true),
         downloadFileStatusRepository = mockk(relaxed = true),
-        gameStartRouter = gameStartRouter,
         siblingChoice = mockk(relaxed = true),
         socialRepository = mockk(relaxed = true),
         saveListStatusRepository = mockk(relaxed = true),

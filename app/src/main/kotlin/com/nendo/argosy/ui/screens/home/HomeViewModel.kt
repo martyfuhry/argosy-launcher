@@ -99,7 +99,6 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
-    private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val configureEmulatorUseCase: com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
@@ -2023,9 +2022,7 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            start = GameStart(gameId, onFailure = {
-                notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
-            })
+            start = GameStart(gameId, onFailure = { showLaunchFailed() })
         )
     }
 
@@ -2037,8 +2034,12 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
-            start = GameStart(gameId = gameId, overrideDisplayId = displayId)
+            start = GameStart(gameId = gameId, overrideDisplayId = displayId, onFailure = { showLaunchFailed() })
         )
+    }
+
+    private fun showLaunchFailed() {
+        notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
     }
 
     private fun rememberGameScreen(gameId: Long, displayId: Int) {

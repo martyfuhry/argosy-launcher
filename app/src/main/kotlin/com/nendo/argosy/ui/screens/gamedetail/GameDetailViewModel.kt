@@ -115,7 +115,6 @@ class GameDetailViewModel @Inject constructor(
     private val repairImageCacheUseCase: RepairImageCacheUseCase,
     private val modalResetSignal: ModalResetSignal,
     private val titleIdDownloadObserver: com.nendo.argosy.data.emulator.TitleIdDownloadObserver,
-    private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val gameDocumentLoader: com.nendo.argosy.data.repository.GameDocumentLoader,
     private val documentHighlightStore: com.nendo.argosy.data.repository.DocumentHighlightStore,
     val pickerModalDelegate: PickerModalDelegate,
@@ -1254,10 +1253,9 @@ class GameDetailViewModel @Inject constructor(
                 overrideDisplayId = overrideDisplayId,
                 onFailure = { e ->
                     notificationManager.showError(
-                        NotificationText.Res(
-                            R.string.gamedetail_notice_launch_failed,
-                            listOf(e.message ?: "null")
-                        )
+                        e.message?.let { reason ->
+                            NotificationText.Res(R.string.gamedetail_notice_launch_failed, listOf(reason))
+                        } ?: NotificationText.Res(R.string.notif_gamelaunch_launch_failed)
                     )
                 }
             ),

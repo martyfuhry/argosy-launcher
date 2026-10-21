@@ -212,12 +212,39 @@ class LaunchProgressTrackerTest {
     }
 
     @Test
+    fun `a launch held for its window outlasts the screen that started it stopping`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.holdForWindow(ticket)
+        tracker.finish(ticket, launched = true)
+
+        tracker.hostStopped()
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+
+        tracker.windowRequested(ticket)
+        tracker.hostStopped()
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
+    fun `a launch held for a window that is never requested still clears on its own`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.holdForWindow(ticket)
+        tracker.finish(ticket, launched = true)
+
+        advanceTimeBy(10_000)
+
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
     fun `a game screen that never opens clears the launching hold at once`() = runTest {
         val tracker = tracker()
         val ticket = tracker.begin(1L, "Game")!!
         tracker.finish(ticket, launched = true)
 
-        tracker.openFailed()
+        tracker.openFailed(ticket)
 
         assertNull(tracker.progress.value)
         assertNull(tracker.current)
@@ -232,10 +259,24 @@ class LaunchProgressTrackerTest {
         val second = tracker.begin(2L, "Second")!!
         second.step(LaunchStep.PreparingUi)
 
-        tracker.openFailed()
+        tracker.openFailed(first)
 
         assertEquals(LaunchStep.PreparingUi, tracker.progress.value?.step)
         assertEquals(second, tracker.current)
+    }
+
+    @Test
+    fun `a failed game screen leaves a newer launch's launching alone`() = runTest {
+        val tracker = tracker()
+        val first = tracker.begin(1L, "First")!!
+        tracker.finish(first, launched = true)
+        val second = tracker.begin(2L, "Second")!!
+        tracker.finish(second, launched = true)
+
+        tracker.openFailed(first)
+
+        assertEquals(2L, tracker.progress.value?.gameId)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
     }
 
     @Test
