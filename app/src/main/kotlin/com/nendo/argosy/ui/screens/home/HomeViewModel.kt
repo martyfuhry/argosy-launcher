@@ -2023,9 +2023,7 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            start = GameStart(gameId, onFailure = {
-                notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
-            })
+            start = GameStart(gameId, onFailure = { showLaunchFailed() })
         )
     }
 
@@ -2037,8 +2035,12 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
-            start = GameStart(gameId = gameId, overrideDisplayId = displayId)
+            start = GameStart(gameId = gameId, overrideDisplayId = displayId, onFailure = { showLaunchFailed() })
         )
+    }
+
+    private fun showLaunchFailed() {
+        notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
     }
 
     private fun rememberGameScreen(gameId: Long, displayId: Int) {
