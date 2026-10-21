@@ -348,6 +348,41 @@ class DualScreenManagerRoleSwapTest {
         verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
     }
 
+    @Test
+    fun `the launch clearing re-asks the game display's launcher after the other display took focus`() {
+        val fixture = launcherFocusedDuringLaunch(liveAtStart = true)
+        manager.emulatorDisplayId = PRIMARY_DISPLAY
+        val companion = launcherOn(PRESENTATION_DISPLAY)
+        manager.onLauncherWindowFocused(fixture.activity)
+        manager.onLauncherWindowFocused(companion)
+        testScope.testScheduler.runCurrent()
+
+        fixture.live.value = false
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 1) { fixture.sessionEnd.endClosedSession() }
+        verify(exactly = 1) { sessionStateStore.clearSession() }
+    }
+
+    @Test
+    fun `the launch clearing with only the other display's launcher focused leaves the session running`() {
+        val fixture = launcherFocusedDuringLaunch(liveAtStart = true)
+        manager.emulatorDisplayId = PRIMARY_DISPLAY
+        manager.onLauncherWindowFocused(launcherOn(PRESENTATION_DISPLAY))
+        testScope.testScheduler.runCurrent()
+
+        fixture.live.value = false
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 0) { fixture.sessionEnd.endClosedSession() }
+    }
+
+    private fun launcherOn(displayId: Int): android.app.Activity =
+        mockk(relaxed = true) {
+            every { window.decorView.display.displayId } returns displayId
+            every { hasWindowFocus() } returns true
+        }
+
     private class LaunchFocusFixture(
         val activity: android.app.Activity,
         val focused: MutableStateFlow<Boolean>,

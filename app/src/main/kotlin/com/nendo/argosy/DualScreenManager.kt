@@ -1359,12 +1359,12 @@ class DualScreenManager(
 
     private var launchLiveObserverJob: Job? = null
     private var launchWasLive = false
-    private var lastFocusedLauncher: java.lang.ref.WeakReference<android.app.Activity>? = null
+    private val focusedLaunchers = HashMap<Int, java.lang.ref.WeakReference<android.app.Activity>>()
 
     /**
-     * Re-asks [onLauncherWindowFocused] for the last launcher window to gain focus when a live
-     * launch clears while that window still holds focus, so a game start that never produced a
-     * window does not leave its session running. A launch going live cancels a focus check still
+     * Re-asks [onLauncherWindowFocused] for the launcher window last focused on each display when a
+     * live launch clears while that window still holds focus, so a game start that never produced a
+     * window does not leave its session running, even when another display took focus since. A launch going live cancels a focus check still
      * in flight, since that check was about the game before it. Focus is read a main-loop turn
      * after the fall, so a focus loss already on its way to the window is applied first. The
      * previous value lives on the manager, so an edge that straddles [rebind] is still seen.
@@ -1378,8 +1378,9 @@ class DualScreenManager(
                 if (live) focusCheck?.cancel()
                 if (!fell) return@collect
                 yield()
-                val launcher = lastFocusedLauncher?.get() ?: return@collect
-                if (launcher.hasWindowFocus()) onLauncherWindowFocused(launcher)
+                focusedLaunchers.values.mapNotNull { it.get() }
+                    .filter { it.hasWindowFocus() }
+                    .forEach(::onLauncherWindowFocused)
             }
         }
     }
@@ -1858,10 +1859,10 @@ class DualScreenManager(
      * A launch that goes live while the check is settling stops it the same way.
      */
     fun onLauncherWindowFocused(activity: android.app.Activity) {
-        lastFocusedLauncher = java.lang.ref.WeakReference(activity)
+        val ownDisplay = activity.window.decorView.display?.displayId ?: return
+        focusedLaunchers[ownDisplay] = java.lang.ref.WeakReference(activity)
         if (launchProgressTracker.launchLive.value) return
         if (isMovingGame || focusCheck?.isActive == true) return
-        val ownDisplay = activity.window.decorView.display?.displayId ?: return
         val gameDisplay = emulatorDisplayId
         if (gameDisplay != null && gameDisplay != ownDisplay) return
         focusCheck = scope.launch {
