@@ -52,4 +52,19 @@ class CompanionSlotGateTest {
     fun `a swapped companion without a game dashboard switches slots without a fade`() {
         assertEquals(0, dashboardArrivalMs(showsDashboard = false, reduced = false, arrivalMs = 400))
     }
+
+    @Test
+    fun `the launcher dissolves into the hold at the veil's rate when a game goes active`() {
+        assertEquals(700, companionHandoffMs(showsDashboard = true, reduced = false, veilMs = 700))
+    }
+
+    @Test
+    fun `reduced motion cuts the launcher to the hold`() {
+        assertEquals(0, companionHandoffMs(showsDashboard = true, reduced = true, veilMs = 700))
+    }
+
+    @Test
+    fun `without a game dashboard the companion switches branches without a dissolve`() {
+        assertEquals(0, companionHandoffMs(showsDashboard = false, reduced = false, veilMs = 700))
+    }
 }
