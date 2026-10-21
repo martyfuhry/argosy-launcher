@@ -113,26 +113,6 @@ class LaunchHandoffTest {
     }
 
     @Test
-    fun `a picker launch keeps launching through a stop of the launching screen during the hold`() = runTest {
-        val tracker = LaunchProgressTracker(backgroundScope)
-        val router = router(backgroundScope)
-        val useCaseTicket = tracker.begin(gameId, "Game")!!
-        tracker.finish(useCaseTicket, launched = true)
-
-        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
-        runCurrent()
-        tracker.hostStopped()
-
-        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
-
-        advanceTimeBy(holdMs)
-        runCurrent()
-        verify(exactly = 1) { manager.startGame(any()) }
-        tracker.hostStopped()
-        assertNull(tracker.progress.value)
-    }
-
-    @Test
     fun `the ticket is finished exactly once as launched`() = runTest {
         val tracker: LaunchProgressTracker = mockk(relaxed = true)
         val ticket: LaunchProgressTracker.Ticket = mockk(relaxed = true)
@@ -154,26 +134,6 @@ class LaunchHandoffTest {
         runCurrent()
 
         verify(exactly = 1) { soundManager.play(SoundType.LAUNCH_GAME) }
-    }
-
-    @Test
-    fun `a picker launch whose ticket is already finished still holds for the veil`() = runTest {
-        val tracker = LaunchProgressTracker(backgroundScope)
-        val router = router(backgroundScope)
-        val useCaseTicket = tracker.begin(gameId, "Game")!!
-        tracker.finish(useCaseTicket, launched = true)
-        val published = tracker.progress.value
-
-        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
-        runCurrent()
-
-        assertSame(published, tracker.progress.value)
-        verify(exactly = 0) { manager.startGame(any()) }
-        verify(exactly = 1) { soundManager.play(SoundType.LAUNCH_GAME) }
-
-        advanceTimeBy(holdMs)
-        runCurrent()
-        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
     }
 
     @Test
@@ -262,21 +222,6 @@ class LaunchHandoffTest {
     }
 
     @Test
-    fun `a picker launch that fails to start clears the launching the use case published`() = runTest {
-        every { manager.startGame(any()) } returns Result.failure(IllegalStateException("gone"))
-        val tracker = LaunchProgressTracker(backgroundScope)
-        val router = router(backgroundScope)
-        val useCaseTicket = tracker.begin(gameId, "Game")!!
-        tracker.finish(useCaseTicket, launched = true)
-
-        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
-        advanceTimeBy(holdMs)
-        runCurrent()
-
-        assertNull(tracker.progress.value)
-    }
-
-    @Test
     fun `an unplaceable game fails at once with no sound, no hold and no launching`() = runTest {
         val broken = IllegalStateException("db closed")
         coEvery { resolver.launchOptionsFor(gameId, any()) } throws broken
@@ -308,22 +253,5 @@ class LaunchHandoffTest {
         advanceTimeBy(holdMs)
         runCurrent()
         verify(exactly = 0) { manager.startGame(any()) }
-    }
-
-    @Test
-    fun `an unplaceable picker launch clears the launching the use case published at once`() = runTest {
-        coEvery { resolver.launchOptionsFor(gameId, any()) } throws IllegalStateException("db closed")
-        val tracker = LaunchProgressTracker(backgroundScope)
-        val router = router(backgroundScope)
-        val useCaseTicket = tracker.begin(gameId, "Game")!!
-        tracker.finish(useCaseTicket, launched = true)
-        var failed = false
-
-        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId, onFailure = { failed = true })) }
-        runCurrent()
-
-        assertTrue(failed)
-        assertNull(tracker.progress.value)
-        verify(exactly = 0) { soundManager.play(SoundType.LAUNCH_GAME) }
     }
 }

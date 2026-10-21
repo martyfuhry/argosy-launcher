@@ -203,13 +203,6 @@ class LaunchProgressTracker internal constructor(
         synchronized(lock) { ticket.awaitsWindow = true }
     }
 
-    /**
-     * Holds the finished live launch as [holdForWindow] does and returns it, or null when there is
-     * none.
-     */
-    fun holdLiveForWindow(): Ticket? =
-        synchronized(lock) { live?.takeIf { it.isFinished }?.also { it.awaitsWindow = true } }
-
     fun windowRequested(ticket: Ticket) {
         synchronized(lock) { ticket.awaitsWindow = false }
     }

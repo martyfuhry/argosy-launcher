@@ -433,7 +433,7 @@ class GameLaunchDelegate @Inject constructor(
 
     private suspend fun dispatchPrimaryLaunchResult(
         result: LaunchResult,
-        ticket: LaunchProgressTracker.Ticket?,
+        ticket: LaunchProgressTracker.Ticket,
         channelName: String?,
         discId: Long?,
         launchMode: LaunchMode?,
@@ -553,22 +553,40 @@ class GameLaunchDelegate @Inject constructor(
         _onLaunchFailed = null
 
         scope.launch {
-            val result = launchGameUseCase(
-                gameId = state.gameId,
-                selectedDiscPath = discPath,
-                origin = state.origin,
-                savesPrepared = true
-            )
-            when (result) {
-                is LaunchResult.Success -> launchHandoff.handOff(
-                    null,
-                    applyLaunchExtras(result.intent, state.launchMode, state.origin),
-                    state.start
+            continuePickedLaunch(state.gameId, onRefused = {}) { ticket ->
+                val result = launchGameUseCase(
+                    gameId = state.gameId,
+                    selectedDiscPath = discPath,
+                    origin = state.origin,
+                    savesPrepared = true
                 )
-                LaunchResult.Cancelled -> Unit
-                is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
-                else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_disc_launch_failed))
+                when (result) {
+                    is LaunchResult.Success -> launchHandoff.handOff(
+                        ticket,
+                        applyLaunchExtras(result.intent, state.launchMode, state.origin),
+                        state.start
+                    )
+                    LaunchResult.Cancelled -> Unit
+                    is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
+                    else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_disc_launch_failed))
+                }
             }
+        }
+    }
+
+    private suspend fun continuePickedLaunch(
+        gameId: Long,
+        onRefused: () -> Unit,
+        block: suspend (LaunchProgressTracker.Ticket) -> Unit
+    ) {
+        val ticket = launchProgressTracker.begin(gameId, gameRepository.getById(gameId)?.title) ?: run {
+            onRefused()
+            return
+        }
+        try {
+            block(ticket)
+        } finally {
+            if (!ticket.isFinished) launchProgressTracker.finish(ticket, launched = false)
         }
     }
 
@@ -585,12 +603,14 @@ class GameLaunchDelegate @Inject constructor(
         _onLaunchFailed = null
 
         scope.launch {
-            val result = if (variantFileId != null) {
-                launchGameUseCase(gameId = state.gameId, variantFileId = variantFileId, origin = state.origin, savesPrepared = true)
-            } else {
-                launchGameUseCase(gameId = state.gameId, skipVariantPrompt = true, origin = state.origin, savesPrepared = true)
+            continuePickedLaunch(state.gameId, onRefused = onFailed) { ticket ->
+                val result = if (variantFileId != null) {
+                    launchGameUseCase(gameId = state.gameId, variantFileId = variantFileId, origin = state.origin, savesPrepared = true)
+                } else {
+                    launchGameUseCase(gameId = state.gameId, skipVariantPrompt = true, origin = state.origin, savesPrepared = true)
+                }
+                dispatchPrimaryLaunchResult(result, ticket, state.channelName, null, state.launchMode, state.origin, state.start, onFailed)
             }
-            dispatchPrimaryLaunchResult(result, null, state.channelName, null, state.launchMode, state.origin, state.start, onFailed)
         }
     }
 
@@ -607,20 +627,22 @@ class GameLaunchDelegate @Inject constructor(
 
         scope.launch {
             emulatorSaveConfigRepository.setMemcardPath(state.emulatorId, cardPath)
-            val result = launchGameUseCase(
-                gameId = state.gameId,
-                origin = state.origin,
-                savesPrepared = true
-            )
-            when (result) {
-                is LaunchResult.Success -> launchHandoff.handOff(
-                    null,
-                    applyLaunchExtras(result.intent, state.launchMode, state.origin),
-                    state.start
+            continuePickedLaunch(state.gameId, onRefused = {}) { ticket ->
+                val result = launchGameUseCase(
+                    gameId = state.gameId,
+                    origin = state.origin,
+                    savesPrepared = true
                 )
-                LaunchResult.Cancelled -> Unit
-                is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
-                else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+                when (result) {
+                    is LaunchResult.Success -> launchHandoff.handOff(
+                        ticket,
+                        applyLaunchExtras(result.intent, state.launchMode, state.origin),
+                        state.start
+                    )
+                    LaunchResult.Cancelled -> Unit
+                    is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
+                    else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+                }
             }
         }
     }

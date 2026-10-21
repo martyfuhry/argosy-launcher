@@ -14,6 +14,7 @@ import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.usecase.game.LaunchGameUseCase
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
@@ -145,6 +146,43 @@ class GameLaunchDelegateTest {
         assertNull(tracker.progress.value)
         assertNull(tracker.current)
         verify(exactly = 1) { tracker.finish(any(), any()) }
+        assertNotNull(tracker.begin(gameId, "Game"))
+    }
+
+    @Test
+    fun `a picked memory card continues under its own ticket, placed before launching is published`() = runTest {
+        val tracker = tracker()
+        val router = router()
+        var stepWhenPlaced: LaunchStep? = LaunchStep.Launching
+        coEvery { resolver.launchOptionsFor(gameId, any()) } answers {
+            stepWhenPlaced = tracker.progress.value?.step
+            options
+        }
+        coEvery {
+            launchGameUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+        } returnsMany listOf(
+            LaunchResult.SelectMemcard(gameId, "duckstation", "PlayStation", emptyList()),
+            LaunchResult.Success(intent)
+        )
+        val delegate = delegate(tracker, router)
+
+        delegate.launchSimple(this, gameId, callbacks = callbacks())
+        runCurrent()
+        assertNotNull(delegate.memcardPickerState.value)
+
+        delegate.selectMemcard(this, "/cards/card1.mcd")
+        runCurrent()
+
+        assertNull(stepWhenPlaced)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+        coVerify(exactly = 2) { tracker.begin(gameId, "Game") }
+        verify(exactly = 0) { manager.startGame(any()) }
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
+        verify(exactly = 1) { tracker.finish(any(), true) }
         assertNotNull(tracker.begin(gameId, "Game"))
     }
 
