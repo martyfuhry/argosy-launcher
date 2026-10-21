@@ -28,7 +28,8 @@ class VideoSettingsManager(
     private val frameRegistry: FrameRegistry,
     private val scope: CoroutineScope,
     private val shaderRegistryProvider: () -> ShaderRegistry,
-    private val getRetroView: () -> GLRetroView
+    private val getRetroView: () -> GLRetroView,
+    private val setAudioVolume: (Float) -> Unit
 ) {
     var currentShader by mutableStateOf("None")
     var resolvedCustomShader: ShaderConfig = ShaderConfig.Default
@@ -480,7 +481,7 @@ class VideoSettingsManager(
                 onRewindConfigChanged?.invoke()
             }
             LibretroSettingDef.AudioVolume -> {
-                retroView.audioVolume = (value.removeSuffix("%").toIntOrNull() ?: 100) / 100f
+                setAudioVolume((value.removeSuffix("%").toIntOrNull() ?: 100) / 100f)
             }
             LibretroSettingDef.SkipDuplicateFrames,
             LibretroSettingDef.LowLatencyAudio,

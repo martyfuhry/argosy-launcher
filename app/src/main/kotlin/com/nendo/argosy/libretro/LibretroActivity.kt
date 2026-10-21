@@ -296,6 +296,7 @@ class LibretroActivity : ComponentActivity() {
 
     private var limitHotkeysToPlayer1 by mutableStateOf(true)
     private var firstFrameRendered = false
+    private var arrivalRevealed by mutableStateOf(false)
     private var framesSinceSample = 0
     private var measuredFps by mutableIntStateOf(0)
     private lateinit var audioController: LibretroAudioController
@@ -880,7 +881,8 @@ class LibretroActivity : ComponentActivity() {
             frameRegistry = frameRegistry,
             scope = lifecycleScope,
             shaderRegistryProvider = { ShaderRegistry(this) },
-            getRetroView = { retroView }
+            getRetroView = { retroView },
+            setAudioVolume = { audioController.setVolume(it) }
         )
         videoSettings.applySettings(settings)
         videoSettings.resolveCustomShader(settings)
@@ -1018,6 +1020,7 @@ class LibretroActivity : ComponentActivity() {
                 Log.e(TAG, "GLRetroView error: code=$errorCode, message=$errorMessage")
                 Log.e(TAG, "Context: gameId=$gameId, core=$coreName, rom=$romPath")
                 gameLoadFailed = true
+                arrivalRevealed = true
                 coreLoadedSuccessfully = false
                 inGameMessage = errorMessage
                 finish()
@@ -1043,6 +1046,8 @@ class LibretroActivity : ComponentActivity() {
                     is GLRetroView.GLRetroEvents.FrameRendered -> {
                         if (!firstFrameRendered) {
                             firstFrameRendered = true
+                            arrivalRevealed = true
+                            audioController.riseFromFirstFrame(lifecycleScope)
                             if (seatPromptVisible) retroView.pauseEmulation()
                             Log.i(TAG, "[Startup] First frame rendered - emulation running successfully")
                             Log.d(TAG, "[Startup] gameId=$gameId, core=$coreName, hardcore=$hardcoreMode")
@@ -1483,6 +1488,7 @@ class LibretroActivity : ComponentActivity() {
                 LocalXYIconsSwapped provides swapXY,
                 LocalSwapStartSelect provides swapStartSelect
             ) {
+                com.nendo.argosy.libretro.ui.GameArrival(revealed = arrivalRevealed)
                 com.nendo.argosy.libretro.touch.OnScreenControlsHost(
                     retroView = retroView,
                     platformSlug = platformSlug,

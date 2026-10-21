@@ -336,6 +336,8 @@ object ComponentDefaults {
         const val progressWidthDp = 280
         const val fadeMs = 300
         const val veilMs = 700
+        const val arrivalMs = 400
+        const val audioRiseMs = 1000
         const val patienceMs = 2500
         const val reflowMs = 900
         const val statusFadeMs = 700
