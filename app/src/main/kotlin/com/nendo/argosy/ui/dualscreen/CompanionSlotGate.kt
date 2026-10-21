@@ -7,3 +7,10 @@ package com.nendo.argosy.ui.dualscreen
  */
 fun companionSlotToRender(showsDashboard: Boolean, slot: PresentationSlot): PresentationSlot? =
     if (showsDashboard && slot !is PresentationSlot.InGame) null else slot
+
+/**
+ * How long the in-game dashboard fades in over the companion's black hold: [arrivalMs] while the
+ * companion arrives from the hold, zero under reduced motion or when no hold applies.
+ */
+fun dashboardArrivalMs(showsDashboard: Boolean, reduced: Boolean, arrivalMs: Int): Int =
+    if (showsDashboard && !reduced) arrivalMs else 0

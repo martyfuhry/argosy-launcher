@@ -223,14 +223,29 @@ class SecondaryHomeActivity :
                 .focusable()
         ) {
             val rendered = com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
-            if (rendered == null) {
+            val arrivalMs = com.nendo.argosy.ui.dualscreen.dashboardArrivalMs(
+                showsDashboard = showsDashboard,
+                reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==
+                    com.nendo.argosy.ui.theme.MotionTier.Reduced,
+                arrivalMs = com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.arrivalMs
+            )
+            if (showsDashboard) {
                 androidx.compose.foundation.layout.Box(
                     modifier = androidx.compose.ui.Modifier
                         .fillMaxSize()
                         .background(androidx.compose.ui.graphics.Color.Black)
                 )
-            } else {
-                com.nendo.argosy.ui.dualscreen.PresentationSlotContent(rendered)
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = rendered != null,
+                enter = androidx.compose.animation.fadeIn(
+                    androidx.compose.animation.core.tween(arrivalMs)
+                ),
+                exit = androidx.compose.animation.ExitTransition.None
+            ) {
+                if (rendered != null) {
+                    com.nendo.argosy.ui.dualscreen.PresentationSlotContent(rendered)
+                }
             }
         }
     }

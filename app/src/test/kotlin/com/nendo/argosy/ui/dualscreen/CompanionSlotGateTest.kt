@@ -37,4 +37,19 @@ class CompanionSlotGateTest {
             assertEquals(it, companionSlotToRender(showsDashboard = false, slot = it))
         }
     }
+
+    @Test
+    fun `the dashboard fades in over the hold for the arrival duration`() {
+        assertEquals(400, dashboardArrivalMs(showsDashboard = true, reduced = false, arrivalMs = 400))
+    }
+
+    @Test
+    fun `reduced motion cuts the dashboard in without a fade`() {
+        assertEquals(0, dashboardArrivalMs(showsDashboard = true, reduced = true, arrivalMs = 400))
+    }
+
+    @Test
+    fun `a swapped companion without a game dashboard switches slots without a fade`() {
+        assertEquals(0, dashboardArrivalMs(showsDashboard = false, reduced = false, arrivalMs = 400))
+    }
 }
