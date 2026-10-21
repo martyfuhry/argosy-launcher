@@ -138,6 +138,40 @@ class HeldWhileTest {
     }
 
     @Test
+    fun `a value released once is not released again by a later hold`() = runTest {
+        val out = collect()
+        send(1)
+
+        setHold(true)
+        send(2)
+        setHold(false)
+        send(3)
+        setHold(true)
+        setHold(false)
+
+        assertEquals(listOf(1, 2, 3), out)
+    }
+
+    @Test
+    fun `a slow collector keeps upstream to its pace instead of queueing values`() = runTest {
+        var produced = 0
+        val lead = mutableListOf<Int>()
+
+        flow {
+            repeat(100) {
+                produced++
+                emit(it)
+            }
+        }.heldWhile(MutableStateFlow(false)).collect { value ->
+            lead += produced - value
+            delay(10)
+        }
+
+        assertEquals(100, lead.size)
+        assertTrue(lead.all { it <= 2 })
+    }
+
+    @Test
     fun `values wait until the hold is known and the latest then arrives once`() = runTest {
         val lateHold = flow {
             delay(100)

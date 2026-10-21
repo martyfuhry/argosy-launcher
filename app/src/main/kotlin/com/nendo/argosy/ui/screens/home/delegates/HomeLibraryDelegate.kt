@@ -7,10 +7,8 @@ import com.nendo.argosy.data.local.entity.getDisplayName
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.model.ResolvedGameArt
 import com.nendo.argosy.data.model.tieredByOwnership
-import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.EmulatorDetector
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
-import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.data.platform.LocalPlatformIds
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -46,6 +44,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -90,8 +89,7 @@ data class LibraryState(
     val repairedCoverPaths: Map<Long, String> = emptyMap()
 )
 
-internal fun holdsRecents(progress: LaunchProgress?, session: ActiveSession?): Boolean =
-    progress != null || session != null
+internal fun holdsRecents(progress: LaunchProgress?): Boolean = progress != null
 
 private data class RecentGamesCache(
     val games: List<HomeGameUi>?,
@@ -115,13 +113,13 @@ class HomeLibraryDelegate @Inject constructor(
     private val steamPathResolver: com.nendo.argosy.data.steam.SteamPathResolver,
     private val collectionRepository: com.nendo.argosy.data.repository.CollectionRepository,
     private val appsRepository: com.nendo.argosy.data.repository.AppsRepository,
-    private val launchProgressTracker: LaunchProgressTracker,
-    private val playSessionTracker: PlaySessionTracker
+    private val launchProgressTracker: LaunchProgressTracker
 ) {
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
 
     private val recentGamesCache = AtomicReference(RecentGamesCache(null, 0L))
+    private val deferredRecentsRefreshes = MutableStateFlow(0L)
     private var cachedPlatformDisplayNames: Map<Long, String> = emptyMap()
     private val pendingCoverRepairs = mutableSetOf<Long>()
     private val platformGameLoader = PlatformGameLoader(gameRepository, downloadFileStatusRepository)
@@ -246,8 +244,10 @@ class HomeLibraryDelegate @Inject constructor(
         scope.launch {
             gameRepository.awaitStorageReady()
             val newThreshold = Instant.now().minus(NEW_GAME_THRESHOLD_HOURS, ChronoUnit.HOURS)
-            val hold = combine(launchProgressTracker.progress, playSessionTracker.activeSession) { p, s -> holdsRecents(p, s) }
-            gameRepository.observeRecentlyPlayed(RECENT_GAMES_CANDIDATE_POOL).heldWhile(hold).collect { recentlyPlayed ->
+            val hold = launchProgressTracker.progress.map { holdsRecents(it) }
+            val played = gameRepository.observeRecentlyPlayed(RECENT_GAMES_CANDIDATE_POOL)
+            val source = combine(played, deferredRecentsRefreshes) { recentlyPlayed, _ -> recentlyPlayed }
+            source.heldWhile(hold).collect { recentlyPlayed ->
                 val installedOnly = installedOnlyHome()
                 val newlyAdded = gameRepository.getNewlyAdded(newThreshold, installedOnly, RECENT_GAMES_CANDIDATE_POOL)
                 val allCandidates = (recentlyPlayed + newlyAdded).distinctBy { it.id }
@@ -282,6 +282,8 @@ class HomeLibraryDelegate @Inject constructor(
 
         val gameUis = if (currentCache.games != null) {
             currentCache.games
+        } else if (deferIfRecentsHeld()) {
+            return
         } else {
             val newThreshold = Instant.now().minus(NEW_GAME_THRESHOLD_HOURS, ChronoUnit.HOURS)
             val installedOnly = installedOnlyHome()
@@ -491,6 +493,10 @@ class HomeLibraryDelegate @Inject constructor(
                 RefreshResult(gameUis.map { it.id }, isEmpty = gameUis.isEmpty())
             }
             HomeRow.Continue -> {
+                if (deferIfRecentsHeld()) {
+                    val shown = _state.value.recentGames
+                    return RefreshResult(shown.map { it.id }, isEmpty = shown.isEmpty())
+                }
                 invalidateRecentGamesCache()
                 val newThreshold = Instant.now().minus(NEW_GAME_THRESHOLD_HOURS, ChronoUnit.HOURS)
                 val installedOnly = installedOnlyHome()
@@ -617,6 +623,12 @@ class HomeLibraryDelegate @Inject constructor(
 
     fun invalidateRecentGamesCache() {
         recentGamesCache.updateAndGet { RecentGamesCache(null, it.version + 1) }
+    }
+
+    private fun deferIfRecentsHeld(): Boolean {
+        if (!holdsRecents(launchProgressTracker.progress.value)) return false
+        deferredRecentsRefreshes.update { it + 1 }
+        return true
     }
 
     private suspend fun prefetchGamesForPinnedCollection(pinned: PinnedCollection) {
