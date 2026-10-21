@@ -22,6 +22,8 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -104,6 +106,7 @@ class HomeLibraryDelegateHoldTest {
         val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
         runCurrent()
         assertEquals(listOf(2L, 1L), result.gameIds)
+        assertFalse(result.isEmpty)
         assertEquals(listOf(2L, 1L), delegate.shownIds())
 
         tracker.finish(ticket, launched = true)
@@ -180,6 +183,7 @@ class HomeLibraryDelegateHoldTest {
         val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
         runCurrent()
         assertEquals(listOf(2L, 1L), result.gameIds)
+        assertFalse(result.isEmpty)
         assertEquals(listOf(2L, 1L), delegate.shownIds())
 
         tracker.finish(ticket, launched = false)
@@ -232,6 +236,23 @@ class HomeLibraryDelegateHoldTest {
         delegate.loadRecentGames()
 
         assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
+    }
+
+    @Test
+    fun `a deferred Continue refresh of an empty row reports the row empty`() = runTest {
+        played.value = emptyList()
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        tracker.begin(1L, "Game 1")!!
+        runCurrent()
+        newlyAdded = listOf(downloaded)
+
+        val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
+
+        assertEquals(emptyList<Long>(), result.gameIds)
+        assertTrue(result.isEmpty)
+        assertEquals(emptyList<Long>(), delegate.shownIds())
     }
 
     @Test
