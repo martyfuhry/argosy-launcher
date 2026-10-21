@@ -551,10 +551,11 @@ class GameLaunchDelegate @Inject constructor(
     fun selectDisc(scope: CoroutineScope, discPath: String) {
         val state = _discPickerState.value ?: return
         _discPickerState.value = null
+        val onRefused = _onLaunchFailed ?: {}
         _onLaunchFailed = null
 
         scope.launch {
-            continuePickedLaunch(state.gameId, onRefused = {}) { ticket ->
+            continuePickedLaunch(state.gameId, onRefused = onRefused) { ticket ->
                 val result = launchGameUseCase(
                     gameId = state.gameId,
                     selectedDiscPath = discPath,
@@ -626,11 +627,12 @@ class GameLaunchDelegate @Inject constructor(
     fun selectMemcard(scope: CoroutineScope, cardPath: String) {
         val state = _memcardPickerState.value ?: return
         _memcardPickerState.value = null
+        val onRefused = _onLaunchFailed ?: {}
         _onLaunchFailed = null
 
         scope.launch {
             emulatorSaveConfigRepository.setMemcardPath(state.emulatorId, cardPath)
-            continuePickedLaunch(state.gameId, onRefused = {}) { ticket ->
+            continuePickedLaunch(state.gameId, onRefused = onRefused) { ticket ->
                 val result = launchGameUseCase(
                     gameId = state.gameId,
                     origin = state.origin,
