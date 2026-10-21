@@ -1363,8 +1363,9 @@ class DualScreenManager(
     /**
      * Re-asks [onLauncherWindowFocused] for the last launcher window to gain focus when a live
      * launch clears while that window still holds focus, so a game start that never produced a
-     * window does not leave its session running. The previous value lives on the manager, so an
-     * edge that straddles [rebind] is still seen.
+     * window does not leave its session running. A launch going live cancels a focus check still
+     * in flight, since that check was about the game before it. The previous value lives on the
+     * manager, so an edge that straddles [rebind] is still seen.
      */
     private fun observeLaunchLive() {
         launchLiveObserverJob?.cancel()
@@ -1372,6 +1373,7 @@ class DualScreenManager(
             launchProgressTracker.launchLive.collect { live ->
                 val fell = launchWasLive && !live
                 launchWasLive = live
+                if (live) focusCheck?.cancel()
                 if (!fell) return@collect
                 val launcher = lastFocusedLauncher?.get() ?: return@collect
                 if (launcher.hasWindowFocus()) onLauncherWindowFocused(launcher)
@@ -1850,6 +1852,7 @@ class DualScreenManager(
      * the game closed. The session ends once [emulatorLeftScreen] confirms it; a game on another
      * display keeps running. While a launch is live the focus gain is a launcher surface returning
      * before its game window exists, not the game closing; the check waits for the launch to clear.
+     * A launch that goes live while the check is settling stops it the same way.
      */
     fun onLauncherWindowFocused(activity: android.app.Activity) {
         lastFocusedLauncher = java.lang.ref.WeakReference(activity)
@@ -1863,6 +1866,7 @@ class DualScreenManager(
                 preferencesRepository.getPersistedSession() == null
             ) return@launch
             if (!emulatorLeftScreen(activity) { activity.hasWindowFocus() }) return@launch
+            if (launchProgressTracker.launchLive.value) return@launch
             Log.d(TAG, "Launcher focused on display $ownDisplay and the game is gone, ending session")
             endSessionAfterEmulatorLeft()
         }

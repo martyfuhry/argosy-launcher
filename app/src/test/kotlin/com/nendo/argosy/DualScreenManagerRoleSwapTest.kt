@@ -293,14 +293,52 @@ class DualScreenManagerRoleSwapTest {
         verify(exactly = 1) { sessionStateStore.clearSession() }
     }
 
+    @Test
+    fun `a launch going live while a focus check settles leaves the new session running`() {
+        val launch = launcherFocusedDuringLaunch(liveAtStart = false, emulatorOnScreen = listOf(true, false))
+
+        manager.onLauncherWindowFocused(launch.activity)
+        testScope.testScheduler.runCurrent()
+        launch.live.value = true
+        testScope.testScheduler.advanceTimeBy(EMULATOR_SETTLE_MS)
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
+        verify(exactly = 0) { sessionStateStore.clearSession() }
+    }
+
+    @Test
+    fun `a focus check that settles with no launch going live ends the session once`() {
+        val launch = launcherFocusedDuringLaunch(liveAtStart = false, emulatorOnScreen = listOf(true, false))
+
+        manager.onLauncherWindowFocused(launch.activity)
+        testScope.testScheduler.runCurrent()
+        testScope.testScheduler.advanceTimeBy(EMULATOR_SETTLE_MS)
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 1) { launch.sessionEnd.endClosedSession() }
+        verify(exactly = 1) { sessionStateStore.clearSession() }
+    }
+
     private class LaunchFocusFixture(
         val activity: android.app.Activity,
         val live: MutableStateFlow<Boolean>,
         val sessionEnd: com.nendo.argosy.ui.screens.common.SessionEndCoordinator
     )
 
-    private fun launcherFocusedDuringLaunch(liveAtStart: Boolean): LaunchFocusFixture {
+    private fun launcherFocusedDuringLaunch(
+        liveAtStart: Boolean,
+        emulatorOnScreen: List<Boolean> = emptyList()
+    ): LaunchFocusFixture {
         val live = MutableStateFlow(liveAtStart)
+        val permissionHelper = mockk<com.nendo.argosy.util.PermissionHelper>(relaxed = true)
+        if (emulatorOnScreen.isNotEmpty()) {
+            every { sessionStateStore.getEmulatorPackage() } returns EXTERNAL_EMULATOR
+            every { permissionHelper.isPackageOnScreenOrRecent(any(), EXTERNAL_EMULATOR, any()) } returnsMany
+                emulatorOnScreen
+        } else {
+            every { sessionStateStore.getEmulatorPackage() } returns null
+        }
         val launchTracker = mockk<com.nendo.argosy.data.emulator.LaunchProgressTracker> {
             every { launchLive } returns live
         }
@@ -309,7 +347,6 @@ class DualScreenManagerRoleSwapTest {
                 MutableStateFlow(mockk<com.nendo.argosy.data.emulator.ActiveSession>(relaxed = true))
         }
         val sessionEnd = mockk<com.nendo.argosy.ui.screens.common.SessionEndCoordinator>(relaxed = true)
-        every { sessionStateStore.getEmulatorPackage() } returns null
         val activity = mockk<android.app.Activity>(relaxed = true) {
             every { window.decorView.display.displayId } returns PRIMARY_DISPLAY
             every { hasWindowFocus() } returns true
@@ -318,7 +355,8 @@ class DualScreenManagerRoleSwapTest {
             scope = testScope.backgroundScope,
             playSessionTracker = sessionTracker,
             sessionEndCoordinator = sessionEnd,
-            launchProgressTracker = launchTracker
+            launchProgressTracker = launchTracker,
+            permissionHelper = permissionHelper
         )
         testScope.testScheduler.runCurrent()
         return LaunchFocusFixture(activity, live, sessionEnd)
@@ -610,6 +648,8 @@ class DualScreenManagerRoleSwapTest {
 
     private companion object {
         const val PRIMARY_DISPLAY = 0
+        const val EXTERNAL_EMULATOR = "org.example.emulator"
+        const val EMULATOR_SETTLE_MS = 2_000L
         const val PRESENTATION_DISPLAY = 1
         const val VIRTUAL_DISPLAY = 9
         val TOP_SCREEN = com.nendo.argosy.util.AttachedScreen(
@@ -630,7 +670,8 @@ class DualScreenManagerRoleSwapTest {
         sessionEndCoordinator: com.nendo.argosy.ui.screens.common.SessionEndCoordinator = mockk(relaxed = true),
         launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker = mockk {
             every { launchLive } returns MutableStateFlow(false)
-        }
+        },
+        permissionHelper: com.nendo.argosy.util.PermissionHelper = mockk(relaxed = true)
     ): DualScreenManager = DualScreenManager(
         context = hostContext,
         scope = scope,
@@ -679,7 +720,7 @@ class DualScreenManagerRoleSwapTest {
         steamDownloadQueueDao = mockk(relaxed = true),
         steamRepository = mockk(relaxed = true),
         playSessionTracker = playSessionTracker,
-        permissionHelper = mockk(relaxed = true),
+        permissionHelper = permissionHelper,
         steamContentManager = mockk(relaxed = true),
         repairImageCacheUseCase = mockk(relaxed = true),
         downloadFileStatusRepository = mockk(relaxed = true),
