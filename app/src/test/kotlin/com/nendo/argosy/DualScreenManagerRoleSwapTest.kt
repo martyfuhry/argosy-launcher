@@ -257,6 +257,73 @@ class DualScreenManagerRoleSwapTest {
         verify(exactly = 1) { tracker.endSessionInBackground(any(), any()) }
     }
 
+    @Test
+    fun `a launcher focus gain while the launch is live leaves the session running`() {
+        val launch = launcherFocusedDuringLaunch(liveAtStart = true)
+
+        manager.onLauncherWindowFocused(launch.activity)
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
+        verify(exactly = 0) { sessionStateStore.clearSession() }
+    }
+
+    @Test
+    fun `the launch clearing while the launcher still holds focus ends the session once`() {
+        val launch = launcherFocusedDuringLaunch(liveAtStart = true)
+        manager.onLauncherWindowFocused(launch.activity)
+        testScope.testScheduler.runCurrent()
+        verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
+
+        launch.live.value = false
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 1) { launch.sessionEnd.endClosedSession() }
+        verify(exactly = 1) { sessionStateStore.clearSession() }
+    }
+
+    @Test
+    fun `a launcher focus gain with no launch live ends the session whose game is gone`() {
+        val launch = launcherFocusedDuringLaunch(liveAtStart = false)
+
+        manager.onLauncherWindowFocused(launch.activity)
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 1) { launch.sessionEnd.endClosedSession() }
+        verify(exactly = 1) { sessionStateStore.clearSession() }
+    }
+
+    private class LaunchFocusFixture(
+        val activity: android.app.Activity,
+        val live: MutableStateFlow<Boolean>,
+        val sessionEnd: com.nendo.argosy.ui.screens.common.SessionEndCoordinator
+    )
+
+    private fun launcherFocusedDuringLaunch(liveAtStart: Boolean): LaunchFocusFixture {
+        val live = MutableStateFlow(liveAtStart)
+        val launchTracker = mockk<com.nendo.argosy.data.emulator.LaunchProgressTracker> {
+            every { launchLive } returns live
+        }
+        val sessionTracker = mockk<com.nendo.argosy.data.emulator.PlaySessionTracker>(relaxed = true) {
+            every { activeSession } returns
+                MutableStateFlow(mockk<com.nendo.argosy.data.emulator.ActiveSession>(relaxed = true))
+        }
+        val sessionEnd = mockk<com.nendo.argosy.ui.screens.common.SessionEndCoordinator>(relaxed = true)
+        every { sessionStateStore.getEmulatorPackage() } returns null
+        val activity = mockk<android.app.Activity>(relaxed = true) {
+            every { window.decorView.display.displayId } returns PRIMARY_DISPLAY
+            every { hasWindowFocus() } returns true
+        }
+        manager = newManager(
+            scope = testScope.backgroundScope,
+            playSessionTracker = sessionTracker,
+            sessionEndCoordinator = sessionEnd,
+            launchProgressTracker = launchTracker
+        )
+        testScope.testScheduler.runCurrent()
+        return LaunchFocusFixture(activity, live, sessionEnd)
+    }
+
     private fun sessionOnLowerScreen(
         screens: () -> List<com.nendo.argosy.util.AttachedScreen>
     ): Pair<android.hardware.display.DisplayManager.DisplayListener,
@@ -559,7 +626,11 @@ class DualScreenManagerRoleSwapTest {
             mockk(relaxed = true) { every { getRoleDisplayIds(any()) } returns null },
         gameWindowMover: com.nendo.argosy.hardware.GameWindowMover = FakeGameWindowMover(arrives = false),
         attachedScreens: () -> List<com.nendo.argosy.util.AttachedScreen> = { emptyList() },
-        playSessionTracker: com.nendo.argosy.data.emulator.PlaySessionTracker = mockk(relaxed = true)
+        playSessionTracker: com.nendo.argosy.data.emulator.PlaySessionTracker = mockk(relaxed = true),
+        sessionEndCoordinator: com.nendo.argosy.ui.screens.common.SessionEndCoordinator = mockk(relaxed = true),
+        launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker = mockk {
+            every { launchLive } returns MutableStateFlow(false)
+        }
     ): DualScreenManager = DualScreenManager(
         context = hostContext,
         scope = scope,
@@ -576,7 +647,7 @@ class DualScreenManagerRoleSwapTest {
         downloadManager = mockk(relaxed = true),
         gameActionsDelegate = mockk(relaxed = true),
         platformSyncQueue = mockk(relaxed = true),
-        sessionEndCoordinator = mockk(relaxed = true),
+        sessionEndCoordinator = sessionEndCoordinator,
         saveCacheManager = mockk(relaxed = true),
         raRepository = mockk(relaxed = true),
         raTileContentRepository = mockk(relaxed = true),
@@ -623,6 +694,7 @@ class DualScreenManagerRoleSwapTest {
         getRelatedMediaUseCase = mockk(relaxed = true),
         resolveMediaPlayTargetUseCase = mockk(relaxed = true),
         mediaPlaybackTracker = MediaPlaybackTracker(),
+        launchProgressTracker = launchProgressTracker,
         mediaAvailabilityVerifier = mockk(relaxed = true),
         mediaDownloadDelegate = mockk(relaxed = true),
         mediaSeriesDelegate = mockk(relaxed = true),
