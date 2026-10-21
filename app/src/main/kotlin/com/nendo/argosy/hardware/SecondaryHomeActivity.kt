@@ -8,6 +8,7 @@ import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -221,7 +222,31 @@ class SecondaryHomeActivity :
                 .focusRequester(presentationSink)
                 .focusable()
         ) {
-            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+            val rendered = com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
+            val arrivalMs = com.nendo.argosy.ui.dualscreen.dashboardArrivalMs(
+                showsDashboard = showsDashboard,
+                reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==
+                    com.nendo.argosy.ui.theme.MotionTier.Reduced,
+                arrivalMs = com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.arrivalMs
+            )
+            if (showsDashboard) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Color.Black)
+                )
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = rendered != null,
+                enter = androidx.compose.animation.fadeIn(
+                    androidx.compose.animation.core.tween(arrivalMs)
+                ),
+                exit = androidx.compose.animation.ExitTransition.None
+            ) {
+                if (rendered != null) {
+                    com.nendo.argosy.ui.dualscreen.PresentationSlotContent(rendered)
+                }
+            }
         }
     }
 
