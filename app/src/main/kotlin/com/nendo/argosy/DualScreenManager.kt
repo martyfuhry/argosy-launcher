@@ -543,6 +543,9 @@ class DualScreenManager(
     /** Live in-memory session check; unlike SessionStateStore.hasActiveSession this flips false the moment session teardown begins, not after save sync completes. */
     fun hasLiveSession(): Boolean = playSessionTracker.activeSession.value != null
 
+    val isLaunchLive: Boolean
+        get() = launchProgressTracker.launchLive.value
+
     fun teardownCompanion() {
         stopStartupGuard()
         companionLaunchJob?.cancel()
@@ -903,11 +906,15 @@ class DualScreenManager(
         com.nendo.argosy.ui.dualscreen.DisplayHostRegistry<CompanionHost>()
 
     fun registerCompanionHost(displayId: Int, host: CompanionHost) {
+        val before = companionHosts.all().size
         companionHosts.register(displayId, host)
+        Log.d(TAG, "registerCompanionHost: display=$displayId manager=${System.identityHashCode(this)} hosts=$before->${companionHosts.all().size}")
     }
 
     fun unregisterCompanionHost(displayId: Int, host: CompanionHost) {
-        companionHosts.unregister(displayId, host)
+        val before = companionHosts.all().size
+        val removed = companionHosts.unregister(displayId, host)
+        Log.d(TAG, "unregisterCompanionHost: display=$displayId removed=$removed manager=${System.identityHashCode(this)} hosts=$before->${companionHosts.all().size}")
     }
 
     /**
@@ -2463,6 +2470,7 @@ class DualScreenManager(
     }
 
     fun broadcastSessionCleared() {
+        Log.d(TAG, "broadcastSessionCleared: hosts=${companionHosts.displayIds()} manager=${System.identityHashCode(this)} holderIsThis=${DualScreenManagerHolder.instance === this}")
         eachCompanion { it.onSessionEnded() }
     }
 

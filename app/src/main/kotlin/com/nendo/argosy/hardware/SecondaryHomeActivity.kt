@@ -230,15 +230,19 @@ class SecondaryHomeActivity :
         if (releaseUnsupportedDisplay()) return
         systemBars.apply()
         if (!::dsm.isInitialized) return
+        reconnectIfStale()
+        dsm.notifyUserActivity("companionResume")
+        syncFromSessionStore()
+        dsm.onCompanionResumed()
+    }
+
+    private fun reconnectIfStale() {
         val currentDsm = DualScreenManagerHolder.instance
         if (currentDsm != null && dsm !== currentDsm) {
             android.util.Log.w("SecondaryHome", "DSM stale, reconnecting to new instance")
             dsm = currentDsm
             initializeCompanion()
         }
-        dsm.notifyUserActivity("companionResume")
-        syncFromSessionStore()
-        dsm.onCompanionResumed()
     }
 
     private fun syncFromSessionStore() {
@@ -314,13 +318,39 @@ class SecondaryHomeActivity :
         return result
     }
 
+    /**
+     * A tap is where this window's key focus is reconciled with the session as it stands now, not
+     * as the last broadcast this companion happened to receive left it. A session that ended
+     * through a path whose broadcast missed this host (a host registered on a replaced manager)
+     * would otherwise leave the window not focusable, and once the tap moves the focused display
+     * here no window on it can take a key. The session record is the shared truth every manager
+     * writes before it notifies, so a companion still showing a session the record has cleared ends
+     * it here. A launcher companion this tap released from that stale yield, and that still lacks
+     * focus a frame later with no launch or session underway, is brought forward; a tap that hands
+     * focus to another display on purpose never had a yield to release, so it is left alone.
+     */
     private fun refocusAfterTouch() {
-        if (isGameActive && ::dsm.isInitialized) {
+        if (!::dsm.isInitialized) return
+        reconnectIfStale()
+        val wasYielded = keysYieldedToSession
+        if (isGameActive && !dsm.sessionStateStore.hasActiveSession()) onSessionEnded()
+        yieldKeysToSession()
+        if (isGameActive) {
+            android.util.Log.d("SecondaryHome", "refocusAfterTouch: branch=session yielded=$keysYieldedToSession hasFocus=${hasWindowFocus()}")
             if (!keysYieldedToSession) window.decorView.post { dsm.refocusSession() }
         } else if (isShowcaseRole) {
+            android.util.Log.d("SecondaryHome", "refocusAfterTouch: branch=showcase hasFocus=${hasWindowFocus()}")
             window.decorView.post { dsm.onRefocusUpper() }
+        } else {
+            android.util.Log.d("SecondaryHome", "refocusAfterTouch: branch=launcher wasYielded=$wasYielded yielded=$keysYieldedToSession hasFocus=${hasWindowFocus()}")
+            if (wasYielded && !keysYieldedToSession) {
+                window.decorView.post { if (!hasWindowFocus() && !sessionUnderway()) refocusSelf() }
+            }
         }
     }
+
+    private fun sessionUnderway(): Boolean =
+        dsm.isLaunchLive || dsm.hasLiveSession() || dsm.sessionStateStore.hasActiveSession()
 
     /**
      * The media dim is the sole writer of this window's brightness override, so an override in
@@ -453,8 +483,15 @@ class SecondaryHomeActivity :
     }
 
     private fun yieldKeysToSession() {
-        keysYieldedToSession = isGameActive && !isShowcaseRole &&
-            (dsm.emulatorDisplayId ?: Display.DEFAULT_DISPLAY) != hostDisplayId()
+        keysYieldedToSession = CompanionKeyYield.yieldsKeys(
+            gameActive = isGameActive,
+            showcaseRole = isShowcaseRole,
+            emulatorDisplayId = dsm.emulatorDisplayId,
+            hostDisplayId = hostDisplayId()
+        )
+        android.util.Log.d("SecondaryHome", "yieldKeysToSession: yielded=$keysYieldedToSession gameActive=$isGameActive showcase=$isShowcaseRole emulatorDisplay=${dsm.emulatorDisplayId} hostDisplay=${hostDisplayId()}")
+        val notFocusable = android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        if (((window.attributes.flags and notFocusable) != 0) == keysYieldedToSession) return
         if (keysYieldedToSession) {
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
         } else {
@@ -465,6 +502,7 @@ class SecondaryHomeActivity :
     override fun onSessionStarted(
         gameId: Long, isHardcore: Boolean, channelName: String?
     ) {
+        android.util.Log.d("SecondaryHome", "onSessionStarted: gameId=$gameId display=${hostDisplayId()} wasGameActive=$isGameActive")
         isGameActive = true
         this.isHardcore = isHardcore
         currentChannelName = channelName
@@ -484,6 +522,7 @@ class SecondaryHomeActivity :
     }
 
     override fun onSessionEnded() {
+        android.util.Log.d("SecondaryHome", "onSessionEnded: display=${hostDisplayId()} wasGameActive=$isGameActive yielded=$keysYieldedToSession")
         isGameActive = false
         isHardcore = false
         currentChannelName = null
