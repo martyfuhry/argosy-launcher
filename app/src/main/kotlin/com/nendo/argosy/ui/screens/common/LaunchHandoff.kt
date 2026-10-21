@@ -32,7 +32,8 @@ class LaunchHandoff internal constructor(
      * placement resolves opens nothing. A start that fails clears Launching at once and reaches
      * [GameStart.onFailure]. A null ticket is a launch continued from a picker, where
      * LaunchGameUseCase opened and finished its own ticket and so has already published Launching;
-     * it still holds.
+     * it still holds. Launching outlasts a stop of the launching screen until the window has been
+     * requested.
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket?,
@@ -41,14 +42,22 @@ class LaunchHandoff internal constructor(
     ) {
         val request = startRouter.place(start.gameId, intent, start.overrideDisplayId)
         if (ticket?.isCancelled == true) return
-        if (ticket != null) tracker.finish(ticket, launched = true)
+        val held = if (ticket != null) {
+            tracker.holdForWindow(ticket)
+            tracker.finish(ticket, launched = true)
+            ticket
+        } else {
+            tracker.holdLiveForWindow()
+        }
         soundManager.play(SoundType.LAUNCH_GAME)
         delay(holdMs)
-        request.fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
+        val failure = request.fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
             .exceptionOrNull()
-            ?.let { failure ->
-                tracker.openFailed()
-                start.onFailure?.invoke(failure)
-            }
+        if (failure == null) {
+            held?.let(tracker::windowRequested)
+            return
+        }
+        tracker.openFailed()
+        start.onFailure?.invoke(failure)
     }
 }

@@ -84,8 +84,9 @@ private fun launchProgressEntryPoint(context: Context): LaunchProgressEntryPoint
 
 /**
  * The launch in progress over the surface that starts launches. It holds the input stack while a
- * launch runs. A launch that has opened its game ends once that surface stops, once the overlay
- * leaves composition (the in-game dashboard takes the surface), and when the overlay comes back.
+ * launch runs. A launch whose game window has been requested ends once that surface stops, once
+ * the overlay leaves composition (the in-game dashboard takes the surface), and when the overlay
+ * comes back.
  */
 @Composable
 fun LaunchOverlay(

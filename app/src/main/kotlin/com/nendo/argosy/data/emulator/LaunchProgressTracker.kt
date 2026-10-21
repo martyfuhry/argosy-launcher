@@ -62,6 +62,9 @@ class LaunchProgressTracker internal constructor(
         var failure: LaunchFailure? = null
             internal set
 
+        @Volatile
+        internal var awaitsWindow = false
+
         private val finished = CompletableDeferred<Unit>()
         private var pendingAnswer: CompletableDeferred<LaunchPromptOption?>? = null
 
@@ -169,7 +172,7 @@ class LaunchProgressTracker internal constructor(
 
     /**
      * Ends [ticket]. A launch that opened its game keeps showing until the screen that started it
-     * stops, or briefly when it never does.
+     * stops outside a [holdForWindow] hold, or briefly when it never does.
      */
     fun finish(ticket: Ticket, launched: Boolean) {
         synchronized(lock) {
@@ -192,15 +195,37 @@ class LaunchProgressTracker internal constructor(
         }
     }
 
-    fun hostStopped() = clearOpened()
+    /**
+     * Keeps [ticket]'s Launching through a stop of the screen that started it until
+     * [windowRequested] or [openFailed]. The Launching hold timeout still ends it.
+     */
+    fun holdForWindow(ticket: Ticket) {
+        synchronized(lock) { ticket.awaitsWindow = true }
+    }
+
+    /**
+     * Holds the finished live launch as [holdForWindow] does and returns it, or null when there is
+     * none.
+     */
+    fun holdLiveForWindow(): Ticket? =
+        synchronized(lock) { live?.takeIf { it.isFinished }?.also { it.awaitsWindow = true } }
+
+    fun windowRequested(ticket: Ticket) {
+        synchronized(lock) { ticket.awaitsWindow = false }
+    }
+
+    /**
+     * Ends the finished live launch unless [holdForWindow] still holds it.
+     */
+    fun hostStopped() {
+        synchronized(lock) { live?.takeIf { it.isFinished && !it.awaitsWindow } }?.let(::clearIfLive)
+    }
 
     /**
      * Ends a launch whose game screen was asked for but never opened. A launch begun since is left
      * alone.
      */
-    fun openFailed() = clearOpened()
-
-    private fun clearOpened() {
+    fun openFailed() {
         synchronized(lock) { live?.takeIf { it.isFinished } }?.let(::clearIfLive)
     }
 

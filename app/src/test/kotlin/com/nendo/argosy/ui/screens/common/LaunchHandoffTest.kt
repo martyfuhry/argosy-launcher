@@ -79,6 +79,60 @@ class LaunchHandoffTest {
     }
 
     @Test
+    fun `the launching screen stopping during the hold leaves launching up and the window still opens`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        runCurrent()
+        tracker.hostStopped()
+
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+    }
+
+    @Test
+    fun `the launching screen stopping after the window is requested clears launching`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        advanceTimeBy(holdMs)
+        runCurrent()
+        verify(exactly = 1) { manager.startGame(any()) }
+
+        tracker.hostStopped()
+
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
+    fun `a picker launch keeps launching through a stop of the launching screen during the hold`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val useCaseTicket = tracker.begin(gameId, "Game")!!
+        tracker.finish(useCaseTicket, launched = true)
+
+        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
+        runCurrent()
+        tracker.hostStopped()
+
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+        verify(exactly = 1) { manager.startGame(any()) }
+        tracker.hostStopped()
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
     fun `the ticket is finished exactly once as launched`() = runTest {
         val tracker: LaunchProgressTracker = mockk(relaxed = true)
         val ticket: LaunchProgressTracker.Ticket = mockk(relaxed = true)
