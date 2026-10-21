@@ -178,6 +178,7 @@ class ArgosyActivity : ComponentActivity() {
     @Inject lateinit var resolveMediaPlayTargetUseCase:
         com.nendo.argosy.domain.usecase.media.ResolveMediaPlayTargetUseCase
     @Inject lateinit var mediaPlaybackTracker: com.nendo.argosy.data.media.MediaPlaybackTracker
+    @Inject lateinit var launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker
     @Inject lateinit var mediaAvailabilityVerifier: com.nendo.argosy.data.media.MediaAvailabilityVerifier
     @Inject lateinit var mediaDownloadDelegate:
         com.nendo.argosy.ui.screens.media.delegates.MediaDownloadDelegate
@@ -319,6 +320,7 @@ class ArgosyActivity : ComponentActivity() {
                 getRelatedMediaUseCase = getRelatedMediaUseCase,
                 resolveMediaPlayTargetUseCase = resolveMediaPlayTargetUseCase,
                 mediaPlaybackTracker = mediaPlaybackTracker,
+                launchProgressTracker = launchProgressTracker,
                 mediaAvailabilityVerifier = mediaAvailabilityVerifier,
                 mediaDownloadDelegate = mediaDownloadDelegate,
                 mediaSeriesDelegate = mediaSeriesDelegate,

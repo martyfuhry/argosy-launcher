@@ -135,6 +135,7 @@ class DualScreenManager(
     internal val resolveMediaPlayTargetUseCase:
         com.nendo.argosy.domain.usecase.media.ResolveMediaPlayTargetUseCase,
     private val mediaPlaybackTracker: com.nendo.argosy.data.media.MediaPlaybackTracker,
+    private val launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker,
     internal val mediaAvailabilityVerifier:
         com.nendo.argosy.data.media.MediaAvailabilityVerifier? = null,
     internal val mediaDownloadDelegate:
@@ -797,6 +798,7 @@ class DualScreenManager(
         observeActiveAccount()
         observeMedia()
         observeAchievementUnlocks()
+        observeLaunchLive()
     }
     interface CompanionHost {
         fun onForegroundChanged(isForeground: Boolean)
@@ -1354,12 +1356,36 @@ class DualScreenManager(
         }
     }
 
+    private var launchLiveObserverJob: Job? = null
+    private var launchWasLive = false
+    private var lastFocusedLauncher: java.lang.ref.WeakReference<android.app.Activity>? = null
+
+    /**
+     * Re-asks [onLauncherWindowFocused] for the last launcher window to gain focus when a live
+     * launch clears while that window still holds focus, so a game start that never produced a
+     * window does not leave its session running. The previous value lives on the manager, so an
+     * edge that straddles [rebind] is still seen.
+     */
+    private fun observeLaunchLive() {
+        launchLiveObserverJob?.cancel()
+        launchLiveObserverJob = scope.launch {
+            launchProgressTracker.launchLive.collect { live ->
+                val fell = launchWasLive && !live
+                launchWasLive = live
+                if (!fell) return@collect
+                val launcher = lastFocusedLauncher?.get() ?: return@collect
+                if (launcher.hasWindowFocus()) onLauncherWindowFocused(launcher)
+            }
+        }
+    }
+
     init {
         observePreferences()
         observeActiveAccount()
         observeMedia()
         observeMediaDim()
         observeAchievementUnlocks()
+        observeLaunchLive()
     }
 
     /**
@@ -1822,9 +1848,12 @@ class DualScreenManager(
     /**
      * A launcher window gaining focus on the display its game ran on is the launcher's signal that
      * the game closed. The session ends once [emulatorLeftScreen] confirms it; a game on another
-     * display keeps running.
+     * display keeps running. While a launch is live the focus gain is a launcher surface returning
+     * before its game window exists, not the game closing; the check waits for the launch to clear.
      */
     fun onLauncherWindowFocused(activity: android.app.Activity) {
+        lastFocusedLauncher = java.lang.ref.WeakReference(activity)
+        if (launchProgressTracker.launchLive.value) return
         if (isMovingGame || focusCheck?.isActive == true) return
         val ownDisplay = activity.window.decorView.display?.displayId ?: return
         val gameDisplay = emulatorDisplayId
