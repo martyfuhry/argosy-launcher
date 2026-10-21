@@ -2,7 +2,9 @@ package com.nendo.argosy.ui.screens.home.delegates
 
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -14,7 +16,9 @@ private class Pending<T>(val value: T)
  * Passes upstream values through while [hold] is false. While [hold] is true only the latest
  * upstream value is kept, and it is emitted once when [hold] turns false. Values that arrive
  * before [hold] first emits are kept the same way, and a [hold] that completes releases for good.
- * The result completes once upstream has completed and nothing is still kept back.
+ * The result completes once upstream has completed and nothing is still kept back. Nothing is
+ * buffered between upstream and the collector, so a value passing through waits for the collector
+ * to take it and upstream keeps the collector's pace.
  */
 fun <T> Flow<T>.heldWhile(hold: Flow<Boolean>): Flow<T> {
     val upstream = this
@@ -52,5 +56,5 @@ fun <T> Flow<T>.heldWhile(hold: Flow<Boolean>): Flow<T> {
             upstreamDone = true
             if (pending == null) holdJob.cancel()
         }
-    }
+    }.buffer(Channel.RENDEZVOUS)
 }
