@@ -346,6 +346,11 @@ object ComponentDefaults {
         const val artHeightDp = 240
         const val artHeightRatio = 0.4f
         const val titleMaxLines = 2
+        const val breathMs = 4000
+        const val breathPeakAlpha = 0.18f
+        const val breathFloorAlpha = 0f
+        const val breathSpreadDp = 28
+        const val breathBlurDp = 24
     }
 
     object UnlockRecap {

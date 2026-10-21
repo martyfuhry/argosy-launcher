@@ -1,5 +1,7 @@
 package com.nendo.argosy.ui.components.launch
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.os.SystemClock
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -102,6 +104,8 @@ fun CalmLaunchContent(
     val coverPath = progress.gameId?.let { rememberResolvedCoverPath(it, null) }
     val cover = rememberFileImageModel(coverPath)
     val hasArt = remember(progress.gameId) { cover != null }
+    var artBitmap by remember(progress.gameId) { mutableStateOf<Bitmap?>(null) }
+    val artColor = rememberArtGlowColor(artBitmap)
     val title = progress.gameTitle
     val hasLead = hasArt || title != null
     val gap = Dimens.spacingLg
@@ -126,9 +130,11 @@ fun CalmLaunchContent(
                     model = cover,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    onSuccess = { state -> artBitmap = (state.result.drawable as? BitmapDrawable)?.bitmap },
                     modifier = Modifier
                         .height(artHeight)
                         .aspectRatio(BoxArtShape.TALL.aspectRatio, matchHeightConstraintsFirst = true)
+                        .launchBreathGlow(artColor, progress.gameId)
                         .clip(RoundedCornerShape(Dimens.radiusLg))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
