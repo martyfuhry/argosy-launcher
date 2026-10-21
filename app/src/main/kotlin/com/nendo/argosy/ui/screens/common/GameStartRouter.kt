@@ -59,7 +59,12 @@ class GameStartRouter internal constructor(
             Result.failure(e)
         }
 
+    /**
+     * Starts [request] with no system window transition, so the game's window appears in place
+     * over the launch veil. The flag is added to the request's own intent, keeping its other flags.
+     */
     fun startPlaced(request: GameLaunchRequest): Result<Unit> {
+        request.intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
         val manager = DualScreenManagerHolder.instance ?: return fallbackStarter.start(request)
         return manager.startGame(request)
     }
