@@ -16,6 +16,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -200,6 +201,37 @@ class HomeLibraryDelegateHoldTest {
         tracker.openFailed()
         runCurrent()
         assertEquals(listOf(1L, 2L), delegate.shownIds())
+    }
+
+    @Test
+    fun `with its observer gone a Continue refresh during a launch reads the database at once`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = delegate(tracker)
+        val observer = backgroundScope.launch { delegate.observeRecentlyPlayedChanges(this) {} }
+        runCurrent()
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+        observer.cancel()
+        runCurrent()
+
+        tracker.begin(1L, "Game 1")!!
+        newlyAdded = listOf(downloaded)
+
+        val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
+
+        assertEquals(listOf(3L, 2L, 1L), result.gameIds)
+        assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
+    }
+
+    @Test
+    fun `with no observer started a recent-games load during a launch reads the database at once`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = delegate(tracker)
+        tracker.begin(1L, "Game 1")!!
+        newlyAdded = listOf(downloaded)
+
+        delegate.loadRecentGames()
+
+        assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
     }
 
     @Test
