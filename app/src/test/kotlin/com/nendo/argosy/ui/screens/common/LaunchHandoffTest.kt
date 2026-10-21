@@ -243,6 +243,25 @@ class LaunchHandoffTest {
     }
 
     @Test
+    fun `a refused start leaves a launch that finished during its hold showing`() = runTest {
+        every { manager.startGame(any()) } returns Result.failure(SecurityException("denied"))
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        runCurrent()
+        val newer = tracker.begin(8L, "Newer")!!
+        tracker.finish(newer, launched = true)
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 1) { manager.startGame(any()) }
+        assertEquals(8L, tracker.progress.value?.gameId)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+    }
+
+    @Test
     fun `a picker launch that fails to start clears the launching the use case published`() = runTest {
         every { manager.startGame(any()) } returns Result.failure(IllegalStateException("gone"))
         val tracker = LaunchProgressTracker(backgroundScope)

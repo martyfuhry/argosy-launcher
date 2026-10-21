@@ -57,7 +57,7 @@ class LaunchHandoff internal constructor(
             held?.let(tracker::windowRequested)
             return
         }
-        tracker.openFailed()
+        held?.let(tracker::openFailed)
         start.onFailure?.invoke(failure)
     }
 }

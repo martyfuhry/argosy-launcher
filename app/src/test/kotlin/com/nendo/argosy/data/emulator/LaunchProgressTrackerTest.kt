@@ -257,7 +257,7 @@ class LaunchProgressTrackerTest {
         val ticket = tracker.begin(1L, "Game")!!
         tracker.finish(ticket, launched = true)
 
-        tracker.openFailed()
+        tracker.openFailed(ticket)
 
         assertNull(tracker.progress.value)
         assertNull(tracker.current)
@@ -272,10 +272,24 @@ class LaunchProgressTrackerTest {
         val second = tracker.begin(2L, "Second")!!
         second.step(LaunchStep.PreparingUi)
 
-        tracker.openFailed()
+        tracker.openFailed(first)
 
         assertEquals(LaunchStep.PreparingUi, tracker.progress.value?.step)
         assertEquals(second, tracker.current)
+    }
+
+    @Test
+    fun `a failed game screen leaves a newer launch's launching alone`() = runTest {
+        val tracker = tracker()
+        val first = tracker.begin(1L, "First")!!
+        tracker.finish(first, launched = true)
+        val second = tracker.begin(2L, "Second")!!
+        tracker.finish(second, launched = true)
+
+        tracker.openFailed(first)
+
+        assertEquals(2L, tracker.progress.value?.gameId)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
     }
 
     @Test

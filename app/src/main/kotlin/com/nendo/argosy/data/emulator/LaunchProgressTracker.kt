@@ -222,12 +222,10 @@ class LaunchProgressTracker internal constructor(
     }
 
     /**
-     * Ends a launch whose game screen was asked for but never opened. A launch begun since is left
-     * alone.
+     * Ends [ticket], a launch whose game screen was asked for but never opened. A launch begun
+     * since is left alone.
      */
-    fun openFailed() {
-        synchronized(lock) { live?.takeIf { it.isFinished } }?.let(::clearIfLive)
-    }
+    fun openFailed(ticket: Ticket) = clearIfLive(ticket)
 
     private fun clearIfLive(ticket: Ticket) {
         synchronized(lock) {
