@@ -511,14 +511,14 @@ class ArgosyActivity : ComponentActivity() {
             return true
         }
 
-        if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused) {
+        val controlCompanion = dualScreenManager.controlCompanion
+        if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused && controlCompanion != null) {
             gamepadInputHandler.observeInput(event)
             if (event.action == KeyEvent.ACTION_DOWN || event.action == KeyEvent.ACTION_UP) {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
                     Logger.verbose(TAG) { "dispatchKeyEvent: FORWARDING key=${event.keyCode} to companion" }
-                    if (dualScreenManager.controlCompanion == null) Log.d(TAG, "dispatchKeyEvent: no control companion, key=${event.keyCode} dropped")
                 }
-                dualScreenManager.controlCompanion?.onForwardKey(
+                controlCompanion.onForwardKey(
                     event.keyCode,
                     event.action,
                     event.repeatCount,
@@ -528,6 +528,11 @@ class ArgosyActivity : ComponentActivity() {
                 )
             }
             return true
+        }
+        if (dualScreenManager.companionHoldsPrimary.value && !isOverlayFocused &&
+            event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0
+        ) {
+            Log.d(TAG, "dispatchKeyEvent: no control companion, key=${event.keyCode} handled locally")
         }
 
         if (!dualScreenManager.isRolesSwapped.value &&
