@@ -153,6 +153,40 @@ class HomeLibraryDelegateHoldTest {
     }
 
     @Test
+    fun `the play-start stamp of a launch with no step yet does not move the row`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        val ticket = tracker.begin(1L, "Game 1")!!
+        played.value = listOf(older.copy(lastPlayed = now), newer)
+        runCurrent()
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+
+        tracker.finish(ticket, launched = false)
+        runCurrent()
+        assertEquals(listOf(1L, 2L), delegate.shownIds())
+    }
+
+    @Test
+    fun `a Continue refresh during a launch with no step yet waits for the launch to clear`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        val ticket = tracker.begin(1L, "Game 1")!!
+        runCurrent()
+        newlyAdded = listOf(downloaded)
+
+        val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
+        runCurrent()
+        assertEquals(listOf(2L, 1L), result.gameIds)
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+
+        tracker.finish(ticket, launched = false)
+        runCurrent()
+        assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
+    }
+
+    @Test
     fun `with no launch a Continue refresh reads the database at once`() = runTest {
         val delegate = observing(LaunchProgressTracker(backgroundScope))
         newlyAdded = listOf(downloaded)

@@ -46,6 +46,14 @@ class LaunchProgressTracker internal constructor(
     private val _progress = MutableStateFlow<LaunchProgress?>(null)
     val progress: StateFlow<LaunchProgress?> = _progress.asStateFlow()
 
+    private val _launchLive = MutableStateFlow(false)
+
+    /**
+     * True from [begin] until the launch it opened is cleared: cancelled, failed, its game screen
+     * taken over or never opened, or its launching hold run out.
+     */
+    val launchLive: StateFlow<Boolean> = _launchLive.asStateFlow()
+
     private val lock = Any()
     private var live: Ticket? = null
     private var draining: Ticket? = null
@@ -128,6 +136,7 @@ class LaunchProgressTracker internal constructor(
             launchingHold?.cancel()
             ticket = Ticket(gameId, gameTitle)
             live = ticket
+            _launchLive.value = true
             previous = draining?.takeUnless { it.isFinished }
             draining = null
             _progress.value = null
@@ -162,6 +171,7 @@ class LaunchProgressTracker internal constructor(
         if (ticket.isFinished) return false
         ticket.cancel()
         live = null
+        _launchLive.value = false
         draining = ticket
         _progress.value = null
         true
@@ -187,6 +197,7 @@ class LaunchProgressTracker internal constructor(
                 }
             } else {
                 live = null
+                _launchLive.value = false
                 _progress.value = null
             }
         }
@@ -208,6 +219,7 @@ class LaunchProgressTracker internal constructor(
         synchronized(lock) {
             if (live !== ticket) return
             live = null
+            _launchLive.value = false
             _progress.value = null
         }
     }

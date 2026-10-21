@@ -1,50 +1,53 @@
 package com.nendo.argosy.ui.screens.home.delegates
 
-import com.nendo.argosy.domain.model.LaunchProgress
-import com.nendo.argosy.domain.model.LaunchStep
+import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HoldsRecentsTest {
-    private val progress = LaunchProgress(gameTitle = "Game", step = LaunchStep.Launching, gameId = 1L)
 
     @Test
-    fun `a launch in progress holds the row`() {
-        assertTrue(holdsRecents(progress))
+    fun `a launch begun with no step yet holds the row`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+
+        tracker.begin(1L, "Game")!!
+
+        assertNull(tracker.progress.value)
+        assertTrue(tracker.launchLive.value)
     }
 
     @Test
-    fun `nothing launching lets the row move`() {
-        assertFalse(holdsRecents(null))
+    fun `nothing launching lets the row move`() = runTest {
+        assertFalse(LaunchProgressTracker(backgroundScope).launchLive.value)
     }
 
     @Test
     fun `the row settles once when the launch is over`() = runTest {
-        val launching = MutableStateFlow<LaunchProgress?>(null)
+        val tracker = LaunchProgressTracker(backgroundScope)
         val recents = MutableStateFlow(listOf("b", "a"))
         val out = mutableListOf<List<String>>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            recents.heldWhile(launching.map { holdsRecents(it) }).collect { out += it }
+            recents.heldWhile(tracker.launchLive).collect { out += it }
         }
         runCurrent()
 
-        launching.value = progress
+        val ticket = tracker.begin(1L, "Game")!!
         runCurrent()
         recents.value = listOf("a", "b")
         runCurrent()
         assertEquals(listOf(listOf("b", "a")), out)
 
-        launching.value = null
+        tracker.finish(ticket, launched = false)
         runCurrent()
         assertEquals(listOf(listOf("b", "a"), listOf("a", "b")), out)
 
