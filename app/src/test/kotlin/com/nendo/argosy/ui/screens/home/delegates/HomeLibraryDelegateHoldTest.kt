@@ -16,11 +16,14 @@ import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -103,6 +106,7 @@ class HomeLibraryDelegateHoldTest {
         val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
         runCurrent()
         assertEquals(listOf(2L, 1L), result.gameIds)
+        assertFalse(result.isEmpty)
         assertEquals(listOf(2L, 1L), delegate.shownIds())
 
         tracker.finish(ticket, launched = true)
@@ -150,6 +154,105 @@ class HomeLibraryDelegateHoldTest {
         tracker.hostStopped()
         runCurrent()
         assertEquals(listOf(1L, 2L), delegate.shownIds())
+    }
+
+    @Test
+    fun `the play-start stamp of a launch with no step yet does not move the row`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        val ticket = tracker.begin(1L, "Game 1")!!
+        played.value = listOf(older.copy(lastPlayed = now), newer)
+        runCurrent()
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+
+        tracker.finish(ticket, launched = false)
+        runCurrent()
+        assertEquals(listOf(1L, 2L), delegate.shownIds())
+    }
+
+    @Test
+    fun `a Continue refresh during a launch with no step yet waits for the launch to clear`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        val ticket = tracker.begin(1L, "Game 1")!!
+        runCurrent()
+        newlyAdded = listOf(downloaded)
+
+        val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
+        runCurrent()
+        assertEquals(listOf(2L, 1L), result.gameIds)
+        assertFalse(result.isEmpty)
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+
+        tracker.finish(ticket, launched = false)
+        runCurrent()
+        assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
+    }
+
+    @Test
+    fun `a game screen that never opens releases the row when the launch clears`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        val ticket = tracker.begin(1L, "Game 1")!!
+        played.value = listOf(older.copy(lastPlayed = now), newer)
+        tracker.finish(ticket, launched = true)
+        runCurrent()
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+
+        tracker.openFailed()
+        runCurrent()
+        assertEquals(listOf(1L, 2L), delegate.shownIds())
+    }
+
+    @Test
+    fun `with its observer gone a Continue refresh during a launch reads the database at once`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = delegate(tracker)
+        val observer = backgroundScope.launch { delegate.observeRecentlyPlayedChanges(this) {} }
+        runCurrent()
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+        observer.cancel()
+        runCurrent()
+
+        tracker.begin(1L, "Game 1")!!
+        newlyAdded = listOf(downloaded)
+
+        val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
+
+        assertEquals(listOf(3L, 2L, 1L), result.gameIds)
+        assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
+    }
+
+    @Test
+    fun `with no observer started a recent-games load during a launch reads the database at once`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = delegate(tracker)
+        tracker.begin(1L, "Game 1")!!
+        newlyAdded = listOf(downloaded)
+
+        delegate.loadRecentGames()
+
+        assertEquals(listOf(3L, 2L, 1L), delegate.shownIds())
+    }
+
+    @Test
+    fun `a deferred Continue refresh of an empty row reports the row empty`() = runTest {
+        played.value = emptyList()
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        tracker.begin(1L, "Game 1")!!
+        runCurrent()
+        newlyAdded = listOf(downloaded)
+
+        val result = delegate.refreshCurrentRow(HomeRow.Continue, focusedGameId = null)
+
+        assertEquals(emptyList<Long>(), result.gameIds)
+        assertTrue(result.isEmpty)
+        assertEquals(emptyList<Long>(), delegate.shownIds())
     }
 
     @Test
