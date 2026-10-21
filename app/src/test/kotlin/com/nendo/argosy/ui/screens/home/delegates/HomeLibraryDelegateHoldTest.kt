@@ -202,7 +202,7 @@ class HomeLibraryDelegateHoldTest {
         runCurrent()
         assertEquals(listOf(2L, 1L), delegate.shownIds())
 
-        tracker.openFailed()
+        tracker.openFailed(ticket)
         runCurrent()
         assertEquals(listOf(1L, 2L), delegate.shownIds())
     }

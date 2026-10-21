@@ -457,7 +457,7 @@ class LaunchProgressTrackerTest {
         val ticket = tracker.begin(1L, "Game")!!
         tracker.finish(ticket, launched = true)
 
-        tracker.openFailed()
+        tracker.openFailed(ticket)
 
         assertFalse(tracker.launchLive.value)
     }
