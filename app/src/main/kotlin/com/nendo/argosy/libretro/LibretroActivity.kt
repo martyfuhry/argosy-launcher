@@ -447,15 +447,15 @@ class LibretroActivity : ComponentActivity() {
             dsm.sessionQuickActions = createSessionQuickActions()
             dsm.sessionRefocus = {
                 @Suppress("DEPRECATION")
-                val options = android.app.ActivityOptions.makeBasic()
-                    .setLaunchDisplayId(windowManager.defaultDisplay.displayId)
+                val options = com.nendo.argosy.ui.screens.common.GameLaunchOptions
+                    .forDisplay(windowManager.defaultDisplay.displayId)
                 startActivity(
                     Intent(this, LibretroActivity::class.java).addFlags(
                         Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
                             Intent.FLAG_ACTIVITY_SINGLE_TOP or
                             Intent.FLAG_ACTIVITY_NO_ANIMATION
                     ),
-                    options.toBundle()
+                    options
                 )
             }
         }
