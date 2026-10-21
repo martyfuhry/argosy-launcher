@@ -34,8 +34,10 @@ private val Defaults = ComponentDefaults.LaunchOverlay
 internal fun rememberArtGlowColor(art: Bitmap?): Color? {
     val extractor = remember { GradientColorExtractor() }
     return produceState<Color?>(initialValue = null, art) {
-        val source = art ?: return@produceState
-        value = withContext(Dispatchers.Default) { extractor.warmerArtColor(source) } ?: value
+        if (art != null) {
+            val extracted = withContext(Dispatchers.Default) { extractor.warmerArtColor(art) }
+            if (extracted != null) value = extracted
+        }
     }.value
 }
 
