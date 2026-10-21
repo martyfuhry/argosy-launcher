@@ -2,7 +2,9 @@ package com.nendo.argosy.ui.screens.common
 
 import android.content.Intent
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.data.emulator.ExternalSessionStart
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
+import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import kotlinx.coroutines.delay
@@ -17,26 +19,31 @@ class LaunchHandoff internal constructor(
     private val tracker: LaunchProgressTracker,
     private val soundManager: SoundFeedbackManager,
     private val startRouter: GameStartRouter,
+    private val playSessionTracker: PlaySessionTracker,
     private val holdMs: Long
 ) {
 
     @Inject constructor(
         tracker: LaunchProgressTracker,
         soundManager: SoundFeedbackManager,
-        startRouter: GameStartRouter
-    ) : this(tracker, soundManager, startRouter, ComponentDefaults.LaunchOverlay.veilMs.toLong())
+        startRouter: GameStartRouter,
+        playSessionTracker: PlaySessionTracker
+    ) : this(tracker, soundManager, startRouter, playSessionTracker, ComponentDefaults.LaunchOverlay.veilMs.toLong())
 
     /**
      * Places [start]'s game, which records its display, then finishes [ticket] as launched and
-     * requests [intent]'s window with that placement after the hold. A ticket cancelled while the
-     * placement resolves opens nothing. A game that cannot be placed fails at once, with no sound
-     * and no hold. A start that fails clears Launching at once. Both reach [GameStart.onFailure].
-     * Launching outlasts a stop of the launching screen until the window has been requested.
+     * requests [intent]'s window with that placement after the hold. [session] starts only once
+     * that window has been requested; a launch that opens nothing leaves no session. A ticket
+     * cancelled while the placement resolves opens nothing. A game that cannot be placed fails at
+     * once, with no sound and no hold. A start that fails clears Launching at once. Both reach
+     * [GameStart.onFailure]. Launching outlasts a stop of the launching screen until the window
+     * has been requested.
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket,
         intent: Intent,
-        start: GameStart
+        start: GameStart,
+        session: ExternalSessionStart?
     ) {
         val request = startRouter.place(start.gameId, intent, start.overrideDisplayId)
         if (ticket.isCancelled) return
@@ -47,10 +54,22 @@ class LaunchHandoff internal constructor(
         delay(holdMs)
         val failure = startRouter.startPlaced(placed).exceptionOrNull()
         if (failure == null) {
+            session?.let(::startSession)
             tracker.windowRequested(ticket)
             return
         }
         fail(ticket, failure, start)
+    }
+
+    private fun startSession(session: ExternalSessionStart) {
+        playSessionTracker.startSession(
+            gameId = session.gameId,
+            emulatorPackage = session.emulatorPackage,
+            coreName = session.coreName,
+            isNewGame = true,
+            variantFileId = session.variantFileId,
+            origin = session.origin
+        )
     }
 
     private fun fail(ticket: LaunchProgressTracker.Ticket, failure: Throwable, start: GameStart) {

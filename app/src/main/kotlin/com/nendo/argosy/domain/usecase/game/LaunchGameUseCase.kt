@@ -1,6 +1,7 @@
 package com.nendo.argosy.domain.usecase.game
 
 import android.content.Intent
+import com.nendo.argosy.data.emulator.ExternalSessionStart
 import com.nendo.argosy.data.emulator.GameLauncher
 import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
@@ -15,9 +16,11 @@ import com.nendo.argosy.domain.model.LaunchStep
 import javax.inject.Inject
 
 /**
- * Builds the launch intent, joining the caller's [LaunchProgressTracker] launch or opening one, and
- * opens the play session for an external emulator; LibretroActivity opens in-process sessions.
- * A fresh launch first runs [CrossEmulatorSaveMigrator] unless the caller passes savesPrepared.
+ * Builds the launch intent, joining the caller's [LaunchProgressTracker] launch or opening one.
+ * A fresh external launch owes a play session: with sessionAtWindow the result carries it as
+ * [LaunchResult.Success.session] for the caller to start once the game's window is requested,
+ * otherwise it is started here. LibretroActivity opens in-process sessions. A fresh launch first
+ * runs [CrossEmulatorSaveMigrator] unless the caller passes savesPrepared.
  */
 class LaunchGameUseCase @Inject constructor(
     private val gameLauncher: GameLauncher,
@@ -38,7 +41,8 @@ class LaunchGameUseCase @Inject constructor(
         allowVariantPrompt: Boolean = true,
         prefetchedGame: GameEntity? = null,
         origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-        savesPrepared: Boolean = false
+        savesPrepared: Boolean = false,
+        sessionAtWindow: Boolean = false
     ): LaunchResult {
         val joined = launchProgressTracker.current
         val ticket = joined ?: launchProgressTracker.begin(
@@ -47,7 +51,7 @@ class LaunchGameUseCase @Inject constructor(
         ) ?: return LaunchResult.Cancelled
         var result: LaunchResult = LaunchResult.Cancelled
         try {
-            result = launch(ticket, gameId, discId, forResume, selectedDiscPath, variantFileId, skipVariantPrompt, allowVariantPrompt, prefetchedGame, origin, savesPrepared)
+            result = launch(ticket, gameId, discId, forResume, selectedDiscPath, variantFileId, skipVariantPrompt, allowVariantPrompt, prefetchedGame, origin, savesPrepared, sessionAtWindow)
             return result
         } finally {
             if (joined == null) launchProgressTracker.finish(ticket, launched = result is LaunchResult.Success)
@@ -65,7 +69,8 @@ class LaunchGameUseCase @Inject constructor(
         allowVariantPrompt: Boolean,
         prefetchedGame: GameEntity?,
         origin: LaunchOrigin,
-        savesPrepared: Boolean
+        savesPrepared: Boolean,
+        sessionAtWindow: Boolean
     ): LaunchResult {
         libraryPointerRepair.await()
         if (!forResume && !savesPrepared) crossEmulatorSaveMigrator.migrateBeforeLaunch(gameId)
@@ -79,19 +84,25 @@ class LaunchGameUseCase @Inject constructor(
                 return LaunchResult.Cancelled
             }
         }
-        if (result is LaunchResult.Success && !result.inProcess && !forResume) {
-            val coreName = extractCoreName(result.intent)
-            playSessionTracker.startSession(
-                gameId = gameId,
-                emulatorPackage = result.intent.component?.packageName
-                    ?: result.intent.`package`
-                    ?: "",
-                coreName = coreName,
-                isNewGame = true,
-                variantFileId = result.variantFileId,
-                origin = origin
-            )
-        }
+        if (result !is LaunchResult.Success || result.inProcess || forResume) return result
+        val session = ExternalSessionStart(
+            gameId = gameId,
+            emulatorPackage = result.intent.component?.packageName
+                ?: result.intent.`package`
+                ?: "",
+            coreName = extractCoreName(result.intent),
+            variantFileId = result.variantFileId,
+            origin = origin
+        )
+        if (sessionAtWindow) return result.copy(session = session)
+        playSessionTracker.startSession(
+            gameId = session.gameId,
+            emulatorPackage = session.emulatorPackage,
+            coreName = session.coreName,
+            isNewGame = true,
+            variantFileId = session.variantFileId,
+            origin = session.origin
+        )
         return result
     }
 
