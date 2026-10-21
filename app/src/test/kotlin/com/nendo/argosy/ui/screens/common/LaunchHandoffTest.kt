@@ -6,7 +6,10 @@ import android.os.Bundle
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.data.emulator.ExternalSessionStart
+import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
+import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
@@ -14,7 +17,9 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
@@ -38,6 +43,14 @@ class LaunchHandoffTest {
     private val soundManager: SoundFeedbackManager = mockk(relaxed = true)
     private val resolver: EmulatorLaunchTargetResolver = mockk()
     private val manager: DualScreenManager = mockk()
+    private val playSessionTracker: PlaySessionTracker = mockk(relaxed = true)
+    private val session = ExternalSessionStart(
+        gameId = gameId,
+        emulatorPackage = "org.citra.emu",
+        coreName = "citra",
+        variantFileId = 50L,
+        origin = LaunchOrigin.EXTERNAL
+    )
 
     @Before
     fun setUp() {
@@ -54,7 +67,13 @@ class LaunchHandoffTest {
     private fun router(scope: CoroutineScope) = GameStartRouter(mockk<Context>(relaxed = true), resolver, scope)
 
     private fun handoff(tracker: LaunchProgressTracker, router: GameStartRouter) =
-        LaunchHandoff(tracker, soundManager, router, holdMs)
+        LaunchHandoff(tracker, soundManager, router, playSessionTracker, holdMs)
+
+    private fun verifyNoSessionStarted() {
+        verify(exactly = 0) {
+            playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any())
+        }
+    }
 
     @Test
     fun `launching is published and the window waits out the veil before it is requested`() = runTest {
@@ -62,7 +81,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
         runCurrent()
 
         assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
@@ -84,7 +103,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
         runCurrent()
         tracker.hostStopped()
 
@@ -102,7 +121,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
         advanceTimeBy(holdMs)
         runCurrent()
         verify(exactly = 1) { manager.startGame(any()) }
@@ -118,7 +137,7 @@ class LaunchHandoffTest {
         val ticket: LaunchProgressTracker.Ticket = mockk(relaxed = true)
         val router = router(backgroundScope)
 
-        handoff(tracker, router).handOff(ticket, intent, GameStart(gameId))
+        handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null)
 
         verify(exactly = 1) { tracker.finish(ticket, true) }
         verify(exactly = 0) { tracker.finish(ticket, false) }
@@ -130,7 +149,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
         runCurrent()
 
         verify(exactly = 1) { soundManager.play(SoundType.LAUNCH_GAME) }
@@ -147,7 +166,7 @@ class LaunchHandoffTest {
             options
         }
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, overrideDisplayId = 2)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, overrideDisplayId = 2), null) }
         runCurrent()
 
         assertNull(stepWhenPlaced)
@@ -163,7 +182,7 @@ class LaunchHandoffTest {
     }
 
     @Test
-    fun `a launch cancelled while its placement resolves opens nothing`() = runTest {
+    fun `a launch cancelled while its placement resolves opens nothing and starts no session`() = runTest {
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
@@ -172,26 +191,90 @@ class LaunchHandoffTest {
             options
         }
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), session) }
         advanceTimeBy(holdMs)
         runCurrent()
 
         assertNull(tracker.progress.value)
         verify(exactly = 0) { soundManager.play(SoundType.LAUNCH_GAME) }
         verify(exactly = 0) { manager.startGame(any()) }
+        verifyNoSessionStarted()
     }
 
     @Test
-    fun `a refused start clears launching at once and reaches the caller's failure callback`() = runTest {
+    fun `a launch whose scope dies during the hold opens nothing and starts no session`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        val job = launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), session) }
+        runCurrent()
+        advanceTimeBy(holdMs - 1)
+        job.cancel()
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 0) { manager.startGame(any()) }
+        verifyNoSessionStarted()
+    }
+
+    @Test
+    fun `the session starts once, after the game's start succeeds and before the window is marked requested`() = runTest {
+        val tracker = spyk(LaunchProgressTracker(backgroundScope))
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), session) }
+        runCurrent()
+        verifyNoSessionStarted()
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verifyOrder {
+            manager.startGame(GameLaunchRequest(intent, options))
+            playSessionTracker.startSession(
+                gameId = gameId,
+                emulatorPackage = "org.citra.emu",
+                coreName = "citra",
+                isHardcore = false,
+                isNewGame = true,
+                isNetplayGuest = false,
+                variantFileId = 50L,
+                origin = LaunchOrigin.EXTERNAL
+            )
+            tracker.windowRequested(ticket)
+        }
+        verify(exactly = 1) {
+            playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `a launch that owes no session starts none`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 1) { manager.startGame(any()) }
+        verifyNoSessionStarted()
+    }
+
+    @Test
+    fun `a refused start clears launching at once, reaches the caller's failure callback and starts no session`() = runTest {
         val refusal = SecurityException("denied")
         every { manager.startGame(any()) } returns Result.failure(refusal)
-        val tracker = LaunchProgressTracker(backgroundScope)
+        val tracker = spyk(LaunchProgressTracker(backgroundScope))
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
         var failure: Throwable? = null
 
         launch {
-            handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, onFailure = { e -> failure = e }))
+            handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, onFailure = { e -> failure = e }), session)
         }
         advanceTimeBy(holdMs)
         runCurrent()
@@ -199,6 +282,9 @@ class LaunchHandoffTest {
         assertSame(refusal, failure)
         assertNull(tracker.progress.value)
         assertNull(tracker.current)
+        verify(exactly = 1) { tracker.openFailed(ticket) }
+        verify(exactly = 0) { tracker.windowRequested(any()) }
+        verifyNoSessionStarted()
         assertNotNull(tracker.begin(gameId, "Game"))
     }
 
@@ -209,7 +295,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
         runCurrent()
         val newer = tracker.begin(8L, "Newer")!!
         tracker.finish(newer, launched = true)
@@ -238,7 +324,8 @@ class LaunchHandoffTest {
                 GameStart(gameId, onFailure = { e ->
                     failure = e
                     progressWhenFailed = tracker.progress.value
-                })
+                }),
+                session
             )
         }
         runCurrent()
@@ -253,5 +340,6 @@ class LaunchHandoffTest {
         advanceTimeBy(holdMs)
         runCurrent()
         verify(exactly = 0) { manager.startGame(any()) }
+        verifyNoSessionStarted()
     }
 }

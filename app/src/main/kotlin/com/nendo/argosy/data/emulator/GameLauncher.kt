@@ -65,13 +65,16 @@ sealed class LaunchResult {
     /**
      * @property variantFileId the `game_files` row that launched in place of the primary rom; null
      * when the primary rom launched, whichever variant the caller requested.
+     * @property session the external play session the caller starts once the game's window has
+     * been requested; null when no session is owed to the caller.
      */
     data class Success(
         val intent: Intent,
         val discId: Long? = null,
         val alreadyLaunched: Boolean = false,
         val inProcess: Boolean = false,
-        val variantFileId: Long? = null
+        val variantFileId: Long? = null,
+        val session: ExternalSessionStart? = null
     ) : LaunchResult()
     data class SelectDisc(val gameId: Long, val discs: List<DiscOption>) : LaunchResult()
     data class SelectVariant(val gameId: Long, val variants: List<VariantOption>) : LaunchResult()
@@ -92,6 +95,18 @@ sealed class LaunchResult {
     data class Error(val message: String) : LaunchResult()
     data object Cancelled : LaunchResult()
 }
+
+/**
+ * The arguments of an external emulator's [PlaySessionTracker.startSession], held until its
+ * window has been requested.
+ */
+data class ExternalSessionStart(
+    val gameId: Long,
+    val emulatorPackage: String,
+    val coreName: String?,
+    val variantFileId: Long?,
+    val origin: LaunchOrigin
+)
 
 @Singleton
 class GameLauncher @Inject constructor(

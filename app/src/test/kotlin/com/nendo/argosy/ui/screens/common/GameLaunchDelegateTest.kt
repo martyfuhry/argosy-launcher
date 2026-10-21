@@ -5,6 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
+import com.nendo.argosy.data.emulator.ExternalSessionStart
+import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import com.nendo.argosy.data.emulator.LaunchResult
 import com.nendo.argosy.data.emulator.PlaySessionTracker
@@ -19,6 +21,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -72,7 +75,7 @@ class GameLaunchDelegateTest {
 
     private fun useCaseReturns(result: LaunchResult) {
         coEvery {
-            launchGameUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            launchGameUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
         } returns result
     }
 
@@ -96,7 +99,7 @@ class GameLaunchDelegateTest {
         retroAchievementsRepository = mockk(relaxed = true),
         getUnifiedSavesUseCase = mockk(relaxed = true),
         launchProgressTracker = tracker,
-        launchHandoff = LaunchHandoff(tracker, mockk(relaxed = true), router, holdMs),
+        launchHandoff = LaunchHandoff(tracker, mockk(relaxed = true), router, playSessionTracker, holdMs),
         resolveSnapshotConflict = mockk(relaxed = true),
         connectedControllerTracker = mockk(relaxed = true),
         preLaunchRecapStep = preLaunchRecapStep
@@ -130,6 +133,31 @@ class GameLaunchDelegateTest {
     }
 
     @Test
+    fun `an external launch defers its session to the handoff, which starts it once the window is requested`() = runTest {
+        val session = ExternalSessionStart(gameId, "org.citra.emu", null, null, LaunchOrigin.INTERNAL)
+        useCaseReturns(LaunchResult.Success(intent, session = session))
+        val tracker = tracker()
+        val router = router()
+
+        delegate(tracker, router).launchSimple(this, gameId, callbacks = callbacks())
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            launchGameUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), true)
+        }
+        verify(exactly = 0) { playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any()) }
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verifyOrder {
+            manager.startGame(GameLaunchRequest(intent, options))
+            playSessionTracker.startSession(gameId, "org.citra.emu", null, false, true, false, null, LaunchOrigin.INTERNAL)
+        }
+        verify(exactly = 1) { playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any()) }
+    }
+
+    @Test
     fun `a launch whose window fails to open clears at once and finishes its ticket once`() = runTest {
         val refusal = SecurityException("denied")
         every { manager.startGame(any()) } returns Result.failure(refusal)
@@ -159,7 +187,7 @@ class GameLaunchDelegateTest {
             options
         }
         coEvery {
-            launchGameUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            launchGameUseCase(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
         } returnsMany listOf(
             LaunchResult.SelectMemcard(gameId, "duckstation", "PlayStation", emptyList()),
             LaunchResult.Success(intent)
