@@ -8,6 +8,7 @@ import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -221,7 +222,16 @@ class SecondaryHomeActivity :
                 .focusRequester(presentationSink)
                 .focusable()
         ) {
-            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+            val rendered = com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
+            if (rendered == null) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Color.Black)
+                )
+            } else {
+                com.nendo.argosy.ui.dualscreen.PresentationSlotContent(rendered)
+            }
         }
     }
 
