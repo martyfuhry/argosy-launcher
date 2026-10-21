@@ -53,6 +53,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -1364,8 +1365,9 @@ class DualScreenManager(
      * Re-asks [onLauncherWindowFocused] for the last launcher window to gain focus when a live
      * launch clears while that window still holds focus, so a game start that never produced a
      * window does not leave its session running. A launch going live cancels a focus check still
-     * in flight, since that check was about the game before it. The previous value lives on the
-     * manager, so an edge that straddles [rebind] is still seen.
+     * in flight, since that check was about the game before it. Focus is read a main-loop turn
+     * after the fall, so a focus loss already on its way to the window is applied first. The
+     * previous value lives on the manager, so an edge that straddles [rebind] is still seen.
      */
     private fun observeLaunchLive() {
         launchLiveObserverJob?.cancel()
@@ -1375,6 +1377,7 @@ class DualScreenManager(
                 launchWasLive = live
                 if (live) focusCheck?.cancel()
                 if (!fell) return@collect
+                yield()
                 val launcher = lastFocusedLauncher?.get() ?: return@collect
                 if (launcher.hasWindowFocus()) onLauncherWindowFocused(launcher)
             }

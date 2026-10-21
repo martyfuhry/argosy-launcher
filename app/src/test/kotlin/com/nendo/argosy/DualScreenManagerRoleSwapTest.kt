@@ -14,6 +14,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
@@ -320,8 +321,36 @@ class DualScreenManagerRoleSwapTest {
         verify(exactly = 1) { sessionStateStore.clearSession() }
     }
 
+    @Test
+    fun `a focus loss queued behind the launch clearing is applied before the re-check reads focus`() {
+        val fixture = launcherFocusedDuringLaunch(liveAtStart = true)
+        manager.onLauncherWindowFocused(fixture.activity)
+        testScope.testScheduler.runCurrent()
+
+        fixture.live.value = false
+        testScope.backgroundScope.launch { fixture.focused.value = false }
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 0) { fixture.sessionEnd.endClosedSession() }
+        verify(exactly = 0) { sessionStateStore.clearSession() }
+    }
+
+    @Test
+    fun `the launch clearing after the launcher lost focus leaves the session running`() {
+        val launch = launcherFocusedDuringLaunch(liveAtStart = true)
+        manager.onLauncherWindowFocused(launch.activity)
+        testScope.testScheduler.runCurrent()
+        launch.focused.value = false
+
+        launch.live.value = false
+        testScope.testScheduler.runCurrent()
+
+        verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
+    }
+
     private class LaunchFocusFixture(
         val activity: android.app.Activity,
+        val focused: MutableStateFlow<Boolean>,
         val live: MutableStateFlow<Boolean>,
         val sessionEnd: com.nendo.argosy.ui.screens.common.SessionEndCoordinator
     )
@@ -347,9 +376,10 @@ class DualScreenManagerRoleSwapTest {
                 MutableStateFlow(mockk<com.nendo.argosy.data.emulator.ActiveSession>(relaxed = true))
         }
         val sessionEnd = mockk<com.nendo.argosy.ui.screens.common.SessionEndCoordinator>(relaxed = true)
+        val focused = MutableStateFlow(true)
         val activity = mockk<android.app.Activity>(relaxed = true) {
             every { window.decorView.display.displayId } returns PRIMARY_DISPLAY
-            every { hasWindowFocus() } returns true
+            every { hasWindowFocus() } answers { focused.value }
         }
         manager = newManager(
             scope = testScope.backgroundScope,
@@ -359,7 +389,7 @@ class DualScreenManagerRoleSwapTest {
             permissionHelper = permissionHelper
         )
         testScope.testScheduler.runCurrent()
-        return LaunchFocusFixture(activity, live, sessionEnd)
+        return LaunchFocusFixture(activity, focused, live, sessionEnd)
     }
 
     private fun sessionOnLowerScreen(
