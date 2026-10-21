@@ -1368,6 +1368,8 @@ class DualScreenManager(
      * in flight, since that check was about the game before it. Focus is read a main-loop turn
      * after the fall, so a focus loss already on its way to the window is applied first. The
      * previous value lives on the manager, so an edge that straddles [rebind] is still seen.
+     * The collector runs on the bound activity's scope on purpose: while no activity is bound
+     * there is no launcher window to re-ask, and the next [rebind] sees any edge it missed.
      */
     private fun observeLaunchLive() {
         launchLiveObserverJob?.cancel()
