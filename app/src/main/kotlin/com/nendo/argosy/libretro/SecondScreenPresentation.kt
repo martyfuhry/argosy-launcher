@@ -37,8 +37,10 @@ import com.nendo.argosy.util.hideSystemBars
  * Built with [arrivesCovered] before the game's first frame, it opens black and fades the game in
  * on [reveal] over [ComponentDefaults.LaunchOverlay.arrivalMs], in step with the main screen's
  * GameArrival. No View can draw over a surface ordered on top, so the cover is the window itself:
- * a full dim behind it holds the display black while the window's alpha, which its surface
- * inherits, rises from 0. Built after the first frame, it shows the game at once.
+ * a dim behind it holds the display black while the window's alpha, which its surface inherits,
+ * rises from 0. The dim itself rises from 0 to full over [ComponentDefaults.LaunchOverlay.veilMs]
+ * once the window shows, so the panel behind breathes out to black instead of cutting to it.
+ * Built after the first frame, it shows the game at once.
  */
 class SecondScreenPresentation(
     context: Context,
@@ -51,6 +53,7 @@ class SecondScreenPresentation(
 
     private lateinit var surfaceView: SurfaceView
     private var arrival: ValueAnimator? = null
+    private var cover: ValueAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +65,7 @@ class SecondScreenPresentation(
         )
         if (arrivesCovered) {
             window?.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setWindowAlpha(0f, dimAmount = 1f)
+            setWindowAlpha(0f, dimAmount = 0f)
         }
 
         surfaceView = SurfaceView(context).apply {
@@ -100,6 +103,17 @@ class SecondScreenPresentation(
         })
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (!arrivesCovered || cover != null || arrival != null) return
+        cover = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = ComponentDefaults.LaunchOverlay.veilMs.toLong()
+            interpolator = LinearInterpolator()
+            addUpdateListener { setDimAmount(it.animatedValue as Float) }
+            start()
+        }
+    }
+
     fun reveal() {
         if (!arrivesCovered || arrival != null || !isShowing) return
         arrival = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -108,12 +122,18 @@ class SecondScreenPresentation(
             addUpdateListener { setWindowAlpha(it.animatedValue as Float) }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
+                    cover?.cancel()
                     window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
                     setWindowAlpha(1f)
                 }
             })
             start()
         }
+    }
+
+    private fun setDimAmount(dimAmount: Float) {
+        val window = window ?: return
+        window.attributes = window.attributes.also { params -> params.dimAmount = dimAmount }
     }
 
     private fun setWindowAlpha(alpha: Float, dimAmount: Float? = null) {
@@ -125,6 +145,7 @@ class SecondScreenPresentation(
     }
 
     override fun onStop() {
+        cover?.cancel()
         arrival?.cancel()
         onSurfaceChanged(null)
         super.onStop()
