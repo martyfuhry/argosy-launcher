@@ -203,13 +203,39 @@ class SecondaryHomeActivity :
         val hereDisplayId = androidx.core.content.ContextCompat.getDisplayOrDefault(this).displayId
         val showsDashboard = gameActive && dsm.primaryShowsDashboard(hereDisplayId, gameDisplay)
         val rolesSwapped by dsm.isRolesSwapped.collectAsState()
-        if (!rolesSwapped && !showsDashboard) {
-            com.nendo.argosy.ui.ArgosyApp(
-                onStartupComplete = { dsm.stopStartupGuard() }
-            )
-            return
+        val launcherShown = !rolesSwapped && !showsDashboard
+        val handoffMs = com.nendo.argosy.ui.dualscreen.companionHandoffMs(
+            showsDashboard = showsDashboard,
+            reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==
+                com.nendo.argosy.ui.theme.MotionTier.Reduced,
+            veilMs = com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.veilMs
+        )
+        androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = launcherShown,
+                enter = androidx.compose.animation.EnterTransition.None,
+                exit = androidx.compose.animation.fadeOut(
+                    androidx.compose.animation.core.tween(handoffMs)
+                )
+            ) {
+                com.nendo.argosy.ui.ArgosyApp(
+                    onStartupComplete = { dsm.stopStartupGuard() }
+                )
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !launcherShown,
+                enter = androidx.compose.animation.fadeIn(
+                    androidx.compose.animation.core.tween(handoffMs)
+                ),
+                exit = androidx.compose.animation.ExitTransition.None
+            ) {
+                CompanionPresentation(showsDashboard)
+            }
         }
+    }
 
+    @androidx.compose.runtime.Composable
+    private fun CompanionPresentation(showsDashboard: Boolean) {
         val slot by dsm.presentationSlot.collectAsState()
         val presentationSink = androidx.compose.runtime.remember {
             androidx.compose.ui.focus.FocusRequester()
