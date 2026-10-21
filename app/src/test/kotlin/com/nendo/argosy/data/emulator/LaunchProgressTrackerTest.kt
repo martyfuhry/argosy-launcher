@@ -212,6 +212,33 @@ class LaunchProgressTrackerTest {
     }
 
     @Test
+    fun `a game screen that never opens clears the launching hold at once`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.finish(ticket, launched = true)
+
+        tracker.openFailed()
+
+        assertNull(tracker.progress.value)
+        assertNull(tracker.current)
+        assertTrue(tracker.begin(2L, "Next") != null)
+    }
+
+    @Test
+    fun `a failed game screen leaves a launch begun since alone`() = runTest {
+        val tracker = tracker()
+        val first = tracker.begin(1L, "First")!!
+        tracker.finish(first, launched = true)
+        val second = tracker.begin(2L, "Second")!!
+        second.step(LaunchStep.PreparingUi)
+
+        tracker.openFailed()
+
+        assertEquals(LaunchStep.PreparingUi, tracker.progress.value?.step)
+        assertEquals(second, tracker.current)
+    }
+
+    @Test
     fun `a launch whose screen never stops clears on its own`() = runTest {
         val tracker = tracker()
         val ticket = tracker.begin(1L, "Game")!!

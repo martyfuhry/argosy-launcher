@@ -192,7 +192,15 @@ class LaunchProgressTracker internal constructor(
         }
     }
 
-    fun hostStopped() {
+    fun hostStopped() = clearOpened()
+
+    /**
+     * Ends a launch whose game screen was asked for but never opened. A launch begun since is left
+     * alone.
+     */
+    fun openFailed() = clearOpened()
+
+    private fun clearOpened() {
         synchronized(lock) { live?.takeIf { it.isFinished } }?.let(::clearIfLive)
     }
 

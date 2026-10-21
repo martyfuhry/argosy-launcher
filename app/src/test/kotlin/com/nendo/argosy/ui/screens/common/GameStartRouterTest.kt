@@ -6,6 +6,7 @@ import android.os.Bundle
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
@@ -13,6 +14,7 @@ import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
@@ -75,6 +77,41 @@ class GameStartRouterTest {
         advanceUntilIdle()
 
         assertSame(refusal, failure)
+    }
+
+    @Test
+    fun `a start asked for while held is handed back unplaced and unstarted`() = runTest {
+        val manager = mockk<DualScreenManager>(relaxed = true)
+        DualScreenManagerHolder.instance = manager
+        val onFailure: (Throwable) -> Unit = {}
+        val router = GameStartRouter(appContext, resolver, this)
+
+        val held = router.held { router.start(gameId = 7L, intent = intent, overrideDisplayId = 2, onFailure = onFailure) }
+        advanceUntilIdle()
+
+        val start = held.single()
+        assertEquals(7L, start.gameId)
+        assertSame(intent, start.intent)
+        assertEquals(2, start.overrideDisplayId)
+        assertSame(onFailure, start.onFailure)
+        coVerify(exactly = 0) { resolver.launchOptionsFor(any(), any()) }
+        verify(exactly = 0) { manager.startGame(any()) }
+    }
+
+    @Test
+    fun `a start asked for after the hold ends starts as usual`() = runTest {
+        val manager = mockk<DualScreenManager> {
+            every { startGame(any()) } returns Result.success(Unit)
+        }
+        DualScreenManagerHolder.instance = manager
+        coEvery { resolver.launchOptionsFor(7L, null) } returns options
+        val router = GameStartRouter(appContext, resolver, this)
+
+        router.held { }
+        router.start(gameId = 7L, intent = intent)
+        advanceUntilIdle()
+
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
     }
 
     @Test

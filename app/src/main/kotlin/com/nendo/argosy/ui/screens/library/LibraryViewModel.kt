@@ -2148,7 +2148,11 @@ class LibraryViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             channelName = channelName,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            onLaunch = { intent ->
+                gameStartRouter.start(gameId, intent, onFailure = {
+                    notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+                })
+            }
         )
     }
 

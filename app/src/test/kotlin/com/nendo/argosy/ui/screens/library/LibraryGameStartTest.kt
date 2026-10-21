@@ -1,9 +1,13 @@
 package com.nendo.argosy.ui.screens.library
 
 import android.content.Intent
+import com.nendo.argosy.R
+import com.nendo.argosy.core.notification.NotificationText
+import com.nendo.argosy.core.notification.NotificationType
 import com.nendo.argosy.data.preferences.UserPreferences
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +37,8 @@ class LibraryGameStartTest {
     private val gameStartRouter =
         mockk<com.nendo.argosy.ui.screens.common.GameStartRouter>(relaxed = true)
     private val gameIntent = mockk<Intent>(relaxed = true)
+    private val notificationManager =
+        mockk<com.nendo.argosy.core.notification.NotificationManager>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -74,6 +80,33 @@ class LibraryGameStartTest {
             verify(exactly = 1) { gameStartRouter.start(5L, gameIntent, null, any()) }
         }
 
+    @Test
+    fun `a game window that fails to open shows the launch failed notice`() =
+        runTest(dispatcher) {
+            val onFailure = slot<(Throwable) -> Unit>()
+            every { gameStartRouter.start(5L, gameIntent, null, capture(onFailure)) } returns Unit
+            val viewModel = viewModel()
+            advanceUntilIdle()
+
+            viewModel.launchGame(5L)
+            advanceUntilIdle()
+            onFailure.captured(SecurityException("denied"))
+
+            verify(exactly = 1) {
+                notificationManager.show(
+                    title = any(),
+                    subtitle = NotificationText.Res(R.string.notif_gamelaunch_launch_failed),
+                    type = NotificationType.ERROR,
+                    imagePath = any(),
+                    platformSlug = any(),
+                    duration = any(),
+                    key = any(),
+                    immediate = any(),
+                    accentColor = any()
+                )
+            }
+        }
+
     private fun viewModel() = LibraryViewModel(
         context = mockk(relaxed = true),
         platformRepository = platformRepository,
@@ -81,7 +114,7 @@ class LibraryGameStartTest {
         mediaRepository = mediaRepository,
         collectionRepository = mockk(relaxed = true),
         gameNavigationContext = mockk(relaxed = true),
-        notificationManager = mockk(relaxed = true),
+        notificationManager = notificationManager,
         preferencesRepository = preferences,
         homeTileRepository = mockk(relaxed = true),
         customGridShapeStore = mockk(relaxed = true),

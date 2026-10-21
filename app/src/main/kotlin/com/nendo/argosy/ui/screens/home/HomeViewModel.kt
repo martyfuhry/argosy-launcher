@@ -2022,7 +2022,11 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            onLaunch = { intent ->
+                gameStartRouter.start(gameId, intent, onFailure = {
+                    notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+                })
+            }
         )
     }
 

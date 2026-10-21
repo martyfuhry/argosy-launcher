@@ -16,27 +16,40 @@ import javax.inject.Inject
 class LaunchHandoff internal constructor(
     private val tracker: LaunchProgressTracker,
     private val soundManager: SoundFeedbackManager,
+    private val startRouter: GameStartRouter,
     private val holdMs: Long
 ) {
 
     @Inject constructor(
         tracker: LaunchProgressTracker,
-        soundManager: SoundFeedbackManager
-    ) : this(tracker, soundManager, ComponentDefaults.LaunchOverlay.veilMs.toLong())
+        soundManager: SoundFeedbackManager,
+        startRouter: GameStartRouter
+    ) : this(tracker, soundManager, startRouter, ComponentDefaults.LaunchOverlay.veilMs.toLong())
 
     /**
-     * Finishes [ticket] as launched, then hands [intent] to [onLaunch] after the hold. A null
-     * ticket is a launch continued from a picker, where LaunchGameUseCase opened and finished its
-     * own ticket and so has already published Launching; it still holds.
+     * Finishes [ticket] as launched, then requests the game window [onLaunch] asks of
+     * [GameStartRouter.start] after the hold. A start that fails clears Launching at once and
+     * reaches the failure callback its caller gave. A null ticket is a launch continued from a
+     * picker, where LaunchGameUseCase opened and finished its own ticket and so has already
+     * published Launching; it still holds.
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket?,
         intent: Intent,
         onLaunch: (Intent) -> Unit
     ) {
+        val starts = startRouter.held { onLaunch(intent) }
         if (ticket != null) tracker.finish(ticket, launched = true)
         soundManager.play(SoundType.LAUNCH_GAME)
         delay(holdMs)
-        onLaunch(intent)
+        starts.forEach { start ->
+            startRouter.place(start.gameId, start.intent, start.overrideDisplayId)
+                .fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
+                .exceptionOrNull()
+                ?.let { failure ->
+                    tracker.openFailed()
+                    start.onFailure?.invoke(failure)
+                }
+        }
     }
 }

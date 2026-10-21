@@ -30,7 +30,18 @@ class GameStartRouter internal constructor(
         launchTargetResolver: EmulatorLaunchTargetResolver
     ) : this(context, launchTargetResolver, SafeCoroutineScope(Dispatchers.Main.immediate, "GameStart"))
 
+    /**
+     * A start asked of [start] inside [held]: what its caller passed, not yet placed or started.
+     */
+    class HeldStart internal constructor(
+        val gameId: Long,
+        val intent: Intent,
+        val overrideDisplayId: Int?,
+        val onFailure: ((Throwable) -> Unit)?
+    )
+
     private val fallbackStarter = GameActivityStarter(context) { null }
+    private val holding = ThreadLocal<MutableList<HeldStart>?>()
 
     fun start(
         gameId: Long,
@@ -38,21 +49,49 @@ class GameStartRouter internal constructor(
         overrideDisplayId: Int? = null,
         onFailure: ((Throwable) -> Unit)? = null
     ) {
+        val held = holding.get()
+        if (held != null) {
+            held += HeldStart(gameId, intent, overrideDisplayId, onFailure)
+            return
+        }
         scope.launch {
-            val result = try {
-                val options = launchTargetResolver.launchOptionsFor(gameId, overrideDisplayId)
-                startResolved(GameLaunchRequest(intent, options))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Logger.error(TAG, "Placement for gameId=$gameId could not be resolved", e)
-                Result.failure(e)
-            }
+            val result = place(gameId, intent, overrideDisplayId)
+                .fold(onSuccess = ::startPlaced, onFailure = { Result.failure(it) })
             result.exceptionOrNull()?.let { onFailure?.invoke(it) }
         }
     }
 
-    private fun startResolved(request: GameLaunchRequest): Result<Unit> {
+    /**
+     * Runs [block] and returns every start it asked of [start] on this thread, unplaced and
+     * unstarted, for the caller to [place] and [startPlaced] when it is ready.
+     */
+    fun held(block: () -> Unit): List<HeldStart> {
+        val outer = holding.get()
+        val starts = mutableListOf<HeldStart>()
+        holding.set(starts)
+        try {
+            block()
+        } finally {
+            holding.set(outer)
+        }
+        return starts
+    }
+
+    /**
+     * Resolves the display [gameId] opens on, records it as the game's display, and returns the
+     * request that opens it there.
+     */
+    suspend fun place(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Result<GameLaunchRequest> =
+        try {
+            Result.success(GameLaunchRequest(intent, launchTargetResolver.launchOptionsFor(gameId, overrideDisplayId)))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Logger.error(TAG, "Placement for gameId=$gameId could not be resolved", e)
+            Result.failure(e)
+        }
+
+    fun startPlaced(request: GameLaunchRequest): Result<Unit> {
         val manager = DualScreenManagerHolder.instance ?: return fallbackStarter.start(request)
         return manager.startGame(request)
     }
