@@ -187,6 +187,22 @@ class HomeLibraryDelegateHoldTest {
     }
 
     @Test
+    fun `a game screen that never opens releases the row when the launch clears`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val delegate = observing(tracker)
+
+        val ticket = tracker.begin(1L, "Game 1")!!
+        played.value = listOf(older.copy(lastPlayed = now), newer)
+        tracker.finish(ticket, launched = true)
+        runCurrent()
+        assertEquals(listOf(2L, 1L), delegate.shownIds())
+
+        tracker.openFailed()
+        runCurrent()
+        assertEquals(listOf(1L, 2L), delegate.shownIds())
+    }
+
+    @Test
     fun `with no launch a Continue refresh reads the database at once`() = runTest {
         val delegate = observing(LaunchProgressTracker(backgroundScope))
         newlyAdded = listOf(downloaded)
