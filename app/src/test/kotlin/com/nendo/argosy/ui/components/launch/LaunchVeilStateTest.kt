@@ -32,55 +32,46 @@ class LaunchVeilStateTest {
     )
 
     @Test
-    fun launchingStepVeilsWithNoGameYet() {
-        assertTrue(veilFor(progress(LaunchStep.Launching), gameActive = false))
+    fun launchingStepVeils() {
+        assertTrue(veilFor(progress(LaunchStep.Launching)))
     }
 
     @Test
-    fun activeGameVeilsWithNoLaunchInProgress() {
-        assertTrue(veilFor(null, gameActive = true))
+    fun quietStepLeavesTheShowcaseUp() {
+        quietSteps.forEach { step -> assertFalse("$step", veilFor(progress(step))) }
     }
 
     @Test
-    fun activeGameVeilsOverAQuietStep() {
-        quietSteps.forEach { step -> assertTrue(veilFor(progress(step), gameActive = true)) }
-    }
-
-    @Test
-    fun quietStepWithNoGameLeavesTheShowcaseUp() {
-        quietSteps.forEach { step -> assertFalse("$step", veilFor(progress(step), gameActive = false)) }
-    }
-
-    @Test
-    fun noLaunchAndNoGameLeavesTheShowcaseUp() {
-        assertFalse(veilFor(null, gameActive = false))
+    fun noLaunchLeavesTheShowcaseUp() {
+        assertFalse(veilFor(null))
     }
 
     @Test
     fun displayTheGameOpensOnIsVeiledWhileLaunching() {
-        assertTrue(veilsDisplay(progress(LaunchStep.Launching), false, gameDisplay, gameDisplay))
+        assertTrue(veilsDisplay(progress(LaunchStep.Launching), gameDisplay, gameDisplay))
     }
 
     @Test
-    fun displayTheGameRunsOnStaysVeiledForTheSession() {
-        assertTrue(veilsDisplay(null, true, gameDisplay, gameDisplay))
+    fun displayTheGameWasSentToClearsOnceLaunchingEnds() {
+        assertFalse(veilsDisplay(null, gameDisplay, gameDisplay))
+    }
+
+    @Test
+    fun displayTheGameWasSentToClearsOverAQuietStep() {
+        quietSteps.forEach { step -> assertFalse("$step", veilsDisplay(progress(step), gameDisplay, gameDisplay)) }
     }
 
     @Test
     fun dashboardOnAnotherDisplayIsNeverVeiled() {
-        assertFalse(veilsDisplay(null, true, gameDisplay, otherDisplay))
-        assertFalse(veilsDisplay(progress(LaunchStep.Launching), true, gameDisplay, otherDisplay))
+        assertFalse(veilsDisplay(null, gameDisplay, otherDisplay))
+        assertFalse(veilsDisplay(progress(LaunchStep.Launching), gameDisplay, otherDisplay))
     }
 
     @Test
     fun unknownGameDisplayVeilsNothing() {
-        assertFalse(veilsDisplay(progress(LaunchStep.Launching), true, null, gameDisplay))
-        assertFalse(veilsDisplay(progress(LaunchStep.Launching), true, gameDisplay, null))
-    }
-
-    @Test
-    fun sessionEndLiftsTheVeilOnTheGameDisplay() {
-        assertFalse(veilsDisplay(null, false, gameDisplay, gameDisplay))
+        assertFalse(veilsDisplay(progress(LaunchStep.Launching), null, gameDisplay))
+        assertFalse(veilsDisplay(progress(LaunchStep.Launching), gameDisplay, null))
+        assertFalse(veilsDisplay(progress(LaunchStep.Launching), null, null))
     }
 
     @Test

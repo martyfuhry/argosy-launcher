@@ -158,12 +158,11 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
 }
 
 /**
- * The black veil a presentation surface on [displayId] draws while the game opens on it or runs
- * on it, lifting back to the showcase once the session ends.
+ * The black veil a presentation surface on [displayId] draws while the game opens on it, lifting
+ * once the launch leaves LAUNCHING.
  */
 @Composable
 fun LaunchVeilMirror(
-    gameActive: Boolean,
     gameDisplayId: Int?,
     displayId: Int?,
     modifier: Modifier = Modifier
@@ -172,7 +171,7 @@ fun LaunchVeilMirror(
     val tracker = remember { launchProgressEntryPoint(context).launchProgressTracker() }
     val progress by tracker.progress.collectAsState()
     LaunchVeil(
-        veiled = veilsDisplay(progress, gameActive, gameDisplayId, displayId),
+        veiled = veilsDisplay(progress, gameDisplayId, displayId),
         modifier = modifier
     )
 }
