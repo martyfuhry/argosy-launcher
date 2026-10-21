@@ -1,6 +1,5 @@
 package com.nendo.argosy.ui.screens.library
 
-import android.content.Intent
 import com.nendo.argosy.R
 import com.nendo.argosy.core.notification.NotificationText
 import com.nendo.argosy.core.notification.NotificationType
@@ -18,6 +17,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -36,7 +37,7 @@ class LibraryGameStartTest {
         mockk<com.nendo.argosy.ui.screens.common.GradientExtractionDelegate>(relaxed = true)
     private val gameStartRouter =
         mockk<com.nendo.argosy.ui.screens.common.GameStartRouter>(relaxed = true)
-    private val gameIntent = mockk<Intent>(relaxed = true)
+    private val gameStart = slot<com.nendo.argosy.ui.screens.common.GameStart>()
     private val notificationManager =
         mockk<com.nendo.argosy.core.notification.NotificationManager>(relaxed = true)
 
@@ -49,9 +50,9 @@ class LibraryGameStartTest {
         every { gameLaunchDelegate.memcardPickerState } returns MutableStateFlow(null)
         every {
             gameLaunchDelegate.launchGame(
-                any(), any(), any(), any(), any(), any(), any(), any(), any(), any()
+                any(), any(), any(), any(), any(), any(), any(), any(), capture(gameStart), any()
             )
-        } answers { arg<(Intent) -> Unit>(8).invoke(gameIntent) }
+        } returns Unit
         every { collectionModalDelegate.state } returns MutableStateFlow(
             com.nendo.argosy.ui.screens.common.CollectionModalDelegate.State()
         )
@@ -69,7 +70,7 @@ class LibraryGameStartTest {
     fun tearDown() = Dispatchers.resetMain()
 
     @Test
-    fun `a launch reaches the game starter with nothing collecting the screen events`() =
+    fun `a launch hands the delegate the game to start with no display override`() =
         runTest(dispatcher) {
             val viewModel = viewModel()
             advanceUntilIdle()
@@ -77,20 +78,19 @@ class LibraryGameStartTest {
             viewModel.launchGame(5L)
             advanceUntilIdle()
 
-            verify(exactly = 1) { gameStartRouter.start(5L, gameIntent, null, any()) }
+            assertEquals(5L, gameStart.captured.gameId)
+            assertNull(gameStart.captured.overrideDisplayId)
         }
 
     @Test
     fun `a game window that fails to open shows the launch failed notice`() =
         runTest(dispatcher) {
-            val onFailure = slot<(Throwable) -> Unit>()
-            every { gameStartRouter.start(5L, gameIntent, null, capture(onFailure)) } returns Unit
             val viewModel = viewModel()
             advanceUntilIdle()
 
             viewModel.launchGame(5L)
             advanceUntilIdle()
-            onFailure.captured(SecurityException("denied"))
+            gameStart.captured.onFailure!!.invoke(SecurityException("denied"))
 
             verify(exactly = 1) {
                 notificationManager.show(

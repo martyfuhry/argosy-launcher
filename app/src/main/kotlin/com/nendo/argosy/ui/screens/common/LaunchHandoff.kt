@@ -27,32 +27,28 @@ class LaunchHandoff internal constructor(
     ) : this(tracker, soundManager, startRouter, ComponentDefaults.LaunchOverlay.veilMs.toLong())
 
     /**
-     * Places the game [onLaunch] asks of [GameStartRouter.start], which records its display, then
-     * finishes [ticket] as launched and requests the window with that placement after the hold. A
-     * ticket cancelled while the placement resolves opens nothing. A start that fails clears
-     * Launching at once and reaches the failure callback its caller gave. A null ticket is a launch
-     * continued from a picker, where LaunchGameUseCase opened and finished its own ticket and so
-     * has already published Launching; it still holds.
+     * Places [start]'s game, which records its display, then finishes [ticket] as launched and
+     * requests [intent]'s window with that placement after the hold. A ticket cancelled while the
+     * placement resolves opens nothing. A start that fails clears Launching at once and reaches
+     * [GameStart.onFailure]. A null ticket is a launch continued from a picker, where
+     * LaunchGameUseCase opened and finished its own ticket and so has already published Launching;
+     * it still holds.
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket?,
         intent: Intent,
-        onLaunch: (Intent) -> Unit
+        start: GameStart
     ) {
-        val placed = startRouter.held { onLaunch(intent) }.map { start ->
-            start to startRouter.place(start.gameId, start.intent, start.overrideDisplayId)
-        }
+        val request = startRouter.place(start.gameId, intent, start.overrideDisplayId)
         if (ticket?.isCancelled == true) return
         if (ticket != null) tracker.finish(ticket, launched = true)
         soundManager.play(SoundType.LAUNCH_GAME)
         delay(holdMs)
-        placed.forEach { (start, request) ->
-            request.fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
-                .exceptionOrNull()
-                ?.let { failure ->
-                    tracker.openFailed()
-                    start.onFailure?.invoke(failure)
-                }
-        }
+        request.fold(onSuccess = startRouter::startPlaced, onFailure = { Result.failure(it) })
+            .exceptionOrNull()
+            ?.let { failure ->
+                tracker.openFailed()
+                start.onFailure?.invoke(failure)
+            }
     }
 }

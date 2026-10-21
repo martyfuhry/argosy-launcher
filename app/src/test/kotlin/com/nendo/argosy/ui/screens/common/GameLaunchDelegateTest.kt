@@ -101,9 +101,9 @@ class GameLaunchDelegateTest {
         preLaunchRecapStep = preLaunchRecapStep
     )
 
-    private fun callbacks(router: GameStartRouter, onFailure: (Throwable) -> Unit = {}, onLaunchFailed: () -> Unit = {}) =
+    private fun callbacks(onFailure: (Throwable) -> Unit = {}, onLaunchFailed: () -> Unit = {}) =
         LaunchResultCallbacks(
-            onLaunch = { router.start(gameId, it, onFailure = onFailure) },
+            start = GameStart(gameId, onFailure = onFailure),
             onLaunchFailed = onLaunchFailed
         )
 
@@ -113,7 +113,7 @@ class GameLaunchDelegateTest {
         val tracker = tracker()
         val router = router()
 
-        delegate(tracker, router).launchSimple(this, gameId, callbacks = callbacks(router))
+        delegate(tracker, router).launchSimple(this, gameId, callbacks = callbacks())
         runCurrent()
 
         assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
@@ -137,7 +137,7 @@ class GameLaunchDelegateTest {
         val router = router()
         var failure: Throwable? = null
 
-        delegate(tracker, router).launchSimple(this, gameId, callbacks = callbacks(router, onFailure = { failure = it }))
+        delegate(tracker, router).launchSimple(this, gameId, callbacks = callbacks(onFailure = { failure = it }))
         advanceTimeBy(holdMs)
         runCurrent()
 
@@ -158,7 +158,7 @@ class GameLaunchDelegateTest {
         delegate(tracker, router).launchSimple(
             this,
             gameId,
-            callbacks = callbacks(router, onLaunchFailed = { failedCalls++ })
+            callbacks = callbacks(onLaunchFailed = { failedCalls++ })
         )
         advanceTimeBy(holdMs)
         runCurrent()

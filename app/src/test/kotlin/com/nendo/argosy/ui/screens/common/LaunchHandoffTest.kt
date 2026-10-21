@@ -62,7 +62,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it) } }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
         runCurrent()
 
         assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
@@ -84,7 +84,7 @@ class LaunchHandoffTest {
         val ticket: LaunchProgressTracker.Ticket = mockk(relaxed = true)
         val router = router(backgroundScope)
 
-        handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it) }
+        handoff(tracker, router).handOff(ticket, intent, GameStart(gameId))
 
         verify(exactly = 1) { tracker.finish(ticket, true) }
         verify(exactly = 0) { tracker.finish(ticket, false) }
@@ -96,7 +96,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
 
-        launch { handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it) } }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
         runCurrent()
 
         verify(exactly = 1) { soundManager.play(SoundType.LAUNCH_GAME) }
@@ -110,7 +110,7 @@ class LaunchHandoffTest {
         tracker.finish(useCaseTicket, launched = true)
         val published = tracker.progress.value
 
-        launch { handoff(tracker, router).handOff(null, intent) { router.start(gameId, it) } }
+        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
         runCurrent()
 
         assertSame(published, tracker.progress.value)
@@ -133,7 +133,7 @@ class LaunchHandoffTest {
             options
         }
 
-        launch { handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it, overrideDisplayId = 2) } }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, overrideDisplayId = 2)) }
         runCurrent()
 
         assertNull(stepWhenPlaced)
@@ -158,7 +158,7 @@ class LaunchHandoffTest {
             options
         }
 
-        launch { handoff(tracker, router).handOff(ticket, intent) { router.start(gameId, it) } }
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId)) }
         advanceTimeBy(holdMs)
         runCurrent()
 
@@ -177,9 +177,7 @@ class LaunchHandoffTest {
         var failure: Throwable? = null
 
         launch {
-            handoff(tracker, router).handOff(ticket, intent) {
-                router.start(gameId, it, onFailure = { e -> failure = e })
-            }
+            handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, onFailure = { e -> failure = e }))
         }
         advanceTimeBy(holdMs)
         runCurrent()
@@ -198,7 +196,7 @@ class LaunchHandoffTest {
         val useCaseTicket = tracker.begin(gameId, "Game")!!
         tracker.finish(useCaseTicket, launched = true)
 
-        launch { handoff(tracker, router).handOff(null, intent) { router.start(gameId, it) } }
+        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId)) }
         advanceTimeBy(holdMs)
         runCurrent()
 
@@ -215,9 +213,7 @@ class LaunchHandoffTest {
         var failure: Throwable? = null
 
         launch {
-            handoff(tracker, router).handOff(ticket, intent) {
-                router.start(gameId, it, onFailure = { e -> failure = e })
-            }
+            handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, onFailure = { e -> failure = e }))
         }
         advanceTimeBy(holdMs)
         runCurrent()

@@ -30,18 +30,7 @@ class GameStartRouter internal constructor(
         launchTargetResolver: EmulatorLaunchTargetResolver
     ) : this(context, launchTargetResolver, SafeCoroutineScope(Dispatchers.Main.immediate, "GameStart"))
 
-    /**
-     * A start asked of [start] inside [held]: what its caller passed, not yet placed or started.
-     */
-    class HeldStart internal constructor(
-        val gameId: Long,
-        val intent: Intent,
-        val overrideDisplayId: Int?,
-        val onFailure: ((Throwable) -> Unit)?
-    )
-
     private val fallbackStarter = GameActivityStarter(context) { null }
-    private val holding = ThreadLocal<MutableList<HeldStart>?>()
 
     fun start(
         gameId: Long,
@@ -49,32 +38,11 @@ class GameStartRouter internal constructor(
         overrideDisplayId: Int? = null,
         onFailure: ((Throwable) -> Unit)? = null
     ) {
-        val held = holding.get()
-        if (held != null) {
-            held += HeldStart(gameId, intent, overrideDisplayId, onFailure)
-            return
-        }
         scope.launch {
             val result = place(gameId, intent, overrideDisplayId)
                 .fold(onSuccess = ::startPlaced, onFailure = { Result.failure(it) })
             result.exceptionOrNull()?.let { onFailure?.invoke(it) }
         }
-    }
-
-    /**
-     * Runs [block] and returns every start it asked of [start] on this thread, unplaced and
-     * unstarted, for the caller to [place] and [startPlaced] when it is ready.
-     */
-    fun held(block: () -> Unit): List<HeldStart> {
-        val outer = holding.get()
-        val starts = mutableListOf<HeldStart>()
-        holding.set(starts)
-        try {
-            block()
-        } finally {
-            holding.set(outer)
-        }
-        return starts
     }
 
     /**
