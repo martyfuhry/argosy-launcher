@@ -184,7 +184,8 @@ fun LaunchVeilMirror(
     val progress by tracker.progress.collectAsState()
     LaunchVeil(
         veiled = veilsDisplay(progress, gameDisplayId, displayId),
-        modifier = modifier
+        modifier = modifier,
+        veiledSinceMs = progress?.stepStartedAtMs
     )
 }
 
@@ -292,7 +293,7 @@ private fun LaunchOverlayContent(
                     onCancel = onCancel
                 )
             }
-            LaunchVeil(veiled = darkensForLaunch(shown, gameOpensHere))
+            LaunchVeil(veiled = darkensForLaunch(shown, gameOpensHere), veiledSinceMs = shown.stepStartedAtMs)
         }
     }
 }

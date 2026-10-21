@@ -3,6 +3,8 @@ package com.nendo.argosy.ui.components.launch
 import com.nendo.argosy.domain.model.LaunchPhase
 import com.nendo.argosy.domain.model.LaunchProgress
 import com.nendo.argosy.domain.model.phase
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 /**
  * Whether a game is on its way in: the launch has published LAUNCHING and its window has been or
@@ -36,3 +38,23 @@ fun opensOnSurface(hasPresentationSurface: Boolean, gameDisplayId: Int?, surface
  */
 fun darkensForLaunch(progress: LaunchProgress?, gameOpensHere: Boolean): Boolean =
     gameOpensHere && progress?.step?.phase == LaunchPhase.LAUNCHING
+
+/**
+ * The veil's opacity when it first draws. A veil whose Launching step began [elapsedMs] ago stands
+ * where one that faded in from that start over [veilMs] would be, so a recreated veil carries on
+ * instead of cutting to black and a launch that enters at Launching still fades in over the full
+ * [veilMs]. A veil that is not [veiled], whose start is unknown, or under [reducedMotion], starts
+ * at its target.
+ */
+fun veilStartAlpha(veiled: Boolean, elapsedMs: Long?, veilMs: Int, reducedMotion: Boolean): Float {
+    val target = if (veiled) 1f else 0f
+    if (!veiled || reducedMotion || elapsedMs == null || veilMs <= 0) return target
+    return (elapsedMs.toFloat() / veilMs).coerceIn(0f, 1f)
+}
+
+/**
+ * How long the veil takes from [from] to [to] at the even rate of a full fade over [veilMs], zero
+ * under [reducedMotion].
+ */
+fun veilRemainingMs(from: Float, to: Float, veilMs: Int, reducedMotion: Boolean): Int =
+    if (reducedMotion) 0 else (abs(to - from) * veilMs.coerceAtLeast(0)).roundToInt()
