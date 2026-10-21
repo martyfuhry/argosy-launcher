@@ -277,22 +277,53 @@ class LaunchHandoffTest {
     }
 
     @Test
-    fun `an unplaceable game clears launching and reaches the failure callback without a start`() = runTest {
+    fun `an unplaceable game fails at once with no sound, no hold and no launching`() = runTest {
         val broken = IllegalStateException("db closed")
         coEvery { resolver.launchOptionsFor(gameId, any()) } throws broken
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
         var failure: Throwable? = null
+        var progressWhenFailed: Any? = Unit
 
         launch {
-            handoff(tracker, router).handOff(ticket, intent, GameStart(gameId, onFailure = { e -> failure = e }))
+            handoff(tracker, router).handOff(
+                ticket,
+                intent,
+                GameStart(gameId, onFailure = { e ->
+                    failure = e
+                    progressWhenFailed = tracker.progress.value
+                })
+            )
         }
-        advanceTimeBy(holdMs)
         runCurrent()
 
         assertSame(broken, failure)
+        assertNull(progressWhenFailed)
         assertNull(tracker.progress.value)
+        assertEquals(0L, testScheduler.currentTime)
+        verify(exactly = 0) { soundManager.play(SoundType.LAUNCH_GAME) }
         verify(exactly = 0) { manager.startGame(any()) }
+
+        advanceTimeBy(holdMs)
+        runCurrent()
+        verify(exactly = 0) { manager.startGame(any()) }
+    }
+
+    @Test
+    fun `an unplaceable picker launch clears the launching the use case published at once`() = runTest {
+        coEvery { resolver.launchOptionsFor(gameId, any()) } throws IllegalStateException("db closed")
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val useCaseTicket = tracker.begin(gameId, "Game")!!
+        tracker.finish(useCaseTicket, launched = true)
+        var failed = false
+
+        launch { handoff(tracker, router).handOff(null, intent, GameStart(gameId, onFailure = { failed = true })) }
+        runCurrent()
+
+        assertTrue(failed)
+        assertNull(tracker.progress.value)
+        verify(exactly = 0) { soundManager.play(SoundType.LAUNCH_GAME) }
     }
 }
