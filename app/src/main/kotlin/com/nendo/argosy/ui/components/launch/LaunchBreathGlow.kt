@@ -35,18 +35,19 @@ internal fun rememberArtGlowColor(art: Bitmap?): Color? {
     val extractor = remember { GradientColorExtractor() }
     return produceState<Color?>(initialValue = null, art) {
         val source = art ?: return@produceState
-        value = withContext(Dispatchers.Default) { extractor.dominantColor(source) } ?: value
+        value = withContext(Dispatchers.Default) { extractor.warmerArtColor(source) } ?: value
     }.value
 }
 
-private fun GradientColorExtractor.dominantColor(art: Bitmap): Color? {
+private fun GradientColorExtractor.warmerArtColor(art: Bitmap): Color? {
     val readable = if (art.config == Bitmap.Config.HARDWARE) {
         art.copy(Bitmap.Config.ARGB_8888, false) ?: return null
     } else {
         art
     }
     return try {
-        extractGradientColors(readable).first
+        val (primary, secondary) = extractGradientColors(readable)
+        warmerOf(primary, secondary)
     } finally {
         if (readable !== art) readable.recycle()
     }
