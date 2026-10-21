@@ -316,9 +316,13 @@ class SecondaryHomeActivity :
 
     private fun refocusAfterTouch() {
         if (isGameActive && ::dsm.isInitialized) {
+            android.util.Log.d("SecondaryHome", "refocusAfterTouch: branch=session yielded=$keysYieldedToSession hasFocus=${hasWindowFocus()}")
             if (!keysYieldedToSession) window.decorView.post { dsm.refocusSession() }
         } else if (isShowcaseRole) {
+            android.util.Log.d("SecondaryHome", "refocusAfterTouch: branch=showcase hasFocus=${hasWindowFocus()}")
             window.decorView.post { dsm.onRefocusUpper() }
+        } else {
+            android.util.Log.d("SecondaryHome", "refocusAfterTouch: branch=none gameActive=$isGameActive yielded=$keysYieldedToSession hasFocus=${hasWindowFocus()}")
         }
     }
 
@@ -455,6 +459,7 @@ class SecondaryHomeActivity :
     private fun yieldKeysToSession() {
         keysYieldedToSession = isGameActive && !isShowcaseRole &&
             (dsm.emulatorDisplayId ?: Display.DEFAULT_DISPLAY) != hostDisplayId()
+        android.util.Log.d("SecondaryHome", "yieldKeysToSession: yielded=$keysYieldedToSession gameActive=$isGameActive showcase=$isShowcaseRole emulatorDisplay=${dsm.emulatorDisplayId} hostDisplay=${hostDisplayId()}")
         if (keysYieldedToSession) {
             window.addFlags(android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE)
         } else {
@@ -465,6 +470,7 @@ class SecondaryHomeActivity :
     override fun onSessionStarted(
         gameId: Long, isHardcore: Boolean, channelName: String?
     ) {
+        android.util.Log.d("SecondaryHome", "onSessionStarted: gameId=$gameId display=${hostDisplayId()} wasGameActive=$isGameActive")
         isGameActive = true
         this.isHardcore = isHardcore
         currentChannelName = channelName
@@ -484,6 +490,7 @@ class SecondaryHomeActivity :
     }
 
     override fun onSessionEnded() {
+        android.util.Log.d("SecondaryHome", "onSessionEnded: display=${hostDisplayId()} wasGameActive=$isGameActive yielded=$keysYieldedToSession")
         isGameActive = false
         isHardcore = false
         currentChannelName = null

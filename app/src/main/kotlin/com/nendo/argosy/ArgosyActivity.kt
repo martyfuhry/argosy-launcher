@@ -516,6 +516,7 @@ class ArgosyActivity : ComponentActivity() {
             if (event.action == KeyEvent.ACTION_DOWN || event.action == KeyEvent.ACTION_UP) {
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
                     Logger.verbose(TAG) { "dispatchKeyEvent: FORWARDING key=${event.keyCode} to companion" }
+                    if (dualScreenManager.controlCompanion == null) Log.d(TAG, "dispatchKeyEvent: no control companion, key=${event.keyCode} dropped")
                 }
                 dualScreenManager.controlCompanion?.onForwardKey(
                     event.keyCode,
