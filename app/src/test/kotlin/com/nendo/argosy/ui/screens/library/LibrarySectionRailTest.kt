@@ -312,6 +312,7 @@ class LibrarySectionRailTest {
         libraryDefaultPlatformMigration = mockk(relaxed = true),
         showcaseSource = mockk(relaxed = true),
         reorderPlatforms = mockk(relaxed = true),
-        quickNavigation = mockk { every { enabled } returns quickNavigation }
+        quickNavigation = mockk { every { enabled } returns quickNavigation },
+        launchProgressTracker = mockk { io.mockk.every { launchLive } returns MutableStateFlow(false) }
     )
 }
