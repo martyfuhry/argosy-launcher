@@ -10,11 +10,13 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -123,5 +125,53 @@ class GameStartRouterTest {
 
         assertSame(broken, failure)
         verify(exactly = 0) { manager.startGame(any()) }
+    }
+
+    @Test
+    fun `the started game window opens without the system transition`() = runTest {
+        val flagged = flagTrackingIntent(initialFlags = 0)
+        coEvery { resolver.launchOptionsFor(7L, null) } returns options
+        val started = slot<Intent>()
+        every { appContext.startActivity(capture(started), options) } returns Unit
+
+        GameStartRouter(appContext, resolver, this).start(gameId = 7L, intent = flagged.intent)
+        advanceUntilIdle()
+
+        assertSame(flagged.intent, started.captured)
+        assertNotEquals(0, flagged.flags and Intent.FLAG_ACTIVITY_NO_ANIMATION)
+    }
+
+    @Test
+    fun `the caller flags survive the transition flag`() = runTest {
+        val callerFlags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val flagged = flagTrackingIntent(initialFlags = callerFlags)
+        val manager = mockk<DualScreenManager> {
+            every { startGame(any()) } returns Result.success(Unit)
+        }
+        DualScreenManagerHolder.instance = manager
+
+        GameStartRouter(appContext, resolver, this).startPlaced(GameLaunchRequest(flagged.intent, options))
+
+        assertEquals(callerFlags or Intent.FLAG_ACTIVITY_NO_ANIMATION, flagged.flags)
+        verify(exactly = 1) { manager.startGame(GameLaunchRequest(flagged.intent, options)) }
+    }
+
+    private class FlagTrackingIntent(val intent: Intent, initialFlags: Int) {
+        var flags: Int = initialFlags
+    }
+
+    private fun flagTrackingIntent(initialFlags: Int): FlagTrackingIntent {
+        val mock = mockk<Intent>(relaxed = true)
+        val tracked = FlagTrackingIntent(mock, initialFlags)
+        every { mock.flags } answers { tracked.flags }
+        every { mock.addFlags(any()) } answers {
+            tracked.flags = tracked.flags or firstArg<Int>()
+            mock
+        }
+        every { mock.setFlags(any()) } answers {
+            tracked.flags = firstArg()
+            mock
+        }
+        return tracked
     }
 }
