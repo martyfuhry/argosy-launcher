@@ -99,7 +99,6 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
-    private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val configureEmulatorUseCase: com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
