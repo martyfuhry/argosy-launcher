@@ -7,7 +7,10 @@ import com.nendo.argosy.data.local.entity.getDisplayName
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.data.model.ResolvedGameArt
 import com.nendo.argosy.data.model.tieredByOwnership
+import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.EmulatorDetector
+import com.nendo.argosy.data.emulator.LaunchProgressTracker
+import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.data.platform.LocalPlatformIds
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
 import com.nendo.argosy.data.preferences.UserPreferencesRepository
@@ -15,6 +18,7 @@ import com.nendo.argosy.data.repository.DownloadFileStatusRepository
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.repository.PlatformRepository
 import com.nendo.argosy.domain.model.CompletionStatus
+import com.nendo.argosy.domain.model.LaunchProgress
 import com.nendo.argosy.domain.model.PinnedCollection
 import com.nendo.argosy.domain.usecase.collection.GetGamesForPinnedCollectionUseCase
 import com.nendo.argosy.domain.usecase.collection.GetPinnedCollectionsUseCase
@@ -40,6 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -85,6 +90,9 @@ data class LibraryState(
     val repairedCoverPaths: Map<Long, String> = emptyMap()
 )
 
+internal fun holdsRecents(progress: LaunchProgress?, session: ActiveSession?): Boolean =
+    progress != null || session != null
+
 private data class RecentGamesCache(
     val games: List<HomeGameUi>?,
     val version: Long
@@ -106,7 +114,9 @@ class HomeLibraryDelegate @Inject constructor(
     private val downloadFileStatusRepository: DownloadFileStatusRepository,
     private val steamPathResolver: com.nendo.argosy.data.steam.SteamPathResolver,
     private val collectionRepository: com.nendo.argosy.data.repository.CollectionRepository,
-    private val appsRepository: com.nendo.argosy.data.repository.AppsRepository
+    private val appsRepository: com.nendo.argosy.data.repository.AppsRepository,
+    private val launchProgressTracker: LaunchProgressTracker,
+    private val playSessionTracker: PlaySessionTracker
 ) {
     private val _state = MutableStateFlow(LibraryState())
     val state: StateFlow<LibraryState> = _state.asStateFlow()
@@ -236,7 +246,8 @@ class HomeLibraryDelegate @Inject constructor(
         scope.launch {
             gameRepository.awaitStorageReady()
             val newThreshold = Instant.now().minus(NEW_GAME_THRESHOLD_HOURS, ChronoUnit.HOURS)
-            gameRepository.observeRecentlyPlayed(RECENT_GAMES_CANDIDATE_POOL).collect { recentlyPlayed ->
+            val hold = combine(launchProgressTracker.progress, playSessionTracker.activeSession) { p, s -> holdsRecents(p, s) }
+            gameRepository.observeRecentlyPlayed(RECENT_GAMES_CANDIDATE_POOL).heldWhile(hold).collect { recentlyPlayed ->
                 val installedOnly = installedOnlyHome()
                 val newlyAdded = gameRepository.getNewlyAdded(newThreshold, installedOnly, RECENT_GAMES_CANDIDATE_POOL)
                 val allCandidates = (recentlyPlayed + newlyAdded).distinctBy { it.id }
