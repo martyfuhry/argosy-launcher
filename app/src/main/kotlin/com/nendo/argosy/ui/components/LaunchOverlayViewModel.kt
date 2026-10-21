@@ -9,6 +9,9 @@ import com.nendo.argosy.domain.model.LaunchProgress
 import com.nendo.argosy.domain.model.LaunchPromptOption
 import com.nendo.argosy.domain.model.LaunchRecap
 import com.nendo.argosy.domain.model.LaunchStep
+import com.nendo.argosy.ui.components.launch.LaunchHostSignal
+import com.nendo.argosy.ui.components.launch.recordsHostStop
+import com.nendo.argosy.ui.components.launch.shouldReportHostStopped
 import com.nendo.argosy.ui.components.recap.LaunchRecapCursor
 import com.nendo.argosy.ui.components.recap.RecapCursor
 import com.nendo.argosy.ui.input.InputHandler
@@ -86,7 +89,17 @@ class LaunchOverlayViewModel @Inject constructor(
 
     fun cancel(): Boolean = tracker.cancel()
 
-    fun hostStopped() = tracker.hostStopped()
+    private var hostStopRecorded = false
+
+    /**
+     * Passes [signal] from the overlay's host to the tracker as a stop, unless the host is being
+     * recreated or, for a return, no real stop came before it.
+     */
+    fun hostSignal(signal: LaunchHostSignal, isChangingConfigurations: Boolean) {
+        if (!shouldReportHostStopped(isChangingConfigurations, signal, hostStopRecorded)) return
+        hostStopRecorded = recordsHostStop(signal)
+        tracker.hostStopped()
+    }
 
     fun recapCurrent(index: Int) {
         val count = recap?.unlocks?.size ?: return
