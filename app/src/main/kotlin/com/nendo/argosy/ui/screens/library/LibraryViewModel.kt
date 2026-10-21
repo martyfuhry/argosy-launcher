@@ -83,6 +83,7 @@ import com.nendo.argosy.ui.screens.common.SyncOverlayState
 import com.nendo.argosy.ui.screens.gamedetail.CollectionItemUi
 import com.nendo.argosy.ui.screens.home.HomePlatformUi
 import com.nendo.argosy.ui.screens.home.toHomePlatformUi
+import com.nendo.argosy.ui.screens.home.delegates.heldWhile
 import com.nendo.argosy.ui.util.GridUtils
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.ui.ModalResetSignal
@@ -490,7 +491,8 @@ class LibraryViewModel @Inject constructor(
     private val libraryDefaultPlatformMigration: com.nendo.argosy.data.repository.LibraryDefaultPlatformMigration,
     private val showcaseSource: com.nendo.argosy.ui.common.PresentationShowcaseSource,
     private val reorderPlatforms: com.nendo.argosy.domain.usecase.platform.ReorderPlatformsUseCase,
-    private val quickNavigation: com.nendo.argosy.data.preferences.QuickNavigationSource
+    private val quickNavigation: com.nendo.argosy.data.preferences.QuickNavigationSource,
+    private val launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker
 ) : ViewModel() {
 
     val siblingChoiceState = siblingChoice.state
@@ -1181,6 +1183,7 @@ class LibraryViewModel @Inject constructor(
                     kotlinx.coroutines.delay(100)
                     emitAll(source)
                 }
+                .heldWhile(launchProgressTracker.launchLive)
                 .collectLatest { (games, seriesIds, regionIds) ->
                     val normalizedQuery = com.nendo.argosy.util.SearchNormalizer.normalize(filters.searchQuery)
                     val platformIds = filters.platforms.map { it.id }.toSet()

@@ -1,12 +1,14 @@
 package com.nendo.argosy.ui.components.launch
 
+import android.os.SystemClock
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -26,22 +28,30 @@ private var SemanticsPropertyReceiver.veilAlpha by VeilAlpha
 
 /**
  * A full-size black layer that fades in over [ComponentDefaults.LaunchOverlay.veilMs] while
- * [veiled] holds and out again when it drops, at an even rate per frame. Reduced motion cuts at
+ * [veiled] holds and out again when it drops, at an even rate per frame. A veil first drawn while
+ * [veiled] holds starts where a fade begun at [veiledSinceMs] (the Launching step's start on the
+ * elapsed-realtime clock) would stand, so one recreated mid-fade carries on. Reduced motion cuts at
  * once. It takes no input and draws nothing while clear.
  */
 @Composable
-fun LaunchVeil(veiled: Boolean, modifier: Modifier = Modifier) {
+fun LaunchVeil(veiled: Boolean, modifier: Modifier = Modifier, veiledSinceMs: Long? = null) {
     val reduced = LocalMotionTier.current == MotionTier.Reduced
+    val veilMs = ComponentDefaults.LaunchOverlay.veilMs
     val target = if (veiled) 1f else 0f
-    val animated by animateFloatAsState(
-        targetValue = target,
-        animationSpec = tween(
-            durationMillis = if (reduced) 0 else ComponentDefaults.LaunchOverlay.veilMs,
-            easing = LinearEasing
-        ),
-        label = "launchVeil"
-    )
-    val alpha = if (reduced) target else animated
+    val animated = remember {
+        val elapsedMs = veiledSinceMs?.let { SystemClock.elapsedRealtime() - it }
+        Animatable(veilStartAlpha(veiled, elapsedMs, veilMs, reduced))
+    }
+    LaunchedEffect(target, reduced) {
+        animated.animateTo(
+            targetValue = target,
+            animationSpec = tween(
+                durationMillis = veilRemainingMs(animated.value, target, veilMs, reduced),
+                easing = LinearEasing
+            )
+        )
+    }
+    val alpha = if (reduced) target else animated.value
     Box(
         modifier = modifier
             .fillMaxSize()

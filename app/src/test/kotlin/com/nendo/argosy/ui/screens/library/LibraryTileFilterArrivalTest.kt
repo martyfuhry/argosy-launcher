@@ -239,7 +239,8 @@ class LibraryTileFilterArrivalTest {
         libraryDefaultPlatformMigration = mockk(relaxed = true),
         showcaseSource = mockk(relaxed = true),
         reorderPlatforms = mockk(relaxed = true),
-        quickNavigation = mockk { io.mockk.every { enabled } returns MutableStateFlow(true) }
+        quickNavigation = mockk { io.mockk.every { enabled } returns MutableStateFlow(true) },
+        launchProgressTracker = mockk { io.mockk.every { launchLive } returns MutableStateFlow(false) }
     )
 
     private fun LibraryViewModel.platformIds(): Set<Long> =

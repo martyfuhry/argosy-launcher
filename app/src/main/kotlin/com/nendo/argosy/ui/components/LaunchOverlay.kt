@@ -1,6 +1,8 @@
 package com.nendo.argosy.ui.components
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -47,6 +49,7 @@ import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.domain.model.SyncProgress
 import com.nendo.argosy.ui.components.launch.CalmLaunchContent
+import com.nendo.argosy.ui.components.launch.LaunchHostSignal
 import com.nendo.argosy.ui.components.launch.LaunchVeil
 import com.nendo.argosy.ui.components.launch.darkensForLaunch
 import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
@@ -86,7 +89,7 @@ private fun launchProgressEntryPoint(context: Context): LaunchProgressEntryPoint
  * The launch in progress over the surface that starts launches. It holds the input stack while a
  * launch runs. A launch whose game window has been requested ends once that surface stops, once
  * the overlay leaves composition (the in-game dashboard takes the surface), and when the overlay
- * comes back.
+ * or its surface comes back after such a stop. A recreation of the surface is none of these.
  */
 @Composable
 fun LaunchOverlay(
@@ -98,17 +101,25 @@ fun LaunchOverlay(
     val recapCursor by viewModel.recapCursorState.collectAsState()
     val hasPresentationSurface by viewModel.hasPresentationSurface.collectAsState()
     val gameDisplayId by viewModel.gameDisplayId.collectAsState()
-    val surfaceDisplayId = ContextCompat.getDisplayOrDefault(LocalContext.current).displayId
+    val context = LocalContext.current
+    val surfaceDisplayId = ContextCompat.getDisplayOrDefault(context).displayId
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
+    DisposableEffect(lifecycleOwner, viewModel, context) {
+        val activity = context.findActivity()
+        fun report(signal: LaunchHostSignal) =
+            viewModel.hostSignal(signal, activity?.isChangingConfigurations == true)
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) viewModel.hostStopped()
+            when (event) {
+                Lifecycle.Event.ON_START -> report(LaunchHostSignal.STARTED)
+                Lifecycle.Event.ON_STOP -> report(LaunchHostSignal.STOPPED)
+                else -> Unit
+            }
         }
-        viewModel.hostStopped()
+        report(LaunchHostSignal.COMPOSED)
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.hostStopped()
+            report(LaunchHostSignal.LEFT_COMPOSITION)
         }
     }
     ModalInputEffect(active = progress != null, handler = viewModel.inputHandler)
@@ -173,7 +184,8 @@ fun LaunchVeilMirror(
     val progress by tracker.progress.collectAsState()
     LaunchVeil(
         veiled = veilsDisplay(progress, gameDisplayId, displayId),
-        modifier = modifier
+        modifier = modifier,
+        veiledSinceMs = progress?.stepStartedAtMs
     )
 }
 
@@ -202,6 +214,12 @@ fun launchOverlayFadeMs(): Int =
     if (LocalMotionTier.current == MotionTier.Reduced) 0 else ComponentDefaults.LaunchOverlay.fadeMs
 
 private const val NO_PROMPT_FOCUS = -1
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
 
 @Composable
 private fun LaunchOverlayContent(
@@ -275,7 +293,7 @@ private fun LaunchOverlayContent(
                     onCancel = onCancel
                 )
             }
-            LaunchVeil(veiled = darkensForLaunch(shown, gameOpensHere))
+            LaunchVeil(veiled = darkensForLaunch(shown, gameOpensHere), veiledSinceMs = shown.stepStartedAtMs)
         }
     }
 }
