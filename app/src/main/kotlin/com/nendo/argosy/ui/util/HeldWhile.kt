@@ -1,4 +1,4 @@
-package com.nendo.argosy.ui.screens.home.delegates
+package com.nendo.argosy.ui.util
 
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job

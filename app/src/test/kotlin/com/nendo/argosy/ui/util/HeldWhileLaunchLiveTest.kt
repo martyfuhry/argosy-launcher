@@ -1,4 +1,4 @@
-package com.nendo.argosy.ui.screens.home.delegates
+package com.nendo.argosy.ui.util
 
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,7 +14,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class HoldsRecentsTest {
+class HeldWhileLaunchLiveTest {
 
     @Test
     fun `a launch begun with no step yet holds the row`() = runTest {
