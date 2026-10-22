@@ -39,20 +39,32 @@ class GameStartRouter internal constructor(
         onFailure: ((Throwable) -> Unit)? = null
     ) {
         scope.launch {
-            val result = try {
-                val options = launchTargetResolver.launchOptionsFor(gameId, overrideDisplayId)
-                startResolved(GameLaunchRequest(intent, options))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Logger.error(TAG, "Placement for gameId=$gameId could not be resolved", e)
-                Result.failure(e)
-            }
+            val result = place(gameId, intent, overrideDisplayId)
+                .fold(onSuccess = ::startPlaced, onFailure = { Result.failure(it) })
             result.exceptionOrNull()?.let { onFailure?.invoke(it) }
         }
     }
 
-    private fun startResolved(request: GameLaunchRequest): Result<Unit> {
+    /**
+     * Resolves the display [gameId] opens on, records it as the game's display, and returns the
+     * request that opens it there.
+     */
+    suspend fun place(gameId: Long, intent: Intent, overrideDisplayId: Int? = null): Result<GameLaunchRequest> =
+        try {
+            Result.success(GameLaunchRequest(intent, launchTargetResolver.launchOptionsFor(gameId, overrideDisplayId)))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Logger.error(TAG, "Placement for gameId=$gameId could not be resolved", e)
+            Result.failure(e)
+        }
+
+    /**
+     * Starts [request] with no system window transition, so the game's window appears in place
+     * over the launch veil. The flag is added to the request's own intent, keeping its other flags.
+     */
+    fun startPlaced(request: GameLaunchRequest): Result<Unit> {
+        request.intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION)
         val manager = DualScreenManagerHolder.instance ?: return fallbackStarter.start(request)
         return manager.startGame(request)
     }

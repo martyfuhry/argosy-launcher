@@ -212,6 +212,74 @@ class LaunchProgressTrackerTest {
     }
 
     @Test
+    fun `a launch held for its window outlasts the screen that started it stopping`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.holdForWindow(ticket)
+        tracker.finish(ticket, launched = true)
+
+        tracker.hostStopped()
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+
+        tracker.windowRequested(ticket)
+        tracker.hostStopped()
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
+    fun `a launch held for a window that is never requested still clears on its own`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.holdForWindow(ticket)
+        tracker.finish(ticket, launched = true)
+
+        advanceTimeBy(10_000)
+
+        assertNull(tracker.progress.value)
+    }
+
+    @Test
+    fun `a game screen that never opens clears the launching hold at once`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.finish(ticket, launched = true)
+
+        tracker.openFailed(ticket)
+
+        assertNull(tracker.progress.value)
+        assertNull(tracker.current)
+        assertTrue(tracker.begin(2L, "Next") != null)
+    }
+
+    @Test
+    fun `a failed game screen leaves a launch begun since alone`() = runTest {
+        val tracker = tracker()
+        val first = tracker.begin(1L, "First")!!
+        tracker.finish(first, launched = true)
+        val second = tracker.begin(2L, "Second")!!
+        second.step(LaunchStep.PreparingUi)
+
+        tracker.openFailed(first)
+
+        assertEquals(LaunchStep.PreparingUi, tracker.progress.value?.step)
+        assertEquals(second, tracker.current)
+    }
+
+    @Test
+    fun `a failed game screen leaves a newer launch's launching alone`() = runTest {
+        val tracker = tracker()
+        val first = tracker.begin(1L, "First")!!
+        tracker.finish(first, launched = true)
+        val second = tracker.begin(2L, "Second")!!
+        tracker.finish(second, launched = true)
+
+        tracker.openFailed(first)
+
+        assertEquals(2L, tracker.progress.value?.gameId)
+        assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
+    }
+
+    @Test
     fun `a launch whose screen never stops clears on its own`() = runTest {
         val tracker = tracker()
         val ticket = tracker.begin(1L, "Game")!!
@@ -335,6 +403,95 @@ class LaunchProgressTrackerTest {
 
         assertNull(second.failure)
         assertNull(tracker.progress.value?.failure)
+    }
+
+    @Test
+    fun `a launch is live from the moment it begins, before any step`() = runTest {
+        val tracker = tracker()
+        assertFalse(tracker.launchLive.value)
+
+        val ticket = tracker.begin(1L, "Game")!!
+        assertNull(tracker.progress.value)
+        assertTrue(tracker.launchLive.value)
+
+        ticket.step(LaunchStep.PreparingUi)
+        assertTrue(tracker.launchLive.value)
+    }
+
+    @Test
+    fun `a launch that opened its game stays live until the screen that started it stops`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+
+        tracker.finish(ticket, launched = true)
+        assertTrue(tracker.launchLive.value)
+
+        tracker.hostStopped()
+        assertFalse(tracker.launchLive.value)
+    }
+
+    @Test
+    fun `a launch whose screen never stops is no longer live once its hold runs out`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.finish(ticket, launched = true)
+
+        advanceTimeBy(10_000)
+
+        assertFalse(tracker.launchLive.value)
+    }
+
+    @Test
+    fun `a launch that failed is no longer live`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+
+        tracker.finish(ticket, launched = false)
+
+        assertFalse(tracker.launchLive.value)
+    }
+
+    @Test
+    fun `a game screen that never opens ends the live launch`() = runTest {
+        val tracker = tracker()
+        val ticket = tracker.begin(1L, "Game")!!
+        tracker.finish(ticket, launched = true)
+
+        tracker.openFailed(ticket)
+
+        assertFalse(tracker.launchLive.value)
+    }
+
+    @Test
+    fun `a cancelled launch is no longer live, and the next one is`() = runTest {
+        val tracker = tracker()
+        val cancelled = tracker.begin(1L, "First")!!
+
+        tracker.cancel()
+        assertFalse(tracker.launchLive.value)
+
+        val next = async { tracker.begin(2L, "Second") }
+        runCurrent()
+        assertTrue(tracker.launchLive.value)
+
+        tracker.finish(cancelled, launched = false)
+        next.await()!!
+        assertTrue(tracker.launchLive.value)
+    }
+
+    @Test
+    fun `a launch cancelled while it waits for the last one is not live`() = runTest {
+        val tracker = tracker()
+        val first = tracker.begin(1L, "First")!!
+        tracker.cancel()
+        val second = async { tracker.begin(2L, "Second") }
+        runCurrent()
+
+        tracker.cancel()
+        tracker.finish(first, launched = false)
+
+        assertNull(second.await())
+        assertFalse(tracker.launchLive.value)
     }
 
     @Test

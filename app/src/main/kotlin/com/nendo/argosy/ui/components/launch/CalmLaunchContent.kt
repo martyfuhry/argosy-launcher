@@ -1,5 +1,7 @@
 package com.nendo.argosy.ui.components.launch
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.os.SystemClock
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
@@ -64,7 +66,9 @@ private val Defaults = ComponentDefaults.LaunchOverlay
 /**
  * The quiet launch column: cover art, title and Cancel at equal spacing. The status block (bar,
  * line, percent) makes room and fades in only once [LaunchOverlayState] says the step has waited
- * out its patience or a failure needs saying, and leaves by the reverse motion.
+ * out its patience or a failure needs saying, and leaves by the reverse motion. Cancel's slot is
+ * always held, empty once the launch can no longer be cancelled, so the column keeps its place
+ * when Launching begins and when the screen is recreated during it.
  */
 @Composable
 fun CalmLaunchContent(
@@ -102,13 +106,13 @@ fun CalmLaunchContent(
     val coverPath = progress.gameId?.let { rememberResolvedCoverPath(it, null) }
     val cover = rememberFileImageModel(coverPath)
     val hasArt = remember(progress.gameId) { cover != null }
+    var artBitmap by remember(progress.gameId) { mutableStateOf<Bitmap?>(null) }
+    val artColor = rememberArtGlowColor(artBitmap)
     val title = progress.gameTitle
     val hasLead = hasArt || title != null
     val gap = Dimens.spacingLg
     val enter = reflowEnter(ui)
     val exit = reflowExit(ui)
-    var cancelSlot by remember { mutableStateOf(ui.cancellable) }
-    SideEffect { if (ui.cancellable) cancelSlot = true }
     val cancelAlpha by animateFloatAsState(
         targetValue = if (ui.cancellable) 1f else 0f,
         animationSpec = tween(durationMillis = ui.statusFadeMs, easing = Motion.argosyEase),
@@ -126,9 +130,13 @@ fun CalmLaunchContent(
                     model = cover,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    onSuccess = { state ->
+                        artBitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
+                    },
                     modifier = Modifier
                         .height(artHeight)
                         .aspectRatio(BoxArtShape.TALL.aspectRatio, matchHeightConstraintsFirst = true)
+                        .launchBreathGlow(artColor, progress.gameId)
                         .clip(RoundedCornerShape(Dimens.radiusLg))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 )
@@ -153,14 +161,12 @@ fun CalmLaunchContent(
                     if (!hasLead) Spacer(Modifier.height(gap))
                 }
             }
-            AnimatedVisibility(visible = cancelSlot, enter = enter, exit = ExitTransition.None) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.alpha(cancelAlpha)
-                ) {
-                    if (hasLead) Spacer(Modifier.height(gap))
-                    LaunchCancelButton(onClick = { if (ui.cancellable) onCancel() })
-                }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.alpha(cancelAlpha)
+            ) {
+                if (hasLead) Spacer(Modifier.height(gap))
+                LaunchCancelButton(onClick = { if (ui.cancellable) onCancel() })
             }
         }
     }

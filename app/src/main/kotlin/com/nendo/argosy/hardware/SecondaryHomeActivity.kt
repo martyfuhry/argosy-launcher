@@ -8,6 +8,7 @@ import android.view.Display
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -202,13 +203,41 @@ class SecondaryHomeActivity :
         val hereDisplayId = androidx.core.content.ContextCompat.getDisplayOrDefault(this).displayId
         val showsDashboard = gameActive && dsm.primaryShowsDashboard(hereDisplayId, gameDisplay)
         val rolesSwapped by dsm.isRolesSwapped.collectAsState()
-        if (!rolesSwapped && !showsDashboard) {
-            com.nendo.argosy.ui.ArgosyApp(
-                onStartupComplete = { dsm.stopStartupGuard() }
-            )
-            return
+        val launcherShown = !rolesSwapped && !showsDashboard
+        val handoffMs = com.nendo.argosy.ui.dualscreen.companionHandoffMs(
+            showsDashboard = showsDashboard,
+            reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==
+                com.nendo.argosy.ui.theme.MotionTier.Reduced,
+            veilMs = com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.veilMs
+        )
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.fillMaxSize()
+        ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = launcherShown,
+                enter = androidx.compose.animation.EnterTransition.None,
+                exit = androidx.compose.animation.fadeOut(
+                    androidx.compose.animation.core.tween(handoffMs)
+                )
+            ) {
+                com.nendo.argosy.ui.ArgosyApp(
+                    onStartupComplete = { dsm.stopStartupGuard() }
+                )
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = !launcherShown,
+                enter = androidx.compose.animation.fadeIn(
+                    androidx.compose.animation.core.tween(handoffMs)
+                ),
+                exit = androidx.compose.animation.ExitTransition.None
+            ) {
+                CompanionPresentation(showsDashboard)
+            }
         }
+    }
 
+    @androidx.compose.runtime.Composable
+    private fun CompanionPresentation(showsDashboard: Boolean) {
         val slot by dsm.presentationSlot.collectAsState()
         val presentationSink = androidx.compose.runtime.remember {
             androidx.compose.ui.focus.FocusRequester()
@@ -221,7 +250,33 @@ class SecondaryHomeActivity :
                 .focusRequester(presentationSink)
                 .focusable()
         ) {
-            com.nendo.argosy.ui.dualscreen.PresentationSlotContent(slot)
+            val rendered =
+                com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
+            val arrivalMs = com.nendo.argosy.ui.dualscreen.dashboardArrivalMs(
+                showsDashboard = showsDashboard,
+                reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==
+                    com.nendo.argosy.ui.theme.MotionTier.Reduced,
+                arrivalMs =
+                    com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.arrivalMs
+            )
+            if (showsDashboard) {
+                androidx.compose.foundation.layout.Box(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxSize()
+                        .background(androidx.compose.ui.graphics.Color.Black)
+                )
+            }
+            androidx.compose.animation.AnimatedVisibility(
+                visible = rendered != null,
+                enter = androidx.compose.animation.fadeIn(
+                    androidx.compose.animation.core.tween(arrivalMs)
+                ),
+                exit = androidx.compose.animation.ExitTransition.None
+            ) {
+                if (rendered != null) {
+                    com.nendo.argosy.ui.dualscreen.PresentationSlotContent(rendered)
+                }
+            }
         }
     }
 

@@ -306,13 +306,13 @@ class LibrarySectionRailTest {
         steamContentManager = mockk(relaxed = true),
         steamDownloadPromptController = mockk(relaxed = true),
         downloadFileStatusRepository = mockk(relaxed = true),
-        gameStartRouter = mockk(relaxed = true),
         siblingChoice = mockk(relaxed = true),
         socialRepository = mockk(relaxed = true),
         saveListStatusRepository = mockk(relaxed = true),
         libraryDefaultPlatformMigration = mockk(relaxed = true),
         showcaseSource = mockk(relaxed = true),
         reorderPlatforms = mockk(relaxed = true),
-        quickNavigation = mockk { every { enabled } returns quickNavigation }
+        quickNavigation = mockk { every { enabled } returns quickNavigation },
+        launchProgressTracker = mockk { io.mockk.every { launchLive } returns MutableStateFlow(false) }
     )
 }

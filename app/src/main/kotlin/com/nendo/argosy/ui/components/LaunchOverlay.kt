@@ -1,6 +1,8 @@
 package com.nendo.argosy.ui.components
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -33,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -46,7 +49,12 @@ import com.nendo.argosy.domain.model.LaunchStep
 import com.nendo.argosy.domain.model.SnapshotConflictChoice
 import com.nendo.argosy.domain.model.SyncProgress
 import com.nendo.argosy.ui.components.launch.CalmLaunchContent
+import com.nendo.argosy.ui.components.launch.LaunchHostSignal
+import com.nendo.argosy.ui.components.launch.LaunchVeil
+import com.nendo.argosy.ui.components.launch.darkensForLaunch
 import com.nendo.argosy.ui.components.launch.mirrorsToPresentation
+import com.nendo.argosy.ui.components.launch.opensOnSurface
+import com.nendo.argosy.ui.components.launch.veilsDisplay
 import com.nendo.argosy.ui.components.recap.LaunchRecapCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCompactCard
 import com.nendo.argosy.ui.components.recap.LaunchRecapCursor
@@ -79,8 +87,9 @@ private fun launchProgressEntryPoint(context: Context): LaunchProgressEntryPoint
 
 /**
  * The launch in progress over the surface that starts launches. It holds the input stack while a
- * launch runs. A launch that has opened its game ends once that surface stops, once the overlay
- * leaves composition (the in-game dashboard takes the surface), and when the overlay comes back.
+ * launch runs. A launch whose game window has been requested ends once that surface stops, once
+ * the overlay leaves composition (the in-game dashboard takes the surface), and when the overlay
+ * or its surface comes back after such a stop. A recreation of the surface is none of these.
  */
 @Composable
 fun LaunchOverlay(
@@ -90,16 +99,27 @@ fun LaunchOverlay(
     val progress by viewModel.progress.collectAsState()
     val promptFocus by viewModel.promptFocus.collectAsState()
     val recapCursor by viewModel.recapCursorState.collectAsState()
+    val hasPresentationSurface by viewModel.hasPresentationSurface.collectAsState()
+    val gameDisplayId by viewModel.gameDisplayId.collectAsState()
+    val context = LocalContext.current
+    val surfaceDisplayId = ContextCompat.getDisplayOrDefault(context).displayId
     val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
+    DisposableEffect(lifecycleOwner, viewModel, context) {
+        val activity = context.findActivity()
+        fun report(signal: LaunchHostSignal) =
+            viewModel.hostSignal(signal, activity?.isChangingConfigurations == true)
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) viewModel.hostStopped()
+            when (event) {
+                Lifecycle.Event.ON_START -> report(LaunchHostSignal.STARTED)
+                Lifecycle.Event.ON_STOP -> report(LaunchHostSignal.STOPPED)
+                else -> Unit
+            }
         }
-        viewModel.hostStopped()
+        report(LaunchHostSignal.COMPOSED)
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            viewModel.hostStopped()
+            report(LaunchHostSignal.LEFT_COMPOSITION)
         }
     }
     ModalInputEffect(active = progress != null, handler = viewModel.inputHandler)
@@ -117,6 +137,7 @@ fun LaunchOverlay(
         promptFocus = promptFocus,
         recapCursor = recapCursor,
         surface = RecapSurface.CONTROL,
+        gameOpensHere = opensOnSurface(hasPresentationSurface, gameDisplayId, surfaceDisplayId),
         onAnswer = viewModel::answer,
         onCancel = { viewModel.cancel() },
         onRecapCurrent = viewModel::recapCurrent,
@@ -137,6 +158,7 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
         promptFocus = NO_PROMPT_FOCUS,
         recapCursor = recapCursor,
         surface = RecapSurface.PRESENTATION,
+        gameOpensHere = false,
         onAnswer = tracker::answer,
         onCancel = { tracker.cancel() },
         onRecapCurrent = { index ->
@@ -144,6 +166,26 @@ fun LaunchOverlayMirror(modifier: Modifier = Modifier) {
             if (count != null) cursorStore.centered(index, count)
         },
         modifier = modifier
+    )
+}
+
+/**
+ * The black veil a presentation surface on [displayId] draws while the game opens on it, lifting
+ * once the launch leaves LAUNCHING.
+ */
+@Composable
+fun LaunchVeilMirror(
+    gameDisplayId: Int?,
+    displayId: Int?,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val tracker = remember { launchProgressEntryPoint(context).launchProgressTracker() }
+    val progress by tracker.progress.collectAsState()
+    LaunchVeil(
+        veiled = veilsDisplay(progress, gameDisplayId, displayId),
+        modifier = modifier,
+        veiledSinceMs = progress?.stepStartedAtMs
     )
 }
 
@@ -173,12 +215,19 @@ fun launchOverlayFadeMs(): Int =
 
 private const val NO_PROMPT_FOCUS = -1
 
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 @Composable
 private fun LaunchOverlayContent(
     progress: LaunchProgress?,
     promptFocus: Int,
     recapCursor: RecapCursor,
     surface: RecapSurface,
+    gameOpensHere: Boolean,
     onAnswer: (LaunchPromptOption) -> Unit,
     onCancel: () -> Unit,
     onRecapCurrent: (Int) -> Unit,
@@ -244,6 +293,10 @@ private fun LaunchOverlayContent(
                     onCancel = onCancel
                 )
             }
+            LaunchVeil(
+                veiled = darkensForLaunch(shown, gameOpensHere),
+                veiledSinceMs = shown.stepStartedAtMs
+            )
         }
     }
 }

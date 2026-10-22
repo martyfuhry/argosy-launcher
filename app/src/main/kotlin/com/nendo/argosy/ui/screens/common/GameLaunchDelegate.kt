@@ -27,8 +27,6 @@ import com.nendo.argosy.domain.usecase.game.LaunchGameUseCase
 import com.nendo.argosy.domain.usecase.game.LaunchWithSyncUseCase
 import com.nendo.argosy.ui.input.HapticFeedbackManager
 import com.nendo.argosy.ui.input.HapticPattern
-import com.nendo.argosy.ui.input.SoundFeedbackManager
-import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.libretro.LaunchMode
 import com.nendo.argosy.libretro.LibretroActivity
 import com.nendo.argosy.core.input.controllerIdOf
@@ -53,7 +51,7 @@ enum class HardcoreConflictChoice { KEEP_HARDCORE, DOWNGRADE_TO_CASUAL, KEEP_LOC
 enum class LocalModifiedChoice { KEEP_LOCAL, RESTORE_SELECTED, LAUNCH_WITHOUT_SYNC }
 
 data class LaunchResultCallbacks(
-    val onLaunch: (Intent) -> Unit,
+    val start: GameStart,
     val onSelectDisc: ((List<DiscOption>) -> Unit)? = null,
     val onSelectVariant: ((List<com.nendo.argosy.data.emulator.VariantOption>) -> Unit)? = null,
     val onNoEmulator: (() -> Unit)? = null,
@@ -79,7 +77,7 @@ data class DiscPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-    val onLaunch: (Intent) -> Unit
+    val start: GameStart
 )
 
 data class VariantPickerState(
@@ -88,7 +86,7 @@ data class VariantPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-    val onLaunch: (Intent) -> Unit
+    val start: GameStart
 )
 
 data class MemcardPickerState(
@@ -99,7 +97,7 @@ data class MemcardPickerState(
     val channelName: String? = null,
     val launchMode: LaunchMode? = null,
     val origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-    val onLaunch: (Intent) -> Unit
+    val start: GameStart
 )
 
 class GameLaunchDelegate @Inject constructor(
@@ -111,7 +109,6 @@ class GameLaunchDelegate @Inject constructor(
     private val launchWithSyncUseCase: LaunchWithSyncUseCase,
     private val playSessionTracker: PlaySessionTracker,
     private val gameLauncher: GameLauncher,
-    private val soundManager: SoundFeedbackManager,
     private val hapticManager: HapticFeedbackManager,
     private val notificationManager: NotificationManager,
     private val sessionEndCoordinator: SessionEndCoordinator,
@@ -123,6 +120,7 @@ class GameLaunchDelegate @Inject constructor(
     private val retroAchievementsRepository: com.nendo.argosy.data.repository.RetroAchievementsRepository,
     private val getUnifiedSavesUseCase: com.nendo.argosy.domain.usecase.save.GetUnifiedSavesUseCase,
     private val launchProgressTracker: LaunchProgressTracker,
+    private val launchHandoff: LaunchHandoff,
     private val resolveSnapshotConflict: com.nendo.argosy.domain.usecase.savechannel.ResolveSnapshotConflictUseCase,
     private val connectedControllerTracker: com.nendo.argosy.core.input.ConnectedControllerTracker,
     private val preLaunchRecapStep: PreLaunchRecapStep
@@ -226,7 +224,7 @@ class GameLaunchDelegate @Inject constructor(
         overrideLaunchMode: LaunchMode? = null,
         allowVariantPrompt: Boolean = true,
         origin: LaunchOrigin = LaunchOrigin.INTERNAL,
-        onLaunch: (Intent) -> Unit,
+        start: GameStart,
         onLaunchFailed: () -> Unit = {}
     ) {
         if (isSyncing) {
@@ -245,7 +243,6 @@ class GameLaunchDelegate @Inject constructor(
                 onLaunchFailed()
                 return@launch
             }
-            var launched = false
             try {
                 val activeSession = playSessionTracker.activeSession.value
                 val sessionRequiresKill = activeSession?.let { session ->
@@ -278,8 +275,8 @@ class GameLaunchDelegate @Inject constructor(
                 }
 
                 if (canResume) {
-                    val result = launchGameUseCase(gameId, discId, forResume = true, variantFileId = resolvedVariantId, allowVariantPrompt = false, prefetchedGame = game)
-                    launched = dispatchPrimaryLaunchResult(result, channelName, discId, overrideLaunchMode, origin, onLaunch, onLaunchFailed)
+                    val result = launchGameUseCase(gameId, discId, forResume = true, variantFileId = resolvedVariantId, allowVariantPrompt = false, prefetchedGame = game, sessionAtWindow = true)
+                    dispatchPrimaryLaunchResult(result, ticket, channelName, discId, overrideLaunchMode, origin, start, onLaunchFailed)
                     return@launch
                 }
 
@@ -426,29 +423,31 @@ class GameLaunchDelegate @Inject constructor(
                     else -> null
                 }
 
-                val result = launchGameUseCase(gameId, discId, variantFileId = resolvedVariantId, allowVariantPrompt = allowVariantPrompt, prefetchedGame = game, origin = origin, savesPrepared = true)
-                launched = dispatchPrimaryLaunchResult(result, channelName, discId, launchMode, origin, onLaunch, onLaunchFailed)
+                val result = launchGameUseCase(gameId, discId, variantFileId = resolvedVariantId, allowVariantPrompt = allowVariantPrompt, prefetchedGame = game, origin = origin, savesPrepared = true, sessionAtWindow = true)
+                dispatchPrimaryLaunchResult(result, ticket, channelName, discId, launchMode, origin, start, onLaunchFailed)
             } finally {
-                launchProgressTracker.finish(ticket, launched)
+                if (!ticket.isFinished) launchProgressTracker.finish(ticket, launched = false)
             }
         }
     }
 
     private suspend fun dispatchPrimaryLaunchResult(
         result: LaunchResult,
+        ticket: LaunchProgressTracker.Ticket,
         channelName: String?,
         discId: Long?,
         launchMode: LaunchMode?,
         origin: LaunchOrigin,
-        onLaunch: (Intent) -> Unit,
+        start: GameStart,
         onLaunchFailed: () -> Unit
-    ): Boolean {
+    ) {
         when (result) {
-            is LaunchResult.Success -> {
-                soundManager.play(SoundType.LAUNCH_GAME)
-                onLaunch(applyLaunchExtras(result.intent, launchMode, origin))
-                return true
-            }
+            is LaunchResult.Success -> launchHandoff.handOff(
+                ticket,
+                applyLaunchExtras(result.intent, launchMode, origin),
+                start,
+                result.session
+            )
             is LaunchResult.SelectDisc -> {
                 _discPickerState.value = DiscPickerState(
                     gameId = result.gameId,
@@ -456,7 +455,7 @@ class GameLaunchDelegate @Inject constructor(
                     channelName = channelName,
                     launchMode = launchMode,
                     origin = origin,
-                    onLaunch = onLaunch
+                    start = start
                 )
             }
             is LaunchResult.SelectVariant -> {
@@ -464,8 +463,8 @@ class GameLaunchDelegate @Inject constructor(
                     .filter { it.fileId == null || it.isDownloaded }
                     .sortedBy { com.nendo.argosy.data.model.VariantCategory.fromKey(it.category).sortOrder }
                 if (launchable.size <= 1) {
-                    val retry = launchGameUseCase(result.gameId, discId, allowVariantPrompt = false, origin = origin, savesPrepared = true)
-                    return dispatchPrimaryLaunchResult(retry, channelName, discId, launchMode, origin, onLaunch, onLaunchFailed)
+                    val retry = launchGameUseCase(result.gameId, discId, allowVariantPrompt = false, origin = origin, savesPrepared = true, sessionAtWindow = true)
+                    dispatchPrimaryLaunchResult(retry, ticket, channelName, discId, launchMode, origin, start, onLaunchFailed)
                 } else {
                     _variantPickerState.value = VariantPickerState(
                         gameId = result.gameId,
@@ -473,7 +472,7 @@ class GameLaunchDelegate @Inject constructor(
                         channelName = channelName,
                         launchMode = launchMode,
                         origin = origin,
-                        onLaunch = onLaunch
+                        start = start
                     )
                 }
             }
@@ -486,12 +485,11 @@ class GameLaunchDelegate @Inject constructor(
                     channelName = channelName,
                     launchMode = launchMode,
                     origin = origin,
-                    onLaunch = onLaunch
+                    start = start
                 )
             }
             else -> dispatchErrorResult(result, onLaunchFailed)
         }
-        return false
     }
 
     private fun dispatchErrorResult(result: LaunchResult, onLaunchFailed: () -> Unit) {
@@ -553,24 +551,46 @@ class GameLaunchDelegate @Inject constructor(
     fun selectDisc(scope: CoroutineScope, discPath: String) {
         val state = _discPickerState.value ?: return
         _discPickerState.value = null
+        val onRefused = _onLaunchFailed ?: {}
         _onLaunchFailed = null
 
         scope.launch {
-            val result = launchGameUseCase(
-                gameId = state.gameId,
-                selectedDiscPath = discPath,
-                origin = state.origin,
-                savesPrepared = true
-            )
-            when (result) {
-                is LaunchResult.Success -> {
-                    soundManager.play(SoundType.LAUNCH_GAME)
-                    state.onLaunch(applyLaunchExtras(result.intent, state.launchMode, state.origin))
+            continuePickedLaunch(state.gameId, onRefused = onRefused) { ticket ->
+                val result = launchGameUseCase(
+                    gameId = state.gameId,
+                    selectedDiscPath = discPath,
+                    origin = state.origin,
+                    savesPrepared = true,
+                    sessionAtWindow = true
+                )
+                when (result) {
+                    is LaunchResult.Success -> launchHandoff.handOff(
+                        ticket,
+                        applyLaunchExtras(result.intent, state.launchMode, state.origin),
+                        state.start,
+                        result.session
+                    )
+                    LaunchResult.Cancelled -> Unit
+                    is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
+                    else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_disc_launch_failed))
                 }
-                LaunchResult.Cancelled -> Unit
-                is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
-                else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_disc_launch_failed))
             }
+        }
+    }
+
+    private suspend fun continuePickedLaunch(
+        gameId: Long,
+        onRefused: () -> Unit,
+        block: suspend (LaunchProgressTracker.Ticket) -> Unit
+    ) {
+        val ticket = launchProgressTracker.begin(gameId, gameRepository.getById(gameId)?.title) ?: run {
+            onRefused()
+            return
+        }
+        try {
+            block(ticket)
+        } finally {
+            if (!ticket.isFinished) launchProgressTracker.finish(ticket, launched = false)
         }
     }
 
@@ -587,12 +607,14 @@ class GameLaunchDelegate @Inject constructor(
         _onLaunchFailed = null
 
         scope.launch {
-            val result = if (variantFileId != null) {
-                launchGameUseCase(gameId = state.gameId, variantFileId = variantFileId, origin = state.origin, savesPrepared = true)
-            } else {
-                launchGameUseCase(gameId = state.gameId, skipVariantPrompt = true, origin = state.origin, savesPrepared = true)
+            continuePickedLaunch(state.gameId, onRefused = onFailed) { ticket ->
+                val result = if (variantFileId != null) {
+                    launchGameUseCase(gameId = state.gameId, variantFileId = variantFileId, origin = state.origin, savesPrepared = true, sessionAtWindow = true)
+                } else {
+                    launchGameUseCase(gameId = state.gameId, skipVariantPrompt = true, origin = state.origin, savesPrepared = true, sessionAtWindow = true)
+                }
+                dispatchPrimaryLaunchResult(result, ticket, state.channelName, null, state.launchMode, state.origin, state.start, onFailed)
             }
-            dispatchPrimaryLaunchResult(result, state.channelName, null, state.launchMode, state.origin, state.onLaunch, onFailed)
         }
     }
 
@@ -605,23 +627,29 @@ class GameLaunchDelegate @Inject constructor(
     fun selectMemcard(scope: CoroutineScope, cardPath: String) {
         val state = _memcardPickerState.value ?: return
         _memcardPickerState.value = null
+        val onRefused = _onLaunchFailed ?: {}
         _onLaunchFailed = null
 
         scope.launch {
             emulatorSaveConfigRepository.setMemcardPath(state.emulatorId, cardPath)
-            val result = launchGameUseCase(
-                gameId = state.gameId,
-                origin = state.origin,
-                savesPrepared = true
-            )
-            when (result) {
-                is LaunchResult.Success -> {
-                    soundManager.play(SoundType.LAUNCH_GAME)
-                    state.onLaunch(applyLaunchExtras(result.intent, state.launchMode, state.origin))
+            continuePickedLaunch(state.gameId, onRefused = onRefused) { ticket ->
+                val result = launchGameUseCase(
+                    gameId = state.gameId,
+                    origin = state.origin,
+                    savesPrepared = true,
+                    sessionAtWindow = true
+                )
+                when (result) {
+                    is LaunchResult.Success -> launchHandoff.handOff(
+                        ticket,
+                        applyLaunchExtras(result.intent, state.launchMode, state.origin),
+                        state.start,
+                        result.session
+                    )
+                    LaunchResult.Cancelled -> Unit
+                    is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
+                    else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
                 }
-                LaunchResult.Cancelled -> Unit
-                is LaunchResult.Error -> notificationManager.showError(NotificationText.Raw(result.message))
-                else -> notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
             }
         }
     }
@@ -651,7 +679,6 @@ class GameLaunchDelegate @Inject constructor(
                 callbacks.onLaunchFailed()
                 return@launch
             }
-            var launched = false
             try {
                 val continuesPickedLaunch = selectedDiscPath != null || variantFileId != null || skipVariantPrompt
                 if (game != null && !continuesPickedLaunch && !preLaunchRecapStep.run(ticket, gameId, game.title)) {
@@ -689,27 +716,30 @@ class GameLaunchDelegate @Inject constructor(
                     skipVariantPrompt = skipVariantPrompt,
                     allowVariantPrompt = allowVariantPrompt,
                     prefetchedGame = game,
-                    origin = origin
+                    origin = origin,
+                    sessionAtWindow = true
                 )
-                launched = dispatchSimpleResult(result, launchMode, origin, callbacks)
+                dispatchSimpleResult(result, ticket, launchMode, origin, callbacks)
             } finally {
-                launchProgressTracker.finish(ticket, launched)
+                if (!ticket.isFinished) launchProgressTracker.finish(ticket, launched = false)
             }
         }
     }
 
-    private fun dispatchSimpleResult(
+    private suspend fun dispatchSimpleResult(
         result: LaunchResult,
+        ticket: LaunchProgressTracker.Ticket,
         launchMode: LaunchMode?,
         origin: LaunchOrigin,
         callbacks: LaunchResultCallbacks
-    ): Boolean {
+    ) {
         when (result) {
-            is LaunchResult.Success -> {
-                soundManager.play(SoundType.LAUNCH_GAME)
-                callbacks.onLaunch(applyLaunchExtras(result.intent, launchMode, origin))
-                return true
-            }
+            is LaunchResult.Success -> launchHandoff.handOff(
+                ticket,
+                applyLaunchExtras(result.intent, launchMode, origin),
+                callbacks.start,
+                result.session
+            )
             is LaunchResult.SelectDisc -> {
                 val handler = callbacks.onSelectDisc
                 if (handler != null) handler(result.discs)
@@ -728,7 +758,7 @@ class GameLaunchDelegate @Inject constructor(
                     cards = result.cards,
                     launchMode = launchMode,
                     origin = origin,
-                    onLaunch = callbacks.onLaunch
+                    start = callbacks.start
                 )
             }
             is LaunchResult.NoEmulator -> {
@@ -746,6 +776,5 @@ class GameLaunchDelegate @Inject constructor(
             }
             else -> dispatchErrorResult(result, callbacks.onLaunchFailed)
         }
-        return false
     }
 }

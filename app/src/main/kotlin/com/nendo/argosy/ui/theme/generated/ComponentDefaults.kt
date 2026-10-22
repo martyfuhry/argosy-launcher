@@ -335,6 +335,9 @@ object ComponentDefaults {
         const val scrimAlphaLight = 0.55f
         const val progressWidthDp = 280
         const val fadeMs = 300
+        const val veilMs = 700
+        const val arrivalMs = 400
+        const val audioRiseMs = 1000
         const val patienceMs = 2500
         const val reflowMs = 900
         const val statusFadeMs = 700
@@ -343,6 +346,11 @@ object ComponentDefaults {
         const val artHeightDp = 240
         const val artHeightRatio = 0.4f
         const val titleMaxLines = 2
+        const val breathMs = 4000
+        const val breathPeakAlpha = 0.18f
+        const val breathFloorAlpha = 0f
+        const val breathSpreadDp = 28
+        const val breathBlurDp = 24
     }
 
     object UnlockRecap {

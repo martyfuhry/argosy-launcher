@@ -64,8 +64,14 @@ class LidSleepGuard @Inject constructor(
     private val sensorListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
             val closed = event.values.firstOrNull()?.let { it <= 0f } ?: return
+            val previousReadAt = lidReadAt
             lidReadAt = SystemClock.elapsedRealtime()
-            if (closed == lidClosed) return
+            if (closed == lidClosed) {
+                if (closed && LidSleepDecision.readingResolvesStale(previousReadAt, screenOnAt)) {
+                    scheduleSleepCheck(0L)
+                }
+                return
+            }
             Logger.info(TAG, "Hall sensor value=${event.values.first()} closed=$closed")
             onLidChanged(closed)
         }

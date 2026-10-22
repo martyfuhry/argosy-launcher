@@ -27,6 +27,7 @@ import com.nendo.argosy.core.event.AchievementUpdateBus
 import com.nendo.argosy.ui.screens.common.CollectionModalDelegate
 import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.common.GameLaunchDelegate
+import com.nendo.argosy.ui.screens.common.GameStart
 import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.hardware.AmbientLedContext
 import com.nendo.argosy.hardware.AmbientLedManager
@@ -98,7 +99,6 @@ class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val gameRepository: GameRepository,
     private val displayAffinityHelper: com.nendo.argosy.util.DisplayAffinityHelper,
-    private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val configureEmulatorUseCase: com.nendo.argosy.domain.usecase.game.ConfigureEmulatorUseCase,
     private val appShortcutActions: com.nendo.argosy.ui.screens.common.AppShortcutActions,
     private val preferencesRepository: UserPreferencesRepository,
@@ -2022,7 +2022,7 @@ class HomeViewModel @Inject constructor(
             gameId = gameId,
             channelName = channelName,
             allowVariantPrompt = false,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            start = GameStart(gameId, onFailure = { showLaunchFailed() })
         )
     }
 
@@ -2034,10 +2034,12 @@ class HomeViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             allowVariantPrompt = false,
-            onLaunch = { intent ->
-                gameStartRouter.start(gameId = gameId, intent = intent, overrideDisplayId = displayId)
-            }
+            start = GameStart(gameId = gameId, overrideDisplayId = displayId, onFailure = { showLaunchFailed() })
         )
+    }
+
+    private fun showLaunchFailed() {
+        notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
     }
 
     private fun rememberGameScreen(gameId: Long, displayId: Int) {

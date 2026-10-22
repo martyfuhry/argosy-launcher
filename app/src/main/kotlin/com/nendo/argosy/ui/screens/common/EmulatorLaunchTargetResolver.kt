@@ -40,10 +40,12 @@ class EmulatorLaunchTargetResolver @Inject constructor(
             rolesSwapped = rolesSwapped
         )
         DualScreenManagerHolder.instance?.setEmulatorDisplay(placedOn(displayId, rolesSwapped))
-        return displayAffinityHelper.getActivityOptions(
-            forEmulator = true,
-            rolesSwapped = rolesSwapped,
-            overrideDisplayId = displayId
+        return GameLaunchOptions.forDisplay(
+            displayAffinityHelper.launchDisplayId(
+                forEmulator = true,
+                rolesSwapped = rolesSwapped,
+                overrideDisplayId = displayId
+            )
         )
     }
 

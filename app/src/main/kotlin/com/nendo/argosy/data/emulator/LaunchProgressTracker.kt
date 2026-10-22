@@ -46,6 +46,14 @@ class LaunchProgressTracker internal constructor(
     private val _progress = MutableStateFlow<LaunchProgress?>(null)
     val progress: StateFlow<LaunchProgress?> = _progress.asStateFlow()
 
+    private val _launchLive = MutableStateFlow(false)
+
+    /**
+     * True from [begin] until the launch it opened is cleared: cancelled, failed, its game screen
+     * taken over or never opened, or its launching hold run out.
+     */
+    val launchLive: StateFlow<Boolean> = _launchLive.asStateFlow()
+
     private val lock = Any()
     private var live: Ticket? = null
     private var draining: Ticket? = null
@@ -61,6 +69,9 @@ class LaunchProgressTracker internal constructor(
 
         var failure: LaunchFailure? = null
             internal set
+
+        @Volatile
+        internal var awaitsWindow = false
 
         private val finished = CompletableDeferred<Unit>()
         private var pendingAnswer: CompletableDeferred<LaunchPromptOption?>? = null
@@ -128,6 +139,7 @@ class LaunchProgressTracker internal constructor(
             launchingHold?.cancel()
             ticket = Ticket(gameId, gameTitle)
             live = ticket
+            _launchLive.value = true
             previous = draining?.takeUnless { it.isFinished }
             draining = null
             _progress.value = null
@@ -162,6 +174,7 @@ class LaunchProgressTracker internal constructor(
         if (ticket.isFinished) return false
         ticket.cancel()
         live = null
+        _launchLive.value = false
         draining = ticket
         _progress.value = null
         true
@@ -169,7 +182,7 @@ class LaunchProgressTracker internal constructor(
 
     /**
      * Ends [ticket]. A launch that opened its game keeps showing until the screen that started it
-     * stops, or briefly when it never does.
+     * stops outside a [holdForWindow] hold, or briefly when it never does.
      */
     fun finish(ticket: Ticket, launched: Boolean) {
         synchronized(lock) {
@@ -187,19 +200,42 @@ class LaunchProgressTracker internal constructor(
                 }
             } else {
                 live = null
+                _launchLive.value = false
                 _progress.value = null
             }
         }
     }
 
-    fun hostStopped() {
-        synchronized(lock) { live?.takeIf { it.isFinished } }?.let(::clearIfLive)
+    /**
+     * Keeps [ticket]'s Launching through a stop of the screen that started it until
+     * [windowRequested] or [openFailed]. The Launching hold timeout still ends it.
+     */
+    fun holdForWindow(ticket: Ticket) {
+        synchronized(lock) { ticket.awaitsWindow = true }
     }
+
+    fun windowRequested(ticket: Ticket) {
+        synchronized(lock) { ticket.awaitsWindow = false }
+    }
+
+    /**
+     * Ends the finished live launch unless [holdForWindow] still holds it.
+     */
+    fun hostStopped() {
+        synchronized(lock) { live?.takeIf { it.isFinished && !it.awaitsWindow } }?.let(::clearIfLive)
+    }
+
+    /**
+     * Ends [ticket], a launch whose game screen was asked for but never opened. A launch begun
+     * since is left alone.
+     */
+    fun openFailed(ticket: Ticket) = clearIfLive(ticket)
 
     private fun clearIfLive(ticket: Ticket) {
         synchronized(lock) {
             if (live !== ticket) return
             live = null
+            _launchLive.value = false
             _progress.value = null
         }
     }

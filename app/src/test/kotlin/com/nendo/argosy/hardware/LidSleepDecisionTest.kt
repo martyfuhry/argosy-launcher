@@ -121,6 +121,44 @@ class LidSleepDecisionTest {
     }
 
     @Test
+    fun `a same-state closed reading that lands after both stale checks still ends in sleep`() {
+        val lateReadAt = wokeAt + 2 * LidSleepDecision.WAKE_GRACE_MS + 500
+        assertEquals(LidSleepVerdict.RETRY_READING, verdict(strayWake(lidReadAt = closedAt, staleRetries = 0)))
+        assertEquals(
+            LidSleepVerdict.STALE_READING,
+            verdict(strayWake(lidReadAt = closedAt, staleRetries = LidSleepDecision.MAX_STALE_RETRIES))
+        )
+        assertEquals(true, LidSleepDecision.readingResolvesStale(previousReadAt = closedAt, screenOnAt = wokeAt))
+        assertEquals(
+            LidSleepVerdict.SLEEP,
+            verdict(strayWake(lidReadAt = lateReadAt, staleRetries = LidSleepDecision.MAX_STALE_RETRIES))
+        )
+    }
+
+    @Test
+    fun `the first reading after a wake resolves the stale reading`() {
+        assertEquals(true, LidSleepDecision.readingResolvesStale(previousReadAt = closedAt, screenOnAt = wokeAt))
+    }
+
+    @Test
+    fun `a reading after one that already followed the wake does not resolve anything`() {
+        assertEquals(false, LidSleepDecision.readingResolvesStale(previousReadAt = refreshedAt, screenOnAt = wokeAt))
+    }
+
+    @Test
+    fun `a reading before any screen-on does not resolve anything`() {
+        assertEquals(false, LidSleepDecision.readingResolvesStale(previousReadAt = closedAt, screenOnAt = 0L))
+    }
+
+    @Test
+    fun `a reading during a normal close after an older wake does not resolve anything`() {
+        assertEquals(
+            false,
+            LidSleepDecision.readingResolvesStale(previousReadAt = closedAt + 30_000, screenOnAt = wokeAt)
+        )
+    }
+
+    @Test
     fun `the external display check comes before the service check`() {
         assertEquals(
             LidSleepVerdict.EXTERNAL_DISPLAY,

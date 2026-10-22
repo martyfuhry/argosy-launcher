@@ -77,12 +77,14 @@ import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.common.RefreshAndroidResult
 import com.nendo.argosy.ui.screens.common.DiscPickerState
 import com.nendo.argosy.ui.screens.common.GameLaunchDelegate
+import com.nendo.argosy.ui.screens.common.GameStart
 import com.nendo.argosy.ui.screens.common.PendingSiblingFocus
 import com.nendo.argosy.ui.screens.common.SyncOverlayState
 import com.nendo.argosy.ui.screens.gamedetail.CollectionItemUi
 import com.nendo.argosy.ui.screens.home.HomePlatformUi
 import com.nendo.argosy.ui.screens.home.toHomePlatformUi
 import com.nendo.argosy.ui.util.GridUtils
+import com.nendo.argosy.ui.util.heldWhile
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.ui.dualscreen.CompanionFact
@@ -459,7 +461,6 @@ class LibraryViewModel @Inject constructor(
     private val platformRepository: PlatformRepository,
     private val gameRepository: GameRepository,
     private val mediaRepository: MediaRepository,
-    private val gameStartRouter: com.nendo.argosy.ui.screens.common.GameStartRouter,
     private val collectionRepository: CollectionRepository,
     private val gameNavigationContext: GameNavigationContext,
     private val notificationManager: NotificationManager,
@@ -490,7 +491,8 @@ class LibraryViewModel @Inject constructor(
     private val libraryDefaultPlatformMigration: com.nendo.argosy.data.repository.LibraryDefaultPlatformMigration,
     private val showcaseSource: com.nendo.argosy.ui.common.PresentationShowcaseSource,
     private val reorderPlatforms: com.nendo.argosy.domain.usecase.platform.ReorderPlatformsUseCase,
-    private val quickNavigation: com.nendo.argosy.data.preferences.QuickNavigationSource
+    private val quickNavigation: com.nendo.argosy.data.preferences.QuickNavigationSource,
+    private val launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker
 ) : ViewModel() {
 
     val siblingChoiceState = siblingChoice.state
@@ -1181,6 +1183,7 @@ class LibraryViewModel @Inject constructor(
                     kotlinx.coroutines.delay(100)
                     emitAll(source)
                 }
+                .heldWhile(launchProgressTracker.launchLive)
                 .collectLatest { (games, seriesIds, regionIds) ->
                     val normalizedQuery = com.nendo.argosy.util.SearchNormalizer.normalize(filters.searchQuery)
                     val platformIds = filters.platforms.map { it.id }.toSet()
@@ -2148,7 +2151,9 @@ class LibraryViewModel @Inject constructor(
             scope = viewModelScope,
             gameId = gameId,
             channelName = channelName,
-            onLaunch = { intent -> gameStartRouter.start(gameId, intent) }
+            start = GameStart(gameId, onFailure = {
+                notificationManager.showError(NotificationText.Res(R.string.notif_gamelaunch_launch_failed))
+            })
         )
     }
 

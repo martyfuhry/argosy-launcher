@@ -270,23 +270,32 @@ class DisplayAffinityHelper @Inject constructor(
         rolesSwapped: Boolean = false,
         overrideDisplayId: Int? = null
     ): Bundle? {
+        val targetDisplayId = launchDisplayId(forEmulator, rolesSwapped, overrideDisplayId) ?: return null
+        return ActivityOptions.makeBasic()
+            .setLaunchDisplayId(targetDisplayId)
+            .toBundle()
+    }
+
+    /**
+     * The display [getActivityOptions] places a start on, or null when it would leave the start
+     * unplaced.
+     */
+    fun launchDisplayId(
+        forEmulator: Boolean,
+        rolesSwapped: Boolean = false,
+        overrideDisplayId: Int? = null
+    ): Int? {
         if (overrideDisplayId == null && !isDesktopMode && !hasSecondaryDisplay &&
             (forEmulator || resolvedAppTarget == null)
         ) {
             return null
         }
-
-        val targetDisplayId = overrideDisplayId
+        return overrideDisplayId
             ?: if (forEmulator) {
                 getRoleDisplayIds(rolesSwapped)?.second
             } else {
                 appLaunchDisplayId(rolesSwapped = rolesSwapped)
             }
-            ?: return null
-
-        return ActivityOptions.makeBasic()
-            .setLaunchDisplayId(targetDisplayId)
-            .toBundle()
     }
 
     fun isPhysicalDisplay(displayId: Int): Boolean {

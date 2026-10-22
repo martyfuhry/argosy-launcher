@@ -53,6 +53,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -135,6 +136,7 @@ class DualScreenManager(
     internal val resolveMediaPlayTargetUseCase:
         com.nendo.argosy.domain.usecase.media.ResolveMediaPlayTargetUseCase,
     private val mediaPlaybackTracker: com.nendo.argosy.data.media.MediaPlaybackTracker,
+    private val launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker,
     internal val mediaAvailabilityVerifier:
         com.nendo.argosy.data.media.MediaAvailabilityVerifier? = null,
     internal val mediaDownloadDelegate:
@@ -797,6 +799,7 @@ class DualScreenManager(
         observeActiveAccount()
         observeMedia()
         observeAchievementUnlocks()
+        observeLaunchLive()
     }
     interface CompanionHost {
         fun onForegroundChanged(isForeground: Boolean)
@@ -1354,12 +1357,42 @@ class DualScreenManager(
         }
     }
 
+    private var launchLiveObserverJob: Job? = null
+    private var launchWasLive = false
+    private val focusedLaunchers = HashMap<Int, java.lang.ref.WeakReference<android.app.Activity>>()
+
+    /**
+     * When a live launch clears, re-asks [onLauncherWindowFocused] for each display's last focused
+     * launcher window that still holds focus, so a game start that never produced a window does not
+     * leave its session running. Focus is read a main-loop turn after the fall, so a focus loss
+     * already queued for the window applies first. A launch going live cancels a focus check in
+     * flight, since that check was about the previous game. The previous value lives on the
+     * manager, so an edge that straddles [rebind] is still seen; the collector runs on the bound
+     * activity's scope because with no activity bound there is no launcher window to re-ask.
+     */
+    private fun observeLaunchLive() {
+        launchLiveObserverJob?.cancel()
+        launchLiveObserverJob = scope.launch {
+            launchProgressTracker.launchLive.collect { live ->
+                val fell = launchWasLive && !live
+                launchWasLive = live
+                if (live) focusCheck?.cancel()
+                if (!fell) return@collect
+                yield()
+                focusedLaunchers.values.mapNotNull { it.get() }
+                    .filter { it.hasWindowFocus() }
+                    .forEach(::onLauncherWindowFocused)
+            }
+        }
+    }
+
     init {
         observePreferences()
         observeActiveAccount()
         observeMedia()
         observeMediaDim()
         observeAchievementUnlocks()
+        observeLaunchLive()
     }
 
     /**
@@ -1822,11 +1855,15 @@ class DualScreenManager(
     /**
      * A launcher window gaining focus on the display its game ran on is the launcher's signal that
      * the game closed. The session ends once [emulatorLeftScreen] confirms it; a game on another
-     * display keeps running.
+     * display keeps running. While a launch is live the focus gain is a launcher surface returning
+     * before its game window exists, not the game closing; the check waits for the launch to clear.
+     * A launch that goes live while the check is settling stops it the same way.
      */
     fun onLauncherWindowFocused(activity: android.app.Activity) {
-        if (isMovingGame || focusCheck?.isActive == true) return
         val ownDisplay = activity.window.decorView.display?.displayId ?: return
+        focusedLaunchers[ownDisplay] = java.lang.ref.WeakReference(activity)
+        if (launchProgressTracker.launchLive.value) return
+        if (isMovingGame || focusCheck?.isActive == true) return
         val gameDisplay = emulatorDisplayId
         if (gameDisplay != null && gameDisplay != ownDisplay) return
         focusCheck = scope.launch {
@@ -1834,6 +1871,7 @@ class DualScreenManager(
                 preferencesRepository.getPersistedSession() == null
             ) return@launch
             if (!emulatorLeftScreen(activity) { activity.hasWindowFocus() }) return@launch
+            if (launchProgressTracker.launchLive.value) return@launch
             Log.d(TAG, "Launcher focused on display $ownDisplay and the game is gone, ending session")
             endSessionAfterEmulatorLeft()
         }
