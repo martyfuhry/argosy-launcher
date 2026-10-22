@@ -28,7 +28,13 @@ class LaunchHandoff internal constructor(
         soundManager: SoundFeedbackManager,
         startRouter: GameStartRouter,
         playSessionTracker: PlaySessionTracker
-    ) : this(tracker, soundManager, startRouter, playSessionTracker, ComponentDefaults.LaunchOverlay.veilMs.toLong())
+    ) : this(
+        tracker,
+        soundManager,
+        startRouter,
+        playSessionTracker,
+        ComponentDefaults.LaunchOverlay.veilMs.toLong()
+    )
 
     /**
      * Places [start]'s game, which records its display, then finishes [ticket] as launched and

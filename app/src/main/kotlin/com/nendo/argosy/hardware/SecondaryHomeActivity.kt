@@ -210,7 +210,9 @@ class SecondaryHomeActivity :
                 com.nendo.argosy.ui.theme.MotionTier.Reduced,
             veilMs = com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.veilMs
         )
-        androidx.compose.foundation.layout.Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+        androidx.compose.foundation.layout.Box(
+            modifier = androidx.compose.ui.Modifier.fillMaxSize()
+        ) {
             androidx.compose.animation.AnimatedVisibility(
                 visible = launcherShown,
                 enter = androidx.compose.animation.EnterTransition.None,
@@ -248,12 +250,14 @@ class SecondaryHomeActivity :
                 .focusRequester(presentationSink)
                 .focusable()
         ) {
-            val rendered = com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
+            val rendered =
+                com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
             val arrivalMs = com.nendo.argosy.ui.dualscreen.dashboardArrivalMs(
                 showsDashboard = showsDashboard,
                 reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==
                     com.nendo.argosy.ui.theme.MotionTier.Reduced,
-                arrivalMs = com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.arrivalMs
+                arrivalMs =
+                    com.nendo.argosy.ui.theme.generated.ComponentDefaults.LaunchOverlay.arrivalMs
             )
             if (showsDashboard) {
                 androidx.compose.foundation.layout.Box(

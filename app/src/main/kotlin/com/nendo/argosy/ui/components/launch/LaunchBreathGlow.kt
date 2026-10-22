@@ -78,7 +78,8 @@ internal fun Modifier.launchBreathGlow(artColor: Color?, breathKey: Any?): Modif
         val spreadPx = spread.toPx()
         val cornerPx = corner.toPx() + spreadPx
         val paint = Paint()
-        paint.asFrameworkPaint().maskFilter = BlurMaskFilter(blur.toPx(), BlurMaskFilter.Blur.NORMAL)
+        paint.asFrameworkPaint().maskFilter =
+            BlurMaskFilter(blur.toPx(), BlurMaskFilter.Blur.NORMAL)
         onDrawBehind {
             val alpha = breathAlpha(
                 elapsedMs = elapsedMs.longValue,
