@@ -1362,14 +1362,13 @@ class DualScreenManager(
     private val focusedLaunchers = HashMap<Int, java.lang.ref.WeakReference<android.app.Activity>>()
 
     /**
-     * Re-asks [onLauncherWindowFocused] for the launcher window last focused on each display when a
-     * live launch clears while that window still holds focus, so a game start that never produced a
-     * window does not leave its session running, even when another display took focus since. A launch going live cancels a focus check still
-     * in flight, since that check was about the game before it. Focus is read a main-loop turn
-     * after the fall, so a focus loss already on its way to the window is applied first. The
-     * previous value lives on the manager, so an edge that straddles [rebind] is still seen.
-     * The collector runs on the bound activity's scope on purpose: while no activity is bound
-     * there is no launcher window to re-ask, and the next [rebind] sees any edge it missed.
+     * When a live launch clears, re-asks [onLauncherWindowFocused] for each display's last focused
+     * launcher window that still holds focus, so a game start that never produced a window does not
+     * leave its session running. Focus is read a main-loop turn after the fall, so a focus loss
+     * already queued for the window applies first. A launch going live cancels a focus check in
+     * flight, since that check was about the previous game. The previous value lives on the
+     * manager, so an edge that straddles [rebind] is still seen; the collector runs on the bound
+     * activity's scope because with no activity bound there is no launcher window to re-ask.
      */
     private fun observeLaunchLive() {
         launchLiveObserverJob?.cancel()
