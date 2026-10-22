@@ -10,7 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Modifier
@@ -33,12 +33,13 @@ private val Defaults = ComponentDefaults.LaunchOverlay
 @Composable
 internal fun rememberArtGlowColor(art: Bitmap?): Color? {
     val extractor = remember { GradientColorExtractor() }
-    return produceState<Color?>(initialValue = null, art) {
-        if (art != null) {
-            val extracted = withContext(Dispatchers.Default) { extractor.warmerArtColor(art) }
-            if (extracted != null) value = extracted
-        }
-    }.value
+    val color = remember(art) { mutableStateOf<Color?>(null) }
+    LaunchedEffect(art) {
+        if (art == null) return@LaunchedEffect
+        val extracted = withContext(Dispatchers.Default) { extractor.warmerArtColor(art) }
+        if (extracted != null) color.value = extracted
+    }
+    return color.value
 }
 
 private fun GradientColorExtractor.warmerArtColor(art: Bitmap): Color? {
