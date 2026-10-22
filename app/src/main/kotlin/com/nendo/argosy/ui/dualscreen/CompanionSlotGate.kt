@@ -16,9 +16,9 @@ fun dashboardArrivalMs(showsDashboard: Boolean, reduced: Boolean, arrivalMs: Int
     if (showsDashboard && !reduced) arrivalMs else 0
 
 /**
- * How long the companion's launcher dissolves into the black hold when a game goes active: [veilMs],
- * the top panel's veil rate, so both panels sink together; zero under reduced motion or when no
- * game dashboard is taking over.
+ * How long the companion's launcher dissolves into the black hold when a game goes active:
+ * [veilMs], the top panel's veil rate, so both panels sink together; zero under reduced motion or
+ * when no game dashboard is taking over.
  */
 fun companionHandoffMs(showsDashboard: Boolean, reduced: Boolean, veilMs: Int): Int =
     if (showsDashboard && !reduced) veilMs else 0

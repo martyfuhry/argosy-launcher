@@ -8,7 +8,13 @@ import kotlin.math.cos
  * starts at [floor], peaks at [peak] halfway through each [periodMs] and returns to [floor]. Under
  * [reduced] motion, or with no period, it holds the midpoint.
  */
-fun breathAlpha(elapsedMs: Long, periodMs: Int, floor: Float, peak: Float, reduced: Boolean): Float {
+fun breathAlpha(
+    elapsedMs: Long,
+    periodMs: Int,
+    floor: Float,
+    peak: Float,
+    reduced: Boolean
+): Float {
     val swing = peak - floor
     if (reduced || periodMs <= 0) return floor + swing / 2f
     val phase = elapsedMs.mod(periodMs.toLong()).toDouble() / periodMs

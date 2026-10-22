@@ -130,7 +130,9 @@ fun CalmLaunchContent(
                     model = cover,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    onSuccess = { state -> artBitmap = (state.result.drawable as? BitmapDrawable)?.bitmap },
+                    onSuccess = { state ->
+                        artBitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
+                    },
                     modifier = Modifier
                         .height(artHeight)
                         .aspectRatio(BoxArtShape.TALL.aspectRatio, matchHeightConstraintsFirst = true)

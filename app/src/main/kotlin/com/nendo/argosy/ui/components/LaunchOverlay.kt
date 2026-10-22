@@ -293,7 +293,10 @@ private fun LaunchOverlayContent(
                     onCancel = onCancel
                 )
             }
-            LaunchVeil(veiled = darkensForLaunch(shown, gameOpensHere), veiledSinceMs = shown.stepStartedAtMs)
+            LaunchVeil(
+                veiled = darkensForLaunch(shown, gameOpensHere),
+                veiledSinceMs = shown.stepStartedAtMs
+            )
         }
     }
 }

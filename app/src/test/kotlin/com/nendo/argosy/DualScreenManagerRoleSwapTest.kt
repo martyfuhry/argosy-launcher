@@ -350,37 +350,37 @@ class DualScreenManagerRoleSwapTest {
 
     @Test
     fun `the launch clearing re-asks the game display's launcher after the other display took focus`() {
-        val fixture = launcherFocusedDuringLaunch(liveAtStart = true)
+        val launch = launcherFocusedDuringLaunch(liveAtStart = true)
         manager.emulatorDisplayId = PRIMARY_DISPLAY
         val companion = launcherOn(PRESENTATION_DISPLAY)
-        manager.onLauncherWindowFocused(fixture.activity)
+        manager.onLauncherWindowFocused(launch.activity)
         manager.onLauncherWindowFocused(companion)
         testScope.testScheduler.runCurrent()
 
-        fixture.live.value = false
+        launch.live.value = false
         testScope.testScheduler.runCurrent()
 
-        verify(exactly = 1) { fixture.sessionEnd.endClosedSession() }
+        verify(exactly = 1) { launch.sessionEnd.endClosedSession() }
         verify(exactly = 1) { sessionStateStore.clearSession() }
     }
 
     @Test
     fun `the launch clearing with only the other display's launcher focused leaves the session running`() {
-        val fixture = launcherFocusedDuringLaunch(liveAtStart = true)
+        val launch = launcherFocusedDuringLaunch(liveAtStart = true)
         manager.emulatorDisplayId = PRIMARY_DISPLAY
         manager.onLauncherWindowFocused(launcherOn(PRESENTATION_DISPLAY))
         testScope.testScheduler.runCurrent()
 
-        fixture.live.value = false
+        launch.live.value = false
         testScope.testScheduler.runCurrent()
 
-        verify(exactly = 0) { fixture.sessionEnd.endClosedSession() }
+        verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
     }
 
     @Test
     fun `a rebind with no launch live does not re-run the focus rule`() {
-        val fixture = launcherFocusedDuringLaunch(liveAtStart = false, emulatorOnScreen = listOf(true, true, false))
-        manager.onLauncherWindowFocused(fixture.activity)
+        val launch = launcherFocusedDuringLaunch(liveAtStart = false, emulatorOnScreen = listOf(true, true, false))
+        manager.onLauncherWindowFocused(launch.activity)
         testScope.testScheduler.runCurrent()
         testScope.testScheduler.advanceTimeBy(EMULATOR_SETTLE_MS)
         testScope.testScheduler.runCurrent()
@@ -390,7 +390,7 @@ class DualScreenManagerRoleSwapTest {
             manager.rebind(mockk(relaxed = true), replacementScope.backgroundScope)
             testScope.testScheduler.runCurrent()
 
-            verify(exactly = 0) { fixture.sessionEnd.endClosedSession() }
+            verify(exactly = 0) { launch.sessionEnd.endClosedSession() }
         } finally {
             replacementScope.cancel()
             testScope.testScheduler.runCurrent()
@@ -399,18 +399,18 @@ class DualScreenManagerRoleSwapTest {
 
     @Test
     fun `a launch clearing after a rebind still re-asks the focused launcher`() {
-        val fixture = launcherFocusedDuringLaunch(liveAtStart = true)
-        manager.onLauncherWindowFocused(fixture.activity)
+        val launch = launcherFocusedDuringLaunch(liveAtStart = true)
+        manager.onLauncherWindowFocused(launch.activity)
         testScope.testScheduler.runCurrent()
 
         val replacementScope = TestScope(testDispatcher)
         try {
             manager.rebind(mockk(relaxed = true), replacementScope.backgroundScope)
             testScope.testScheduler.runCurrent()
-            fixture.live.value = false
+            launch.live.value = false
             testScope.testScheduler.runCurrent()
 
-            verify(exactly = 1) { fixture.sessionEnd.endClosedSession() }
+            verify(exactly = 1) { launch.sessionEnd.endClosedSession() }
         } finally {
             replacementScope.cancel()
             testScope.testScheduler.runCurrent()

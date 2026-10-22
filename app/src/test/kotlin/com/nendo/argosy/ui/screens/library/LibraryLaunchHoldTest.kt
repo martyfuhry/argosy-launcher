@@ -19,11 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-/**
- * A launch records its play start mid-launch, so a library sorted by Last played or Play count
- * would re-sort under the launch scrim. The library holds its game list while a launch is live and
- * settles once when it ends, as Home's Continue row does.
- */
 class LibraryLaunchHoldTest {
 
     private val dispatcher = StandardTestDispatcher()
@@ -178,7 +173,7 @@ class LibraryLaunchHoldTest {
         libraryDefaultPlatformMigration = mockk(relaxed = true),
         showcaseSource = mockk(relaxed = true),
         reorderPlatforms = mockk(relaxed = true),
-        quickNavigation = mockk { io.mockk.every { enabled } returns MutableStateFlow(true) },
-        launchProgressTracker = mockk { io.mockk.every { launchLive } returns this@LibraryLaunchHoldTest.launchLive }
+        quickNavigation = mockk { every { enabled } returns MutableStateFlow(true) },
+        launchProgressTracker = mockk { every { launchLive } returns this@LibraryLaunchHoldTest.launchLive }
     )
 }
