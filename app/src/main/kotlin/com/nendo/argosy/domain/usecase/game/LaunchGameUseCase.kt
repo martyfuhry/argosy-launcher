@@ -7,6 +7,7 @@ import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import com.nendo.argosy.data.emulator.LaunchResult
 import com.nendo.argosy.data.emulator.PlaySessionTracker
+import com.nendo.argosy.data.emulator.startExternal
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.repository.LibraryPointerRepair
@@ -95,14 +96,7 @@ class LaunchGameUseCase @Inject constructor(
             origin = origin
         )
         if (sessionAtWindow) return result.copy(session = session)
-        playSessionTracker.startSession(
-            gameId = session.gameId,
-            emulatorPackage = session.emulatorPackage,
-            coreName = session.coreName,
-            isNewGame = true,
-            variantFileId = session.variantFileId,
-            origin = session.origin
-        )
+        playSessionTracker.startExternal(session)
         return result
     }
 

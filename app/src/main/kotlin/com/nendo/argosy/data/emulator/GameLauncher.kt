@@ -96,18 +96,6 @@ sealed class LaunchResult {
     data object Cancelled : LaunchResult()
 }
 
-/**
- * The arguments of an external emulator's [PlaySessionTracker.startSession], held until its
- * window has been requested.
- */
-data class ExternalSessionStart(
-    val gameId: Long,
-    val emulatorPackage: String,
-    val coreName: String?,
-    val variantFileId: Long?,
-    val origin: LaunchOrigin
-)
-
 @Singleton
 class GameLauncher @Inject constructor(
     @ApplicationContext private val context: Context,

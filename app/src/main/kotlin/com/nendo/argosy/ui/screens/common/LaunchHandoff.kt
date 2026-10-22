@@ -5,6 +5,7 @@ import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.data.emulator.ExternalSessionStart
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import com.nendo.argosy.data.emulator.PlaySessionTracker
+import com.nendo.argosy.data.emulator.startExternal
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import kotlinx.coroutines.delay
@@ -60,22 +61,11 @@ class LaunchHandoff internal constructor(
         delay(holdMs)
         val failure = startRouter.startPlaced(placed).exceptionOrNull()
         if (failure == null) {
-            session?.let(::startSession)
+            session?.let(playSessionTracker::startExternal)
             tracker.windowRequested(ticket)
             return
         }
         fail(ticket, failure, start)
-    }
-
-    private fun startSession(session: ExternalSessionStart) {
-        playSessionTracker.startSession(
-            gameId = session.gameId,
-            emulatorPackage = session.emulatorPackage,
-            coreName = session.coreName,
-            isNewGame = true,
-            variantFileId = session.variantFileId,
-            origin = session.origin
-        )
     }
 
     private fun fail(ticket: LaunchProgressTracker.Ticket, failure: Throwable, start: GameStart) {

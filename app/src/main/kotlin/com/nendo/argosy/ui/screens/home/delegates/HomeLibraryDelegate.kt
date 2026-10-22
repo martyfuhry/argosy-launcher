@@ -35,6 +35,7 @@ import com.nendo.argosy.ui.screens.home.HomeRowItem
 import com.nendo.argosy.ui.screens.home.PLATFORM_ROW_LIMIT
 import com.nendo.argosy.ui.screens.home.PlatformGameLoader
 import com.nendo.argosy.ui.screens.home.toHomePlatformUi
+import com.nendo.argosy.ui.util.heldWhile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

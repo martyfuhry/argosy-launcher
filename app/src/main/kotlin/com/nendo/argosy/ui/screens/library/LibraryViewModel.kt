@@ -83,8 +83,8 @@ import com.nendo.argosy.ui.screens.common.SyncOverlayState
 import com.nendo.argosy.ui.screens.gamedetail.CollectionItemUi
 import com.nendo.argosy.ui.screens.home.HomePlatformUi
 import com.nendo.argosy.ui.screens.home.toHomePlatformUi
-import com.nendo.argosy.ui.screens.home.delegates.heldWhile
 import com.nendo.argosy.ui.util.GridUtils
+import com.nendo.argosy.ui.util.heldWhile
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.ui.dualscreen.CompanionFact
