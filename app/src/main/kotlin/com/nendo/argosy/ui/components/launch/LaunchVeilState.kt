@@ -37,7 +37,7 @@ fun opensOnSurface(hasPresentationSurface: Boolean, gameDisplayId: Int?, surface
  * and only on the surface the game opens on, [gameOpensHere].
  */
 fun darkensForLaunch(progress: LaunchProgress?, gameOpensHere: Boolean): Boolean =
-    gameOpensHere && progress?.step?.phase == LaunchPhase.LAUNCHING
+    gameOpensHere && veilFor(progress)
 
 /**
  * The veil's opacity when it first draws. A veil whose Launching step began [elapsedMs] ago stands
