@@ -1979,9 +1979,9 @@ class DualScreenManager(
                 launchCompanionApp(packageName, row.screenKey)
             is com.nendo.argosy.ui.components.AppMenuRow.Action -> when (row.item) {
                 com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_SECONDARY_HOME ->
-                    scope.launch { appShortcutActions.togglePinned(packageName) }
+                    activityIndependentScope.launch { appShortcutActions.togglePinned(packageName) }
                 com.nendo.argosy.ui.components.AppContextMenuItem.TOGGLE_VISIBILITY ->
-                    scope.launch { appShortcutActions.toggleHidden(packageName) }
+                    activityIndependentScope.launch { appShortcutActions.toggleHidden(packageName) }
                 com.nendo.argosy.ui.components.AppContextMenuItem.UNINSTALL ->
                     activityContext.startActivity(appShortcutActions.uninstallIntent(packageName))
                 else -> Unit
@@ -2242,7 +2242,7 @@ class DualScreenManager(
      */
     fun applyDisplayRoleOverride(override: DisplayRoleOverride) {
         sessionStateStore.setDisplayRoleOverride(override.name)
-        scope.launch { preferencesRepository.setDisplayRoleOverride(override) }
+        activityIndependentScope.launch { preferencesRepository.setDisplayRoleOverride(override) }
         val resolved = DisplayRoleResolver(displayAffinityHelper, sessionStateStore).isSwapped
         if (resolved == _isRolesSwapped.value) return
         if (sessionStateStore.hasActiveSession()) {
