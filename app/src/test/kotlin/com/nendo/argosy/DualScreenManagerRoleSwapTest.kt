@@ -129,15 +129,48 @@ class DualScreenManagerRoleSwapTest {
         activityScope.cancel()
 
         manager.onSessionChanged(GAME_ID)
-        val deadline = System.currentTimeMillis() + COMPANION_LOAD_WAIT_MS
-        while (!manager.swappedCompanionState.value.isLoaded && System.currentTimeMillis() < deadline) {
-            testScope.testScheduler.runCurrent()
-            Thread.sleep(COMPANION_LOAD_POLL_MS)
-        }
-        testScope.testScheduler.runCurrent()
+        awaitCompanionLoaded()
 
         assertTrue(manager.swappedCompanionState.value.isLoaded)
         assertEquals(GAME_ID, manager.swappedCompanionState.value.gameId)
+        assertTrue(manager.presentationSlot.value is com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame)
+    }
+
+    @Test
+    fun `a session whose game row is missing still releases the companion hold`() {
+        val gameDao = mockk<com.nendo.argosy.data.local.dao.GameDao>(relaxed = true) {
+            io.mockk.coEvery { getById(GAME_ID) } returns null
+        }
+        manager = newManager(gameDao = gameDao)
+
+        manager.onSessionChanged(GAME_ID)
+        awaitCompanionLoaded()
+
+        assertTrue(manager.swappedCompanionState.value.isLoaded)
+        assertEquals(GAME_ID, manager.swappedCompanionState.value.gameId)
+        assertEquals("", manager.swappedCompanionState.value.title)
+        assertTrue(manager.presentationSlot.value is com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame)
+    }
+
+    @Test
+    fun `a session whose art lookup throws still releases the companion hold`() {
+        val game = mockk<com.nendo.argosy.data.local.entity.GameEntity>(relaxed = true) {
+            every { title } returns "Artless"
+        }
+        val gameDao = mockk<com.nendo.argosy.data.local.dao.GameDao>(relaxed = true) {
+            io.mockk.coEvery { getById(GAME_ID) } returns game
+        }
+        val imageCacheManager = mockk<com.nendo.argosy.data.cache.ImageCacheManager>(relaxed = true) {
+            io.mockk.coEvery { loadArt(GAME_ID) } throws IllegalStateException("art store unreadable")
+        }
+        manager = newManager(gameDao = gameDao, imageCacheManager = imageCacheManager)
+
+        manager.onSessionChanged(GAME_ID)
+        awaitCompanionLoaded()
+
+        assertTrue(manager.swappedCompanionState.value.isLoaded)
+        assertEquals("Artless", manager.swappedCompanionState.value.title)
+        assertEquals(null, manager.swappedCompanionState.value.coverPath)
         assertTrue(manager.presentationSlot.value is com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame)
     }
 
@@ -713,6 +746,15 @@ class DualScreenManagerRoleSwapTest {
         every { action } returns android.content.Intent.ACTION_USER_PRESENT
     }
 
+    private fun awaitCompanionLoaded() {
+        val deadline = System.currentTimeMillis() + COMPANION_LOAD_WAIT_MS
+        while (!manager.swappedCompanionState.value.isLoaded && System.currentTimeMillis() < deadline) {
+            testScope.testScheduler.runCurrent()
+            Thread.sleep(COMPANION_LOAD_POLL_MS)
+        }
+        testScope.testScheduler.runCurrent()
+    }
+
     private fun liveSwapReady(mover: FakeGameWindowMover): DualScreenManager.LiveMoveHost {
         io.mockk.mockkObject(com.nendo.argosy.hardware.FocusDirectorActivity.Companion)
         every {
@@ -806,7 +848,8 @@ class DualScreenManagerRoleSwapTest {
             every { launchLive } returns MutableStateFlow(false)
         },
         permissionHelper: com.nendo.argosy.util.PermissionHelper = mockk(relaxed = true),
-        gameDao: com.nendo.argosy.data.local.dao.GameDao = mockk(relaxed = true)
+        gameDao: com.nendo.argosy.data.local.dao.GameDao = mockk(relaxed = true),
+        imageCacheManager: com.nendo.argosy.data.cache.ImageCacheManager = mockk(relaxed = true)
     ): DualScreenManager = DualScreenManager(
         context = hostContext,
         scope = scope,
@@ -831,7 +874,7 @@ class DualScreenManagerRoleSwapTest {
         displayAffinityHelper = displayAffinityHelper,
         sessionStateStore = sessionStateStore,
         preferencesRepository = preferencesRepository,
-        imageCacheManager = mockk(relaxed = true),
+        imageCacheManager = imageCacheManager,
         romMRepository = mockk(relaxed = true),
         gameDocumentLoader = mockk(relaxed = true),
         documentHighlightStore = mockk(relaxed = true),

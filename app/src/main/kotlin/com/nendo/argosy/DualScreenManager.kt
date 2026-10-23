@@ -2048,26 +2048,31 @@ class DualScreenManager(
             companionSessionGameId = gameId
             activityIndependentScope.launch { refreshCompanionAchievements(gameId) }
             activityIndependentScope.launch(Dispatchers.IO) {
-                val game = gameDao.getById(gameId) ?: return@launch
-                val art = imageCacheManager.loadArt(gameId)
-                val platform = platformRepository.getById(game.platformId)
-                val documents = com.nendo.argosy.ui.screens.gamedetail.components.gameDocuments(
-                    game = game,
-                    files = gameFileDao.getFilesForGame(gameId),
-                    romMRepository = romMRepository
-                )
+                val game = companionLookup(gameId) { gameDao.getById(gameId) }
+                val art = companionLookup(gameId) { imageCacheManager.loadArt(gameId) }
+                    ?: com.nendo.argosy.data.model.ResolvedGameArt()
+                val platform = game?.let { companionLookup(gameId) { platformRepository.getById(it.platformId) } }
+                val documents = game?.let {
+                    companionLookup(gameId) {
+                        com.nendo.argosy.ui.screens.gamedetail.components.gameDocuments(
+                            game = it,
+                            files = gameFileDao.getFilesForGame(gameId),
+                            romMRepository = romMRepository
+                        )
+                    }
+                }.orEmpty()
                 _swappedCompanionState.update {
                     com.nendo.argosy.hardware.CompanionInGameState(
                         gameId = gameId,
-                        title = game.title,
+                        title = game?.title.orEmpty(),
                         coverPath = art.coverPath,
-                        platformName = platform?.getDisplayName() ?: game.platformSlug,
-                        developer = game.developer,
-                        releaseYear = game.releaseYear,
-                        playTimeMinutes = game.playTimeMinutes,
-                        playCount = game.playCount,
-                        achievementCount = game.achievementCount,
-                        earnedAchievementCount = game.earnedAchievementCount,
+                        platformName = platform?.getDisplayName() ?: game?.platformSlug.orEmpty(),
+                        developer = game?.developer,
+                        releaseYear = game?.releaseYear,
+                        playTimeMinutes = game?.playTimeMinutes ?: 0,
+                        playCount = game?.playCount ?: 0,
+                        achievementCount = game?.achievementCount ?: 0,
+                        earnedAchievementCount = game?.earnedAchievementCount ?: 0,
                         sessionStartTimeMillis = sessionStateStore.getSessionStartTimeMillis(),
                         channelName = sessionStateStore.getChannelName(),
                         isHardcore = sessionStateStore.isHardcore(),
@@ -2105,6 +2110,14 @@ class DualScreenManager(
             }
         }
     }
+
+    private suspend fun <T> companionLookup(gameId: Long, lookup: suspend () -> T): T? =
+        runCatching { lookup() }
+            .onFailure {
+                if (it is kotlin.coroutines.cancellation.CancellationException) throw it
+                Log.w(TAG, "Companion in-game lookup failed for game $gameId", it)
+            }
+            .getOrNull()
 
     /**
      * The hardcore claim of the running session changed after it started (RetroAchievements
