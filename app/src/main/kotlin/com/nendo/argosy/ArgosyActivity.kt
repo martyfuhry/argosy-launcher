@@ -452,8 +452,11 @@ class ArgosyActivity : ComponentActivity() {
         } else {
             if (displayAffinityHelper.hasSecondaryDisplay && !dualScreenManager.isRolesSwapped.value) {
                 window.decorView.postDelayed({
-                    if (!sessionStateStore.hasActiveSession() &&
-                        !dualScreenManager.swappedIsGameActive.value
+                    if (com.nendo.argosy.ui.dualscreen.companionTakesFocusOnFirstResume(
+                            sessionActive = sessionStateStore.hasActiveSession(),
+                            gameActive = dualScreenManager.swappedIsGameActive.value,
+                            launchLive = launchProgressTracker.launchLive.value
+                        )
                     ) {
                         dualScreenManager.controlCompanion?.refocusSelf()
                     }
