@@ -8,6 +8,7 @@ import com.nendo.argosy.data.emulator.PlaySessionTracker
 import com.nendo.argosy.data.emulator.startExternal
 import com.nendo.argosy.ui.input.SoundFeedbackManager
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 
@@ -43,8 +44,8 @@ class LaunchHandoff internal constructor(
      * that window has been requested; a launch that opens nothing leaves no session. A ticket
      * cancelled while the placement resolves opens nothing. A game that cannot be placed fails at
      * once, with no sound and no hold. A start that fails clears Launching at once. Both reach
-     * [GameStart.onFailure]. Launching outlasts a stop of the launching screen until the window
-     * has been requested.
+     * [GameStart.onFailure]. A hold cut short, as when its screen is popped, clears Launching at
+     * once. Launching outlasts a stop of the launching screen until the window has been requested.
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket,
@@ -58,7 +59,12 @@ class LaunchHandoff internal constructor(
         val placed = request.getOrElse { return fail(ticket, it, start) }
         tracker.finish(ticket, launched = true)
         soundManager.play(SoundType.LAUNCH_GAME)
-        delay(holdMs)
+        try {
+            delay(holdMs)
+        } catch (cancelled: CancellationException) {
+            tracker.openFailed(ticket)
+            throw cancelled
+        }
         val failure = startRouter.startPlaced(placed).exceptionOrNull()
         if (failure == null) {
             session?.let(playSessionTracker::startExternal)

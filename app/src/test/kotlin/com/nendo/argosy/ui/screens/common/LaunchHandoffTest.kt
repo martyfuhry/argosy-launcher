@@ -28,6 +28,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -202,7 +203,7 @@ class LaunchHandoffTest {
     }
 
     @Test
-    fun `a launch whose scope dies during the hold opens nothing and starts no session`() = runTest {
+    fun `a launch whose scope dies during the hold opens nothing, starts no session and clears at once`() = runTest {
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
@@ -211,9 +212,12 @@ class LaunchHandoffTest {
         runCurrent()
         advanceTimeBy(holdMs - 1)
         job.cancel()
-        advanceTimeBy(holdMs)
         runCurrent()
 
+        assertNull(tracker.progress.value)
+        assertFalse(tracker.launchLive.value)
+        advanceTimeBy(holdMs)
+        runCurrent()
         verify(exactly = 0) { manager.startGame(any()) }
         verifyNoSessionStarted()
     }
