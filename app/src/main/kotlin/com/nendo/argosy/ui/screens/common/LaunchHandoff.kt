@@ -2,6 +2,7 @@ package com.nendo.argosy.ui.screens.common
 
 import android.content.Intent
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.data.emulator.EXTRA_ALREADY_LAUNCHED
 import com.nendo.argosy.data.emulator.ExternalSessionStart
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
 import com.nendo.argosy.data.emulator.PlaySessionTracker
@@ -39,14 +40,10 @@ class LaunchHandoff internal constructor(
     )
 
     /**
-     * Places [start]'s game, which records its display, then finishes [ticket] as launched and
-     * requests [intent]'s window with that placement after the hold. [session] starts only once
-     * that window has been requested; a launch that opens nothing leaves no session. A ticket
-     * cancelled while the placement resolves opens nothing. A game that cannot be placed fails at
-     * once, with no sound and no hold. A start that fails clears Launching at once. Both cancel
-     * the game's running play session, as a resumed game has, and reach [GameStart.onFailure]. A
-     * hold cut short, as when its screen is popped, clears Launching at once. Launching outlasts a
-     * stop of the launching screen until the window has been requested.
+     * Places [start]'s game, finishes [ticket] as launched and requests [intent]'s window with that
+     * placement after the hold, which a game the launch already opened skips; [session] starts once
+     * the window is requested. A cancelled ticket opens nothing. A failed placement or start, or a cut-short
+     * hold, clears Launching at once; a failure also cancels the game's session and reaches [GameStart.onFailure].
      */
     suspend fun handOff(
         ticket: LaunchProgressTracker.Ticket,
@@ -60,11 +57,13 @@ class LaunchHandoff internal constructor(
         val placed = request.getOrElse { return fail(ticket, it, start) }
         tracker.finish(ticket, launched = true)
         soundManager.play(SoundType.LAUNCH_GAME)
-        try {
-            delay(holdMs)
-        } catch (cancelled: CancellationException) {
-            tracker.openFailed(ticket)
-            throw cancelled
+        if (!intent.getBooleanExtra(EXTRA_ALREADY_LAUNCHED, false)) {
+            try {
+                delay(holdMs)
+            } catch (cancelled: CancellationException) {
+                tracker.openFailed(ticket)
+                throw cancelled
+            }
         }
         val failure = startRouter.startPlaced(placed).exceptionOrNull()
         if (failure == null) {

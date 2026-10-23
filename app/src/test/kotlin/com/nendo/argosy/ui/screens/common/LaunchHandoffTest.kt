@@ -7,6 +7,7 @@ import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.core.input.SoundType
 import com.nendo.argosy.data.emulator.ActiveSession
+import com.nendo.argosy.data.emulator.EXTRA_ALREADY_LAUNCHED
 import com.nendo.argosy.data.emulator.ExternalSessionStart
 import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
@@ -258,6 +259,24 @@ class LaunchHandoffTest {
         verify(exactly = 1) {
             playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any())
         }
+    }
+
+    @Test
+    fun `a game the launch already opened starts its session at once with no hold`() = runTest {
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+        val opened: Intent = mockk(relaxed = true)
+        every { opened.getBooleanExtra(EXTRA_ALREADY_LAUNCHED, false) } returns true
+
+        launch { handoff(tracker, router).handOff(ticket, opened, GameStart(gameId), session) }
+        runCurrent()
+
+        verify(exactly = 1) {
+            playSessionTracker.startSession(any(), any(), any(), any(), any(), any(), any(), any())
+        }
+        tracker.hostStopped()
+        assertNull(tracker.progress.value)
     }
 
     @Test
