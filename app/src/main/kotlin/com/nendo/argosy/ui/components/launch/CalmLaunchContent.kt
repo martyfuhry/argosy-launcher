@@ -105,7 +105,8 @@ fun CalmLaunchContent(
 
     val coverPath = progress.gameId?.let { rememberResolvedCoverPath(it, null) }
     val cover = rememberFileImageModel(coverPath)
-    val hasArt = remember(progress.gameId) { cover != null }
+    val hasArt = cover != null
+    val shownCover = rememberLastShown(cover, hasArt)
     var artBitmap by remember(progress.gameId) { mutableStateOf<Bitmap?>(null) }
     val artColor = rememberArtGlowColor(artBitmap)
     val title = progress.gameTitle
@@ -125,22 +126,24 @@ fun CalmLaunchContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(horizontal = Dimens.spacingXl)
         ) {
-            if (hasArt) {
-                AsyncImage(
-                    model = cover,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    onSuccess = { state ->
-                        artBitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
-                    },
-                    modifier = Modifier
-                        .height(artHeight)
-                        .aspectRatio(BoxArtShape.TALL.aspectRatio, matchHeightConstraintsFirst = true)
-                        .launchBreathGlow(artColor, progress.gameId)
-                        .clip(RoundedCornerShape(Dimens.radiusLg))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
-                if (title != null) Spacer(Modifier.height(gap))
+            AnimatedVisibility(visible = hasArt, enter = enter, exit = exit) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AsyncImage(
+                        model = shownCover,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        onSuccess = { state ->
+                            artBitmap = (state.result.drawable as? BitmapDrawable)?.bitmap
+                        },
+                        modifier = Modifier
+                            .height(artHeight)
+                            .aspectRatio(BoxArtShape.TALL.aspectRatio, matchHeightConstraintsFirst = true)
+                            .launchBreathGlow(artColor, progress.gameId)
+                            .clip(RoundedCornerShape(Dimens.radiusLg))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                    )
+                    if (title != null) Spacer(Modifier.height(gap))
+                }
             }
             if (title != null) {
                 Text(
