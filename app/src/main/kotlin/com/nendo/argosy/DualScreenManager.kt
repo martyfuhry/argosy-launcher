@@ -1836,7 +1836,7 @@ class DualScreenManager(
         broadcastSessionCleared()
         if (emulatorPackage == null || !_isDualScreenDevice.value) return
         if (emulatorPackage == com.nendo.argosy.data.emulator.EmulatorRegistry.BUILTIN_PACKAGE) return
-        scope.launch {
+        activityIndependentScope.launch {
             sessionEnd.join()
             releaseStoppedEmulator(
                 emulatorPackage = emulatorPackage,
