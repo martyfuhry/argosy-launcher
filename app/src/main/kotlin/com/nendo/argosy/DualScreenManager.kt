@@ -2062,6 +2062,7 @@ class DualScreenManager(
                     }
                 }.orEmpty()
                 _swappedCompanionState.update {
+                    if (companionSessionGameId != gameId || !_swappedIsGameActive.value) return@update it
                     com.nendo.argosy.hardware.CompanionInGameState(
                         gameId = gameId,
                         title = game?.title.orEmpty(),

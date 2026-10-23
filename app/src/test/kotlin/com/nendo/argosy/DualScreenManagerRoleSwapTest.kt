@@ -175,6 +175,35 @@ class DualScreenManagerRoleSwapTest {
     }
 
     @Test
+    fun `a load finishing after its session ended does not publish the ended game`() {
+        val release = java.util.concurrent.CountDownLatch(1)
+        val game = mockk<com.nendo.argosy.data.local.entity.GameEntity>(relaxed = true) {
+            every { title } returns "Ended"
+        }
+        val gameDao = mockk<com.nendo.argosy.data.local.dao.GameDao>(relaxed = true) {
+            io.mockk.coEvery { getById(GAME_ID) } coAnswers {
+                release.await(COMPANION_LOAD_WAIT_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+                game
+            }
+        }
+        manager = newManager(gameDao = gameDao)
+
+        try {
+            manager.onSessionChanged(GAME_ID)
+            testScope.testScheduler.runCurrent()
+            manager.onSessionChanged(0L)
+            testScope.testScheduler.runCurrent()
+        } finally {
+            release.countDown()
+        }
+        Thread.sleep(LATE_LOAD_WINDOW_MS)
+        testScope.testScheduler.runCurrent()
+
+        assertEquals(com.nendo.argosy.hardware.CompanionInGameState(), manager.swappedCompanionState.value)
+        assertTrue(manager.presentationSlot.value !is com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame)
+    }
+
+    @Test
     fun `a swap flips the live arrangement even when the stored override disagrees`() {
         manager.setRolesSwapped(false)
         every { sessionStateStore.getDisplayRoleOverride() } returns "SWAPPED"
@@ -828,6 +857,7 @@ class DualScreenManagerRoleSwapTest {
         const val GAME_ID = 42L
         const val COMPANION_LOAD_WAIT_MS = 5_000L
         const val COMPANION_LOAD_POLL_MS = 10L
+        const val LATE_LOAD_WINDOW_MS = 500L
         val TOP_SCREEN = com.nendo.argosy.util.AttachedScreen(
             key = "top", displayId = 0, number = 1, widthPx = 1920, heightPx = 1080, builtIn = true
         )
