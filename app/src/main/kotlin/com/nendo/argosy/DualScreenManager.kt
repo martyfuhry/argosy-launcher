@@ -2046,8 +2046,8 @@ class DualScreenManager(
             swappedSessionTimer?.stop(appContext)
             swappedSessionTimer = com.nendo.argosy.hardware.CompanionSessionTimer().also { it.start(appContext) }
             companionSessionGameId = gameId
-            scope.launch { refreshCompanionAchievements(gameId) }
-            scope.launch(Dispatchers.IO) {
+            activityIndependentScope.launch { refreshCompanionAchievements(gameId) }
+            activityIndependentScope.launch(Dispatchers.IO) {
                 val game = gameDao.getById(gameId) ?: return@launch
                 val art = imageCacheManager.loadArt(gameId)
                 val platform = platformRepository.getById(game.platformId)

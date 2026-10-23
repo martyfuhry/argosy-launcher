@@ -116,6 +116,32 @@ class DualScreenManagerRoleSwapTest {
     }
 
     @Test
+    fun `session started while the bound activity scope is cancelled still loads the companion state`() {
+        val game = mockk<com.nendo.argosy.data.local.entity.GameEntity>(relaxed = true) {
+            every { title } returns "Recreated"
+        }
+        val gameDao = mockk<com.nendo.argosy.data.local.dao.GameDao>(relaxed = true) {
+            io.mockk.coEvery { getById(GAME_ID) } returns game
+        }
+        val activityScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + testDispatcher)
+        manager = newManager(scope = activityScope, gameDao = gameDao)
+        testScope.testScheduler.runCurrent()
+        activityScope.cancel()
+
+        manager.onSessionChanged(GAME_ID)
+        val deadline = System.currentTimeMillis() + COMPANION_LOAD_WAIT_MS
+        while (!manager.swappedCompanionState.value.isLoaded && System.currentTimeMillis() < deadline) {
+            testScope.testScheduler.runCurrent()
+            Thread.sleep(COMPANION_LOAD_POLL_MS)
+        }
+        testScope.testScheduler.runCurrent()
+
+        assertTrue(manager.swappedCompanionState.value.isLoaded)
+        assertEquals(GAME_ID, manager.swappedCompanionState.value.gameId)
+        assertTrue(manager.presentationSlot.value is com.nendo.argosy.ui.dualscreen.PresentationSlot.InGame)
+    }
+
+    @Test
     fun `a swap flips the live arrangement even when the stored override disagrees`() {
         manager.setRolesSwapped(false)
         every { sessionStateStore.getDisplayRoleOverride() } returns "SWAPPED"
@@ -757,6 +783,9 @@ class DualScreenManagerRoleSwapTest {
         const val EMULATOR_SETTLE_MS = 2_000L
         const val PRESENTATION_DISPLAY = 1
         const val VIRTUAL_DISPLAY = 9
+        const val GAME_ID = 42L
+        const val COMPANION_LOAD_WAIT_MS = 5_000L
+        const val COMPANION_LOAD_POLL_MS = 10L
         val TOP_SCREEN = com.nendo.argosy.util.AttachedScreen(
             key = "top", displayId = 0, number = 1, widthPx = 1920, heightPx = 1080, builtIn = true
         )
@@ -776,11 +805,12 @@ class DualScreenManagerRoleSwapTest {
         launchProgressTracker: com.nendo.argosy.data.emulator.LaunchProgressTracker = mockk {
             every { launchLive } returns MutableStateFlow(false)
         },
-        permissionHelper: com.nendo.argosy.util.PermissionHelper = mockk(relaxed = true)
+        permissionHelper: com.nendo.argosy.util.PermissionHelper = mockk(relaxed = true),
+        gameDao: com.nendo.argosy.data.local.dao.GameDao = mockk(relaxed = true)
     ): DualScreenManager = DualScreenManager(
         context = hostContext,
         scope = scope,
-        gameDao = mockk(relaxed = true),
+        gameDao = gameDao,
         gameRepository = mockk(relaxed = true),
         activeSaveRepository = mockk(relaxed = true),
         prefetchGameSaveDataUseCase = mockk(relaxed = true),
