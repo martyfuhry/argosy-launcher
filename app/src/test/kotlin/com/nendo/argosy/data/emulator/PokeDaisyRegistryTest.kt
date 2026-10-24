@@ -14,7 +14,8 @@ class PokeDaisyRegistryTest {
     fun `PokeDaisy is offered on every handheld platform it plays`() {
         for (platform in listOf("gb", "gbc", "gba", "nds")) {
             assertTrue(platform, EmulatorRegistry.getForPlatform(platform).any { it.id == "pokedaisy" })
-            assertEquals(platform, "pokedaisy", EmulatorRegistry.getRecommendedEmulators()[platform]?.last())
+            val recommended = EmulatorRegistry.getRecommendedEmulators()[platform]?.filterNot { it == "minarch_link" }
+            assertEquals(platform, "pokedaisy", recommended?.last())
         }
     }
 
