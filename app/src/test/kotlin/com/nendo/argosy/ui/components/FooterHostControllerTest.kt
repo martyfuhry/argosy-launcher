@@ -43,12 +43,15 @@ class FooterHostControllerTest {
     }
 
     @Test
-    fun `the topmost entry that reserves space decides, forced or with any hint`() {
+    fun `the topmost entry that reserves space decides, forced or with a hint the screen does not already show`() {
         val controller = FooterHostController()
         assertFalse(controller.isBarVisible)
 
-        val screen = controller.push(entry(InputButton.B))
+        val screen = controller.push(entry(InputButton.Y))
         assertTrue(controller.isBarVisible)
+
+        controller.set(screen, entry(InputButton.A, InputButton.B))
+        assertFalse(controller.isBarVisible)
 
         controller.set(screen, entry())
         assertFalse(controller.isBarVisible)

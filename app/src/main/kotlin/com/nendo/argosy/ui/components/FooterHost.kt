@@ -54,7 +54,7 @@ class FooterHostController {
 
     val isBarVisible: Boolean
         get() = stack.lastOrNull { it.second.reservesSpace }?.second
-            ?.let { it.forced || it.hints.isNotEmpty() } == true
+            ?.let { entry -> entry.forced || entry.hints.any { !isObviousHint(it.button) } } == true
 
     private val tappableHints = mutableMapOf<Any, LayoutCoordinates>()
 
@@ -148,11 +148,6 @@ fun FooterHost(
         }
     }
 }
-
-val FooterHostController.isBarVisible: Boolean
-    get() = top?.let { entry ->
-        entry.forced || entry.hints.any { !isObviousHint(it.button) }
-    } == true
 
 @Composable
 fun FooterSpacer() {
