@@ -4245,6 +4245,27 @@ object Migration_214_215 : Migration(214, 215) {
     }
 }
 
+/**
+ * Adds the Game Boy color style column. A fork database at 215 already has it and lacks
+ * upstream's full sync skip flag instead, so each column is added only where it is missing.
+ */
+object Migration_215_216 : Migration(215, 216) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        if ("skipFullSync" !in columnsOf(db, "platforms")) {
+            db.execSQL("ALTER TABLE `platforms` ADD COLUMN `skipFullSync` INTEGER NOT NULL DEFAULT 0")
+        }
+        if ("gbColorStyle" !in columnsOf(db, "platform_libretro_settings")) {
+            db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `gbColorStyle` TEXT DEFAULT NULL")
+        }
+    }
+
+    private fun columnsOf(db: SupportSQLiteDatabase, table: String): Set<String> =
+        db.query("PRAGMA table_info(`$table`)").use { cursor ->
+            val name = cursor.getColumnIndex("name")
+            generateSequence { if (cursor.moveToNext()) cursor.getString(name) else null }.toSet()
+        }
+}
+
 object Migration_203_204 : Migration(203, 204) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

@@ -200,7 +200,7 @@ import com.nendo.argosy.data.local.entity.SteamLicenseEntity
         com.nendo.argosy.data.local.entity.GameScreenshotEntity::class,
         com.nendo.argosy.data.local.entity.RAPatchCacheEntity::class
     ],
-    version = 215,
+    version = 216,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
