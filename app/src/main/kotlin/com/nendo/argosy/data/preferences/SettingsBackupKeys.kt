@@ -225,13 +225,15 @@ object SettingsBackupKeys {
         SettingsBackupKey("builtin_fast_forward_enabled", SettingsBackupType.BOOLEAN),
         SettingsBackupKey("builtin_fast_forward_mode", SettingsBackupType.STRING),
         SettingsBackupKey("builtin_fast_forward_speed", SettingsBackupType.INT),
-        SettingsBackupKey("builtin_fast_forward_preserve_pitch", SettingsBackupType.BOOLEAN)
+        SettingsBackupKey("builtin_fast_forward_preserve_pitch", SettingsBackupType.BOOLEAN),
+        SettingsBackupKey("builtin_dual_screen_match_size", SettingsBackupType.BOOLEAN)
     )
 
     private val BUILTIN_INPUT = listOf(
         SettingsBackupKey("builtin_analog_as_dpad", SettingsBackupType.BOOLEAN),
         SettingsBackupKey("builtin_dpad_as_analog", SettingsBackupType.BOOLEAN),
-        SettingsBackupKey("builtin_rumble_enabled", SettingsBackupType.BOOLEAN)
+        SettingsBackupKey("builtin_rumble_enabled", SettingsBackupType.BOOLEAN),
+        SettingsBackupKey("builtin_select_as_back", SettingsBackupType.STRING)
     )
 
     private val BUILTIN_TOUCH = listOf(

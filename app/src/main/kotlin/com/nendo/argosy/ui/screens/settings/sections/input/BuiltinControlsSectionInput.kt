@@ -107,6 +107,7 @@ internal class BuiltinControlsSectionInput(
         val state = viewModel.uiState.value
         return when (val item = builtinControlsItemAtFocusIndex(state.focusedIndex, state.builtinControls)) {
             is BuiltinControlsItem.ControllerType -> viewModel.stepControllerType(item.port, -1)
+            BuiltinControlsItem.SelectAsBack -> stepSelectAsBack(-1)
             BuiltinControlsItem.SpeedrunPanelWidth -> {
                 viewModel.adjustSpeedrunPanelWidth(-5)
                 InputResult.handled(SoundType.TOGGLE)
@@ -119,12 +120,22 @@ internal class BuiltinControlsSectionInput(
         val state = viewModel.uiState.value
         return when (val item = builtinControlsItemAtFocusIndex(state.focusedIndex, state.builtinControls)) {
             is BuiltinControlsItem.ControllerType -> viewModel.stepControllerType(item.port, 1)
+            BuiltinControlsItem.SelectAsBack -> stepSelectAsBack(1)
             BuiltinControlsItem.SpeedrunPanelWidth -> {
                 viewModel.adjustSpeedrunPanelWidth(5)
                 InputResult.handled(SoundType.TOGGLE)
             }
             else -> InputResult.UNHANDLED
         }
+    }
+
+    private fun stepSelectAsBack(direction: Int): InputResult {
+        val modes = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries
+        val current = modes.indexOf(viewModel.uiState.value.builtinControls.selectAsBack)
+        val next = (current + direction).coerceIn(0, modes.lastIndex)
+        if (next == current) return InputResult.HANDLED
+        viewModel.setBuiltinSelectAsBack(modes[next])
+        return InputResult.handled(SoundType.TOGGLE)
     }
 
     override fun onSecondaryAction(): InputResult {

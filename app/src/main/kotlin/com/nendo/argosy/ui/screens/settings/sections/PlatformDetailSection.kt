@@ -97,6 +97,7 @@ internal sealed class PlatformDetailItem(
     data object SyncToggle : PlatformDetailItem("sync_toggle", "sync")
     data object CombineContent : PlatformDetailItem("combine_content", "sync", { it.showCombineContent })
     data object SyncNow : PlatformDetailItem("sync_now", "sync", { it.syncEnabled })
+    data object SkipFullSync : PlatformDetailItem("skip_full_sync", "sync", { it.syncEnabled })
     data object DownloadDefaults : PlatformDetailItem("download_defaults", "sync", { !it.isAndroid })
     data object PackagePath : PlatformDetailItem("package_path", "sync", { it.showSavePath && !it.isAndroid })
     data object RemoveFiles : PlatformDetailItem("remove_files", "sync", { it.hasDownloads && !it.isAndroid })
@@ -117,7 +118,7 @@ internal sealed class PlatformDetailItem(
                 Header("header_bios", "bios", R.string.settings_platform_section_bios, { it.hasBios && !it.isAndroid }),
                 InfoItem("info_bios_status", "bios", { it.hasBios && !it.isAndroid }), BiosDownload, BiosInstall, BiosCopy,
                 Header("header_sync", "sync", R.string.settings_platform_section_sync),
-                SyncToggle, SyncNow, DownloadDefaults, CombineContent,
+                SyncToggle, SyncNow, SkipFullSync, DownloadDefaults, CombineContent,
                 InfoItem("info_package_path", "sync", { it.showSavePath && !it.isBuiltin && !it.isRetroArch }),
                 RomPath, SavePath, MemoryCard, StatePath,
                 RemoveFiles
@@ -711,6 +712,13 @@ fun PlatformDetailSection(
                         onClick = { viewModel.syncPlatform(config.platform.id, config.platform.getDisplayName()) }
                     )
                 }
+                PlatformDetailItem.SkipFullSync -> SwitchPreference(
+                    title = stringResource(R.string.settings_platform_skip_full_sync_title),
+                    subtitle = stringResource(R.string.settings_platform_skip_full_sync_subtitle),
+                    isEnabled = storageConfig?.skipFullSync ?: false,
+                    isFocused = isFocused(item),
+                    onToggle = { viewModel.togglePlatformSkipFullSync(config.platform.id, it) }
+                )
                 PlatformDetailItem.PackagePath -> {} // rendered as InfoItem
                 PlatformDetailItem.DownloadDefaults -> ActionPreference(
                     title = stringResource(R.string.settings_platform_download_defaults_title),

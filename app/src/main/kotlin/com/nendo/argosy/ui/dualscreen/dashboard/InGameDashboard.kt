@@ -193,7 +193,7 @@ fun InGameDashboard(
                 wide = wide,
                 controls = controls,
                 quitArmed = android.os.SystemClock.elapsedRealtime() < quitArmedUntil,
-                showsQuit = state.quickActionsAvailable,
+                showsQuit = state.quickActionsAvailable || state.externalEmulator,
                 onSelect = selectSection,
                 onCheats = actions.onOpenCheats,
                 onSettings = actions.onOpenSettings,

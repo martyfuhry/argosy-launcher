@@ -103,6 +103,21 @@
     <string name="ui_save_channel_delete_slot_cancel">Abbrechen</string>
     <string name="ui_save_channel_delete_slot_message">\"%1$s\" löschen?</string>
     <string name="ui_save_channel_delete_slot_note">Dies entfernt ihn vom Server und aus dem lokalen Speicher. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="ui_save_channel_footer_delete_archived">Alle löschen</string>
+    <string name="ui_save_channel_footer_delete_version">Löschen</string>
+    <string name="ui_save_channel_delete_version_title">SPIELSTAND LÖSCHEN</string>
+    <string name="ui_save_channel_delete_version_message">Spielstand vom %1$s löschen?</string>
+    <string name="ui_save_channel_delete_archived_title">ARCHIVIERTE SPIELSTÄNDE LÖSCHEN</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="one">%1$d archivierten Spielstand löschen?</item>
+        <item quantity="other">%1$d archivierte Spielstände löschen?</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">Dies entfernt die Kopie auf diesem Gerät. Eine Kopie auf dem Server bleibt erhalten. Dies kann nicht rückgängig gemacht werden.</string>
+    <string name="ui_save_channel_delete_only_copy_note">Dieses Gerät hat die einzige Kopie. Sie ist danach endgültig verloren.</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="one">%1$d Spielstand gelöscht</item>
+        <item quantity="other">%1$d Spielstände gelöscht</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">CORE-VERSION STIMMT NICHT ÜBEREIN</string>
     <string name="ui_save_channel_version_mismatch_confirm">Trotzdem laden</string>
@@ -1028,4 +1043,7 @@
     <string name="gamelist_row_genre_board_game">Brettspiel</string>
     <string name="gamelist_row_genre_quiz">Quiz</string>
     <string name="gamelist_row_genre_sim">Simulation</string>
+    <string name="common_game_confirm_hide_title">%1$s ausblenden?</string>
+    <string name="common_game_confirm_hide_message">Ausgeblendete Spiele lassen sich in der Bibliothek wieder anzeigen, indem du Quelle auf Ausgeblendet filterst.</string>
+    <string name="common_game_confirm_hide_confirm">Ausblenden</string>
 </resources>

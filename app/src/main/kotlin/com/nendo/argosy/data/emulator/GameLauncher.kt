@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.core.content.FileProvider
@@ -521,20 +522,14 @@ class GameLauncher @Inject constructor(
 
         Logger.debug(TAG, "Multi-disc game has ${discs.size} discs")
 
-        val missingDiscs = discs.filter { it.localPath == null }
-        if (missingDiscs.isNotEmpty()) {
-            return LaunchResult.MissingDiscs(missingDiscs.map { it.discNumber }).also {
-                Logger.warn(TAG, "launchMultiDiscGame() failed: missing discs ${missingDiscs.map { d -> d.discNumber }}")
+        val presentDiscs = discs.filter { disc -> disc.localPath?.let { File(it).exists() } == true }
+        if (presentDiscs.isEmpty()) {
+            return LaunchResult.MissingDiscs(discs.map { it.discNumber }).also {
+                Logger.warn(TAG, "launchMultiDiscGame() failed: no disc on disk")
             }
         }
-
-        for (disc in discs) {
-            val discFile = disc.localPath?.let { File(it) }
-            if (discFile == null || !discFile.exists()) {
-                return LaunchResult.MissingDiscs(listOf(disc.discNumber)).also {
-                    Logger.warn(TAG, "launchMultiDiscGame() failed: disc ${disc.discNumber} file not found")
-                }
-            }
+        if (presentDiscs.size < discs.size) {
+            Logger.info(TAG, "launchMultiDiscGame(): launching with discs ${presentDiscs.map { it.discNumber }} of ${discs.size}")
         }
 
         val emulator = resolveEmulator(game)
@@ -561,20 +556,20 @@ class GameLauncher @Inject constructor(
                     m3uResult.discFile
                 }
                 is M3uResult.NotApplicable -> {
-                    Logger.debug(TAG, "M3u not applicable: ${m3uResult.reason}, falling back to disc 1")
-                    File(discs.minByOrNull { it.discNumber }!!.localPath!!)
+                    Logger.debug(TAG, "M3u not applicable: ${m3uResult.reason}, falling back to the first disc on disk")
+                    File(presentDiscs.minBy { it.discNumber }.localPath!!)
                 }
                 is M3uResult.Error -> {
-                    Logger.warn(TAG, "M3u error: ${m3uResult.message}, falling back to disc 1")
-                    File(discs.minByOrNull { it.discNumber }!!.localPath!!)
+                    Logger.warn(TAG, "M3u error: ${m3uResult.message}, falling back to the first disc on disk")
+                    File(presentDiscs.minBy { it.discNumber }.localPath!!)
                 }
             }
         } else {
             val targetDisc: GameDiscEntity = when {
-                requestedDiscId != null -> discs.find { it.id == requestedDiscId }
-                game.lastPlayedDiscId != null -> discs.find { it.id == game.lastPlayedDiscId }
+                requestedDiscId != null -> presentDiscs.find { it.id == requestedDiscId }
+                game.lastPlayedDiscId != null -> presentDiscs.find { it.id == game.lastPlayedDiscId }
                 else -> null
-            } ?: discs.minByOrNull { it.discNumber }
+            } ?: presentDiscs.minByOrNull { it.discNumber }
                 ?: return LaunchResult.Error("Could not determine which disc to launch").also {
                     Logger.error(TAG, "launchMultiDiscGame() failed: could not determine target disc")
                 }
@@ -1001,7 +996,8 @@ class GameLauncher @Inject constructor(
             return buildBuiltInIntent(romFile, game, variantFileId, discM3uPath)
         }
 
-        val command = buildEffectiveCommand(emulator, romFile, game, forResume) ?: return null
+        val built = buildEffectiveCommand(emulator, romFile, game, forResume) ?: return null
+        val command = built.pinnedPastPathPattern(romFile.extension) { path -> resolveViewActivity(built, path) }
 
         Logger.info(TAG, buildString {
             append("[Command] method=${command.launchMethod}")
@@ -1554,9 +1550,10 @@ class GameLauncher @Inject constructor(
         }
 
         if (emulator.launchAction == Intent.ACTION_VIEW) {
-            val uri = fileUri ?: getFileUri(romFile)
+            val bindsPath = config.defaultDataBinding == RomBindingFormat.ABSOLUTE_PATH
+            val uri = if (bindsPath) Uri.parse(romFile.absolutePath) else fileUri ?: getFileUri(romFile)
             val mimeType = config.mimeTypeOverride ?: getMimeType(romFile)
-            val grantUris = mutableListOf(uri)
+            val grantUris = if (bindsPath) mutableListOf() else mutableListOf(uri)
             if (documentUri != null && documentUri !in grantUris) {
                 grantUris += documentUri!!
             }
@@ -1574,7 +1571,7 @@ class GameLauncher @Inject constructor(
                     config.defaultIntentFlags(emulator)
                 },
                 grantReadUriTo = grantUris,
-                clipDataUri = documentUri ?: uri
+                clipDataUri = documentUri ?: uri.takeUnless { bindsPath }
             )
         }
 
@@ -1926,17 +1923,25 @@ class GameLauncher @Inject constructor(
                 Logger.warn(TAG, "Cannot build document URI for non-documentable path: ${file.absolutePath}")
                 return null
             }
-        // Build a plain document URI (content://com.android.externalstorage.documents/document/...)
-        // rather than a tree-delegated URI. The tree form embeds a caller-scoped tree grant, which
-        // only resolves when the *receiver* holds a persistent SAF grant on that tree. Argosy uses
-        // MANAGE_EXTERNAL_STORAGE and never holds tree grants for ROM folders, so the tree form
-        // was effectively relying on the receiver app having its own grant -- fragile across
-        // emulator updates. The plain document form is what a caller-delegated
-        // FLAG_GRANT_READ_URI_PERMISSION can actually hand off.
         return DocumentsContract.buildDocumentUri(
             "com.android.externalstorage.documents",
             "$volumeId:$relativePath"
         )
+    }
+
+    private fun resolveViewActivity(command: EffectiveLaunchCommand, pathOverride: String?): String? {
+        val dataUri = command.dataUri ?: return null
+        val uri = if (pathOverride == null) dataUri else dataUri.buildUpon().path(pathOverride).build()
+        val intent = Intent(command.action)
+        intent.setPackage(command.packageName)
+        command.categories.forEach { intent.addCategory(it) }
+        if (command.mimeType != null) intent.setDataAndType(uri, command.mimeType) else intent.data = uri
+        return context.packageManager
+            .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .filter { it.activityInfo.packageName == command.packageName }
+            .map { it.activityInfo.name }
+            .distinct()
+            .singleOrNull()
     }
 
     private fun getMimeType(file: File): String {

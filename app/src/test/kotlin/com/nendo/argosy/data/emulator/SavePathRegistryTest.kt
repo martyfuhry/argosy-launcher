@@ -132,6 +132,12 @@ class SavePathRegistryTest {
     }
 
     @Test
+    fun `getConfigForPlatform returns null for an unsupported emulator`() {
+        assertNull(SavePathRegistry.getConfigForPlatform("redream", "dreamcast"))
+        assertNull(SavePathRegistry.getConfigForPlatformByPackage("io.recompiled.redream", "dreamcast"))
+    }
+
+    @Test
     fun `getConfigIncludingUnsupported returns config even when supported is false`() {
         val cfg = SavePathRegistry.getConfigIncludingUnsupported("redream")
         assertNotNull(cfg)

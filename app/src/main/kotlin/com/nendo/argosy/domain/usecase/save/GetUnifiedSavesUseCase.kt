@@ -189,7 +189,8 @@ class GetUnifiedSavesUseCase @Inject constructor(
                         isRollback = cache.isRollback,
                         isUserCreatedSlot = !localIsArchival && cache.isLocked,
                         isCurrent = deviceSyncCurrent ?: false,
-                        isArchival = localIsArchival
+                        isArchival = localIsArchival,
+                        localCopyUploaded = cache.rommSaveId != null
                     )
                 )
             } else {

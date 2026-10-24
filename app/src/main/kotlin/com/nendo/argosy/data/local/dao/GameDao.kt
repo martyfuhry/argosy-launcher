@@ -1038,6 +1038,18 @@ interface GameDao {
     @Query("UPDATE games SET m3uPath = :path WHERE id = :gameId")
     suspend fun updateM3uPath(gameId: Long, path: String?)
 
+    @Query("""
+        UPDATE games SET localPath = :newPrefix || SUBSTR(localPath, LENGTH(:oldPrefix) + 1)
+        WHERE localPath = :oldPrefix OR SUBSTR(localPath, 1, LENGTH(:oldPrefix) + 1) = :oldPrefix || '/'
+    """)
+    suspend fun relocateLocalPaths(oldPrefix: String, newPrefix: String)
+
+    @Query("""
+        UPDATE games SET m3uPath = :newPrefix || SUBSTR(m3uPath, LENGTH(:oldPrefix) + 1)
+        WHERE m3uPath = :oldPrefix OR SUBSTR(m3uPath, 1, LENGTH(:oldPrefix) + 1) = :oldPrefix || '/'
+    """)
+    suspend fun relocateM3uPaths(oldPrefix: String, newPrefix: String)
+
     @Query("UPDATE games SET activeVariantFileId = :fileId WHERE id = :gameId")
     suspend fun updateActiveVariantFileId(gameId: Long, fileId: Long?)
 

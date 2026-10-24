@@ -35,9 +35,8 @@ data class ExtractedFolderRom(
             if (discFiles.isNotEmpty()) return discFiles.first().absolutePath
 
             // 4. Search allFiles for disc files (handles zips with files in subfolders)
-            val discExtensions = setOf("bin", "cue", "chd", "iso", "img", "mdf", "gdi", "cdi")
             val allDiscFiles = allFiles.filter {
-                it.extension.lowercase() in discExtensions && !it.name.startsWith("._")
+                it.extension.lowercase() in DISC_EXTENSIONS && !it.name.startsWith("._")
             }
             val nestedCueGdi = allDiscFiles.find { it.extension.lowercase() in setOf("cue", "gdi") }
             if (nestedCueGdi != null) return nestedCueGdi.absolutePath
@@ -70,7 +69,9 @@ private val NSW_UPDATE_EXTENSIONS = setOf("nsp")
 private val NSW_PLATFORM_SLUGS = setOf("switch", "nsw")
 private val UPDATE_FILENAME_PATTERNS = listOf("[UPD]", "[UPDATE]")
 private val DLC_FILENAME_PATTERNS = listOf("[DLC]")
-private val DISC_EXTENSIONS = setOf("bin", "cue", "chd", "iso", "img", "mdf", "gdi", "cdi")
+private val DISC_EXTENSIONS = setOf(
+    "bin", "cue", "chd", "iso", "img", "mdf", "gdi", "cdi", "pbp", "cso", "zso", "gcm", "gcz", "rvz", "ciso", "wia", "wbfs"
+)
 private const val MAC_METADATA_FOLDER = "__MACOSX"
 private val DISC_LAYOUT_FOLDERS = setOf("ps3_game", "psp_game", "usrdir")
 private val ZIP_MAGIC_BYTES = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
@@ -895,7 +896,7 @@ object ZipExtractor {
             // CUE/GDI files reference bin/iso/img, so they are the launchable files
             cueGdiFiles.isNotEmpty() -> cueGdiFiles
             // Otherwise, use iso/bin/img files directly
-            else -> discFiles.filter { it.extension.lowercase() in setOf("iso", "bin", "img", "cdi") }
+            else -> discFiles.filter { it.extension.lowercase() != "mdf" }
         }
     }
 

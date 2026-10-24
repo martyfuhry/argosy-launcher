@@ -4,6 +4,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Migration213To214Test {
@@ -28,5 +29,10 @@ class Migration213To214Test {
             ),
             statements()
         )
+    }
+
+    @Test
+    fun `is registered`() {
+        assertTrue(Migration_213_214 in MigrationRegistry.ALL)
     }
 }

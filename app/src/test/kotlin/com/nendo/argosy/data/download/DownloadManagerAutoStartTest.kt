@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -100,7 +101,8 @@ class DownloadManagerAutoStartTest {
                 platformDao = platformDao,
                 gameDao = gameDao,
                 preferencesRepository = preferencesRepository
-            )
+            ),
+            scope = CoroutineScope(testDispatcher)
         )
     }
 

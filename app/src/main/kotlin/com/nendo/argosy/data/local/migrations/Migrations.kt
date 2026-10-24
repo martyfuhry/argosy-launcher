@@ -4239,6 +4239,12 @@ object Migration_213_214 : Migration(213, 214) {
     }
 }
 
+object Migration_214_215 : Migration(214, 215) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `platforms` ADD COLUMN `skipFullSync` INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 object Migration_203_204 : Migration(203, 204) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
@@ -4402,11 +4408,5 @@ object Migration_202_203 : Migration(202, 203) {
         )
 
         db.execSQL("PRAGMA foreign_keys=ON")
-    }
-}
-
-object Migration_214_215 : Migration(214, 215) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE `platform_libretro_settings` ADD COLUMN `gbColorStyle` TEXT DEFAULT NULL")
     }
 }

@@ -115,6 +115,21 @@
     <string name="ui_save_channel_delete_slot_cancel">Annuler</string>
     <string name="ui_save_channel_delete_slot_message">Supprimer \"%1$s\" ?</string>
     <string name="ui_save_channel_delete_slot_note">Cela le supprimera du serveur et du stockage local. Cette action est irréversible.</string>
+    <string name="ui_save_channel_footer_delete_archived">Tout supprimer</string>
+    <string name="ui_save_channel_footer_delete_version">Supprimer</string>
+    <string name="ui_save_channel_delete_version_title">SUPPRIMER LA SAUVEGARDE</string>
+    <string name="ui_save_channel_delete_version_message">Supprimer la sauvegarde du %1$s ?</string>
+    <string name="ui_save_channel_delete_archived_title">SUPPRIMER LES SAUVEGARDES ARCHIVÉES</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="one">Supprimer %1$d sauvegarde archivée ?</item>
+        <item quantity="other">Supprimer %1$d sauvegardes archivées ?</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">Cela supprime la copie sur cet appareil. La copie sur le serveur est conservée. Cette action est irréversible.</string>
+    <string name="ui_save_channel_delete_only_copy_note">Cet appareil détient la seule copie. Elle sera perdue définitivement.</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="one">%1$d sauvegarde supprimée</item>
+        <item quantity="other">%1$d sauvegardes supprimées</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">INCOMPATIBILITÉ DE VERSION DU CORE</string>
     <string name="ui_save_channel_version_mismatch_confirm">Charger quand même</string>
@@ -1074,4 +1089,7 @@
     <string name="gamelist_row_genre_board_game">Jeu de société</string>
     <string name="gamelist_row_genre_quiz">Quiz</string>
     <string name="gamelist_row_genre_sim">Simulation</string>
+    <string name="common_game_confirm_hide_title">Masquer %1$s ?</string>
+    <string name="common_game_confirm_hide_message">Les jeux masqués peuvent être réaffichés dans la Bibliothèque en filtrant Source sur Masqués.</string>
+    <string name="common_game_confirm_hide_confirm">Masquer</string>
 </resources>

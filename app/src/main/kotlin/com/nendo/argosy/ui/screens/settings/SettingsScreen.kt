@@ -997,47 +997,13 @@ fun SettingsScreen(
 
     val platformGameDelete = uiState.storagePlatformGames.deleteConfirm
     if (platformGameDelete != null) {
-        val saveWarning = if (platformGameDelete.unsyncedSaves > 0) {
-            " " + pluralStringResource(
-                R.plurals.settings_shell_unsynced_saves_warning,
-                platformGameDelete.unsyncedSaves,
-                platformGameDelete.unsyncedSaves
-            )
-        } else {
-            ""
-        }
-        if (platformGameDelete.hasSoundtrack) {
-            ArgosyConfirmModalHost(
-                visible = true,
-                title = stringResource(
-                    R.string.settings_shell_modal_delete_game_soundtrack_title, platformGameDelete.title
-                ),
-                message = stringResource(
-                    R.string.settings_shell_modal_delete_game_soundtrack_message, saveWarning
-                ),
-                cancelLabel = stringResource(R.string.settings_shell_modal_delete_game_cancel),
-                neutralLabel = stringResource(R.string.settings_shell_modal_delete_game_only),
-                onNeutral = { viewModel.confirmStoragePlatformGameDelete(platformGameDelete.gameId, withSoundtrack = false) },
-                confirmLabel = stringResource(R.string.settings_shell_modal_delete_game_with_soundtrack),
-                destructive = true,
-                onConfirm = { viewModel.confirmStoragePlatformGameDelete(platformGameDelete.gameId, withSoundtrack = true) },
-                onDismiss = { viewModel.dismissStoragePlatformGameDelete() }
-            )
-        } else {
-            ArgosyConfirmModalHost(
-                visible = true,
-                title = stringResource(
-                    R.string.settings_shell_modal_delete_game_plain_title, platformGameDelete.title
-                ),
-                message = stringResource(
-                    R.string.settings_shell_modal_delete_game_plain_message, saveWarning
-                ),
-                confirmLabel = stringResource(R.string.settings_shell_modal_delete_game_plain_confirm),
-                destructive = true,
-                onConfirm = { viewModel.confirmStoragePlatformGameDelete(platformGameDelete.gameId, withSoundtrack = false) },
-                onDismiss = { viewModel.dismissStoragePlatformGameDelete() }
-            )
-        }
+        com.nendo.argosy.ui.common.GameConfirmModal(
+            confirm = platformGameDelete,
+            onConfirm = { withSoundtrack ->
+                viewModel.confirmStoragePlatformGameDelete(platformGameDelete.gameId, withSoundtrack)
+            },
+            onDismiss = { viewModel.dismissStoragePlatformGameDelete() }
+        )
     }
 
     val platformCategoryDelete = uiState.storagePlatformGames.categoryDeleteConfirm

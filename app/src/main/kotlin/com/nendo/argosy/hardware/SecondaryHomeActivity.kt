@@ -36,6 +36,7 @@ import com.nendo.argosy.core.game.AchievementUi
 import com.nendo.argosy.data.preferences.SessionStateStore
 import com.nendo.argosy.data.repository.AppsRepository
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
+import com.nendo.argosy.ui.dualscreen.onDisplay
 import com.nendo.argosy.ui.dualscreen.CompanionDetailScreen
 import com.nendo.argosy.ui.input.GamepadEvent
 import com.nendo.argosy.ui.input.InputResult
@@ -250,8 +251,12 @@ class SecondaryHomeActivity :
                 .focusRequester(presentationSink)
                 .focusable()
         ) {
-            val rendered =
-                com.nendo.argosy.ui.dualscreen.companionSlotToRender(showsDashboard, slot)
+            val gameDisplay by dsm.emulatorDisplay.collectAsState()
+            val ownDisplay = androidx.compose.ui.platform.LocalView.current.display?.displayId
+            val rendered = com.nendo.argosy.ui.dualscreen.companionSlotToRender(
+                showsDashboard,
+                slot.onDisplay(ownDisplay, gameDisplay)
+            )
             val arrivalMs = com.nendo.argosy.ui.dualscreen.dashboardArrivalMs(
                 showsDashboard = showsDashboard,
                 reduced = com.nendo.argosy.ui.theme.LocalMotionTier.current ==

@@ -29,6 +29,7 @@ import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import com.nendo.argosy.util.SafeCoroutineScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -157,7 +158,7 @@ data class DownloadCompletionEvent(
 )
 
 @Singleton
-class DownloadManager @Inject constructor(
+class DownloadManager internal constructor(
     private val gameDao: GameDao,
     private val gameDiscDao: GameDiscDao,
     private val gameFileDao: GameFileDao,
@@ -178,8 +179,40 @@ class DownloadManager @Inject constructor(
     private val customGridShapeStore: CustomGridShapeStore,
     private val extContentOrganizer: ExtContentOrganizer,
     private val romStagingManager: RomStagingManager,
-    private val platformFolderResolver: PlatformFolderResolver
+    private val platformFolderResolver: PlatformFolderResolver,
+    private val scope: CoroutineScope
 ) {
+    @Inject constructor(
+        gameDao: GameDao,
+        gameDiscDao: GameDiscDao,
+        gameFileDao: GameFileDao,
+        downloadQueueDao: DownloadQueueDao,
+        platformDao: PlatformDao,
+        romMRepository: RomMRepository,
+        preferencesRepository: UserPreferencesRepository,
+        soundManager: SoundFeedbackManager,
+        m3uManager: M3uManager,
+        thermalManager: dagger.Lazy<DownloadThermalManager>,
+        steamContentManager: dagger.Lazy<com.nendo.argosy.data.steam.SteamContentManager>,
+        mediaDownloadManager: dagger.Lazy<MediaDownloadManager>,
+        musicDirectoryManager: MusicDirectoryManager,
+        attributionRepository: StorageAttributionRepository,
+        syncPreferencesRepository: SyncPreferencesRepository,
+        homeTileRepository: com.nendo.argosy.data.repository.HomeTileRepository,
+        homeTilePromptQueue: com.nendo.argosy.data.repository.HomeTilePromptQueue,
+        customGridShapeStore: CustomGridShapeStore,
+        extContentOrganizer: ExtContentOrganizer,
+        romStagingManager: RomStagingManager,
+        platformFolderResolver: PlatformFolderResolver
+    ) : this(
+        gameDao, gameDiscDao, gameFileDao, downloadQueueDao, platformDao, romMRepository,
+        preferencesRepository, soundManager, m3uManager, thermalManager, steamContentManager,
+        mediaDownloadManager, musicDirectoryManager, attributionRepository, syncPreferencesRepository,
+        homeTileRepository, homeTilePromptQueue, customGridShapeStore, extContentOrganizer,
+        romStagingManager, platformFolderResolver,
+        SafeCoroutineScope(Dispatchers.Main, TAG)
+    )
+
     private val _state = MutableStateFlow(DownloadQueueState())
     val state: StateFlow<DownloadQueueState> = _state.asStateFlow()
 
@@ -224,7 +257,6 @@ class DownloadManager @Inject constructor(
     private val _completionEvents = MutableSharedFlow<DownloadCompletionEvent>()
     val completionEvents: SharedFlow<DownloadCompletionEvent> = _completionEvents.asSharedFlow()
 
-    private val scope = SafeCoroutineScope(Dispatchers.Main, "DownloadManager")
     private val downloadJobs = mutableMapOf<Long, Job>()
 
     init {
@@ -1385,11 +1417,13 @@ class DownloadManager @Inject constructor(
             progress.isGameFileDownload && progress.gameFileId != null -> {
                 gameFileDao.updateLocalPath(progress.gameFileId, finalPath, Instant.now())
                 maybeComputeRomHashPrefix(progress.gameFileId, progress.gameId, finalPath)
-                claimLaunchTargetIfBase(progress, finalPath)
+                val isDisc = gameFileDao.getById(progress.gameFileId)
+                    ?.let { m3uManager.recordDiscFile(progress.gameId, it.fileName, finalPath) } == true
+                if (!isDisc) claimLaunchTargetIfBase(progress, finalPath)
             }
             progress.isDiscDownload && progress.discId != null -> {
                 gameDiscDao.updateLocalPath(progress.discId, finalPath)
-                m3uManager.generateM3uIfComplete(progress.gameId)
+                m3uManager.refreshPlaylist(progress.gameId)
             }
             else -> {
                 gameDao.markDownloaded(progress.gameId, finalPath, GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD)
@@ -2126,10 +2160,12 @@ class DownloadManager @Inject constructor(
             when {
                 discId != null -> {
                     gameDiscDao.updateLocalPath(discId, finalPath)
-                    m3uManager.generateM3uIfComplete(gameId)
+                    m3uManager.refreshPlaylist(gameId)
                 }
                 queueEntry.gameFileId != null -> {
                     gameFileDao.updateLocalPath(queueEntry.gameFileId, finalPath, Instant.now())
+                    gameFileDao.getById(queueEntry.gameFileId)
+                        ?.let { m3uManager.recordDiscFile(gameId, it.fileName, finalPath) }
                 }
                 else -> {
                     gameDao.markDownloaded(gameId, finalPath, GameSource.ROMM_SYNCED, FileOrigin.ROMM_DOWNLOAD)

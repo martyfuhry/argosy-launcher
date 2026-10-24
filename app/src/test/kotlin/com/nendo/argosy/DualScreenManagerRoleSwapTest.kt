@@ -535,8 +535,13 @@ class DualScreenManagerRoleSwapTest {
             every { launchLive } returns live
         }
         val sessionTracker = mockk<com.nendo.argosy.data.emulator.PlaySessionTracker>(relaxed = true) {
-            every { activeSession } returns
-                MutableStateFlow(mockk<com.nendo.argosy.data.emulator.ActiveSession>(relaxed = true))
+            every { activeSession } returns MutableStateFlow(
+                com.nendo.argosy.data.emulator.ActiveSession(
+                    gameId = 1L,
+                    startTime = java.time.Instant.EPOCH,
+                    emulatorPackage = EXTERNAL_EMULATOR
+                )
+            )
         }
         val sessionEnd = mockk<com.nendo.argosy.ui.screens.common.SessionEndCoordinator>(relaxed = true)
         val focused = MutableStateFlow(true)

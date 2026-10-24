@@ -247,6 +247,8 @@
 
     <string name="settings_displays_display_roles_title">कंट्रोल स्क्रीन</string>
     <string name="settings_displays_display_roles_subtitle">वह स्क्रीन जिस पर मेन्यू खुलते हैं; दूसरी वह दिखाती है जो आप देख रहे हैं</string>
+    <string name="settings_displays_match_screen_size_title">गेम स्क्रीन का आकार मिलाएँ</string>
+    <string name="settings_displays_match_screen_size_subtitle">DS और 3DS की स्क्रीनें एक ही आकार में दिखती हैं और कब्ज़े पर मिलती हैं</string>
     <string name="settings_displays_display_roles_auto">ऑटो</string>
     <string name="settings_displays_display_roles_standard">कम्पैनियन स्क्रीन</string>
     <string name="settings_displays_display_roles_swapped">मुख्य स्क्रीन</string>
@@ -1487,6 +1489,7 @@
     <string name="settings_builtin_controls_mapping_subtitle">हर कंट्रोलर के लिए बटन रीमैप करें</string>
     <string name="settings_builtin_controls_controller_type_title">खिलाड़ी %1$d का कंट्रोलर</string>
     <string name="settings_builtin_controls_controller_type_subtitle">वह कंट्रोलर जो गेम देखता है। अगली बार गेम शुरू होने पर लागू होता है।</string>
+    <string name="settings_builtin_controls_controller_type_auto">ऑटो (%1$s)</string>
 
     <string name="settings_builtin_controls_analog_as_dpad_title">लेफ़्ट स्टिक को D-Pad बनाएँ</string>
     <string name="settings_builtin_controls_analog_as_dpad_subtitle">लेफ़्ट एनालॉग स्टिक को D-pad इनपुट से मैप करें</string>
@@ -1497,6 +1500,11 @@
     <string name="settings_builtin_controls_hotkeys_subtitle">मेनू, फ़ास्ट फ़ॉरवर्ड, रिवाइंड के लिए शॉर्टकट कॉन्फ़िगर करें</string>
     <string name="settings_builtin_controls_limit_hotkeys_title">हॉटकी केवल प्लेयर 1 तक सीमित करें</string>
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">केवल प्लेयर 1 का कंट्रोलर हॉटकी ट्रिगर कर सकता है</string>
+    <string name="settings_builtin_controls_select_as_back_title">Select को बैक मानें</string>
+    <string name="settings_builtin_controls_select_as_back_subtitle">उन कंट्रोलर के लिए जिनका Select बैक भेजता है। ऑटो, बिना Select बटन वाले कंट्रोलर पर बैक को Select मानता है।</string>
+    <string name="settings_builtin_controls_select_as_back_auto">ऑटो</string>
+    <string name="settings_builtin_controls_select_as_back_on">चालू</string>
+    <string name="settings_builtin_controls_select_as_back_off">बंद</string>
     <string name="settings_builtin_controls_toggle_ff_title">फ़ास्ट फ़ॉरवर्ड टॉगल करें</string>
     <string name="settings_builtin_controls_toggle_ff_subtitle">शुरू करने के लिए एक बार, रोकने के लिए फिर से दबाएँ (बंद = फ़ास्ट फ़ॉरवर्ड के लिए दबाए रखें)</string>
     <string name="settings_builtin_controls_ff_pitch_title">ऑडियो पिच बनाए रखें</string>
@@ -1753,6 +1761,8 @@
     <string name="settings_platform_sync_toggle_subtitle">इस प्लेटफ़ॉर्म को लाइब्रेरी सिंक में शामिल करें</string>
     <string name="settings_platform_combine_content_title">सामग्री मिलाएँ</string>
     <string name="settings_platform_combine_content_subtitle">सभी गेम एक फ़ोल्डर में, सभी अपडेट और DLC extcontent में</string>
+    <string name="settings_platform_skip_full_sync_title">पूर्ण सिंक में छोड़ें</string>
+    <string name="settings_platform_skip_full_sync_subtitle">इंक्रीमेंटल सिंक अब भी बदलावों की जाँच करता है</string>
     <string name="settings_platform_sync_now_title">अभी सिंक करें</string>
     <string name="settings_platform_sync_now_busy">सिंक चल रही है...</string>
     <string name="settings_platform_sync_now_subtitle">इस प्लेटफ़ॉर्म को RomM के साथ सिंक करें</string>

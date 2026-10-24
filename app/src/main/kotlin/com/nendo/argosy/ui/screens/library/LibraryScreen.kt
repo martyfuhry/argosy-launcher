@@ -665,7 +665,7 @@ fun LibraryScreen(
                     },
                     onDelete = {
                         viewModel.toggleQuickMenu()
-                        viewModel.deleteLocalFile(game.id)
+                        if (game.isAndroidApp) viewModel.uninstallAndroidApp(game.id) else viewModel.deleteLocalFile(game.id)
                     },
                     onRemoveFromLibrary = {
                         viewModel.toggleQuickMenu()
@@ -678,6 +678,8 @@ fun LibraryScreen(
                 )
             }
         }
+
+        com.nendo.argosy.ui.common.GameConfirmHost(viewModel.gameConfirm)
 
         AnimatedVisibility(
             visible = uiState.showAddToCollectionModal,

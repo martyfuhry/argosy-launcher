@@ -178,6 +178,7 @@
     <string name="ingame_settings_controller_type_title">प्लेयर %1$d कंट्रोलर</string>
     <string name="ingame_settings_controller_type_pending">अगली बार लॉन्च करने पर लागू होगा</string>
     <string name="ingame_settings_controller_type_core_default">कोर द्वारा चुना गया</string>
+    <string name="ingame_settings_controller_type_auto">ऑटो (%1$s)</string>
     <string name="ingame_settings_controller_grip_title">कंट्रोलर ग्रिप</string>
     <string name="ingame_settings_controller_grip_subtitle">ग्रिप जिस हिस्से को ढकती है, UI को वहां से ऊपर खिसकाएं</string>
     <string name="ingame_settings_input_mapping_title">इनपुट मैपिंग</string>
@@ -190,6 +191,8 @@
     <string name="ingame_settings_hotkeys_subtitle">मेन्यू, फास्ट फॉरवर्ड, रिवाइंड के लिए शॉर्टकट सेट करें</string>
     <string name="ingame_settings_limit_hotkeys_title">हॉटकी केवल प्लेयर 1 तक सीमित करें</string>
     <string name="ingame_settings_limit_hotkeys_subtitle">केवल प्लेयर 1 का कंट्रोलर हॉटकी चला सकता है</string>
+    <string name="ingame_settings_select_as_back_title">Select को बैक मानें</string>
+    <string name="ingame_settings_select_as_back_subtitle">उन कंट्रोलर के लिए जिनका Select बैक भेजता है। ऑटो, बिना Select बटन वाले कंट्रोलर पर बैक को Select मानता है।</string>
     <string name="ingame_settings_toggle_fast_forward_title">फास्ट फॉरवर्ड टॉगल करें</string>
     <string name="ingame_settings_toggle_fast_forward_subtitle">शुरू करने के लिए एक बार दबाएं, रोकने के लिए फिर से (बंद = दबाए रखकर फास्ट फॉरवर्ड)</string>
     <string name="ingame_settings_preserve_pitch_title">ऑडियो पिच बनाए रखें</string>

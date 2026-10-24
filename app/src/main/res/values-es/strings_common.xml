@@ -104,6 +104,21 @@
     <string name="ui_save_channel_delete_slot_cancel">Cancelar</string>
     <string name="ui_save_channel_delete_slot_message">¿Eliminar \"%1$s\"?</string>
     <string name="ui_save_channel_delete_slot_note">Esto la eliminará del servidor y del almacenamiento local. Esta acción no se puede deshacer.</string>
+    <string name="ui_save_channel_footer_delete_archived">Eliminar todo</string>
+    <string name="ui_save_channel_footer_delete_version">Eliminar</string>
+    <string name="ui_save_channel_delete_version_title">ELIMINAR PARTIDA GUARDADA</string>
+    <string name="ui_save_channel_delete_version_message">¿Eliminar la partida guardada del %1$s?</string>
+    <string name="ui_save_channel_delete_archived_title">ELIMINAR PARTIDAS ARCHIVADAS</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="one">¿Eliminar %1$d partida archivada?</item>
+        <item quantity="other">¿Eliminar %1$d partidas archivadas?</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">Esto elimina la copia de este dispositivo. La copia del servidor se conserva. Esta acción no se puede deshacer.</string>
+    <string name="ui_save_channel_delete_only_copy_note">Este dispositivo tiene la única copia. Se perderá para siempre.</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="one">%1$d partida eliminada</item>
+        <item quantity="other">%1$d partidas eliminadas</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">INCOMPATIBILIDAD DE VERSIÓN DEL NÚCLEO</string>
     <string name="ui_save_channel_version_mismatch_confirm">Cargar de todos modos</string>
@@ -1063,4 +1078,7 @@
     <string name="gamelist_row_genre_board_game">Juego de mesa</string>
     <string name="gamelist_row_genre_quiz">Trivia</string>
     <string name="gamelist_row_genre_sim">Simulación</string>
+    <string name="common_game_confirm_hide_title">¿Ocultar %1$s?</string>
+    <string name="common_game_confirm_hide_message">Los juegos ocultos se pueden volver a mostrar en la Biblioteca filtrando Origen por Ocultos.</string>
+    <string name="common_game_confirm_hide_confirm">Ocultar</string>
 </resources>

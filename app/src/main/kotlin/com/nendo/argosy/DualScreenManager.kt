@@ -846,6 +846,37 @@ class DualScreenManager(
             if (value == null) _sessionControls.value = com.nendo.argosy.ui.dualscreen.dashboard.SessionControls()
         }
 
+    /**
+     * Quits the running game from the dashboard. A built-in game quits itself. An external one is
+     * covered by the launcher on its display, which ends the session the way leaving any game does.
+     */
+    fun quitSession() {
+        sessionQuickActions?.let {
+            it.quit()
+            return
+        }
+        if (!_swappedCompanionState.value.externalEmulator) return
+        val gameDisplay = emulatorDisplayId ?: return
+        val roles = displayAffinityHelper.getRoleDisplayIds(_isRolesSwapped.value) ?: return
+        if (gameDisplay != roles.first && gameDisplay != roles.second) return
+        val launcher = if (gameDisplay == android.view.Display.DEFAULT_DISPLAY) {
+            ArgosyActivity::class.java
+        } else {
+            SecondaryHomeActivity::class.java
+        }
+        Log.d(TAG, "Quitting the external game on display $gameDisplay")
+        activityContext.startActivity(
+            Intent(activityContext, launcher).apply {
+                addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                )
+            },
+            displayAffinityHelper.getActivityOptions(forEmulator = false, overrideDisplayId = gameDisplay)
+        )
+    }
+
     private val _sessionControls = MutableStateFlow(com.nendo.argosy.ui.dualscreen.dashboard.SessionControls())
     val sessionControls: StateFlow<com.nendo.argosy.ui.dualscreen.dashboard.SessionControls> = _sessionControls
 
@@ -1810,21 +1841,40 @@ class DualScreenManager(
     }
 
     /**
-     * Whether the emulator has left the screen a launcher surface just resumed on. The emulator
-     * reports stopped only after the launcher resumes, so a first answer of "still there" is asked
-     * again after [EMULATOR_SETTLE_MS] while [launcherStillInFront] holds.
+     * Whether the emulator has left the display a launcher surface just took focus on. Focus on the
+     * game's own display ([onGameDisplay]) past [EMULATOR_SETTLE_MS] into the session answers yes.
+     * A younger session first waits [EMULATOR_SETTLE_MS]. A remaining answer of "still there" is
+     * asked again every [EMULATOR_SETTLE_MS], up to [EMULATOR_SETTLE_CHECKS] times, while
+     * [launcherStillInFront] holds.
      */
-    suspend fun emulatorLeftScreen(context: Context, launcherStillInFront: () -> Boolean): Boolean {
-        if (!isEmulatorStillOnScreen(context)) return true
-        delay(EMULATOR_SETTLE_MS)
-        return launcherStillInFront() && !isEmulatorStillOnScreen(context)
+    suspend fun emulatorLeftScreen(
+        context: Context,
+        onGameDisplay: Boolean,
+        launcherStillInFront: () -> Boolean
+    ): Boolean {
+        if (isSessionSettling()) {
+            delay(EMULATOR_SETTLE_MS)
+            if (!launcherStillInFront()) return false
+        } else if (onGameDisplay) {
+            return true
+        }
+        return awaitEmulatorLeft(
+            stillOnScreen = { isEmulatorStillOnScreen(context) },
+            launcherStillInFront = launcherStillInFront,
+            checks = EMULATOR_SETTLE_CHECKS,
+            intervalMs = EMULATOR_SETTLE_MS
+        )
+    }
+
+    private fun isSessionSettling(): Boolean {
+        val startedAt = playSessionTracker.activeSession.value?.startTime ?: return false
+        return java.time.Duration.between(startedAt, java.time.Instant.now()).toMillis() < EMULATOR_SETTLE_MS
     }
 
     /**
      * Ends the session whose emulator [emulatorLeftScreen] reported gone. On a dual-screen device it
-     * then kills the stopped emulator along with any presentation window it left on the other
-     * display, retrying until the process is cached or a new session starts. On any other device
-     * [SessionEndCoordinator] stops the emulator once its session end completes.
+     * also force-stops the emulator [EMULATOR_RELEASE_ATTEMPTS] times beside the save sync, ending
+     * early if a new session starts. Elsewhere [SessionEndCoordinator] stops it after the sync.
      */
     fun endSessionAfterEmulatorLeft() {
         val emulatorPackage = sessionStateStore.getEmulatorPackage()
@@ -1832,12 +1882,11 @@ class DualScreenManager(
         emulatorDisplayId = null
         sessionStateStore.clearSession()
         rederiveRolesFromLayout()
-        val sessionEnd = sessionEndCoordinator.endClosedSession()
-        broadcastSessionCleared()
+        sessionEndCoordinator.endClosedSession()
+        if (_swappedIsGameActive.value) onSessionChanged(-1L) else broadcastSessionCleared()
         if (emulatorPackage == null || !_isDualScreenDevice.value) return
         if (emulatorPackage == com.nendo.argosy.data.emulator.EmulatorRegistry.BUILTIN_PACKAGE) return
         activityIndependentScope.launch {
-            sessionEnd.join()
             releaseStoppedEmulator(
                 emulatorPackage = emulatorPackage,
                 endedSession = endedSession,
@@ -1870,7 +1919,9 @@ class DualScreenManager(
             if (playSessionTracker.activeSession.value == null &&
                 preferencesRepository.getPersistedSession() == null
             ) return@launch
-            if (!emulatorLeftScreen(activity) { activity.hasWindowFocus() }) return@launch
+            if (!emulatorLeftScreen(activity, onGameDisplay = gameDisplay == ownDisplay) { activity.hasWindowFocus() }) {
+                return@launch
+            }
             if (launchProgressTracker.launchLive.value) return@launch
             Log.d(TAG, "Launcher focused on display $ownDisplay and the game is gone, ending session")
             endSessionAfterEmulatorLeft()
@@ -2079,6 +2130,8 @@ class DualScreenManager(
                         isHardcore = sessionStateStore.isHardcore(),
                         isDirty = sessionStateStore.isSaveDirty(),
                         isLoaded = true,
+                        externalEmulator = sessionStateStore.getEmulatorPackage()
+                            ?.let { it != com.nendo.argosy.data.emulator.EmulatorRegistry.BUILTIN_PACKAGE } == true,
                         backgroundPath = art.backgroundPath,
                         manual = documents.firstOrNull {
                             it.category == com.nendo.argosy.data.model.VariantCategory.MANUAL.key
@@ -2394,6 +2447,7 @@ class DualScreenManager(
 
     companion object {
         private const val EMULATOR_SETTLE_MS = 2_000L
+        private const val EMULATOR_SETTLE_CHECKS = 8
         private const val EMULATOR_RELEASE_ATTEMPTS = 6
         private const val EMULATOR_RELEASE_INTERVAL_MS = 5_000L
         const val ACTION_WIZARD_STATE = "com.nendo.argosy.WIZARD_STATE"

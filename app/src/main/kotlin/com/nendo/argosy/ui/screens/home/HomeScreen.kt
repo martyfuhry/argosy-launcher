@@ -1519,6 +1519,8 @@ fun HomeScreen(
             }
         }
 
+        com.nendo.argosy.ui.common.GameConfirmHost(viewModel.gameConfirm)
+
         val siblingChoiceState by viewModel.siblingChoiceState.collectAsState()
         com.nendo.argosy.ui.screens.common.SiblingChoiceModalHost(
             state = siblingChoiceState,

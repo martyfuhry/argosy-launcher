@@ -257,6 +257,8 @@
 
     <string name="settings_displays_display_roles_title">Steuerbildschirm</string>
     <string name="settings_displays_display_roles_subtitle">Der Bildschirm, auf dem Menüs erscheinen; der andere zeigt, was du gerade ansiehst</string>
+    <string name="settings_displays_match_screen_size_title">Spielbildschirme gleich groß</string>
+    <string name="settings_displays_match_screen_size_subtitle">DS- und 3DS-Bildschirme erscheinen gleich groß und treffen sich am Scharnier</string>
     <string name="settings_displays_display_roles_auto">Auto</string>
     <string name="settings_displays_display_roles_standard">Begleitbildschirm</string>
     <string name="settings_displays_display_roles_swapped">Hauptbildschirm</string>
@@ -1497,6 +1499,7 @@
     <string name="settings_builtin_controls_mapping_subtitle">Tasten für jeden Controller neu belegen</string>
     <string name="settings_builtin_controls_controller_type_title">Controller Spieler %1$d</string>
     <string name="settings_builtin_controls_controller_type_subtitle">Der Controller, den das Spiel sieht. Gilt ab dem nächsten Spielstart.</string>
+    <string name="settings_builtin_controls_controller_type_auto">Auto (%1$s)</string>
 
     <string name="settings_builtin_controls_analog_as_dpad_title">Linker Stick als D-Pad</string>
     <string name="settings_builtin_controls_analog_as_dpad_subtitle">Linken Analogstick auf D-Pad-Eingaben abbilden</string>
@@ -1507,6 +1510,11 @@
     <string name="settings_builtin_controls_hotkeys_subtitle">Kurzbefehle für Menü, Vorspulen, Rewind konfigurieren</string>
     <string name="settings_builtin_controls_limit_hotkeys_title">Hotkeys auf Spieler 1 beschränken</string>
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">Nur der Controller von Spieler 1 kann Hotkeys auslösen</string>
+    <string name="settings_builtin_controls_select_as_back_title">Select als Zurück</string>
+    <string name="settings_builtin_controls_select_as_back_subtitle">Für Controller, deren Select-Taste Zurück sendet. Automatisch nutzt Zurück als Select bei Controllern ohne Select-Taste.</string>
+    <string name="settings_builtin_controls_select_as_back_auto">Automatisch</string>
+    <string name="settings_builtin_controls_select_as_back_on">An</string>
+    <string name="settings_builtin_controls_select_as_back_off">Aus</string>
     <string name="settings_builtin_controls_toggle_ff_title">Vorspulen umschalten</string>
     <string name="settings_builtin_controls_toggle_ff_subtitle">Einmal drücken zum Starten, erneut zum Stoppen (aus = halten zum Vorspulen)</string>
     <string name="settings_builtin_controls_ff_pitch_title">Tonhöhe beibehalten</string>
@@ -1763,6 +1771,8 @@
     <string name="settings_platform_sync_toggle_subtitle">Diese Plattform in den Bibliotheks-Sync einbeziehen</string>
     <string name="settings_platform_combine_content_title">Inhalte zusammenführen</string>
     <string name="settings_platform_combine_content_subtitle">Alle Spiele in einem Ordner, alle Updates und DLC in extcontent</string>
+    <string name="settings_platform_skip_full_sync_title">Bei vollständiger Synchronisierung überspringen</string>
+    <string name="settings_platform_skip_full_sync_subtitle">Die inkrementelle Synchronisierung prüft weiterhin auf Änderungen</string>
     <string name="settings_platform_sync_now_title">Jetzt synchronisieren</string>
     <string name="settings_platform_sync_now_busy">Sync läuft…</string>
     <string name="settings_platform_sync_now_subtitle">Diese Plattform mit RomM synchronisieren</string>

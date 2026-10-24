@@ -6,6 +6,7 @@ import android.os.Bundle
 import com.nendo.argosy.DualScreenManager
 import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.core.input.SoundType
+import com.nendo.argosy.data.emulator.ActiveSession
 import com.nendo.argosy.data.emulator.ExternalSessionStart
 import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.LaunchProgressTracker
@@ -21,6 +22,7 @@ import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -34,6 +36,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 class LaunchHandoffTest {
 
@@ -44,7 +47,10 @@ class LaunchHandoffTest {
     private val soundManager: SoundFeedbackManager = mockk(relaxed = true)
     private val resolver: EmulatorLaunchTargetResolver = mockk()
     private val manager: DualScreenManager = mockk()
-    private val playSessionTracker: PlaySessionTracker = mockk(relaxed = true)
+    private val activeSession = MutableStateFlow<ActiveSession?>(null)
+    private val playSessionTracker: PlaySessionTracker = mockk(relaxed = true) {
+        every { activeSession } returns this@LaunchHandoffTest.activeSession
+    }
     private val session = ExternalSessionStart(
         gameId = gameId,
         emulatorPackage = "org.citra.emu",
@@ -55,7 +61,7 @@ class LaunchHandoffTest {
 
     @Before
     fun setUp() {
-        coEvery { resolver.launchOptionsFor(gameId, any()) } returns options
+        coEvery { resolver.launchOptionsFor(gameId, any(), any()) } returns options
         every { manager.startGame(any()) } returns Result.success(Unit)
         DualScreenManagerHolder.instance = manager
     }
@@ -65,7 +71,7 @@ class LaunchHandoffTest {
         DualScreenManagerHolder.instance = null
     }
 
-    private fun router(scope: CoroutineScope) = GameStartRouter(mockk<Context>(relaxed = true), resolver, scope)
+    private fun router(scope: CoroutineScope) = GameStartRouter(mockk<Context>(relaxed = true), resolver, playSessionTracker, scope)
 
     private fun handoff(tracker: LaunchProgressTracker, router: GameStartRouter) =
         LaunchHandoff(tracker, soundManager, router, playSessionTracker, holdMs)
@@ -162,7 +168,7 @@ class LaunchHandoffTest {
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
         var stepWhenPlaced: LaunchStep? = LaunchStep.Launching
-        coEvery { resolver.launchOptionsFor(gameId, 2) } answers {
+        coEvery { resolver.launchOptionsFor(gameId, 2, any()) } answers {
             stepWhenPlaced = tracker.progress.value?.step
             options
         }
@@ -171,14 +177,14 @@ class LaunchHandoffTest {
         runCurrent()
 
         assertNull(stepWhenPlaced)
-        coVerify(exactly = 1) { resolver.launchOptionsFor(gameId, 2) }
+        coVerify(exactly = 1) { resolver.launchOptionsFor(gameId, 2, any()) }
         assertEquals(LaunchStep.Launching, tracker.progress.value?.step)
         verify(exactly = 0) { manager.startGame(any()) }
 
         advanceTimeBy(holdMs)
         runCurrent()
 
-        coVerify(exactly = 1) { resolver.launchOptionsFor(any(), any()) }
+        coVerify(exactly = 1) { resolver.launchOptionsFor(any(), any(), any()) }
         verify(exactly = 1) { manager.startGame(GameLaunchRequest(intent, options)) }
     }
 
@@ -187,7 +193,7 @@ class LaunchHandoffTest {
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
-        coEvery { resolver.launchOptionsFor(gameId, any()) } answers {
+        coEvery { resolver.launchOptionsFor(gameId, any(), any()) } answers {
             tracker.cancel()
             options
         }
@@ -314,7 +320,7 @@ class LaunchHandoffTest {
     @Test
     fun `an unplaceable game fails at once with no sound, no hold and no launching`() = runTest {
         val broken = IllegalStateException("db closed")
-        coEvery { resolver.launchOptionsFor(gameId, any()) } throws broken
+        coEvery { resolver.launchOptionsFor(gameId, any(), any()) } throws broken
         val tracker = LaunchProgressTracker(backgroundScope)
         val router = router(backgroundScope)
         val ticket = tracker.begin(gameId, "Game")!!
@@ -346,4 +352,66 @@ class LaunchHandoffTest {
         verify(exactly = 0) { manager.startGame(any()) }
         verifyNoSessionStarted()
     }
+
+    @Test
+    fun `a refused start cancels the running session of the game it was starting`() = runTest {
+        every { manager.startGame(any()) } returns Result.failure(SecurityException("denied"))
+        activeSession.value = runningSession(gameId)
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 1) { playSessionTracker.cancelSession() }
+    }
+
+    @Test
+    fun `an unplaceable game cancels the running session of the game it was starting`() = runTest {
+        coEvery { resolver.launchOptionsFor(gameId, any(), any()) } throws IllegalStateException("db closed")
+        activeSession.value = runningSession(gameId)
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
+        runCurrent()
+
+        verify(exactly = 1) { playSessionTracker.cancelSession() }
+    }
+
+    @Test
+    fun `a refused start leaves another game's session running`() = runTest {
+        every { manager.startGame(any()) } returns Result.failure(SecurityException("denied"))
+        activeSession.value = runningSession(8L)
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), session) }
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 0) { playSessionTracker.cancelSession() }
+    }
+
+    @Test
+    fun `a launch that opens its window cancels no session`() = runTest {
+        activeSession.value = runningSession(gameId)
+        val tracker = LaunchProgressTracker(backgroundScope)
+        val router = router(backgroundScope)
+        val ticket = tracker.begin(gameId, "Game")!!
+
+        launch { handoff(tracker, router).handOff(ticket, intent, GameStart(gameId), null) }
+        advanceTimeBy(holdMs)
+        runCurrent()
+
+        verify(exactly = 1) { manager.startGame(any()) }
+        verify(exactly = 0) { playSessionTracker.cancelSession() }
+    }
+
+    private fun runningSession(id: Long) =
+        ActiveSession(gameId = id, startTime = Instant.EPOCH, emulatorPackage = "org.citra.emu")
 }

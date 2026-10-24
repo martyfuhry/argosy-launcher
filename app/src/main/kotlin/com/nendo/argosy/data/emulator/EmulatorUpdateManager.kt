@@ -175,7 +175,8 @@ class EmulatorUpdateManager @Inject constructor(
                 val result = emulatorUpdateRepository.checkForUpdate(
                     emulator = emulatorDef,
                     installedVersion = effectiveVersion,
-                    storedVariant = cached?.installedVariant
+                    storedVariant = cached?.installedVariant,
+                    installedAt = installed?.let { getInstalledAt(it.def.packageName) }
                 )
 
                 if (result is EmulatorUpdateCheckResult.UpdateAvailable) {
@@ -231,6 +232,13 @@ class EmulatorUpdateManager @Inject constructor(
             null
         }
     }
+
+    private fun getInstalledAt(packageName: String): Instant? =
+        try {
+            Instant.ofEpochMilli(packageManager.getPackageInfo(packageName, 0).lastUpdateTime)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
 
     private suspend fun getLastCheckTime(): Instant? {
         return dataStore.data.map { prefs ->

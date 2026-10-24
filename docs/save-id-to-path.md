@@ -187,7 +187,7 @@ returns the *parent*, not a match, because there is no single folder. All of
 that lives in `PrefixBundleFolderHandler`, shared with PS3; what PSP owns is
 the PARAM.SFO test that keeps installed game data out of the bundle.
 
-### Vita, Wii, Wii U (plain `FolderSaveHandler`)
+### Vita (plain `FolderSaveHandler`)
 
 `FOLDER_EXACT`, one directory named exactly for the id:
 
@@ -195,9 +195,48 @@ the PARAM.SFO test that keeps installed game data out of the bundle.
 <base>/<save_id>
 ```
 
-For Wii the base is the NAND's `Wii/title/00010000`: under the standalone app's files for
+### Wii (`CategorySplitFolderHandler`)
+
+`save_id` is `FOLDER_SPLIT`, the ticket's category and code, `00010000/524d4745`. The base is
+the NAND's category directory `Wii/title/00010000`: under the standalone app's files for
 `dolphin_wii`, and `<builtin saves>/User/Wii/title/00010000` for the built-in Dolphin core
-(`argosy_wii`). Both upload through the same handler, so a game's save moves between the two.
+(`argosy_wii`). The folder is the low id under it, `<base>/524d4745`, with the same id rules
+as Wii U below: split, flat and bare low ids address one folder, and another `0001xxxx`
+category resolves beside the base. Uploads and restores go through Sigil
+(`dolphin_standalone` and the libretro `dolphin` layout); pre-launch discovery and active-cache
+placement still find the folder through this handler. Joining the split id whole pointed both
+at `00010000/00010000/524d4745`.
+
+### Wii U (`WiiUFolderHandler`)
+
+`WiiUFolderHandler` is the same `CategorySplitFolderHandler` over `0005xxxx` categories, plus
+the user-folder archive shape below.
+
+`save_id` is `FOLDER_SPLIT`, the title id split as `00050000/1012bd00`. Cemu's base is
+already the category directory, `mlc01/usr/save/00050000`, so only the low half names the
+folder:
+
+```
+<base>/<low id>
+  meta/
+  user/<persistent id>/...
+  user/common/...
+```
+
+The low half is the last eight characters of the id, so the split form, the flat
+`000500001012bd00` and the low id alone all resolve to the same folder, in lowercase as
+Cemu writes it. The category is the high half of a full id. When it differs from the
+category directory the base ends in, the folder is its sibling: a demo id
+`00050002/<low id>` resolves to `mlc01/usr/save/00050002/<low id>`. A low id alone carries
+no category and stays under the base. Before this handler the split id was joined onto the base whole, which
+pointed every restore at `00050000/00050000/1012bd00` and never found the save Cemu
+actually wrote.
+
+An archive comes in one of two shapes. Argosy uploads the title folder under its own
+name (`1012bd00/meta`, `1012bd00/user`), which matches exactly. Other clients upload the
+contents of `user` (`80000001/`, `common/`): those roots name no title, so the archive
+is placed on the resolved destination, each root under the title's `user` folder. An archive
+with any other root, such as a different title's folder, is refused.
 
 ### GameCube (`GciSaveHandler`)
 
@@ -363,6 +402,24 @@ redistribution never copies a fresh one over it. Every other firmware entry is a
 static blob where overwriting is harmless; this one is a volume the user's saves
 live inside.
 
+### Dreamcast (`DreamcastSaveHandler`)
+
+`save_id` is the disc's IP.BIN product number. Port A1's card is named after it,
+with each of ` /\:*?|<>` replaced by `_` (standalone also replaces `"`):
+
+```
+built-in flycast core   <save dir>/T13301N.A1.bin
+standalone Flycast      <VMU folder>/T13301N_vmu_save_A1.bin
+```
+
+The standalone names come from `hostfs::getVmuPath` in Flycast's
+`core/oslib/oslib.cpp`. The VMU folder is `Dreamcast.VMUPath` from `emu.cfg`
+when it is set, else Flycast's `data` folder. `emu.cfg` sits beside `data`. With
+`PerGameVmu` off, every game shares `vmu_save_A1.bin`, and only Sigil's
+`flycast_standalone` layout can sort that card's saves by game.
+`FlycastStandaloneConfig` reads both settings. `DreamcastSaveHandler.standalone`
+names the file when Sigil doesn't route the save.
+
 ### RetroArch and the file-based default
 
 Not id-derived at all. The save is named for the ROM, not the title:
@@ -374,6 +431,13 @@ Not id-derived at all. The save is named for the ROM, not the title:
 `RetroArchSaveHandler` resolves `<base>` through the core name and
 `retroarch.cfg`, including the `savefiles_in_content_dir` case where the save
 sits beside the ROM.
+
+A multi-disc game on a playlist platform (psx, saturn, dreamcast, dc, amiga) is
+launched through `<folder>.m3u`, which `M3uManager` writes for whichever discs
+are on disk, even one. Emulators name the save after that playlist, so the
+game's `localPath` is the playlist and `<rom name>` above is the playlist's name
+whichever discs are present. The game's title id is RomM's, read from the first
+disc; a local read only ever takes disc 1.
 
 ## What wiring the three actually took
 

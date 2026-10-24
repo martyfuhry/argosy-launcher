@@ -17,6 +17,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,7 +96,8 @@ class DownloadManagerPlatformFolderTest {
             customGridShapeStore = mockk(relaxed = true),
             extContentOrganizer = mockk(relaxed = true),
             romStagingManager = mockk(relaxed = true),
-            platformFolderResolver = PlatformFolderResolver(mockk(relaxed = true), platformDao, gameDao, preferences)
+            platformFolderResolver = PlatformFolderResolver(mockk(relaxed = true), platformDao, gameDao, preferences),
+            scope = CoroutineScope(testDispatcher)
         )
     }
 

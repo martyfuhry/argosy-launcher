@@ -914,6 +914,11 @@ class DisplaySettingsDelegate @Inject constructor(
 
     fun isAmbientLedAvailable(): Boolean = ledController.isAvailable
 
+    fun setDualScreenMatchSize(scope: CoroutineScope, enabled: Boolean) {
+        _state.update { it.copy(dualScreenMatchSize = enabled) }
+        scope.launch { preferencesRepository.setBuiltinDualScreenMatchSize(enabled) }
+    }
+
     fun setAmbientLedEnabled(scope: CoroutineScope, enabled: Boolean) {
         scope.launch {
             preferencesRepository.setAmbientLedEnabled(enabled)

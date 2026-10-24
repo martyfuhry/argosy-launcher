@@ -228,6 +228,7 @@ class RomMLibrarySyncService @Inject constructor(
             androidGameScanner.get().relinkInstalledRommAndroidApps()
             playSessionDao.relinkOrphans(scope.ownerUserId)
             userPreferencesRepository.setLastRommSyncTime(syncStartedAt)
+            userPreferencesRepository.setRommChangesWatermark(syncStartedAt)
             syncVirtualCollectionsUseCase.get()()
             recomputeSiblingGroups(completesFullPass = false)
             writeGameCounts(enabledRemoteIds.values.map { storagePlatformId(it) }, scope.ownerUserId)
@@ -247,15 +248,12 @@ class RomMLibrarySyncService @Inject constructor(
     }
 
     suspend fun syncPlatform(platformId: Long): SyncResult = withContext(NonCancellable + Dispatchers.IO) {
-        if (!syncMutex.tryLock()) {
-            return@withContext SyncResult(0, 0, 0, 0, emptyList(), alreadyInProgress = true)
-        }
-
-        try {
-            return@withContext doSyncPlatform(platformId)
-        } finally {
-            flushDecodedImageCache()
-            syncMutex.unlock()
+        syncMutex.withLock {
+            try {
+                doSyncPlatform(platformId)
+            } finally {
+                flushDecodedImageCache()
+            }
         }
     }
 
@@ -622,9 +620,15 @@ class RomMLibrarySyncService @Inject constructor(
             }
             passClock.mark("syncPlatformMetadata x${platforms.size}")
 
-            val enabledPlatforms = platforms.filter { platform ->
-                val local = platformDao.getById(storagePlatformId(platform))
-                local?.syncEnabled != false
+            val localPlatforms = platforms.associateWith { platformDao.getById(storagePlatformId(it)) }
+            val enabledPlatforms = platforms.filter { localPlatforms[it]?.syncEnabled != false }
+            val passPlatforms = enabledPlatforms.filterNot { localPlatforms[it]?.skipFullSync == true }
+            val skipsPlatforms = passPlatforms.size < enabledPlatforms.size
+            if (skipsPlatforms) {
+                Logger.info(
+                    TAG,
+                    "doSyncLibrary: ${enabledPlatforms.size - passPlatforms.size} platforms set to skip the full pass"
+                )
             }
 
             val syncStartedAt = Instant.now()
@@ -639,8 +643,8 @@ class RomMLibrarySyncService @Inject constructor(
             }
 
             _syncProgress.value = _syncProgress.value.copy(
-                platformsTotal = enabledPlatforms.size,
-                platforms = enabledPlatforms.map { platform ->
+                platformsTotal = passPlatforms.size,
+                platforms = passPlatforms.map { platform ->
                     PlatformSyncRow(
                         platformId = storagePlatformId(platform),
                         name = platform.name,
@@ -649,8 +653,8 @@ class RomMLibrarySyncService @Inject constructor(
                 }
             )
 
-            for ((index, platform) in enabledPlatforms.withIndex()) {
-                onProgress?.invoke(index + 1, enabledPlatforms.size, platform.name)
+            for ((index, platform) in passPlatforms.withIndex()) {
+                onProgress?.invoke(index + 1, passPlatforms.size, platform.name)
 
                 _syncProgress.value = _syncProgress.value.copy(
                     currentPlatform = platform.name,
@@ -682,7 +686,7 @@ class RomMLibrarySyncService @Inject constructor(
 
             userPreferencesRepository.clearSyncResume()
 
-            val completeUnresumedPass = errors.isEmpty() && platformsResumed == 0
+            val completeUnresumedPass = errors.isEmpty() && platformsResumed == 0 && !skipsPlatforms
             if (completeUnresumedPass) {
                 siblingSplitRepair.retryBlockedSaveSyncMoves()
                 siblingSplitRepair.runOnce()
@@ -699,7 +703,9 @@ class RomMLibrarySyncService @Inject constructor(
                 Logger.info(TAG, "doSyncLibrary: relinked $relinkedSessions play sessions to current game rows")
             }
 
-            userPreferencesRepository.setLastRommSyncTime(Instant.now())
+            val passFinishedAt = Instant.now()
+            userPreferencesRepository.setLastRommSyncTime(passFinishedAt)
+            if (!skipsPlatforms) userPreferencesRepository.setRommChangesWatermark(passFinishedAt)
             if (errors.isEmpty()) {
                 userPreferencesRepository.setLastRommFullSyncTime(
                     resumeGeneration.takeIf { resuming } ?: syncStartedAt
@@ -895,38 +901,38 @@ class RomMLibrarySyncService @Inject constructor(
     }
 
     /**
-     * Removes rows already kept as server-removed whose local rom files are gone. Needs no
-     * server; withholds when a rom storage volume cannot be read.
+     * Removes rows already kept as server-removed whose local rom files are gone, judged by the
+     * stored file state alone. Needs no server, runs no file validation or discovery, and
+     * withholds when a rom storage volume cannot be read.
      */
-    suspend fun pruneServerRemovedGames(): Int =
-        settleServerRemovedCandidates(
-            gameDao.getServerRemovedIdsForOwner(ROMM_SOURCES, overlayWriter.activeOwnerId()),
-            overlayWriter.activeOwnerId()
-        )
+    suspend fun pruneServerRemovedGames(): Int {
+        val ownerUserId = overlayWriter.activeOwnerId()
+        val candidates = gameDao.getServerRemovedIdsForOwner(ROMM_SOURCES, ownerUserId)
+        if (candidates.isEmpty() || !romVolumesReadableForRemoval()) return 0
+        return settleServerRemovedCandidates(candidates, ownerUserId)
+    }
 
-    private suspend fun reconcileDeletedRoms(scope: SyncScope): Int =
-        settleServerRemovedCandidates(
-            missingServerRoms(scope) +
-                gameDao.getServerRemovedIdsForOwner(ROMM_SOURCES, scope.ownerUserId),
-            scope.ownerUserId
+    private suspend fun reconcileDeletedRoms(scope: SyncScope): Int {
+        val candidates = missingServerRoms(scope) +
+            gameDao.getServerRemovedIdsForOwner(ROMM_SOURCES, scope.ownerUserId)
+        if (candidates.isEmpty() || !romVolumesReadableForRemoval()) return 0
+        candidates.map { it.platformId }.distinct().forEach { validateLocalRomFiles(it) }
+        return settleServerRemovedCandidates(candidates, scope.ownerUserId)
+    }
+
+    private suspend fun romVolumesReadableForRemoval(): Boolean {
+        if (gameRepository.get().romStorageVolumesReadable()) return true
+        Logger.warn(
+            TAG,
+            "reconcileDeletedRoms: a rom storage volume could not be read; withholding"
         )
+        return false
+    }
 
     private suspend fun settleServerRemovedCandidates(
         candidates: List<com.nendo.argosy.data.local.dao.ServerBackedGameRef>,
         ownerUserId: Long?
     ): Int {
-        if (candidates.isEmpty()) return 0
-
-        if (!gameRepository.get().romStorageVolumesReadable()) {
-            Logger.warn(
-                TAG,
-                "reconcileDeletedRoms: a rom storage volume could not be read; withholding"
-            )
-            return 0
-        }
-
-        candidates.map { it.platformId }.distinct().forEach { validateLocalRomFiles(it) }
-
         var deleted = 0
         var preserved = 0
 
@@ -1060,7 +1066,8 @@ class RomMLibrarySyncService @Inject constructor(
             lastScanned = existing?.lastScanned,
             syncEnabled = existing?.syncEnabled ?: true,
             customRomPath = existing?.customRomPath,
-            combineContent = existing?.combineContent ?: false
+            combineContent = existing?.combineContent ?: false,
+            skipFullSync = existing?.skipFullSync ?: false
         )
 
         if (existing == null) {
@@ -1110,6 +1117,7 @@ class RomMLibrarySyncService @Inject constructor(
                 platformDao.update(local.copy(
                     isVisible = legacy.isVisible,
                     syncEnabled = legacy.syncEnabled,
+                    skipFullSync = legacy.skipFullSync,
                     customRomPath = legacy.customRomPath ?: local.customRomPath
                 ))
             }
@@ -1773,6 +1781,7 @@ class RomMLibrarySyncService @Inject constructor(
                 platformDao.update(newPlatform.copy(
                     isVisible = old.isVisible,
                     syncEnabled = old.syncEnabled,
+                    skipFullSync = old.skipFullSync,
                     customRomPath = old.customRomPath ?: newPlatform.customRomPath,
                     sortOrder = old.sortOrder
                 ))

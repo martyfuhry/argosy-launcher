@@ -33,6 +33,7 @@ data class SyncPreferences(
     val raProxyEnabled: Boolean = false,
     val raProxyAddress: String = "",
     val lastRommSync: Instant? = null,
+    val rommChangesWatermark: Instant? = null,
     val lastFavoritesSync: Instant? = null,
     val lastFavoritesCheck: Instant? = null,
     val syncFilters: SyncFilterPreferences = SyncFilterPreferences(),
@@ -93,6 +94,7 @@ class SyncPreferencesRepository @Inject constructor(
         val RA_PROXY_ENABLED = booleanPreferencesKey("ra_proxy_enabled")
         val RA_PROXY_ADDRESS = stringPreferencesKey("ra_proxy_address")
         val LAST_ROMM_SYNC = stringPreferencesKey("last_romm_sync")
+        val ROMM_CHANGES_WATERMARK = stringPreferencesKey("romm_changes_watermark")
         val LAST_ROMM_FULL_SYNC = stringPreferencesKey("last_romm_full_sync")
         val LAST_FAVORITES_SYNC = stringPreferencesKey("last_favorites_sync")
         val LAST_FAVORITES_CHECK = stringPreferencesKey("last_favorites_check")
@@ -330,6 +332,7 @@ class SyncPreferencesRepository @Inject constructor(
             raProxyEnabled = prefs[Keys.RA_PROXY_ENABLED] ?: false,
             raProxyAddress = prefs[Keys.RA_PROXY_ADDRESS] ?: "",
             lastRommSync = prefs[Keys.LAST_ROMM_SYNC]?.let { Instant.parse(it) },
+            rommChangesWatermark = prefs[Keys.ROMM_CHANGES_WATERMARK]?.let { Instant.parse(it) },
             lastFavoritesSync = prefs[Keys.LAST_FAVORITES_SYNC]?.let { Instant.parse(it) },
             lastFavoritesCheck = prefs[Keys.LAST_FAVORITES_CHECK]?.let { Instant.parse(it) },
             syncFilters = syncFiltersFrom(prefs),
@@ -474,6 +477,10 @@ class SyncPreferencesRepository @Inject constructor(
             prefs[Keys.RA_PROXY_ENABLED] = enabled
             prefs[Keys.RA_PROXY_ADDRESS] = address
         }
+    }
+
+    suspend fun setRommChangesWatermark(time: Instant) {
+        dataStore.edit { it[Keys.ROMM_CHANGES_WATERMARK] = time.toString() }
     }
 
     suspend fun setLastRommSyncTime(time: Instant) {

@@ -6,9 +6,11 @@ import com.nendo.argosy.data.local.dao.PlatformDao
 import com.nendo.argosy.data.local.dao.SaveCacheDao
 import com.nendo.argosy.data.local.dao.SaveSyncDao
 import com.nendo.argosy.data.local.dao.StateCacheDao
+import com.nendo.argosy.data.platform.PlatformDefinitions
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
+import com.nendo.argosy.util.DiscSheets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -62,6 +64,13 @@ class PurgePlatformUseCase @Inject constructor(
                     val localPath = game.localPath ?: return@forEachIndexed
                     val file = File(localPath)
                     if (file.exists()) {
+                        if (DiscSheets.isLoader(file.name)) {
+                            val romExtensions = PlatformDefinitions.getBySlug(game.platformSlug)?.extensions.orEmpty()
+                            DiscSheets.companions(file, romExtensions).forEach { track ->
+                                val size = track.length()
+                                if (track.delete()) bytesFreed += size
+                            }
+                        }
                         bytesFreed += file.length()
                         file.delete()
                         filesDeleted++

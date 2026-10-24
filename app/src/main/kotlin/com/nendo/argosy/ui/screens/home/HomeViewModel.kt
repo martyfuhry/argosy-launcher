@@ -143,8 +143,13 @@ class HomeViewModel @Inject constructor(
     private val showcaseSource: com.nendo.argosy.ui.common.PresentationShowcaseSource,
     private val quickNavigationSource: com.nendo.argosy.data.preferences.QuickNavigationSource,
     private val firstFrameCache: HomeFirstFrameCache,
-    private val monthlyRecap: com.nendo.argosy.ui.components.recap.MonthlyRecapController
+    private val monthlyRecap: com.nendo.argosy.ui.components.recap.MonthlyRecapController,
+    gameActions: com.nendo.argosy.ui.screens.common.GameActionsDelegate
 ) : ViewModel(), HomeInputActions {
+
+    val gameConfirm = com.nendo.argosy.ui.common.GameConfirmController(
+        gameActions::deleteDownloadConfirm, gameActions::hideConfirm, viewModelScope
+    )
 
     private val selectDoubleTap = com.nendo.argosy.ui.screens.home.delegates.SelectDoubleTap(
         scope = viewModelScope,
@@ -2068,7 +2073,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun hideGame(gameId: Long) {
-        gameMenuDelegate.hideGame(viewModelScope, gameId) { refreshCurrentRowInternal() }
+        gameConfirm.requestHide(gameId) {
+            gameMenuDelegate.hideGame(viewModelScope, gameId) { refreshCurrentRowInternal() }
+        }
     }
 
     fun removeFromHome(gameId: Long) {
@@ -2091,9 +2098,11 @@ class HomeViewModel @Inject constructor(
     }
 
     fun deleteLocalFile(gameId: Long) {
-        downloadDelegate.deleteLocalFile(viewModelScope, gameId) {
-            libraryDelegate.invalidateRecentGamesCache()
-            refreshCurrentRowInternal()
+        gameConfirm.requestDelete(gameId) { withSoundtrack ->
+            downloadDelegate.deleteLocalFile(viewModelScope, gameId, withSoundtrack) {
+                libraryDelegate.invalidateRecentGamesCache()
+                refreshCurrentRowInternal()
+            }
         }
     }
 

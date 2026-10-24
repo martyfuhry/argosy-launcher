@@ -497,6 +497,10 @@ class LibraryViewModel @Inject constructor(
 
     val siblingChoiceState = siblingChoice.state
 
+    val gameConfirm = com.nendo.argosy.ui.common.GameConfirmController(
+        gameActions::deleteDownloadConfirm, gameActions::hideConfirm, viewModelScope
+    )
+
     private val companionOwner = SlotOwner.of("library", this)
     private val platformShowcaseOwner = SlotOwner.of("library.platforms", this)
     private var isDescribing = false
@@ -2079,8 +2083,8 @@ class LibraryViewModel @Inject constructor(
     fun dismissSiblingChoice() = siblingChoice.dismiss()
 
     fun hideGame(gameId: Long) {
-        viewModelScope.launch {
-            gameActions.hideGame(gameId)
+        gameConfirm.requestHide(gameId) {
+            viewModelScope.launch { gameActions.hideGame(gameId) }
         }
     }
 
@@ -2108,11 +2112,13 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun deleteLocalFile(gameId: Long) {
-        viewModelScope.launch {
-            gameActions.deleteLocalFile(gameId)
-            notificationManager.showSuccess(
-                NotificationText.Res(R.string.library_notice_download_deleted)
-            )
+        gameConfirm.requestDelete(gameId) { withSoundtrack ->
+            viewModelScope.launch {
+                gameActions.deleteLocalFile(gameId, withSoundtrack)
+                notificationManager.showSuccess(
+                    NotificationText.Res(R.string.library_notice_download_deleted)
+                )
+            }
         }
     }
 

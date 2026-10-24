@@ -181,6 +181,7 @@
     <string name="ingame_settings_controller_type_title">Manette du joueur %1$d</string>
     <string name="ingame_settings_controller_type_pending">Sera appliqué au prochain lancement</string>
     <string name="ingame_settings_controller_type_core_default">Choisi par le core</string>
+    <string name="ingame_settings_controller_type_auto">Auto (%1$s)</string>
     <string name="ingame_settings_controller_grip_title">Poignée de manette</string>
     <string name="ingame_settings_controller_grip_subtitle">Déplacer l\'interface hors de la zone couverte par la poignée</string>
     <string name="ingame_settings_input_mapping_title">Mappage des touches</string>
@@ -193,6 +194,8 @@
     <string name="ingame_settings_hotkeys_subtitle">Configurer les raccourcis pour le menu, l\'avance rapide et le rembobinage</string>
     <string name="ingame_settings_limit_hotkeys_title">Limiter les raccourcis au joueur 1</string>
     <string name="ingame_settings_limit_hotkeys_subtitle">Seule la manette du joueur 1 peut déclencher les raccourcis</string>
+    <string name="ingame_settings_select_as_back_title">Select comme Retour</string>
+    <string name="ingame_settings_select_as_back_subtitle">Pour les manettes dont Select envoie Retour. Auto traite Retour comme Select sur les manettes sans bouton Select.</string>
     <string name="ingame_settings_toggle_fast_forward_title">Basculer l\'avance rapide</string>
     <string name="ingame_settings_toggle_fast_forward_subtitle">Appuyez une fois pour démarrer, une seconde fois pour arrêter (désactivé = maintenir pour avancer rapidement)</string>
     <string name="ingame_settings_preserve_pitch_title">Préserver la hauteur audio</string>

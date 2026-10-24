@@ -56,7 +56,8 @@ class SaveSyncOrchestratorDiskCheckTest {
         saveOwnershipTracker = ownership,
         accountSwitchMarkerStore = mockk(relaxed = true),
         fileAccessLayer = mockk(relaxed = true),
-        gameArtDao = mockk(relaxed = true)
+        gameArtDao = mockk(relaxed = true),
+        diskJudge = ActiveSaveDiskJudge(saveCacheDao, saveSyncDao, ownership)
     )
 
     private val active = SaveCacheEntity(

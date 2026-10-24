@@ -95,7 +95,7 @@ class GetUnifiedStatesUseCase @Inject constructor(
 
         val channelMatched = serverStates.filter { serverState ->
             val parsed = stateCacheManager.parseStateFileName(serverState.fileName)
-            channelName == null || parsed.channelName == channelName
+            channelName == null || belongsToChannel(parsed.channelName, channelName)
         }
 
         channelMatched
@@ -103,7 +103,7 @@ class GetUnifiedStatesUseCase @Inject constructor(
             .forEach { (_, states) ->
                 if (states.size <= 1) return@forEach
                 val canonical = states.maxByOrNull {
-                    stateCacheManager.parseStateFileTimestamp(it.fileName) ?: Instant.EPOCH
+                    stateCacheManager.serverStateWrittenAt(it) ?: Instant.EPOCH
                 } ?: return@forEach
                 states.filter { it.id != canonical.id }
                     .forEach { stateCacheManager.tombstoneServerState(gameId, it.id) }
@@ -164,7 +164,7 @@ class GetUnifiedStatesUseCase @Inject constructor(
         val remoteBySlot = remoteOnlyStates
             .groupBy { stateCacheManager.parseStateFileName(it.fileName).slotNumber }
             .mapValues { (_, states) ->
-                states.maxByOrNull { stateCacheManager.parseStateFileTimestamp(it.fileName) ?: Instant.EPOCH }!!
+                states.maxByOrNull { stateCacheManager.serverStateWrittenAt(it) ?: Instant.EPOCH }!!
             }
             .filterKeys { statesBySlot[it] == null }
         val result = mutableListOf<UnifiedStateEntry>()

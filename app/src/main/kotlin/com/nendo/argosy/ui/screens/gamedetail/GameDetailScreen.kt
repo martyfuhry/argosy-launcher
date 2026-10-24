@@ -134,9 +134,10 @@ fun GameDetailScreen(
     }
 
     val pendingLaunch by argosyViewModel.pendingLaunch.collectAsState()
-    LaunchedEffect(pendingLaunch, uiState.game?.id) {
+    val sessionEndSyncing = uiState.syncOverlayState != null
+    LaunchedEffect(pendingLaunch, uiState.game?.id, sessionEndSyncing) {
         val pending = pendingLaunch ?: return@LaunchedEffect
-        if (pending.gameId == gameId && uiState.game?.id == gameId) {
+        if (pending.gameId == gameId && uiState.game?.id == gameId && !sessionEndSyncing) {
             argosyViewModel.consumePendingLaunch()
             if (pending.discId != null) {
                 viewModel.playGame(discId = pending.discId, origin = pending.origin)
@@ -1338,6 +1339,8 @@ private fun GameDetailModals(
             onDismiss = viewModel::dismissAddToCollectionModal
         )
     }
+
+    com.nendo.argosy.ui.common.GameConfirmHost(viewModel.gameConfirm)
 
     if (uiState.showCreateCollectionDialog) {
         CreateCollectionDialog(

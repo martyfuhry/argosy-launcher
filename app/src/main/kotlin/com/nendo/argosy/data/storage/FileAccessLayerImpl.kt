@@ -364,11 +364,12 @@ class FileAccessLayerImpl @Inject constructor(
         return androidDataAccessor.getFile(path)
     }
 
-    override fun prepareSaveAccess(vararg paths: String?) {
+    override fun prepareSaveAccess(vararg paths: String?): Boolean {
         val restricted = paths.filterNotNull().filter(::isRestrictedPath)
-        if (restricted.isEmpty()) return
-        if (androidDataAccessor.syncMirror(restricted) != null) return
+        if (restricted.isEmpty()) return true
+        androidDataAccessor.syncMirror(restricted)?.let { return it }
         if (rootFileAccessor.isAvailable) rootFileAccessor.grantGroupAccess(restricted)
+        return true
     }
 
     override fun commitSaveAccess(vararg paths: String?): Boolean {

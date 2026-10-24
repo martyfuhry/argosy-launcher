@@ -252,6 +252,8 @@
 
     <string name="settings_displays_display_roles_title">Экран управления</string>
     <string name="settings_displays_display_roles_subtitle">Экран, на котором открываются меню; второй показывает то, что вы смотрите</string>
+    <string name="settings_displays_match_screen_size_title">Одинаковый размер игровых экранов</string>
+    <string name="settings_displays_match_screen_size_subtitle">Экраны DS и 3DS показываются одного размера и сходятся у шарнира</string>
     <string name="settings_displays_display_roles_auto">Авто</string>
     <string name="settings_displays_display_roles_standard">Экран-компаньон</string>
     <string name="settings_displays_display_roles_swapped">Основной экран</string>
@@ -1574,6 +1576,7 @@
     <string name="settings_builtin_controls_mapping_subtitle">Переназначить кнопки для каждого контроллера</string>
     <string name="settings_builtin_controls_controller_type_title">Контроллер игрока %1$d</string>
     <string name="settings_builtin_controls_controller_type_subtitle">Контроллер, который видит игра. Применяется при следующем запуске игры.</string>
+    <string name="settings_builtin_controls_controller_type_auto">Авто (%1$s)</string>
 
     <string name="settings_builtin_controls_analog_as_dpad_title">Левый стик как D-Pad</string>
     <string name="settings_builtin_controls_analog_as_dpad_subtitle">Сопоставить левый аналоговый стик с D-pad</string>
@@ -1584,6 +1587,11 @@
     <string name="settings_builtin_controls_hotkeys_subtitle">Настроить сочетания для меню, перемотки вперёд и назад</string>
     <string name="settings_builtin_controls_limit_hotkeys_title">Горячие клавиши только для игрока 1</string>
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">Горячие клавиши работают только с контроллером игрока 1</string>
+    <string name="settings_builtin_controls_select_as_back_title">Select как «Назад»</string>
+    <string name="settings_builtin_controls_select_as_back_subtitle">Для контроллеров, у которых Select отправляет «Назад». В режиме «Авто» «Назад» работает как Select на контроллерах без кнопки Select.</string>
+    <string name="settings_builtin_controls_select_as_back_auto">Авто</string>
+    <string name="settings_builtin_controls_select_as_back_on">Вкл</string>
+    <string name="settings_builtin_controls_select_as_back_off">Выкл</string>
     <string name="settings_builtin_controls_toggle_ff_title">Переключение перемотки вперёд</string>
     <string name="settings_builtin_controls_toggle_ff_subtitle">Нажмите один раз, чтобы начать, ещё раз - чтобы остановить (выкл = удерживать для перемотки)</string>
     <string name="settings_builtin_controls_ff_pitch_title">Сохранять высоту звука</string>
@@ -1844,6 +1852,8 @@
     <string name="settings_platform_sync_toggle_subtitle">Включить эту платформу в синхронизацию библиотеки</string>
     <string name="settings_platform_combine_content_title">Объединить контент</string>
     <string name="settings_platform_combine_content_subtitle">Все игры в одной папке, все обновления и DLC в extcontent</string>
+    <string name="settings_platform_skip_full_sync_title">Пропускать при полной синхронизации</string>
+    <string name="settings_platform_skip_full_sync_subtitle">Инкрементная синхронизация по-прежнему проверяет изменения</string>
     <string name="settings_platform_sync_now_title">Синхронизировать сейчас</string>
     <string name="settings_platform_sync_now_busy">Синхронизация...</string>
     <string name="settings_platform_sync_now_subtitle">Синхронизировать эту платформу с RomM</string>

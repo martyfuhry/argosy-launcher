@@ -8,10 +8,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.local.entity.SaveCacheEntity
+import com.nendo.argosy.data.repository.ActiveSaveDiskJudge
 import com.nendo.argosy.data.repository.ActiveSaveRepository
+import com.nendo.argosy.data.repository.DiskVerdict
 import com.nendo.argosy.data.repository.SaveCacheManager
 import com.nendo.argosy.data.sync.platform.SigilRestore
 import com.swordfish.libretrodroid.GLRetroView
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.security.MessageDigest
@@ -23,6 +27,9 @@ class SaveStateManager(
     private val gameId: Long,
     private val activeSaveRepository: ActiveSaveRepository,
     private val saveCacheManager: SaveCacheManager,
+    private val diskJudge: ActiveSaveDiskJudge,
+    private val secureSaves: Boolean,
+    private val ownerUserId: Long?,
     private val usesExternalMemcard: Boolean = false,
     private val channelName: String? = null,
     private val isVariant: Boolean = false,
@@ -258,11 +265,10 @@ class SaveStateManager(
     }
 
     /**
-     * Resolves the SRAM to load for [launchMode], writes it to the live .srm, and returns the bytes
-     * plus mode hints. Two non-obvious rules: an explicit save-management restore (activeSaveApplied)
-     * wins over the default resume pick; and RESUME_HARDCORE falls back to the active save when no
-     * hardcore save exists, because RetroAchievements forbids only save states in hardcore, not SRAM
-     * battery saves (that fallback is flagged casualSaveInHardcore so the UI can surface it).
+     * The SRAM to load for [launchMode], placed on the live .srm as [ActiveSaveDiskJudge] decides
+     * against the save already there. An explicit save-management restore wins over the resume
+     * pick; RESUME_HARDCORE with no hardcore save falls back to the active save, flagged
+     * casualSaveInHardcore.
      */
     suspend fun restoreSaveForLaunchMode(launchMode: LaunchMode): RestoreResult {
         if (usesExternalMemcard) {
@@ -314,11 +320,10 @@ class SaveStateManager(
                     if (!isValid) {
                         Log.w(TAG, "Hardcore save missing trailer - save may have been modified externally")
                     }
-                    val bytes = placeCachedSave(hardcoreSave)
-                    if (bytes != null) {
-                        Log.d(TAG, "Restored hardcore save (${bytes.size} bytes, valid=$isValid)")
-                    }
-                    RestoreResult(coreBytes(bytes))
+                    val placement = placeCachedSave(hardcoreSave)
+                    Log.d(TAG, "Hardcore save cache=${hardcoreSave.id} valid=$isValid inPlay=${placement.targetInPlay} bytes=${placement.bytes?.size ?: -1}")
+                    val sram = coreBytes(placement.bytes)
+                    RestoreResult(sram, casualSaveInHardcore = sram != null && !placement.targetInPlay)
                 } else {
                     Log.d(TAG, "No hardcore save; using active save for hardcore session")
                     val fallback = restoreResumeSave(activeSave)
@@ -333,15 +338,76 @@ class SaveStateManager(
         }
     }
 
-    private suspend fun placeCachedSave(entity: SaveCacheEntity): ByteArray? {
+    private class Placement(val bytes: ByteArray?, val targetInPlay: Boolean)
+
+    private suspend fun placeCachedSave(entity: SaveCacheEntity): Placement {
+        val primaryPath = primarySaveFile.absolutePath
+        val diskHash = when (val disk = saveCacheManager.probeLocalSave(primaryPath, gameId, EmulatorRegistry.BUILTIN_ID)) {
+            SaveCacheManager.LocalSaveProbe.Absent -> return Placement(writeCachedSave(entity), targetInPlay = true)
+            SaveCacheManager.LocalSaveProbe.Unreadable -> {
+                Log.w(TAG, "[SRAM] save on disk could not be read, writing nothing over it | cache=${entity.id} file=$primaryPath")
+                return keepDisk()
+            }
+            is SaveCacheManager.LocalSaveProbe.Present -> disk.contentHash
+        }
+        val judgement = diskJudge.judge(
+            gameId, EmulatorRegistry.BUILTIN_ID, channelName, primaryPath, diskHash, entity, secureSaves, ownerUserId
+        )
+        return when (val verdict = judgement.verdict) {
+            DiskVerdict.Matches -> Placement(diskBytes(), targetInPlay = true)
+            is DiskVerdict.Progress -> {
+                Log.i(TAG, "[SRAM] disk matches unsynced cache=${verdict.cacheId}, keeping it as the active version")
+                activeSaveRepository.activateCache(gameId, verdict.cacheId)
+                keepDisk()
+            }
+            DiskVerdict.Adopt -> {
+                val adopted = withContext(NonCancellable) {
+                    saveCacheManager.cacheCurrentSave(
+                        gameId = gameId,
+                        emulatorId = EmulatorRegistry.BUILTIN_ID,
+                        savePath = primaryPath,
+                        channelName = channelName,
+                        needsRemoteSync = true
+                    )
+                }
+                Log.i(TAG, "[SRAM] disk differs from cache=${entity.id}, adopting it (Secure Saves off) | result=${adopted::class.simpleName}")
+                keepDisk()
+            }
+            DiskVerdict.Foreign -> {
+                Log.i(TAG, "[SRAM] disk save belongs to another account, leaving it | cache=${entity.id}")
+                keepDisk()
+            }
+            DiskVerdict.ProtectThenRestore -> protectThenWrite(entity, primaryPath)
+        }
+    }
+
+    private suspend fun protectThenWrite(entity: SaveCacheEntity, primaryPath: String): Placement =
+        withContext(NonCancellable) {
+            when (saveCacheManager.cacheAsRollback(gameId, EmulatorRegistry.BUILTIN_ID, primaryPath)) {
+                is SaveCacheManager.CacheResult.Created, is SaveCacheManager.CacheResult.Duplicate -> {
+                    Log.i(TAG, "[SRAM] disk differs from cache=${entity.id}, kept as rollback, restoring (Secure Saves on)")
+                    Placement(writeCachedSave(entity), targetInPlay = true)
+                }
+                SaveCacheManager.CacheResult.Failed -> {
+                    Log.e(TAG, "[SRAM] rollback of the disk save failed, writing nothing over it | cache=${entity.id}")
+                    keepDisk()
+                }
+            }
+        }
+
+    private fun diskBytes(): ByteArray? = primarySaveFile.takeIf { it.exists() }?.readBytes()
+
+    private fun keepDisk(): Placement = Placement(diskBytes(), targetInPlay = false)
+
+    private suspend fun writeCachedSave(entity: SaveCacheEntity): ByteArray? {
         when (val restored = saveCacheManager.restoreThroughSigil(entity)) {
             is SigilRestore.Restored -> {
                 Log.i(TAG, "[SRAM] cache=${entity.id} restored through Sigil -> ${savesDir.absolutePath}")
-                return primarySaveFile.takeIf { it.exists() }?.readBytes()
+                return diskBytes()
             }
             is SigilRestore.Refused -> {
                 Log.w(TAG, "[SRAM] Sigil refused cache=${entity.id}, keeping the save on disk | ${restored.reason}")
-                return primarySaveFile.takeIf { it.exists() }?.readBytes()
+                return diskBytes()
             }
             SigilRestore.NotRouted -> Unit
         }
@@ -408,8 +474,9 @@ class SaveStateManager(
             return RestoreResult(coreBytes(bytes))
         }
         if (targetSave != null) {
+            val placement = placeCachedSave(targetSave)
             var switchToHardcore = false
-            if (targetSave.isHardcore) {
+            if (targetSave.isHardcore && placement.targetInPlay) {
                 val isValid = saveCacheManager.isValidHardcoreSave(targetSave)
                 if (isValid) {
                     switchToHardcore = true
@@ -418,11 +485,8 @@ class SaveStateManager(
                     Log.w(TAG, "RESUME: Hardcore save missing trailer, loading as casual")
                 }
             }
-            val bytes = placeCachedSave(targetSave)
-            if (bytes != null) {
-                Log.d(TAG, "RESUME: Restored save (${bytes.size} bytes, hardcore=${targetSave.isHardcore}) -> ${primarySaveFile.name}")
-            }
-            return RestoreResult(coreBytes(bytes), switchToHardcore)
+            Log.d(TAG, "RESUME: cache=${targetSave.id} inPlay=${placement.targetInPlay} bytes=${placement.bytes?.size ?: -1} hardcore=${targetSave.isHardcore} -> ${primarySaveFile.name}")
+            return RestoreResult(coreBytes(placement.bytes), switchToHardcore)
         } else {
             val f = primarySaveFile
             val bytes = f.takeIf { it.exists() }?.readBytes()

@@ -364,6 +364,7 @@ class StorageSettingsDelegate @Inject constructor(
                     downloadedCount = downloadedCount,
                     syncEnabled = platform.syncEnabled,
                     combineContent = platform.combineContent,
+                    skipFullSync = platform.skipFullSync,
                     customRomPath = platform.customRomPath,
                     effectivePath = effectivePath,
                     supportsStatePath = info?.supportsStatePath ?: false,
@@ -439,6 +440,13 @@ class StorageSettingsDelegate @Inject constructor(
         scope.launch {
             platformRepository.updateCombineContent(platformId, enabled)
             updatePlatformConfigInState(platformId) { it.copy(combineContent = enabled) }
+        }
+    }
+
+    fun togglePlatformSkipFullSync(scope: CoroutineScope, platformId: Long, skip: Boolean) {
+        scope.launch {
+            platformRepository.updateSkipFullSync(platformId, skip)
+            updatePlatformConfigInState(platformId) { it.copy(skipFullSync = skip) }
         }
     }
 

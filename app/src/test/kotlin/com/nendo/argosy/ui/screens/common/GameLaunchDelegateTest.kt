@@ -59,7 +59,7 @@ class GameLaunchDelegateTest {
         every { playSessionTracker.activeSession } returns MutableStateFlow(null)
         coEvery { emulatorResolver.getEmulatorPackageForGame(any(), any(), any()) } returns null
         coEvery { preLaunchRecapStep.run(any(), any(), any()) } returns true
-        coEvery { resolver.launchOptionsFor(gameId, any()) } returns options
+        coEvery { resolver.launchOptionsFor(gameId, any(), any()) } returns options
         every { manager.startGame(any()) } returns Result.success(Unit)
         DualScreenManagerHolder.instance = manager
     }
@@ -71,7 +71,7 @@ class GameLaunchDelegateTest {
 
     private fun TestScope.tracker() = spyk(LaunchProgressTracker(backgroundScope))
 
-    private fun TestScope.router() = GameStartRouter(mockk<Context>(relaxed = true), resolver, backgroundScope)
+    private fun TestScope.router() = GameStartRouter(mockk<Context>(relaxed = true), resolver, playSessionTracker, backgroundScope)
 
     private fun useCaseReturns(result: LaunchResult) {
         coEvery {
@@ -182,7 +182,7 @@ class GameLaunchDelegateTest {
         val tracker = tracker()
         val router = router()
         var stepWhenPlaced: LaunchStep? = LaunchStep.Launching
-        coEvery { resolver.launchOptionsFor(gameId, any()) } answers {
+        coEvery { resolver.launchOptionsFor(gameId, any(), any()) } answers {
             stepWhenPlaced = tracker.progress.value?.step
             options
         }

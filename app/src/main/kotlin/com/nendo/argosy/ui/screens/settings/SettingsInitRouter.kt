@@ -644,6 +644,9 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
             lidSleepEnabled = prefs.lidSleepEnabled,
             lidSleepServiceReady = vm.lidSleepGuard.isServiceReady,
             dualScreenEnabled = prefs.dualScreenEnabled,
+            dualScreenMatchSize = vm.libretroSettingsRepo.getBuiltinEmulatorSettings().first().dualScreenMatchSize,
+            dualScreenMatchSizeAvailable = vm.displayAffinityHelper.hasPhysicalSecondaryDisplay &&
+                com.nendo.argosy.libretro.KnownPanels.forModel().isNotEmpty(),
             displayRoleOverride = prefs.displayRoleOverride,
             gamesLaunchTarget = prefs.gamesDisplayTarget,
             appsLaunchTarget = prefs.appsDisplayTarget,
@@ -947,6 +950,7 @@ internal fun routeLoadSettings(vm: SettingsViewModel) {
                     speedrunPanelSide = refreshSettings.speedrunPanelSide,
                     speedrunPanelWidthPercent = refreshSettings.speedrunPanelWidthPercent,
                     fastForwardMode = refreshSettings.fastForwardMode,
+                    selectAsBack = refreshSettings.selectAsBack,
                     fastForwardPreservePitch = refreshSettings.fastForwardPreservePitch,
                     analogAsDpad = refreshSettings.analogAsDpad,
                     dpadAsAnalog = refreshSettings.dpadAsAnalog,

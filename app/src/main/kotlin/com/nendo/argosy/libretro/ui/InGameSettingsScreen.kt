@@ -101,6 +101,8 @@ data class ControllerPortOption(
     val port: Int,
     val options: List<String>,
     val selectedIndex: Int,
+    val autoIndex: Int?,
+    val followsAuto: Boolean,
     val isOverridden: Boolean,
     val pendingRestart: Boolean = false
 )
@@ -115,6 +117,8 @@ data class InGameControlsState(
     val limitHotkeysToPlayer1: Boolean = true,
     val fastForwardMode: com.nendo.argosy.data.local.entity.FastForwardMode =
         com.nendo.argosy.data.local.entity.FastForwardMode.HOLD,
+    val selectAsBack: com.nendo.argosy.data.local.entity.SelectAsBackMode =
+        com.nendo.argosy.data.local.entity.SelectAsBackMode.AUTO,
     val fastForwardPreservePitch: Boolean = false,
     val controllerOrderCount: Int = 0,
     val gripReserveMode: GripReserveMode = GripReserveMode.OFF,
@@ -146,6 +150,9 @@ sealed class InGameControlsAction {
         val mode: com.nendo.argosy.data.local.entity.FastForwardMode
     ) : InGameControlsAction()
     data class SetFastForwardPreservePitch(val enabled: Boolean) : InGameControlsAction()
+    data class SetSelectAsBack(
+        val mode: com.nendo.argosy.data.local.entity.SelectAsBackMode
+    ) : InGameControlsAction()
     data class CycleControllerType(val port: Int, val direction: Int) : InGameControlsAction()
     data class SelectControllerType(val port: Int, val optionIndex: Int) : InGameControlsAction()
     data class ResetControllerType(val port: Int) : InGameControlsAction()
@@ -206,6 +213,7 @@ internal sealed class InGameControlsItem(
     data object InputMapping : InGameControlsItem("inputMapping", "controllers")
     data object ControllerGrip : InGameControlsItem("controllerGrip", "controllers")
     data object Rumble : InGameControlsItem("rumble", "controllers")
+    data object SelectAsBack : InGameControlsItem("selectAsBack", "controllers")
     data object AnalogAsDpad : InGameControlsItem("analogAsDpad", "sticks")
     data object DpadAsAnalog : InGameControlsItem("dpadAsAnalog", "sticks")
     data object Hotkeys : InGameControlsItem("hotkeys", "hotkeys")
@@ -230,6 +238,7 @@ internal sealed class InGameControlsItem(
                 InputMapping,
                 ControllerGrip,
                 Rumble,
+                SelectAsBack,
                 Header("sticksHeader", "sticks", R.string.ingame_settings_header_sticks),
                 AnalogAsDpad,
                 DpadAsAnalog,
@@ -438,10 +447,20 @@ fun InGameSettingsScreen(
     }
 
     fun cycleControlsItem(direction: Int): Boolean {
-        val item = controlsLayout.itemAtFocusIndex(focusedIndex, controlsVisibility)
-        if (item !is InGameControlsItem.ControllerType) return false
-        currentOnControlsAction.value(InGameControlsAction.CycleControllerType(item.port, direction))
-        return true
+        return when (val item = controlsLayout.itemAtFocusIndex(focusedIndex, controlsVisibility)) {
+            is InGameControlsItem.ControllerType -> {
+                currentOnControlsAction.value(InGameControlsAction.CycleControllerType(item.port, direction))
+                true
+            }
+            InGameControlsItem.SelectAsBack -> {
+                val modes = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries
+                val current = modes.indexOf(currentControlsState.value.selectAsBack)
+                val next = (current + direction).coerceIn(0, modes.lastIndex)
+                if (next != current) currentOnControlsAction.value(InGameControlsAction.SetSelectAsBack(modes[next]))
+                true
+            }
+            else -> false
+        }
     }
 
     fun handleControlsConfirm() {
@@ -881,6 +900,21 @@ private fun InGameControlsSection(
                     onToggle = { onAction(InGameControlsAction.SetRumble(it)) }
                 )
 
+                InGameControlsItem.SelectAsBack -> SegmentedPreference(
+                    title = stringResource(R.string.ingame_settings_select_as_back_title),
+                    subtitle = stringResource(R.string.ingame_settings_select_as_back_subtitle),
+                    options = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries.map {
+                        stringResource(it.labelRes)
+                    },
+                    selectedIndex = com.nendo.argosy.data.local.entity.SelectAsBackMode.entries.indexOf(state.selectAsBack),
+                    isFocused = isFocused(item),
+                    onSelect = {
+                        onAction(InGameControlsAction.SetSelectAsBack(
+                            com.nendo.argosy.data.local.entity.SelectAsBackMode.entries[it]
+                        ))
+                    }
+                )
+
                 InGameControlsItem.ControllerOrder -> NavigationPreference(
                     icon = Icons.Default.SortByAlpha,
                     title = stringResource(R.string.ingame_settings_controller_order_title),
@@ -901,13 +935,18 @@ private fun InGameControlsSection(
                     val portState = state.controllerPorts.firstOrNull { it.port == item.port }
                     if (portState != null) {
                         val focused = isFocused(item)
+                        val autoName = portState.autoIndex?.let { portState.options.getOrNull(it) }
                         CyclePreference(
                             title = stringResource(
                                 R.string.ingame_settings_controller_type_title,
                                 item.port + 1
                             ),
-                            value = portState.options.getOrElse(portState.selectedIndex) {
-                                stringResource(R.string.ingame_settings_controller_type_default_fallback)
+                            value = if (portState.followsAuto && autoName != null) {
+                                stringResource(R.string.ingame_settings_controller_type_auto, autoName)
+                            } else {
+                                portState.options.getOrElse(portState.selectedIndex) {
+                                    stringResource(R.string.ingame_settings_controller_type_default_fallback)
+                                }
                             },
                             isFocused = focused,
                             subtitle = when {

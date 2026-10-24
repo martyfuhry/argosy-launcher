@@ -57,7 +57,8 @@ class SaveSyncOrchestrator @Inject constructor(
     private val saveOwnershipTracker: SaveOwnershipTracker,
     private val accountSwitchMarkerStore: com.nendo.argosy.data.preferences.AccountSwitchMarkerStore,
     private val fileAccessLayer: com.nendo.argosy.data.storage.FileAccessLayer,
-    private val gameArtDao: com.nendo.argosy.data.local.dao.GameArtDao
+    private val gameArtDao: com.nendo.argosy.data.local.dao.GameArtDao,
+    private val diskJudge: ActiveSaveDiskJudge
 ) {
     sealed interface RefreshOutcome {
         data object Dirtied : RefreshOutcome
@@ -411,7 +412,6 @@ class SaveSyncOrchestrator @Inject constructor(
 
         val diskHash = cacheManager.calculateLocalSaveHash(savePath, game.id, emulatorId)
             ?: return@withContext DiskCheck.Untouched
-        val syncRow = saveSyncDao.getByGameEmulatorAndChannel(game.id, emulatorId, SaveSyncApiClient.syncKeyOf(channel), ownerUserId)
 
         if (active == null) {
             if (saveOwnershipTracker.claim(savePath, emulatorId) is SaveClaim.Foreign) return@withContext DiskCheck.Untouched
@@ -419,26 +419,22 @@ class SaveSyncOrchestrator @Inject constructor(
             return@withContext if (cacheSystemSave(game.id, emulatorId, savePath, channelName)) DiskCheck.Adopted else DiskCheck.Untouched
         }
 
-        val knownForms = setOfNotNull(
-            active.contentHash,
-            active.identityHash,
-            syncRow?.localContentHash?.takeIf { syncRow.rommSaveId != null && syncRow.rommSaveId == active.rommSaveId }
-        )
-        if (diskHash in knownForms) return@withContext DiskCheck.Matches
-
-        val newerDirty = saveCacheDao.getAllByGameChannelAndHash(game.id, ownerUserId, active.channelName, diskHash)
-            .firstOrNull { it.needsRemoteSync && !it.cachedAt.isBefore(active.cachedAt) }
-        if (newerDirty != null) {
-            Logger.info(TAG, "[SaveSync] DISK gameId=${game.id} | disk matches unsynced cache id=${newerDirty.id}, keeping it as the active version")
-            activeSaveRepository.activateCache(game.id, newerDirty.id)
-            return@withContext DiskCheck.Adopted
-        }
-
-        if (!secureSaves) {
-            if (saveOwnershipTracker.claim(savePath, emulatorId) is SaveClaim.Foreign) return@withContext DiskCheck.Untouched
-            Logger.info(TAG, "[SaveSync] DISK gameId=${game.id} | disk differs from active cache id=${active.id}, adopting it (Secure Saves off) | path=$savePath")
-            cacheSystemSave(game.id, emulatorId, savePath, channelName)
-            return@withContext DiskCheck.Adopted
+        val judgement = diskJudge.judge(game.id, emulatorId, channel, savePath, diskHash, active, secureSaves, ownerUserId)
+        val syncRow = judgement.syncRow
+        when (val verdict = judgement.verdict) {
+            DiskVerdict.Matches -> return@withContext DiskCheck.Matches
+            is DiskVerdict.Progress -> {
+                Logger.info(TAG, "[SaveSync] DISK gameId=${game.id} | disk matches unsynced cache id=${verdict.cacheId}, keeping it as the active version")
+                activeSaveRepository.activateCache(game.id, verdict.cacheId)
+                return@withContext DiskCheck.Adopted
+            }
+            DiskVerdict.Foreign -> return@withContext DiskCheck.Untouched
+            DiskVerdict.Adopt -> {
+                Logger.info(TAG, "[SaveSync] DISK gameId=${game.id} | disk differs from active cache id=${active.id}, adopting it (Secure Saves off) | path=$savePath")
+                cacheSystemSave(game.id, emulatorId, savePath, channelName)
+                return@withContext DiskCheck.Adopted
+            }
+            DiskVerdict.ProtectThenRestore -> Unit
         }
 
         if (!hasExtension(savePath, expectedExtension)) return@withContext DiskCheck.Failed

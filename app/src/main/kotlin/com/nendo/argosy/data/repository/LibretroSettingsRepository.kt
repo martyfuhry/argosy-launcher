@@ -104,6 +104,9 @@ class LibretroSettingsRepository @Inject constructor(
     suspend fun setBuiltinFastForwardMode(mode: FastForwardMode) =
         builtinPrefs.setBuiltinFastForwardMode(mode)
 
+    suspend fun setBuiltinSelectAsBack(mode: com.nendo.argosy.data.local.entity.SelectAsBackMode) =
+        builtinPrefs.setBuiltinSelectAsBack(mode)
+
     suspend fun setBuiltinFastForwardPreservePitch(enabled: Boolean) =
         builtinPrefs.setBuiltinFastForwardPreservePitch(enabled)
 

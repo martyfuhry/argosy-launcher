@@ -63,6 +63,8 @@ internal class DisplaysSectionInput(
             DisplaysItem.AppsTarget -> { viewModel.cycleAppsLaunchTarget(direction); return InputResult.HANDLED }
             DisplaysItem.DualScreenEnabled ->
                 return toggleLeftRight(direction, state.display.dualScreenEnabled) { viewModel.setDualScreenEnabled(it) }
+            DisplaysItem.DualScreenMatchSize ->
+                return toggleLeftRight(direction, state.display.dualScreenMatchSize) { viewModel.setDualScreenMatchSize(it) }
             DisplaysItem.ScreenDimmer ->
                 return toggleLeftRight(direction, state.storage.screenDimmerEnabled) { viewModel.toggleScreenDimmer() }
             DisplaysItem.LidSleep ->

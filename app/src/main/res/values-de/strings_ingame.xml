@@ -178,6 +178,7 @@
     <string name="ingame_settings_controller_type_title">Controller von Spieler %1$d</string>
     <string name="ingame_settings_controller_type_pending">Gilt ab dem nächsten Start</string>
     <string name="ingame_settings_controller_type_core_default">Vom Core gewählt</string>
+    <string name="ingame_settings_controller_type_auto">Auto (%1$s)</string>
     <string name="ingame_settings_controller_grip_title">Controller-Griff</string>
     <string name="ingame_settings_controller_grip_subtitle">Oberfläche aus dem vom Griff verdeckten Bereich verschieben</string>
     <string name="ingame_settings_input_mapping_title">Tastenbelegung</string>
@@ -190,6 +191,8 @@
     <string name="ingame_settings_hotkeys_subtitle">Tastenkürzel für Menü, Vorlauf und Rücklauf einrichten</string>
     <string name="ingame_settings_limit_hotkeys_title">Hotkeys auf Spieler 1 beschränken</string>
     <string name="ingame_settings_limit_hotkeys_subtitle">Nur der Controller von Spieler 1 kann Hotkeys auslösen</string>
+    <string name="ingame_settings_select_as_back_title">Select als Zurück</string>
+    <string name="ingame_settings_select_as_back_subtitle">Für Controller, deren Select-Taste Zurück sendet. Automatisch nutzt Zurück als Select bei Controllern ohne Select-Taste.</string>
     <string name="ingame_settings_toggle_fast_forward_title">Vorlauf umschalten</string>
     <string name="ingame_settings_toggle_fast_forward_subtitle">Einmal drücken zum Starten, erneut zum Stoppen (aus = gedrückt halten für Vorlauf)</string>
     <string name="ingame_settings_preserve_pitch_title">Tonhöhe beibehalten</string>

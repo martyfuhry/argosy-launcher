@@ -127,13 +127,6 @@ class SaveSyncRepository @Inject constructor(
     private val snapshotRouter: dagger.Lazy<com.nendo.argosy.data.sync.snapshot.SnapshotSyncRouter>
 ) {
     private val PRE_LAUNCH_TAG = "SaveSyncRepository"
-    private val PRE_LAUNCH_ACTION_PRIORITY = listOf(
-        ReconcileAction.CONFLICT,
-        ReconcileAction.DOWNLOAD,
-        ReconcileAction.UPLOAD,
-        ReconcileAction.NO_OP
-    )
-
     val syncQueueState: StateFlow<SyncQueueState> = entityManager.syncQueueState
 
     fun setApi(api: RomMApi?) = apiClient.setApi(api)
@@ -480,9 +473,7 @@ class SaveSyncRepository @Inject constructor(
             Logger.debug(PRE_LAUNCH_TAG, "[SaveSync] PRE_LAUNCH gameId=$gameId slot=$slot | negotiate unavailable | decision=NoConnection")
             return PreLaunchSyncResult.NoConnection
         }
-        val op = plan.operations
-            .filter { SaveSyncApiClient.syncKeyOf(it.slot) == slot }
-            .minByOrNull { PRE_LAUNCH_ACTION_PRIORITY.indexOf(it.action) }
+        val op = plan.operations.firstOrNull { SaveSyncApiClient.syncKeyOf(it.slot) == slot }
         val serverTimestamp = op?.serverUpdatedAt?.let { SaveSyncApiClient.parseTimestamp(it) } ?: Instant.now()
         val flaggedConflict = existing?.syncStatus == SaveSyncEntity.STATUS_CONFLICT
         val decision = when (op?.action) {

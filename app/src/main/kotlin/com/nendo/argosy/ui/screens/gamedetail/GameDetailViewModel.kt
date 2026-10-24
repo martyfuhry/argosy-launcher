@@ -149,6 +149,10 @@ class GameDetailViewModel @Inject constructor(
 
     private val sessionStateStore by lazy { com.nendo.argosy.data.preferences.SessionStateStore(context) }
 
+    val gameConfirm = com.nendo.argosy.ui.common.GameConfirmController(
+        gameActions::deleteDownloadConfirm, gameActions::hideConfirm, viewModelScope
+    )
+
     private val _uiState = MutableStateFlow(GameDetailUiState())
     val uiState: StateFlow<GameDetailUiState> = _uiState.asStateFlow()
 
@@ -551,9 +555,9 @@ class GameDetailViewModel @Inject constructor(
     }
 
     fun loadGame(gameId: Long) {
+        if (gameId != currentGameId) downloadDelegate.reset()
         currentGameId = gameId
         pageLoadTime = System.currentTimeMillis()
-        downloadDelegate.reset()
         imageCacheManager.pauseBackgroundCaching()
         gameThemeAudio.enter(gameId)
         viewModelScope.launch { prefetchGameSaveDataUseCase(gameId) }
@@ -765,7 +769,7 @@ class GameDetailViewModel @Inject constructor(
                 }
             }
 
-            val needsTitleId = game.platformSlug in com.nendo.argosy.data.platform.PlatformDefinitions.TITLE_ID_PLATFORMS
+            val needsTitleId = com.nendo.argosy.data.platform.PlatformDefinitions.hasTitleId(game.platformSlug)
             if (needsTitleId && game.titleId == null && game.localPath != null) {
                 viewModelScope.launch {
                     titleIdDownloadObserver.extractTitleIdForGame(gameId)
@@ -1060,12 +1064,13 @@ class GameDetailViewModel @Inject constructor(
         if (!picker.showFilePicker) return
         pickerModalDelegate.dismissFilePicker()
         if (picker.filePickerManageMode) {
+            val gameId = currentGameId
             downloadDelegate.applyManagedFiles(
                 viewModelScope,
-                currentGameId,
+                gameId,
                 picker.filePickerRows,
                 picker.filePickerSelected
-            )
+            ) { if (currentGameId == gameId) loadGame(gameId) }
         } else {
             downloadDelegate.downloadWithSelection(
                 viewModelScope,
@@ -1407,7 +1412,10 @@ class GameDetailViewModel @Inject constructor(
                         viewModelScope.launch { loadGame(currentGameId) }
                     }
                     else -> {
-                        downloadDelegate.deleteLocalFile(viewModelScope, currentGameId) { loadGame(currentGameId) }
+                        val gameId = currentGameId
+                        gameConfirm.requestDelete(gameId) { withSoundtrack ->
+                            downloadDelegate.deleteLocalFile(viewModelScope, gameId, withSoundtrack) { loadGame(gameId) }
+                        }
                     }
                 }
             }
@@ -1415,7 +1423,18 @@ class GameDetailViewModel @Inject constructor(
                 toggleMoreOptions()
                 downloadDelegate.removeFromLibrary(viewModelScope, currentGameId)
             }
-            MoreOptionAction.ToggleHide -> { toggleHideGame(); onBack() }
+            MoreOptionAction.ToggleHide -> {
+                toggleMoreOptions()
+                if (_uiState.value.game?.isHidden == true) {
+                    toggleHideGame()
+                    onBack()
+                } else {
+                    gameConfirm.requestHide(currentGameId) {
+                        toggleHideGame()
+                        onBack()
+                    }
+                }
+            }
         }
     }
 
@@ -1582,13 +1601,13 @@ class GameDetailViewModel @Inject constructor(
 
     fun confirmRename() = saveManagement.saveChannelDelegate.confirmRename(viewModelScope)
 
-    fun saveChannelSecondaryAction() = saveManagement.saveChannelDelegate.secondaryAction(viewModelScope, ::handleSaveStatusChanged)
+    fun saveChannelSecondaryAction() = saveManagement.saveChannelDelegate.secondaryAction()
 
-    fun saveChannelTertiaryAction() = saveManagement.saveChannelDelegate.tertiaryAction()
+    fun saveChannelTertiaryAction() = saveManagement.saveChannelDelegate.tertiaryAction(viewModelScope)
 
     fun dismissDeleteConfirmation() = saveManagement.saveChannelDelegate.dismissDeleteConfirmation()
 
-    fun confirmDeleteChannel() = saveManagement.saveChannelDelegate.confirmDeleteChannel(viewModelScope, ::handleSaveStatusChanged)
+    fun confirmDelete() = saveManagement.saveChannelDelegate.confirmDelete(viewModelScope, ::handleSaveStatusChanged)
 
     fun dismissMigrateConfirmation() = saveManagement.saveChannelDelegate.dismissMigrateConfirmation()
 
@@ -2694,7 +2713,7 @@ class GameDetailViewModel @Inject constructor(
             when {
                 state.reviewEditor != null -> confirmReviewEditorAction()
                 saveState.showRenameDialog -> confirmRename()
-                saveState.showDeleteConfirmation -> confirmDeleteChannel()
+                saveState.showDeleteConfirmation -> confirmDelete()
                 saveState.showRestoreConfirmation -> restoreSave(syncToServer = false)
                 saveState.showMigrateConfirmation -> confirmMigrateChannel()
                 saveState.showDeleteLegacyConfirmation -> confirmDeleteLegacyChannel()

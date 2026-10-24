@@ -107,7 +107,8 @@ class SaveSyncOrchestratorTest {
             saveOwnershipTracker = saveOwnershipTracker,
             accountSwitchMarkerStore = mockk(relaxed = true),
             fileAccessLayer = fileAccessLayer,
-            gameArtDao = mockk(relaxed = true)
+            gameArtDao = mockk(relaxed = true),
+            diskJudge = ActiveSaveDiskJudge(saveCacheDao, saveSyncDao, saveOwnershipTracker)
         )
     }
 

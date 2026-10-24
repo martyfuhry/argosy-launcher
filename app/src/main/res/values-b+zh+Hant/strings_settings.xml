@@ -231,6 +231,8 @@
 
     <string name="settings_displays_display_roles_title">操作螢幕</string>
     <string name="settings_displays_display_roles_subtitle">選單開啟的那個螢幕；另一個顯示你正在看的內容</string>
+    <string name="settings_displays_match_screen_size_title">遊戲螢幕同尺寸</string>
+    <string name="settings_displays_match_screen_size_subtitle">DS 與 3DS 的兩個螢幕以相同尺寸顯示，並在轉軸處相接</string>
     <string name="settings_displays_display_roles_auto">自動</string>
     <string name="settings_displays_display_roles_standard">隨附螢幕</string>
     <string name="settings_displays_display_roles_swapped">主螢幕</string>
@@ -1378,6 +1380,7 @@
     <string name="settings_builtin_controls_mapping_subtitle">為各控制器重新對應按鍵</string>
     <string name="settings_builtin_controls_controller_type_title">玩家 %1$d 控制器</string>
     <string name="settings_builtin_controls_controller_type_subtitle">遊戲識別到的控制器。下次啟動遊戲時生效。</string>
+    <string name="settings_builtin_controls_controller_type_auto">自動（%1$s）</string>
 
     <string name="settings_builtin_controls_analog_as_dpad_title">左搖桿作為方向鍵</string>
     <string name="settings_builtin_controls_analog_as_dpad_subtitle">將左類比搖桿對應至方向鍵輸入</string>
@@ -1388,6 +1391,11 @@
     <string name="settings_builtin_controls_hotkeys_subtitle">設定選單、快轉、倒轉的快捷鍵</string>
     <string name="settings_builtin_controls_limit_hotkeys_title">僅限玩家1使用快捷鍵</string>
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">只有玩家1的控制器可以觸發快捷鍵</string>
+    <string name="settings_builtin_controls_select_as_back_title">Select 視為返回</string>
+    <string name="settings_builtin_controls_select_as_back_subtitle">適用於按 Select 會送出返回鍵的控制器。自動模式會在沒有 Select 鍵的控制器上把返回鍵當作 Select。</string>
+    <string name="settings_builtin_controls_select_as_back_auto">自動</string>
+    <string name="settings_builtin_controls_select_as_back_on">開</string>
+    <string name="settings_builtin_controls_select_as_back_off">關</string>
     <string name="settings_builtin_controls_toggle_ff_title">切換式快轉</string>
     <string name="settings_builtin_controls_toggle_ff_subtitle">按一次開始，再按一次停止（關閉時需按住才能快轉）</string>
     <string name="settings_builtin_controls_ff_pitch_title">保持音訊音調</string>
@@ -1636,6 +1644,8 @@
     <string name="settings_platform_sync_toggle_subtitle">在收藏庫同步時包含此平台</string>
     <string name="settings_platform_combine_content_title">合併內容</string>
     <string name="settings_platform_combine_content_subtitle">所有遊戲放在同一資料夾，所有更新與DLC放在extcontent</string>
+    <string name="settings_platform_skip_full_sync_title">完整同步時略過</string>
+    <string name="settings_platform_skip_full_sync_subtitle">增量同步仍會檢查其變更</string>
     <string name="settings_platform_sync_now_title">立即同步</string>
     <string name="settings_platform_sync_now_busy">同步進行中&#8230;</string>
     <string name="settings_platform_sync_now_subtitle">將此平台與RomM同步</string>

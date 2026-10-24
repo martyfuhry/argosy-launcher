@@ -17,9 +17,9 @@ class Migration214To215Test {
     }
 
     @Test
-    fun `adds the nullable game boy color style column to the platform settings`() {
+    fun `adds the full sync skip flag off, so every platform stays in the full pass`() {
         assertEquals(
-            listOf("ALTER TABLE `platform_libretro_settings` ADD COLUMN `gbColorStyle` TEXT DEFAULT NULL"),
+            listOf("ALTER TABLE `platforms` ADD COLUMN `skipFullSync` INTEGER NOT NULL DEFAULT 0"),
             statements()
         )
     }

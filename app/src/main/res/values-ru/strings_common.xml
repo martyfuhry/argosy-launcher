@@ -103,6 +103,25 @@
     <string name="ui_save_channel_delete_slot_cancel">Отмена</string>
     <string name="ui_save_channel_delete_slot_message">Удалить \"%1$s\"?</string>
     <string name="ui_save_channel_delete_slot_note">Это удалит его с сервера и из локального хранилища. Это действие нельзя отменить.</string>
+    <string name="ui_save_channel_footer_delete_archived">Удалить все</string>
+    <string name="ui_save_channel_footer_delete_version">Удалить</string>
+    <string name="ui_save_channel_delete_version_title">УДАЛИТЬ СОХРАНЕНИЕ</string>
+    <string name="ui_save_channel_delete_version_message">Удалить сохранение от %1$s?</string>
+    <string name="ui_save_channel_delete_archived_title">УДАЛИТЬ АРХИВНЫЕ СОХРАНЕНИЯ</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="one">Удалить %1$d архивное сохранение?</item>
+        <item quantity="few">Удалить %1$d архивных сохранения?</item>
+        <item quantity="many">Удалить %1$d архивных сохранений?</item>
+        <item quantity="other">Удалить %1$d архивного сохранения?</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">Это удалит копию на этом устройстве. Копия на сервере останется. Это действие нельзя отменить.</string>
+    <string name="ui_save_channel_delete_only_copy_note">Единственная копия хранится на этом устройстве. Она будет удалена навсегда.</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="one">Удалено %1$d сохранение</item>
+        <item quantity="few">Удалено %1$d сохранения</item>
+        <item quantity="many">Удалено %1$d сохранений</item>
+        <item quantity="other">Удалено %1$d сохранения</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">НЕСОВПАДЕНИЕ ВЕРСИИ ЯДРА</string>
     <string name="ui_save_channel_version_mismatch_confirm">Загрузить всё равно</string>
@@ -1074,4 +1093,7 @@
     <string name="gamelist_row_genre_board_game">Настольная</string>
     <string name="gamelist_row_genre_quiz">Викторина</string>
     <string name="gamelist_row_genre_sim">Симулятор</string>
+    <string name="common_game_confirm_hide_title">Скрыть %1$s?</string>
+    <string name="common_game_confirm_hide_message">Скрытые игры можно снова показать в Библиотеке, выбрав в фильтре Источник значение Скрытые.</string>
+    <string name="common_game_confirm_hide_confirm">Скрыть</string>
 </resources>

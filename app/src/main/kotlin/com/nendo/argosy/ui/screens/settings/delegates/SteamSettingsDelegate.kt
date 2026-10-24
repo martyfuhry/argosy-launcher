@@ -616,11 +616,12 @@ class SteamSettingsDelegate @Inject constructor(
         }
     }
 
-    fun showAddSteamGameDialog() {
+    fun showAddSteamGameDialog(launcherPackage: String?) {
         _state.update {
             it.copy(
                 showAddGameDialog = true,
                 addGameAppId = "",
+                addGameLauncherPackage = launcherPackage,
                 addGameError = null,
                 isAddingGame = false
             )
@@ -632,6 +633,7 @@ class SteamSettingsDelegate @Inject constructor(
             it.copy(
                 showAddGameDialog = false,
                 addGameAppId = "",
+                addGameLauncherPackage = null,
                 addGameError = null,
                 isAddingGame = false
             )
@@ -643,17 +645,14 @@ class SteamSettingsDelegate @Inject constructor(
     }
 
     /**
-     * Adds a Steam game by App ID under a specific managing launcher. Called from each
-     * per-launcher Settings section so the resulting GameEntity is linked to that
-     * launcher (e.g. GameNative's section passes GameNativeLauncher.packageName). The
-     * launcher string is stored in GameEntity.steamLauncher and drives the launch
-     * intent as well as the Unlink-from-X affordance.
+     * Adds a Steam game by App ID under the launcher whose section opened the dialog, or
+     * GameNative when it was opened from the general Add row. The launcher is stored in
+     * GameEntity.steamLauncher and drives the launch intent as well as the Unlink-from-X
+     * affordance.
      */
-    fun confirmAddSteamGame(
-        context: Context,
-        scope: CoroutineScope,
-        launcherPackage: String = com.nendo.argosy.data.launcher.GameNativeLauncher.packageName
-    ) {
+    fun confirmAddSteamGame(context: Context, scope: CoroutineScope) {
+        val launcherPackage = _state.value.addGameLauncherPackage
+            ?: com.nendo.argosy.data.launcher.GameNativeLauncher.packageName
         val appIdStr = _state.value.addGameAppId.trim()
         val appId = appIdStr.toLongOrNull()
 

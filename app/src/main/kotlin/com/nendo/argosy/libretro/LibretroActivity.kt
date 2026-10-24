@@ -207,6 +207,7 @@ class LibretroActivity : ComponentActivity() {
     @Inject lateinit var saveUnitResolver: com.nendo.argosy.data.sync.SaveUnitResolver
     @Inject lateinit var sigilSaveHandler: com.nendo.argosy.data.sync.platform.SigilSaveHandler
     @Inject lateinit var activeSaveRepository: com.nendo.argosy.data.repository.ActiveSaveRepository
+    @Inject lateinit var activeSaveDiskJudge: com.nendo.argosy.data.repository.ActiveSaveDiskJudge
     @Inject lateinit var ambientLedManager: AmbientLedManager
     @Inject lateinit var socialRepository: SocialRepository
     @Inject lateinit var argosSocialService: ArgosSocialService
@@ -295,6 +296,10 @@ class LibretroActivity : ComponentActivity() {
     private var canEnableBFI = false
 
     private var limitHotkeysToPlayer1 by mutableStateOf(true)
+    private var selectAsBack by mutableStateOf(com.nendo.argosy.data.local.entity.SelectAsBackMode.AUTO)
+    private val backAsSelect = BackAsSelectTranslator { selectAsBack }
+    private var dualScreenMatchSize = false
+    private var matchedScreens: MatchedScreens? = null
     private var firstFrameRendered = false
     private var arrivalRevealed by mutableStateOf(false)
     private var framesSinceSample = 0
@@ -798,6 +803,9 @@ class LibretroActivity : ComponentActivity() {
             gameId = gameId,
             activeSaveRepository = activeSaveRepository,
             saveCacheManager = saveCacheManager,
+            diskJudge = activeSaveDiskJudge,
+            secureSaves = secureSavesEnabled,
+            ownerUserId = launchPreferences.rommUserId,
             usesExternalMemcard = com.nendo.argosy.data.platform.PlatformDefinitions.getCanonicalSlug(platformSlug) == "gc",
             channelName = channelName,
             isVariant = variantFileId >= 0,
@@ -887,6 +895,8 @@ class LibretroActivity : ComponentActivity() {
         videoSettings.applySettings(settings)
         videoSettings.resolveCustomShader(settings)
         limitHotkeysToPlayer1 = settings.limitHotkeysToPlayer1
+        selectAsBack = settings.selectAsBack
+        dualScreenMatchSize = settings.dualScreenMatchSize
         videoSettings.onRewindToggled = { enabled ->
             if (enabled && !hardcoreMode) {
                 setupRewind(settings)
@@ -993,7 +1003,9 @@ class LibretroActivity : ComponentActivity() {
                 saveRAMState = existingSram
                 rtcState = restoredRtc
                 shader = effectiveShader
-                skipDuplicateFrames = if (coreName == "dolphin") false else settings.skipDuplicateFrames
+                skipDuplicateFrames = settings.skipDuplicateFrames &&
+                    coreName != "dolphin" &&
+                    DualScreenOutput.forCore(coreName) == null
                 timingFollowsGeometry = coreName == "dolphin"
                 preferLowLatencyAudio = settings.lowLatencyAudio
                 forceSoftwareTiming = settings.forceSoftwareTiming
@@ -1969,10 +1981,13 @@ class LibretroActivity : ComponentActivity() {
             if (devices.size < 2) return@mapIndexedNotNull null
             val stored = if (perGame) gameControllerTypes[port] else platformControllerTypes[port]
             val effective = effectiveControllerType(port)
+            val deviceIds = devices.map { it.id }
             ControllerPortOption(
                 port = port,
                 options = devices.map { it.description ?: getString(R.string.ingame_libretro_controller_port_device_fallback, it.id) },
-                selectedIndex = devices.indexOfFirst { it.id == effective }.coerceAtLeast(0),
+                selectedIndex = CorePortDeviceCatalog.selectedDeviceIndex(deviceIds, effective),
+                autoIndex = CorePortDeviceCatalog.autoDeviceIndex(deviceIds),
+                followsAuto = effective == null,
                 isOverridden = stored != null,
                 pendingRestart = effective != null && effective != appliedControllerTypes[port]
             )
@@ -1992,8 +2007,7 @@ class LibretroActivity : ComponentActivity() {
     private fun cycleControllerType(port: Int, direction: Int) {
         val devices = corePortDevices.getOrNull(port) ?: return
         if (devices.isEmpty()) return
-        val current = effectiveControllerType(port)
-        val currentIndex = devices.indexOfFirst { it.id == current }.coerceAtLeast(0)
+        val currentIndex = CorePortDeviceCatalog.selectedDeviceIndex(devices.map { it.id }, effectiveControllerType(port))
         val next = devices[(currentIndex + direction).mod(devices.size)]
         setControllerType(port, next.id)
     }
@@ -2363,6 +2377,7 @@ class LibretroActivity : ComponentActivity() {
                 dpadAsAnalog = videoSettings.currentDpadAsAnalog,
                 limitHotkeysToPlayer1 = limitHotkeysToPlayer1,
                 fastForwardMode = videoSettings.fastForwardMode,
+                selectAsBack = selectAsBack,
                 fastForwardPreservePitch = videoSettings.fastForwardPreservePitch,
                 controllerOrderCount = inputConfig.controllerOrderCount,
                 gripReserveMode = gripReserveModeState,
@@ -3084,6 +3099,12 @@ class LibretroActivity : ComponentActivity() {
                     preferencesRepository.setBuiltinFastForwardMode(action.mode)
                 }
             }
+            is InGameControlsAction.SetSelectAsBack -> {
+                selectAsBack = action.mode
+                lifecycleScope.launch {
+                    preferencesRepository.setBuiltinSelectAsBack(action.mode)
+                }
+            }
             is InGameControlsAction.SetFastForwardPreservePitch -> {
                 videoSettings.fastForwardPreservePitch = action.enabled
                 audioController.setPitchPreservationEnabled(action.enabled)
@@ -3253,7 +3274,7 @@ class LibretroActivity : ComponentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         observeVirtualPad(event)
         connectedControllerTracker.noteInput(event)
-        return dispatchKeyFrom(event, KeyPressGate.Source.Key, coreBound = true)
+        return dispatchKeyFrom(backAsSelect.translate(event), KeyPressGate.Source.Key, coreBound = true)
     }
 
     private fun observeVirtualPad(event: android.view.InputEvent) {
@@ -3416,6 +3437,30 @@ class LibretroActivity : ComponentActivity() {
         retroView.setScreenSplit(output.primary, output.primaryAspect)
         retroView.secondaryCrop = output.secondary
         retroView.secondaryAspectRatio = output.secondaryAspect
+        applyMatchedScreens(output, secondScreenDisplay())
+    }
+
+    private fun applyMatchedScreens(output: DualScreenOutput, secondDisplay: android.view.Display?) {
+        val panels = KnownPanels.forModel()
+        @Suppress("DEPRECATION")
+        val primaryPanel = windowManager.defaultDisplay.panelSpec(panels)
+        val secondaryPanel = secondDisplay?.panelSpec(panels)
+        matchedScreens = if (dualScreenMatchSize && primaryPanel != null && secondaryPanel != null) {
+            MatchedScreens.of(primaryPanel, secondaryPanel, output.primaryAspect, output.secondaryAspect)
+        } else {
+            null
+        }
+        val column = splitColumn ?: return
+        column.post {
+            val padding = matchedScreens?.primaryPadding(column.width, column.height)
+            column.setPadding(padding?.left ?: 0, padding?.top ?: 0, padding?.right ?: 0, 0)
+            column.setBackgroundColor(if (padding != null) android.graphics.Color.BLACK else android.graphics.Color.TRANSPARENT)
+        }
+    }
+
+    private fun android.view.Display.panelSpec(panels: List<PanelSpec>): PanelSpec? {
+        val mode = mode
+        return KnownPanels.specFor(panels, mode.physicalWidth, mode.physicalHeight)
     }
 
     /**
@@ -3424,6 +3469,9 @@ class LibretroActivity : ComponentActivity() {
      */
     private fun clearScreenSplit() {
         dualScreenOutput = null
+        matchedScreens = null
+        splitColumn?.setPadding(0, 0, 0, 0)
+        splitColumn?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         if (!::retroView.isInitialized) return
         retroView.setScreenSplit(null, 0f)
         retroView.secondaryCrop = RectF(0f, 0f, 0f, 0f)
@@ -3435,6 +3483,7 @@ class LibretroActivity : ComponentActivity() {
 
     private fun secondScreenDisplay(): android.view.Display? =
         screenCatalog.secondScreenFor(windowManager.defaultDisplay.displayId)
+            ?.takeIf { it.displayId != android.view.Display.DEFAULT_DISPLAY }
 
     /**
      * Rebuilds the second screen's window. Its surface belongs to the display, not to us, so it is
@@ -3451,6 +3500,7 @@ class LibretroActivity : ComponentActivity() {
             context = this,
             display = display,
             arrivesCovered = !arrivalRevealed,
+            pictureHeightPx = matchedScreens?.secondary?.height,
             onSurfaceChanged = { surface ->
                 if (::retroView.isInitialized) retroView.setSecondaryOutput(surface)
             },

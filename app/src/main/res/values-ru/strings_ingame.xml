@@ -184,6 +184,7 @@
     <string name="ingame_settings_controller_type_title">Контроллер игрока %1$d</string>
     <string name="ingame_settings_controller_type_pending">Применится при следующем запуске</string>
     <string name="ingame_settings_controller_type_core_default">Выбирается ядром</string>
+    <string name="ingame_settings_controller_type_auto">Авто (%1$s)</string>
     <string name="ingame_settings_controller_grip_title">Рукоятка контроллера</string>
     <string name="ingame_settings_controller_grip_subtitle">Сдвинуть интерфейс из зоны, которую закрывает рукоятка</string>
     <string name="ingame_settings_input_mapping_title">Раскладка кнопок</string>
@@ -196,6 +197,8 @@
     <string name="ingame_settings_hotkeys_subtitle">Настройка сочетаний для меню, перемотки вперёд и назад</string>
     <string name="ingame_settings_limit_hotkeys_title">Горячие клавиши только для игрока 1</string>
     <string name="ingame_settings_limit_hotkeys_subtitle">Горячие клавиши доступны только с контроллера игрока 1</string>
+    <string name="ingame_settings_select_as_back_title">Select как «Назад»</string>
+    <string name="ingame_settings_select_as_back_subtitle">Для контроллеров, у которых Select отправляет «Назад». В режиме «Авто» «Назад» работает как Select на контроллерах без кнопки Select.</string>
     <string name="ingame_settings_toggle_fast_forward_title">Переключение перемотки вперёд</string>
     <string name="ingame_settings_toggle_fast_forward_subtitle">Нажмите один раз, чтобы включить, ещё раз - чтобы выключить (выкл. = удерживать для перемотки)</string>
     <string name="ingame_settings_preserve_pitch_title">Сохранять высоту звука</string>

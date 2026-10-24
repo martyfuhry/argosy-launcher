@@ -290,12 +290,9 @@ class PreLaunchStateSyncUseCase @Inject constructor(
                 parsed.slotNumber to stateChannelKey(parsed.channelName)
             }
             .map { (_, candidates) ->
-                candidates.maxByOrNull { writtenAt(it) ?: Instant.MIN } ?: candidates.first()
+                candidates.maxByOrNull { stateCacheManager.serverStateWrittenAt(it) ?: Instant.MIN }
+                    ?: candidates.first()
             }
-
-    private fun writtenAt(serverState: RomMState): Instant? =
-        stateCacheManager.parseStateFileTimestamp(serverState.fileName)
-            ?: stateCacheManager.parseTimestamp(serverState.updatedAt)
 
     private suspend fun materializeToLiveDir(
         rommStateId: Long,

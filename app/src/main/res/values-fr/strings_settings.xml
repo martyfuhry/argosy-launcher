@@ -138,7 +138,7 @@
     <string name="settings_navigation_nav_bar_pages_subtitle">Choisissez et ordonnez les pages que parcourent la barre de navigation et les boutons supérieurs</string>
     <string name="settings_navigation_quick_navigation_title">Navigation rapide</string>
     <string name="settings_navigation_quick_navigation_subtitle">Les boutons supérieurs changent de page avec la barre de navigation. Désactivée, ils changent de plateforme et d\'onglet, et les gâchettes sautent entre les lettres</string>
-    <string name="settings_navigation_nav_bar_auto_hide_title">Masquer la barre de navigation</string>
+    <string name="settings_navigation_nav_bar_auto_hide_title">Masquer automatiquement la barre de navigation</string>
     <string name="settings_navigation_nav_bar_auto_hide_subtitle">Masque la barre de navigation après quelques secondes pour laisser la place aux indications des boutons. Désactivée, elle reste affichée</string>
     <string name="settings_navigation_nav_bar_pages_count">%1$d / %2$d</string>
     <string name="settings_nav_ring_modal_title">Pages de la barre de navigation</string>
@@ -250,6 +250,8 @@
 
     <string name="settings_displays_display_roles_title">Écran de contrôle</string>
     <string name="settings_displays_display_roles_subtitle">L\'écran où s\'ouvrent les menus ; l\'autre montre ce que vous regardez</string>
+    <string name="settings_displays_match_screen_size_title">Écrans de jeu à la même taille</string>
+    <string name="settings_displays_match_screen_size_subtitle">Les écrans DS et 3DS s\'affichent à la même taille et se rejoignent à la charnière</string>
     <string name="settings_displays_display_roles_auto">Auto</string>
     <string name="settings_displays_display_roles_standard">Écran compagnon</string>
     <string name="settings_displays_display_roles_swapped">Écran principal</string>
@@ -1532,6 +1534,7 @@
     <string name="settings_builtin_controls_mapping_subtitle">Réattribuer les boutons pour chaque manette</string>
     <string name="settings_builtin_controls_controller_type_title">Manette du joueur %1$d</string>
     <string name="settings_builtin_controls_controller_type_subtitle">La manette que voit le jeu. S\'applique au prochain lancement d\'un jeu.</string>
+    <string name="settings_builtin_controls_controller_type_auto">Auto (%1$s)</string>
 
     <string name="settings_builtin_controls_analog_as_dpad_title">Stick gauche comme croix directionnelle</string>
     <string name="settings_builtin_controls_analog_as_dpad_subtitle">Associer le stick analogique gauche aux entrées de la croix directionnelle</string>
@@ -1542,6 +1545,11 @@
     <string name="settings_builtin_controls_hotkeys_subtitle">Configurer les raccourcis pour le menu, l\'avance rapide, le rembobinage</string>
     <string name="settings_builtin_controls_limit_hotkeys_title">Limiter les raccourcis au joueur 1</string>
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">Seule la manette du joueur 1 peut déclencher les raccourcis</string>
+    <string name="settings_builtin_controls_select_as_back_title">Select comme Retour</string>
+    <string name="settings_builtin_controls_select_as_back_subtitle">Pour les manettes dont Select envoie Retour. Auto traite Retour comme Select sur les manettes sans bouton Select.</string>
+    <string name="settings_builtin_controls_select_as_back_auto">Auto</string>
+    <string name="settings_builtin_controls_select_as_back_on">Activé</string>
+    <string name="settings_builtin_controls_select_as_back_off">Désactivé</string>
     <string name="settings_builtin_controls_toggle_ff_title">Basculer l\'avance rapide</string>
     <string name="settings_builtin_controls_toggle_ff_subtitle">Appuyer une fois pour démarrer, encore pour arrêter (désactivé = maintenir pour avancer rapidement)</string>
     <string name="settings_builtin_controls_ff_pitch_title">Préserver la hauteur audio</string>
@@ -1800,6 +1808,8 @@
     <string name="settings_platform_sync_toggle_subtitle">Inclure cette plateforme dans la synchro de la bibliothèque</string>
     <string name="settings_platform_combine_content_title">Combiner le contenu</string>
     <string name="settings_platform_combine_content_subtitle">Tous les jeux dans un seul dossier, toutes les mises à jour et le DLC dans extcontent</string>
+    <string name="settings_platform_skip_full_sync_title">Ignorer lors de la synchronisation complète</string>
+    <string name="settings_platform_skip_full_sync_subtitle">La synchronisation incrémentielle vérifie toujours les changements</string>
     <string name="settings_platform_sync_now_title">Synchroniser maintenant</string>
     <string name="settings_platform_sync_now_busy">Synchro en cours...</string>
     <string name="settings_platform_sync_now_subtitle">Synchroniser cette plateforme avec RomM</string>

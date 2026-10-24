@@ -395,6 +395,8 @@
     <!-- Second line under that row when nothing has been picked, so the emulation engine
          decides. -->
     <string name="ingame_settings_controller_type_core_default">Chosen by the core</string>
+    <!-- %1$s is a controller device name as the emulator core reports it, untranslated -->
+    <string name="ingame_settings_controller_type_auto">Auto (%1$s)</string>
     <!-- Row on the controls tab. Noun phrase: the moulded handle some handhelds clip on,
          which hides the bottom of the screen. -->
     <string name="ingame_settings_controller_grip_title">Controller Grip</string>
@@ -424,6 +426,11 @@
     <string name="ingame_settings_limit_hotkeys_title">Limit Hotkeys to Player 1</string>
     <!-- Second line under that row. -->
     <string name="ingame_settings_limit_hotkeys_subtitle">Only player 1 controller can trigger hotkeys</string>
+    <!-- Row title. Noun phrase: the controller's Select button reaching the app as Back. "Select"
+         and "Back" are button names. -->
+    <string name="ingame_settings_select_as_back_title">Select as Back</string>
+    <!-- Second line of that row: what the three options do. -->
+    <string name="ingame_settings_select_as_back_subtitle">For controllers whose Select sends Back. Auto plays Back as Select on controllers without a Select button.</string>
     <!-- Row on the controls tab. Verb phrase: makes the fast forward shortcut a switch rather
          than something held down. -->
     <string name="ingame_settings_toggle_fast_forward_title">Toggle Fast Forward</string>

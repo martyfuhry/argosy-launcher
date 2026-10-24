@@ -1149,14 +1149,18 @@ fun ArgosyApp(
                     .background(MaterialTheme.colorScheme.background)
                     .windowInsetsPadding(WindowInsets.systemBars)
                     .padding(bottom = bottomReserved)
-                    .revealOnBottomEdgeTouch(edgeHeight = Dimens.footerHeight) {
+                    .revealOnBottomEdgeTouch(edgeHeight = Dimens.footerHeight) { windowPosition ->
                         val ringAtPress = viewModel.navRingState.value
+                        val pressOnFooterHint = footerHostController.hasTappableHintAt(windowPosition)
                         val claimsPress = NavBarVisibility.revealClaimsPress(
                             navBarAllowed = currentNavBarAllowed,
                             barVisible = ringAtPress.isBarVisible,
-                            destinationCount = ringAtPress.destinations.size
+                            destinationCount = ringAtPress.destinations.size,
+                            pressOnFooterHint = pressOnFooterHint
                         )
-                        if (currentNavBarAllowed) viewModel.showNavBar()
+                        if (NavBarVisibility.revealRaisesBar(currentNavBarAllowed, pressOnFooterHint)) {
+                            viewModel.showNavBar()
+                        }
                         claimsPress
                     }
                     .onFocusChanged { keySinkFocused = it.isFocused }

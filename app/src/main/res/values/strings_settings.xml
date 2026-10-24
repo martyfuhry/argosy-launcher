@@ -552,6 +552,12 @@
     <string name="settings_displays_dual_screen_subtitle_unsupported">This system does not allow a companion app on the secondary display; toggle off and on to retry</string>
 
 
+    <!-- Switch row title. When on, a DS or 3DS game played in the built-in emulator draws both of
+         its screens at the same physical size on the device's two panels. -->
+    <string name="settings_displays_match_screen_size_title">Match Game Screen Sizes</string>
+    <!-- Second line of that switch row. -->
+    <string name="settings_displays_match_screen_size_subtitle">DS and 3DS screens show at the same size and meet at the hinge</string>
+
     <!-- Row title. Noun phrase: the screen the controller drives. -->
     <string name="settings_displays_display_roles_title">Control Screen</string>
     <!-- Second line of that row. Names what the other screen becomes. -->
@@ -2859,6 +2865,8 @@
     <string name="settings_builtin_controls_controller_type_title">Player %1$d Controller</string>
     <!-- Second line under that row. -->
     <string name="settings_builtin_controls_controller_type_subtitle">The controller the game sees. Takes effect the next time a game starts.</string>
+    <!-- %1$s is a controller device name as the emulator core reports it, untranslated -->
+    <string name="settings_builtin_controls_controller_type_auto">Auto (%1$s)</string>
 
     <!-- Row title. Noun phrase: the left stick sends the same inputs as the direction pad.
          "D-Pad" is the cross-shaped direction control; keep the abbreviation. -->
@@ -2878,6 +2886,17 @@
     <string name="settings_builtin_controls_limit_hotkeys_title">Limit Hotkeys to Player 1</string>
     <!-- Second line of that row. -->
     <string name="settings_builtin_controls_limit_hotkeys_subtitle">Only player 1 controller can trigger hotkeys</string>
+    <!-- Row title. Noun phrase: the controller's Select button reaching the app as Back. "Select"
+         and "Back" are button names. -->
+    <string name="settings_builtin_controls_select_as_back_title">Select as Back</string>
+    <!-- Second line of that row: what the three options do. -->
+    <string name="settings_builtin_controls_select_as_back_subtitle">For controllers whose Select sends Back. Auto plays Back as Select on controllers without a Select button.</string>
+    <!-- Option of that row: decide per controller. -->
+    <string name="settings_builtin_controls_select_as_back_auto">Auto</string>
+    <!-- Option of that row: Back is always Select in game. -->
+    <string name="settings_builtin_controls_select_as_back_on">On</string>
+    <!-- Option of that row: Back always opens the in-game menu. -->
+    <string name="settings_builtin_controls_select_as_back_off">Off</string>
     <!-- Row title. Verb phrase: fast forward switches on and off rather than needing a held
          button. -->
     <string name="settings_builtin_controls_toggle_ff_title">Toggle Fast Forward</string>
@@ -3379,6 +3398,11 @@
     <!-- Second line of that row. "DLC" is paid add-on content and "extcontent" a folder name;
          leave both as they are. -->
     <string name="settings_platform_combine_content_subtitle">All games in one folder, all updates and DLC in extcontent</string>
+    <!-- Row title. Switch: when on, the full library sync passes over this console. -->
+    <string name="settings_platform_skip_full_sync_title">Skip in Full Sync</string>
+    <!-- Second line of that row. "Incremental sync" is the quick sync that fetches only games
+         changed since the last one. -->
+    <string name="settings_platform_skip_full_sync_subtitle">Incremental sync still checks it for changes</string>
     <!-- Row that fetches just this console. Verb phrase. -->
     <string name="settings_platform_sync_now_title">Sync Now</string>
     <!-- Second line of that row while it runs. -->

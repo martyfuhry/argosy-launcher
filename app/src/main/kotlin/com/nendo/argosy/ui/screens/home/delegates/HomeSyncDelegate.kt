@@ -54,7 +54,7 @@ class HomeSyncDelegate @Inject constructor(
                 if (isStale && !platformSyncQueue.isLibraryBusyNow()) {
                     platformSyncQueue.enqueueLibrary(
                         initializeFirst = true,
-                        changesSince = lastSync,
+                        changesSince = prefs.rommChangesWatermark ?: lastSync,
                         onComplete = onSyncComplete
                     )
                 } else {

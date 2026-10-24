@@ -496,6 +496,27 @@ class GameLauncherTest {
         }
     }
 
+    @Test
+    fun `flycast is handed the rom path rather than a content uri it cannot open`() = runTest {
+        val chdPath = romFile("chd")
+        val game = createGame(localPath = chdPath, platformSlug = "dc")
+        coEvery { gameDao.getById(1L) } returns game
+        coEvery { variantResolver.getVariantOptions(game) } returns null
+
+        val flycast = EmulatorRegistry.getById("flycast")!!
+        coEvery { emulatorConfigDao.getByGameId(1L) } returns createConfig(
+            gameId = 1L,
+            packageName = flycast.packageName,
+            displayName = flycast.displayName
+        )
+        stubDetectorWith(installedEmulator(flycast))
+        every { emulatorDetector.getByPackage(flycast.packageName) } returns flycast
+
+        launcher.launch(1L)
+
+        verify(exactly = 0) { FileProvider.getUriForFile(any(), any(), any<java.io.File>()) }
+    }
+
     // -----------------------------------------------------------------------
     // Emulator resolution: platform default
     // -----------------------------------------------------------------------

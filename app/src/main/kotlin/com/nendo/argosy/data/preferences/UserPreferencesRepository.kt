@@ -112,6 +112,7 @@ class UserPreferencesRepository @Inject constructor(
             quickNavigation = controls.quickNavigation,
             navBarAutoHide = controls.navBarAutoHide,
             lastRommSync = sync.lastRommSync,
+            rommChangesWatermark = sync.rommChangesWatermark,
             lastFavoritesSync = sync.lastFavoritesSync,
             lastFavoritesCheck = sync.lastFavoritesCheck,
             syncFilters = sync.syncFilters,
@@ -443,6 +444,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setRAWebApiKey(key: String?) = syncPrefs.setRAWebApiKey(key)
     suspend fun setRAProxy(enabled: Boolean, address: String) = syncPrefs.setRAProxy(enabled, address)
     suspend fun setLastRommSyncTime(time: Instant) = syncPrefs.setLastRommSyncTime(time)
+
+    suspend fun setRommChangesWatermark(time: Instant) = syncPrefs.setRommChangesWatermark(time)
     suspend fun setLastRommFullSyncTime(time: Instant) = syncPrefs.setLastRommFullSyncTime(time)
     suspend fun getSyncResumeGeneration(): Instant? = syncPrefs.getSyncResumeGeneration()
     suspend fun getSyncResumeCompletedPlatformIds(): Set<Long> = syncPrefs.getSyncResumeCompletedPlatformIds()
@@ -612,6 +615,8 @@ class UserPreferencesRepository @Inject constructor(
     suspend fun setBuiltinFastForwardEnabled(enabled: Boolean) = builtinPrefs.setBuiltinFastForwardEnabled(enabled)
     suspend fun setBuiltinFastForwardSpeed(speed: Int) = builtinPrefs.setBuiltinFastForwardSpeed(speed)
     suspend fun setBuiltinFastForwardMode(mode: com.nendo.argosy.data.local.entity.FastForwardMode) = builtinPrefs.setBuiltinFastForwardMode(mode)
+    suspend fun setBuiltinSelectAsBack(mode: com.nendo.argosy.data.local.entity.SelectAsBackMode) = builtinPrefs.setBuiltinSelectAsBack(mode)
+    suspend fun setBuiltinDualScreenMatchSize(enabled: Boolean) = builtinPrefs.setBuiltinDualScreenMatchSize(enabled)
     suspend fun setBuiltinFastForwardPreservePitch(enabled: Boolean) = builtinPrefs.setBuiltinFastForwardPreservePitch(enabled)
     suspend fun setBuiltinRotation(rotation: Int) = builtinPrefs.setBuiltinRotation(rotation)
     suspend fun setBuiltinOverscanCrop(crop: Int) = builtinPrefs.setBuiltinOverscanCrop(crop)
@@ -704,6 +709,8 @@ data class BuiltinEmulatorSettings(
     val fastForwardEnabled: Boolean = true,
     val fastForwardSpeed: Int = 4,
     val fastForwardMode: com.nendo.argosy.data.local.entity.FastForwardMode = com.nendo.argosy.data.local.entity.FastForwardMode.HOLD,
+    val selectAsBack: com.nendo.argosy.data.local.entity.SelectAsBackMode = com.nendo.argosy.data.local.entity.SelectAsBackMode.AUTO,
+    val dualScreenMatchSize: Boolean = false,
     val fastForwardPreservePitch: Boolean = false,
     val rotation: Int = -1,
     val overscanCrop: Int = 0,
@@ -860,6 +867,7 @@ data class UserPreferences(
     val quickNavigation: Boolean = true,
     val navBarAutoHide: Boolean = true,
     val lastRommSync: Instant? = null,
+    val rommChangesWatermark: Instant? = null,
     val lastFavoritesSync: Instant? = null,
     val lastFavoritesCheck: Instant? = null,
     val syncFilters: SyncFilterPreferences = SyncFilterPreferences(),

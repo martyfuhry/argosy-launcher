@@ -98,6 +98,35 @@ class EmulatorUpdateRepository @Inject constructor(
         fun isCommitHash(version: String): Boolean {
             return HEX_PATTERN.matches(version.removePrefix("v"))
         }
+
+        internal fun isUpdateAvailable(
+            installedVersion: String?,
+            latestVersion: String,
+            installedAt: Instant?,
+            releasePublishedAt: String?
+        ): Boolean {
+            installedVersion ?: return false
+            val latest = VersionInfo.parse(latestVersion)
+            val current = VersionInfo.parse(installedVersion)
+            return when {
+                current != null && latest != null -> latest > current
+                current == null && isCommitHash(installedVersion) && latest != null ->
+                    !installedSinceRelease(installedAt, releasePublishedAt)
+                latest != null && current == null ->
+                    VERSION_PATTERN.find(installedVersion)?.groupValues?.get(1)
+                        ?.let { VersionInfo.parse(it) }
+                        ?.let { latest > it } == true
+                else -> false
+            }
+        }
+
+        private fun installedSinceRelease(installedAt: Instant?, releasePublishedAt: String?): Boolean {
+            installedAt ?: return false
+            val published = releasePublishedAt?.let {
+                runCatching { java.time.OffsetDateTime.parse(it).toInstant() }.getOrNull()
+            } ?: return false
+            return !installedAt.isBefore(published)
+        }
     }
 
     private val moshi = Moshi.Builder().build()
@@ -199,7 +228,8 @@ class EmulatorUpdateRepository @Inject constructor(
     suspend fun checkForUpdate(
         emulator: EmulatorDef,
         installedVersion: String?,
-        storedVariant: String? = null
+        storedVariant: String? = null,
+        installedAt: Instant? = null
     ): EmulatorUpdateCheckResult {
         val source = emulator.releaseSource ?: return EmulatorUpdateCheckResult.Error(
             emulator.id,
@@ -236,9 +266,6 @@ class EmulatorUpdateRepository @Inject constructor(
             extractedVersion = extractedVersion ?: release.tagName
             Log.d(TAG, "${emulator.id}: final version: $extractedVersion")
 
-            val latestVersion = VersionInfo.parse(extractedVersion)
-
-            // If installed version is a commit hash, try to find the associated tag
             var resolvedInstalledVersion = installedVersion
             if (installedVersion != null && isCommitHash(installedVersion)) {
                 Log.d(TAG, "${emulator.id}: installed version is commit hash, fetching tags...")
@@ -252,8 +279,6 @@ class EmulatorUpdateRepository @Inject constructor(
                 }
             }
 
-            val currentVersionInfo = resolvedInstalledVersion?.let { VersionInfo.parse(it) }
-
             val matchResult = ApkAssetMatcher.matchApk(
                 assets = release.assets,
                 storedVariant = storedVariant
@@ -266,22 +291,12 @@ class EmulatorUpdateRepository @Inject constructor(
                 )
             }
 
-            val hasUpdate = when {
-                // No installed version means we can't compare
-                resolvedInstalledVersion == null -> false
-                // Both have valid semver - use semver comparison
-                currentVersionInfo != null && latestVersion != null -> latestVersion > currentVersionInfo
-                // Installed version is an unresolved commit hash -- assume release is newer
-                currentVersionInfo == null && isCommitHash(resolvedInstalledVersion) && latestVersion != null -> true
-                // If GitHub version couldn't be parsed but installed can, try extracting semver from installed
-                latestVersion != null && currentVersionInfo == null -> {
-                    val extractedInstalled = VERSION_PATTERN.find(resolvedInstalledVersion)?.groupValues?.get(1)
-                    val extractedInfo = extractedInstalled?.let { VersionInfo.parse(it) }
-                    extractedInfo != null && latestVersion > extractedInfo
-                }
-                // Can't compare - skip
-                else -> false
-            }
+            val hasUpdate = isUpdateAvailable(
+                installedVersion = resolvedInstalledVersion,
+                latestVersion = extractedVersion,
+                installedAt = installedAt,
+                releasePublishedAt = release.publishedAt
+            )
 
             if (hasUpdate) {
                 Log.d(TAG, "Update available for ${emulator.id}: $installedVersion -> $extractedVersion")

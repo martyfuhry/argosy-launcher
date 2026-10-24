@@ -181,6 +181,7 @@
     <string name="ingame_settings_controller_type_title">Mando del jugador %1$d</string>
     <string name="ingame_settings_controller_type_pending">Se aplicará la próxima vez que inicies</string>
     <string name="ingame_settings_controller_type_core_default">Elegido por el núcleo</string>
+    <string name="ingame_settings_controller_type_auto">Auto (%1$s)</string>
     <string name="ingame_settings_controller_grip_title">Agarre del mando</string>
     <string name="ingame_settings_controller_grip_subtitle">Desplazar la interfaz fuera del área que cubre el agarre</string>
     <string name="ingame_settings_input_mapping_title">Asignación de botones</string>
@@ -193,6 +194,8 @@
     <string name="ingame_settings_hotkeys_subtitle">Configurar atajos para el menú, avance rápido y rebobinado</string>
     <string name="ingame_settings_limit_hotkeys_title">Limitar atajos al jugador 1</string>
     <string name="ingame_settings_limit_hotkeys_subtitle">Solo el mando del jugador 1 puede activar los atajos</string>
+    <string name="ingame_settings_select_as_back_title">Select como Atrás</string>
+    <string name="ingame_settings_select_as_back_subtitle">Para mandos cuyo Select envía Atrás. Automático usa Atrás como Select en mandos sin botón Select.</string>
     <string name="ingame_settings_toggle_fast_forward_title">Alternar avance rápido</string>
     <string name="ingame_settings_toggle_fast_forward_subtitle">Presiona una vez para iniciar, otra vez para detener (desactivado = mantener presionado para avanzar rápido)</string>
     <string name="ingame_settings_preserve_pitch_title">Conservar tono del audio</string>

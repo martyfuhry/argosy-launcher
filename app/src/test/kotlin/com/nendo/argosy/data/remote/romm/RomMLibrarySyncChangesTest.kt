@@ -315,6 +315,7 @@ class RomMLibrarySyncChangesTest {
 
         assertTrue(result.errors.isNotEmpty())
         coVerify(exactly = 0) { preferencesRepository.setLastRommSyncTime(any()) }
+        coVerify(exactly = 0) { preferencesRepository.setRommChangesWatermark(any()) }
     }
 
     @Test
@@ -370,6 +371,7 @@ class RomMLibrarySyncChangesTest {
         val recorded = slot<Instant>()
         coVerify { preferencesRepository.setLastRommSyncTime(capture(recorded)) }
         assertTrue(!recorded.captured.isBefore(before))
+        coVerify { preferencesRepository.setRommChangesWatermark(recorded.captured) }
     }
 
     private companion object {

@@ -739,6 +739,7 @@ class SettingsViewModel @Inject constructor(
     fun adjustSpeedrunPanelWidth(delta: Int) = routeAdjustSpeedrunPanelWidth(this, delta)
     fun setBuiltinFastForwardMode(mode: com.nendo.argosy.data.local.entity.FastForwardMode) = routeSetBuiltinFastForwardMode(this, mode)
     fun setBuiltinFastForwardPreservePitch(enabled: Boolean) = routeSetBuiltinFastForwardPreservePitch(this, enabled)
+    fun setBuiltinSelectAsBack(mode: com.nendo.argosy.data.local.entity.SelectAsBackMode) = routeSetBuiltinSelectAsBack(this, mode)
     fun setBuiltinAnalogAsDpad(enabled: Boolean) = routeSetBuiltinAnalogAsDpad(this, enabled)
     fun setBuiltinDpadAsAnalog(enabled: Boolean) = routeSetBuiltinDpadAsAnalog(this, enabled)
     fun showControllerOrderModal() = routeShowControllerOrderModal(this)
@@ -1051,7 +1052,8 @@ class SettingsViewModel @Inject constructor(
     fun forceSyncSteamLibrary() = steamDelegate.forceSyncLibraryWithOverwrite(context, viewModelScope)
     fun disconnectSteam() = steamDelegate.disconnectSteam(context, viewModelScope)
     fun resetSteamLibrary() = steamDelegate.resetLibrary(viewModelScope)
-    fun showAddSteamGameDialog() = steamDelegate.showAddSteamGameDialog()
+    fun showAddSteamGameDialog(launcherPackage: String? = null) =
+        steamDelegate.showAddSteamGameDialog(launcherPackage)
     fun openGameNativeSyncDirPicker(folder: com.nendo.argosy.data.launcher.GameNativeSyncFolder) =
         steamDelegate.openStoreSyncDirPicker(viewModelScope, folder)
     fun setGameNativeSyncDir(folder: com.nendo.argosy.data.launcher.GameNativeSyncFolder, path: String) =
@@ -1079,8 +1081,6 @@ class SettingsViewModel @Inject constructor(
     }
     fun confirmGameNativeFoldersRow() = steamDelegate.confirmGameNativeFoldersRow(viewModelScope)
     val openGameNativeSyncDirPickerEvent get() = steamDelegate.openStoreSyncDirPicker
-    @Suppress("UNUSED_PARAMETER")
-    fun showAddSteamGameDialog(launcherPackage: String?) = steamDelegate.showAddSteamGameDialog()
     fun dismissAddSteamGameDialog() = steamDelegate.dismissAddSteamGameDialog()
     fun setAddGameAppId(appId: String) = steamDelegate.setAddGameAppId(appId)
     fun confirmAddSteamGame() = steamDelegate.confirmAddSteamGame(context, viewModelScope)
@@ -1483,6 +1483,8 @@ class SettingsViewModel @Inject constructor(
     fun setDualScreenEnabled(enabled: Boolean) = routeSetDualScreenEnabled(this, enabled)
     fun setLidSleepEnabled(enabled: Boolean) = displayDelegate.setLidSleepEnabled(viewModelScope, enabled)
 
+    fun setDualScreenMatchSize(enabled: Boolean) = displayDelegate.setDualScreenMatchSize(viewModelScope, enabled)
+
 
     fun cycleDisplayRoleOverride(direction: Int = 1) = routeCycleDisplayRoleOverride(this, direction)
 
@@ -1827,6 +1829,23 @@ class SettingsViewModel @Inject constructor(
                     platforms = state.emulators.platforms.map { cfg ->
                         if (cfg.platform.id == platformId) {
                             cfg.copy(platform = cfg.platform.copy(combineContent = enabled))
+                        } else {
+                            cfg
+                        }
+                    }
+                )
+            )
+        }
+    }
+
+    fun togglePlatformSkipFullSync(platformId: Long, skip: Boolean) {
+        storageDelegate.togglePlatformSkipFullSync(viewModelScope, platformId, skip)
+        _uiState.update { state ->
+            state.copy(
+                emulators = state.emulators.copy(
+                    platforms = state.emulators.platforms.map { cfg ->
+                        if (cfg.platform.id == platformId) {
+                            cfg.copy(platform = cfg.platform.copy(skipFullSync = skip))
                         } else {
                             cfg
                         }

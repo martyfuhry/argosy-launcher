@@ -448,7 +448,8 @@ class RomMApiClient @Inject constructor(
                         lastScanned = existing?.lastScanned,
                         syncEnabled = existing?.syncEnabled ?: defaultSyncEnabled,
                         customRomPath = existing?.customRomPath,
-                        combineContent = existing?.combineContent ?: false
+                        combineContent = existing?.combineContent ?: false,
+                        skipFullSync = existing?.skipFullSync ?: false
                     )
                 }
                 entities.forEach { entity ->

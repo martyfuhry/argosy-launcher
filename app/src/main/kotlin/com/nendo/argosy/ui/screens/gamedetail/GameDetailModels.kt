@@ -221,7 +221,7 @@ data class MoreOptionsContext(
 fun buildMoreOptions(ctx: MoreOptionsContext): List<MoreOptionAction> = buildList {
     val canTrackProgress = ctx.isRommGame || ctx.isAndroidApp
     val isEmulatedGame = !ctx.isSteamGame && !ctx.isAndroidApp
-    val usesTitleId = ctx.platformSlug in com.nendo.argosy.data.platform.PlatformDefinitions.TITLE_ID_PLATFORMS
+    val usesTitleId = ctx.platformSlug?.let(com.nendo.argosy.data.platform.PlatformDefinitions::hasTitleId) == true
 
     if (ctx.isDownloaded && ctx.launchDisplayCount > 1) add(MoreOptionAction.LaunchOnDisplay)
     if (ctx.canManageSaves || ctx.canManageStates) add(MoreOptionAction.ManageSaves)

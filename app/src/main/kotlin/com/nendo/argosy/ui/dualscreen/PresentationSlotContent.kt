@@ -245,7 +245,7 @@ private fun dashboardActions(manager: com.nendo.argosy.DualScreenManager) =
         onScreenshot = { manager.sessionQuickActions?.screenshot() },
         onOpenCheats = { manager.sessionQuickActions?.openCheats() },
         onOpenSettings = { manager.sessionQuickActions?.openGameSettings() },
-        onQuit = { manager.sessionQuickActions?.quit() },
+        onQuit = { manager.quitSession() },
         onOpenDocument = { manager.openDashboardDocument(it) }
     )
 

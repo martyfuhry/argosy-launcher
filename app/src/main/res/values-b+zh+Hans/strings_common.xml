@@ -100,6 +100,19 @@
     <string name="ui_save_channel_delete_slot_cancel">取消</string>
     <string name="ui_save_channel_delete_slot_message">删除“%1$s”？</string>
     <string name="ui_save_channel_delete_slot_note">这将从服务器和本地存储中移除它，且无法撤销。</string>
+    <string name="ui_save_channel_footer_delete_archived">全部删除</string>
+    <string name="ui_save_channel_footer_delete_version">删除</string>
+    <string name="ui_save_channel_delete_version_title">删除存档</string>
+    <string name="ui_save_channel_delete_version_message">删除 %1$s 的存档？</string>
+    <string name="ui_save_channel_delete_archived_title">删除已归档的存档</string>
+    <plurals name="ui_save_channel_delete_archived_message">
+        <item quantity="other">删除 %1$d 个已归档的存档？</item>
+    </plurals>
+    <string name="ui_save_channel_delete_local_note">这将移除此设备上的副本，服务器上的副本会保留。此操作无法撤销。</string>
+    <string name="ui_save_channel_delete_only_copy_note">唯一的副本在此设备上，删除后将永久丢失。</string>
+    <plurals name="ui_save_channel_notice_versions_deleted">
+        <item quantity="other">已删除 %1$d 个存档</item>
+    </plurals>
 
     <string name="ui_save_channel_version_mismatch_title">核心版本不匹配</string>
     <string name="ui_save_channel_version_mismatch_confirm">仍然加载</string>
@@ -969,4 +982,7 @@
     <string name="gamelist_row_genre_board_game">桌游</string>
     <string name="gamelist_row_genre_quiz">问答</string>
     <string name="gamelist_row_genre_sim">模拟</string>
+    <string name="common_game_confirm_hide_title">隐藏%1$s？</string>
+    <string name="common_game_confirm_hide_message">在游戏库中将来源筛选为已隐藏，即可再次显示隐藏的游戏。</string>
+    <string name="common_game_confirm_hide_confirm">隐藏</string>
 </resources>

@@ -206,10 +206,12 @@ class DownloadDelegate @Inject constructor(
         scope: CoroutineScope,
         gameId: Long,
         rows: List<FilePickerRow>,
-        selected: Set<Long>
+        selected: Set<Long>,
+        onApplied: () -> Unit
     ) {
         scope.launch {
             val (added, removed) = filePickerFlow.applyManagedSelection(gameId, rows, selected)
+            if (removed > 0) onApplied()
             val parts = buildList {
                 if (added > 0) {
                     add(
@@ -410,9 +412,9 @@ class DownloadDelegate @Inject constructor(
         }
     }
 
-    fun deleteLocalFile(scope: CoroutineScope, gameId: Long, onGameDeleted: () -> Unit) {
+    fun deleteLocalFile(scope: CoroutineScope, gameId: Long, withSoundtrack: Boolean, onGameDeleted: () -> Unit) {
         scope.launch {
-            gameActions.deleteLocalFile(gameId)
+            gameActions.deleteLocalFile(gameId, withSoundtrack)
             notificationManager.showSuccess(
                 NotificationText.Res(R.string.gamedetail_notice_download_deleted)
             )
