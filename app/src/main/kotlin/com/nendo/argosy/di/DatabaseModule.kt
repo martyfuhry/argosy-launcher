@@ -3,6 +3,7 @@ package com.nendo.argosy.di
 import android.content.Context
 import androidx.room.Room
 import com.nendo.argosy.data.local.ALauncherDatabase
+import com.nendo.argosy.data.local.ForkSchemaBridge
 import com.nendo.argosy.data.local.migrations.MigrationRegistry
 import com.nendo.argosy.data.local.dao.AchievementDao
 import com.nendo.argosy.data.local.dao.AppCategoryDao
@@ -76,6 +77,7 @@ object DatabaseModule {
             ALauncherDatabase::class.java,
             "alauncher.db"
         )
+            .openHelperFactory(ForkSchemaBridge.openHelperFactory())
             .addMigrations(*MigrationRegistry.ARRAY)
             .enableMultiInstanceInvalidation()
             .build()
