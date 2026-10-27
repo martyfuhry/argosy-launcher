@@ -89,6 +89,9 @@ class SecondaryHomeActivity :
         private set
     var isGameActive by mutableStateOf(false)
         private set
+    private var keyFocus = CompanionKeyFocus.OWN
+    private var focusHandedHere = false
+    private var keyFocusInputsJob: kotlinx.coroutines.Job? = null
     private var currentChannelName by mutableStateOf<String?>(null)
     private var isHardcore by mutableStateOf(false)
     private var companionAchievements by mutableStateOf<List<AchievementUi>>(emptyList())
@@ -308,6 +311,7 @@ class SecondaryHomeActivity :
         isGameActive = store.hasActiveSession()
         isHardcore = store.isHardcore()
         currentChannelName = store.getChannelName()
+        applyKeyFocus()
     }
 
     override fun onPause() {
@@ -320,6 +324,32 @@ class SecondaryHomeActivity :
     override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
         super.onTopResumedActivityChanged(isTopResumedActivity)
         pointerGuard.onInFrontChanged(isTopResumedActivity)
+        focusHandedHere = isTopResumedActivity
+        applyKeyFocus()
+    }
+
+    private fun applyKeyFocus() {
+        if (!::dsm.isInitialized) return
+        runOnUiThread {
+            keyFocus = CompanionKeyFocusDecision.decide(
+                isGameActive = isGameActive,
+                isShowcaseRole = isShowcaseRole,
+                emulatorDisplayId = dsm.emulatorDisplayId,
+                hostDisplayId = hostDisplayId(),
+                focusHandedHere = focusHandedHere
+            )
+            val flag = android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            if (keyFocus == CompanionKeyFocus.YIELDED) window.addFlags(flag) else window.clearFlags(flag)
+        }
+    }
+
+    private fun followKeyFocusInputs() {
+        keyFocusInputsJob?.cancel()
+        keyFocusInputsJob = lifecycleScope.launch {
+            kotlinx.coroutines.flow.combine(dsm.emulatorDisplay, dsm.isRolesSwapped) { display, swapped ->
+                display to swapped
+            }.collect { applyKeyFocus() }
+        }
     }
 
     private fun setWindowTouchable(touchable: Boolean) {
@@ -400,7 +430,7 @@ class SecondaryHomeActivity :
 
     private fun refocusAfterTouch() {
         if (isGameActive && ::dsm.isInitialized) {
-            window.decorView.post { dsm.refocusSession() }
+            if (keyFocus == CompanionKeyFocus.OWN) window.decorView.post { dsm.refocusSession() }
         } else if (isShowcaseRole) {
             window.decorView.post { dsm.onRefocusUpper() }
         }
@@ -522,6 +552,7 @@ class SecondaryHomeActivity :
         isArgosyForeground = isForeground
         if (isForeground && isGameActive && !sessionKeepsItsScreen()) onSessionEnded()
         isInitialized = true
+        applyKeyFocus()
     }
 
     /**
@@ -548,6 +579,7 @@ class SecondaryHomeActivity :
             it.start(applicationContext)
         }
         isInitialized = true
+        applyKeyFocus()
     }
 
     override fun onSessionHardcoreChanged(isHardcore: Boolean, channelName: String?) {
@@ -564,6 +596,7 @@ class SecondaryHomeActivity :
         companionSessionTimer?.stop(applicationContext)
         companionSessionTimer = null
         isInitialized = true
+        applyKeyFocus()
     }
 
     override fun onLibraryRefresh() = Unit
@@ -802,6 +835,7 @@ class SecondaryHomeActivity :
             }
         }
         dimWhileMediaIdle()
+        followKeyFocusInputs()
     }
 
 
