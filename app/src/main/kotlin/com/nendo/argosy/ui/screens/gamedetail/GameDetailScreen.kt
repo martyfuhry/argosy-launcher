@@ -137,7 +137,7 @@ fun GameDetailScreen(
     }
 
     val pendingLaunch by argosyViewModel.pendingLaunch.collectAsState()
-    val sessionEndSyncing = uiState.syncOverlayState != null
+    val sessionEndSyncing = uiState.syncOverlayState != null || uiState.sessionEndRunning
     LaunchedEffect(pendingLaunch, uiState.game?.id, sessionEndSyncing) {
         val pending = pendingLaunch ?: return@LaunchedEffect
         if (pending.gameId == gameId && uiState.game?.id == gameId && !sessionEndSyncing) {
@@ -770,7 +770,7 @@ private fun GameDetailContent(
                         }
                         when (focusedItem) {
                             MenuItem.Play -> add(InputButton.A to when {
-                                isAnySyncing -> playSyncingHint
+                                isAnySyncing || uiState.sessionEndRunning -> playSyncingHint
                                 uiState.downloadStatus == GameDownloadStatus.DOWNLOADED -> playDownloadedHint
                                 uiState.downloadStatus == GameDownloadStatus.NEEDS_INSTALL -> playInstallHint
                                 uiState.downloadStatus == GameDownloadStatus.NOT_DOWNLOADED -> playDownloadHint
