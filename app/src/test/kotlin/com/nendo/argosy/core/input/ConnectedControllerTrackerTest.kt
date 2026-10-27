@@ -84,6 +84,7 @@ class ConnectedControllerTrackerTest {
         every { id } returns deviceId
         every { sources } returns InputDevice.SOURCE_GAMEPAD
         every { isVirtual } returns false
+        every { hasKeys(*anyIntVararg()) } returns BooleanArray(2)
         every { name } returns "Pad $descriptor"
         every { vendorId } returns deviceId
         every { productId } returns 2
