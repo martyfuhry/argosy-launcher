@@ -33,9 +33,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -94,13 +97,14 @@ import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
 import com.nendo.argosy.ui.theme.LocalBoxArtStyle
 import com.nendo.argosy.ui.theme.LocalLauncherTheme
+import com.nendo.argosy.ui.theme.LocalMotionTier
 import com.nendo.argosy.ui.theme.LocalUiScale
 import com.nendo.argosy.ui.theme.Motion
+import com.nendo.argosy.ui.theme.MotionTier
 import com.nendo.argosy.ui.theme.generated.ColorTokens
 import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.util.formatPlayTime
 import com.nendo.argosy.util.formatTimeToBeat
-import com.nendo.argosy.ui.common.stackedScreenshotBackdrop
 
 private const val PERCENT = 100f
 private const val DEFAULT_STRENGTH = 90f
@@ -133,7 +137,29 @@ fun GameShowcase(
 ) {
     val art = detail.gameId?.let { com.nendo.argosy.ui.common.rememberResolvedArt(it) }
     val liveDetail = remember(detail, art) { detail.withLiveArt(art) }
-    GameShowcaseContent(liveDetail, style, bottomInset, backgroundBlur, modifier)
+    val reduced = LocalMotionTier.current == MotionTier.Reduced
+    val durations = remember(reduced) { showcaseMotionDurations(reduced) }
+    val scope = rememberCoroutineScope()
+    val coordinator = remember(scope) {
+        ShowcaseMotionCoordinator(scope, if (reduced) 0L else Motion.transitionDebounceMs)
+    }
+    val key = liveDetail.gameId ?: UNIDENTIFIED_GAME_KEY
+    LaunchedEffect(key) { coordinator.focus(key) }
+    val motion by coordinator.state.collectAsState()
+    val last = remember { arrayOfNulls<CompanionDetail>(1) }
+    val heldDetail = if (motion.contentKey == key) liveDetail else last[0]
+    SideEffect { last[0] = heldDetail }
+    GameShowcaseContent(
+        detail = liveDetail,
+        heldDetail = heldDetail,
+        motion = motion,
+        durations = durations,
+        onEntranceFinished = coordinator::entranceFinished,
+        style = style,
+        bottomInset = bottomInset,
+        backgroundBlur = backgroundBlur,
+        modifier = modifier
+    )
 }
 
 internal fun CompanionDetail.withLiveArt(art: com.nendo.argosy.data.model.ResolvedGameArt?): CompanionDetail {
@@ -152,6 +178,10 @@ internal fun CompanionDetail.withLiveArt(art: com.nendo.argosy.data.model.Resolv
 @Composable
 private fun GameShowcaseContent(
     detail: CompanionDetail,
+    heldDetail: CompanionDetail?,
+    motion: ShowcaseMotionState,
+    durations: ShowcaseMotionDurations,
+    onEntranceFinished: (Long?) -> Unit,
     style: PresentationStyle,
     bottomInset: Dp,
     backgroundBlur: Int,
@@ -159,7 +189,7 @@ private fun GameShowcaseContent(
 ) {
     val contentBottom = bottomInset + Dimens.spacingMd
     val theme = LocalArgosyTheme.current
-    val friends = detail.stats?.friends.orEmpty().takeIf { style.shows(PresentationStat.FRIENDS) }.orEmpty()
+    val friends = heldDetail?.stats?.friends.orEmpty().takeIf { style.shows(PresentationStat.FRIENDS) }.orEmpty()
     val backdrop = LocalFrostedBackdrop.current ?: rememberFrostedBackdrop()
     val backgroundBlurRadius = when (style.scrim) {
         PresentationScrim.GRADIENT -> backgroundBlur.backgroundBlurDp
@@ -168,6 +198,14 @@ private fun GameShowcaseContent(
     }
     var viewportOrigin by remember { mutableStateOf(Offset.Zero) }
     var titleBounds by remember { mutableStateOf(Rect.Zero) }
+    val cinematicText = if (heldDetail != null && style.layout == PresentationLayout.CINEMATIC) {
+        rememberShowcaseLayer(
+            motion, durations, durations.textDelayMs, durations.textRiseDp,
+            horizontal = false, onFinished = onEntranceFinished
+        )
+    } else {
+        null
+    }
     CompositionLocalProvider(LocalFrostedBackdrop provides backdrop) {
       BoxWithConstraints(modifier = modifier.fillMaxSize().clipToBounds().onGloballyPositioned {
           viewportOrigin = it.positionInRoot()
@@ -176,17 +214,16 @@ private fun GameShowcaseContent(
         Box(Modifier.fillMaxSize().frostedBackdropSource(backdrop).background(theme.surfaceBase)) {
             (detail.backdropUrl ?: detail.artUrl)?.let { background ->
                 val isScreenshot = detail.backdropIsScreenshotOrArt && background == detail.backdropUrl
-                val model = rememberFileImageModel(background)
-                val context = androidx.compose.ui.platform.LocalContext.current
+                val backdropImage = rememberShowcaseBackdrop(
+                    background,
+                    durations.backdropCrossfadeMs,
+                    stackedScreenshot = isScreenshot
+                )
                 AsyncImage(
-                    model = remember(model, isScreenshot) {
-                        coil.request.ImageRequest.Builder(context)
-                            .data(model)
-                            .apply { if (isScreenshot) stackedScreenshotBackdrop() }
-                            .build()
-                    },
+                    model = backdropImage.request,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    onSuccess = backdropImage.onSuccess,
                     modifier = Modifier
                         .fillMaxSize()
                         .then(if (backgroundBlurRadius > 0.dp) Modifier.blur(backgroundBlurRadius) else Modifier)
@@ -198,6 +235,7 @@ private fun GameShowcaseContent(
                 val strength = style.scrimStrength / DEFAULT_STRENGTH
                 Box(Modifier.fillMaxSize().drawBehind {
                     val bounds = titleBounds.translate(-viewportOrigin)
+                    val textAlpha = cinematicText?.alpha ?: 0f
                     if (bounds.width > 0f && bounds.height > 0f && strength > 0f) {
                         val radii = presentationTitleRadii(
                             size.width, size.height, bounds.width, bounds.height,
@@ -208,10 +246,10 @@ private fun GameShowcaseContent(
                                 alpha = presentationScrimAlpha(
                                     ComponentDefaults.Presentation.titleCenterAlpha,
                                     strength
-                                )
+                                ) * textAlpha
                             ),
                             ComponentDefaults.Presentation.titleMidRatio to color.copy(
-                                alpha = presentationScrimAlpha(ComponentDefaults.Presentation.titleMidAlpha, strength)
+                                alpha = presentationScrimAlpha(ComponentDefaults.Presentation.titleMidAlpha, strength) * textAlpha
                             ),
                             1f to color.copy(alpha = 0f),
                             center = bounds.center,
@@ -225,24 +263,42 @@ private fun GameShowcaseContent(
             }
         }
 
-        when (style.layout) {
-            PresentationLayout.LOGO -> LogoShowcase(detail = detail, gutter = gutter)
-            PresentationLayout.CINEMATIC -> CinematicShowcase(
-                detail = detail,
-                style = style,
-                bottom = bottomInset,
-                viewportWidth = maxWidth,
-                viewportHeight = maxHeight,
-                onTitleBoundsChanged = { titleBounds = it }
-            )
-            PresentationLayout.JOURNAL -> JournalShowcase(
-                detail = detail,
-                style = style,
-                friends = friends,
-                gutter = gutter,
-                bottom = contentBottom,
-                columnWidth = maxWidth * JOURNAL_COLUMN_WIDTH_SHARE
-            )
+        if (heldDetail != null) {
+            when (style.layout) {
+                PresentationLayout.LOGO -> LogoShowcase(
+                    detail = heldDetail,
+                    gutter = gutter,
+                    coverLayer = rememberShowcaseLayer(
+                        motion, durations, durations.coverDelayMs, durations.coverDriftDp,
+                        horizontal = false, onFinished = onEntranceFinished
+                    ).modifier,
+                    floatLayer = Modifier.showcaseFloat(motion, durations)
+                )
+                PresentationLayout.CINEMATIC -> CinematicShowcase(
+                    detail = heldDetail,
+                    style = style,
+                    bottom = bottomInset,
+                    viewportWidth = maxWidth,
+                    viewportHeight = maxHeight,
+                    onTitleBoundsChanged = { titleBounds = it },
+                    coverLayer = rememberShowcaseLayer(
+                        motion, durations, durations.coverDelayMs, durations.coverDriftDp, horizontal = true
+                    ).modifier,
+                    textLayer = cinematicText?.modifier ?: Modifier
+                )
+                PresentationLayout.JOURNAL -> JournalShowcase(
+                    detail = heldDetail,
+                    style = style,
+                    friends = friends,
+                    gutter = gutter,
+                    bottom = contentBottom,
+                    columnWidth = maxWidth * JOURNAL_COLUMN_WIDTH_SHARE,
+                    textLayer = rememberShowcaseLayer(
+                        motion, durations, durations.textDelayMs, durations.textRiseDp,
+                        horizontal = false, onFinished = onEntranceFinished
+                    ).modifier
+                )
+            }
         }
       }
     }
@@ -288,7 +344,7 @@ private fun presentationScrimColor(): Color = if (LocalLauncherTheme.current.isD
 }
 
 @Composable
-private fun LogoShowcase(detail: CompanionDetail, gutter: Dp) {
+private fun LogoShowcase(detail: CompanionDetail, gutter: Dp, coverLayer: Modifier, floatLayer: Modifier) {
     val theme = LocalArgosyTheme.current
     Box(
         modifier = Modifier
@@ -298,43 +354,45 @@ private fun LogoShowcase(detail: CompanionDetail, gutter: Dp) {
     ) {
         var logoFailed by remember(detail.logoUrl) { mutableStateOf(false) }
         val logo = detail.logoUrl?.takeIf { !logoFailed }
-        if (logo != null) {
-            val glow = theme.surfaceBase
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .drawBehind {
-                        val brush = Brush.radialGradient(
-                            0f to glow.copy(alpha = LOGO_GLOW_ALPHA),
-                            LOGO_GLOW_HOLD to glow.copy(alpha = LOGO_GLOW_ALPHA * LOGO_GLOW_HOLD_FADE),
-                            1f to Color.Transparent,
-                            center = center,
-                            radius = size.height / 2f
-                        )
-                        scale(scaleX = size.width / size.height, scaleY = 1f, pivot = center) {
-                            drawCircle(brush = brush, radius = size.height / 2f, center = center)
+        Box(Modifier.fillMaxSize().then(coverLayer).then(floatLayer), contentAlignment = Alignment.Center) {
+            if (logo != null) {
+                val glow = theme.surfaceBase
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            val brush = Brush.radialGradient(
+                                0f to glow.copy(alpha = LOGO_GLOW_ALPHA),
+                                LOGO_GLOW_HOLD to glow.copy(alpha = LOGO_GLOW_ALPHA * LOGO_GLOW_HOLD_FADE),
+                                1f to Color.Transparent,
+                                center = center,
+                                radius = size.height / 2f
+                            )
+                            scale(scaleX = size.width / size.height, scaleY = 1f, pivot = center) {
+                                drawCircle(brush = brush, radius = size.height / 2f, center = center)
+                            }
                         }
-                    }
-            )
-            AsyncImage(
-                model = rememberFileImageModel(logo),
-                contentDescription = detail.title,
-                contentScale = ContentScale.Fit,
-                onError = { logoFailed = true },
-                modifier = Modifier
-                    .fillMaxWidth(LOGO_WIDTH_SHARE)
-                    .fillMaxHeight(LOGO_HEIGHT_SHARE)
-            )
-        } else {
-            Text(
-                text = detail.title,
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = theme.textPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
+                )
+                AsyncImage(
+                    model = rememberFileImageModel(logo),
+                    contentDescription = detail.title,
+                    contentScale = ContentScale.Fit,
+                    onError = { logoFailed = true },
+                    modifier = Modifier
+                        .fillMaxWidth(LOGO_WIDTH_SHARE)
+                        .fillMaxHeight(LOGO_HEIGHT_SHARE)
+                )
+            } else {
+                Text(
+                    text = detail.title,
+                    style = MaterialTheme.typography.displayLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = theme.textPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }
@@ -352,7 +410,9 @@ private fun CinematicShowcase(
     bottom: Dp,
     viewportWidth: Dp,
     viewportHeight: Dp,
-    onTitleBoundsChanged: (Rect) -> Unit
+    onTitleBoundsChanged: (Rect) -> Unit,
+    coverLayer: Modifier,
+    textLayer: Modifier
 ) {
     val scrollState = rememberScrollState()
     LaunchedEffect(detail.gameId) {
@@ -374,7 +434,9 @@ private fun CinematicShowcase(
             .onGloballyPositioned {
                 onTitleBoundsChanged(Rect(it.positionInRoot(), Size(it.size.width.toFloat(), it.size.height.toFloat())))
             },
-        interactiveCover = true
+        interactiveCover = true,
+        coverLayer = coverLayer,
+        textLayer = textLayer
     )
 }
 
@@ -385,7 +447,9 @@ internal fun GameHero(
     coverMaxHeight: Dp,
     modifier: Modifier = Modifier,
     metadataModifier: Modifier = Modifier,
-    interactiveCover: Boolean = false
+    interactiveCover: Boolean = false,
+    coverLayer: Modifier = Modifier,
+    textLayer: Modifier = Modifier
 ) {
     val textDirection = LocalLayoutDirection.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -400,7 +464,10 @@ internal fun GameHero(
             } else coverMaxHeight
             val cover: @Composable () -> Unit = {
                 if (style.art != PresentationArt.TITLE) {
-                    Box(Modifier.width(coverWidth).height(coverHeight), contentAlignment = Alignment.CenterStart) {
+                    Box(
+                        Modifier.width(coverWidth).height(coverHeight).then(coverLayer),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
                         ShowcaseCover(detail, style.art, coverHeight, coverWidth, interactiveCover)
                     }
                 }
@@ -408,7 +475,7 @@ internal fun GameHero(
             val metadata: @Composable (Modifier) -> Unit = { containerModifier ->
                 Box(containerModifier) {
                     CompositionLocalProvider(LocalLayoutDirection provides textDirection) {
-                        GameHeroMetadata(detail, style, metadataModifier)
+                        GameHeroMetadata(detail, style, metadataModifier, textLayer)
                     }
                 }
             }
@@ -432,7 +499,12 @@ internal fun GameHero(
 }
 
 @Composable
-private fun GameHeroMetadata(detail: CompanionDetail, style: PresentationStyle, modifier: Modifier) {
+private fun GameHeroMetadata(
+    detail: CompanionDetail,
+    style: PresentationStyle,
+    modifier: Modifier,
+    textLayer: Modifier
+) {
     val theme = LocalArgosyTheme.current
     val friends = detail.stats?.friends.orEmpty().takeIf { style.shows(PresentationStat.FRIENDS) }.orEmpty()
     val journey = rememberJourney(detail.stats, style)
@@ -452,28 +524,30 @@ private fun GameHeroMetadata(detail: CompanionDetail, style: PresentationStyle, 
         }
     }
     Column(modifier = modifier) {
-        Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)) {
-            ShowcaseTitle(detail = detail)
-            developer?.let {
-                Text(text = it, style = MaterialTheme.typography.titleMedium, color = theme.textDim)
+        Column(textLayer) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)) {
+                ShowcaseTitle(detail = detail)
+                developer?.let {
+                    Text(text = it, style = MaterialTheme.typography.titleMedium, color = theme.textDim)
+                }
             }
-        }
-        val friendsAfterRatings = friends.isNotEmpty() && rows.any { it.first == RailGroup.RATINGS }
-        rows.forEachIndexed { index, row ->
-            Box(Modifier.padding(top = if (index == 0) Dimens.spacingMd else Dimens.spacingSm)) {
-                ShowcaseRailRow(row.second)
+            val friendsAfterRatings = friends.isNotEmpty() && rows.any { it.first == RailGroup.RATINGS }
+            rows.forEachIndexed { index, row ->
+                Box(Modifier.padding(top = if (index == 0) Dimens.spacingMd else Dimens.spacingSm)) {
+                    ShowcaseRailRow(row.second)
+                }
+                if (friendsAfterRatings && row.first == RailGroup.RATINGS) {
+                    ShowcaseFriendsPill(friends = friends, modifier = Modifier.padding(top = Dimens.spacingSm))
+                }
             }
-            if (friendsAfterRatings && row.first == RailGroup.RATINGS) {
-                ShowcaseFriendsPill(friends = friends, modifier = Modifier.padding(top = Dimens.spacingSm))
+            journey?.let {
+                Box(Modifier.padding(top = Dimens.spacingMd)) {
+                    ShowcaseJourneyBar(journey = it)
+                }
             }
-        }
-        journey?.let {
-            Box(Modifier.padding(top = Dimens.spacingMd)) {
-                ShowcaseJourneyBar(journey = it)
+            if (friends.isNotEmpty() && !friendsAfterRatings) {
+                ShowcaseFriendsPill(friends = friends, modifier = Modifier.padding(top = Dimens.spacingMd))
             }
-        }
-        if (friends.isNotEmpty() && !friendsAfterRatings) {
-            ShowcaseFriendsPill(friends = friends, modifier = Modifier.padding(top = Dimens.spacingMd))
         }
     }
 }
@@ -485,7 +559,8 @@ private fun JournalShowcase(
     friends: List<FriendActivity>,
     gutter: Dp,
     bottom: Dp,
-    columnWidth: Dp
+    columnWidth: Dp,
+    textLayer: Modifier
 ) {
     val theme = LocalArgosyTheme.current
     val stats = detail.stats
@@ -499,7 +574,8 @@ private fun JournalShowcase(
         modifier = Modifier
             .width(columnWidth)
             .fillMaxHeight()
-            .padding(start = gutter, top = Dimens.spacingXl, bottom = bottom + Dimens.spacingLg),
+            .padding(start = gutter, top = Dimens.spacingXl, bottom = bottom + Dimens.spacingLg)
+            .then(textLayer),
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
     ) {
         detail.subtitle?.let { ShowcaseSubtitle(it, detail.platformSlug) }
