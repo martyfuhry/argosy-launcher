@@ -47,6 +47,9 @@ object ComponentDefaults {
         const val floatTravelDp = 6
         const val floatSlideMs = 2400
         const val floatHoldMs = 1600
+        const val appIconDp = 120
+        const val appHaloAlpha = 0.45f
+        const val appWashAlpha = 0.35f
     }
 
     object BoxArt {

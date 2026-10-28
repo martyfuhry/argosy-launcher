@@ -11,6 +11,7 @@ import com.nendo.argosy.data.social.FriendActivity
 import com.nendo.argosy.domain.model.PresentationLayout
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.home.toCompanionDetail
 import com.nendo.argosy.DualScreenManagerHolder
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -30,7 +31,8 @@ class PresentationShowcaseSource @Inject constructor(
     private val gameRepository: GameRepository,
     private val platformRepository: PlatformRepository,
     private val downloadStatus: DownloadFileStatusRepository,
-    private val romMRepository: RomMRepository
+    private val romMRepository: RomMRepository,
+    private val gradients: GradientExtractionDelegate
 ) {
 
     suspend fun gameDetail(
@@ -72,7 +74,8 @@ class PresentationShowcaseSource @Inject constructor(
             downloadStatus,
             gameRepository.getArt(game.id),
             gameRepository.getScreenshots(game.id).firstOrNull()?.sourceUrl,
-            platformDisplayName = platformName
+            platformDisplayName = platformName,
+            gradientColors = gradients.getGradient(game.id)
         ).toCompanionDetail(friends)
     }
 }

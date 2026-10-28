@@ -3,6 +3,7 @@ package com.nendo.argosy.ui.screens.home
 import com.nendo.argosy.data.social.FriendActivity
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionGameStats
+import com.nendo.argosy.ui.dualscreen.showcaseAppPackage
 
 fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): CompanionDetail =
     CompanionDetail(
@@ -17,6 +18,8 @@ fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): C
         box3dUrl = box3dPath,
         logoUrl = logoPath,
         gameId = id,
+        appPackageName = showcaseAppPackage(isAndroidApp, isRommGame, packageName, coverPath),
+        accentColors = gradientColors,
         stats = CompanionGameStats(
             developer = developer,
             releaseYear = releaseYear,
@@ -31,6 +34,7 @@ fun HomeGameUi.toCompanionDetail(friends: List<FriendActivity> = emptyList()): C
             status = status,
             achievementCount = achievementCount,
             earnedAchievementCount = earnedAchievementCount,
-            friends = friends
+            friends = friends,
+            lastPlayedAt = lastPlayedAt
         )
     )

@@ -6,6 +6,7 @@ import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionGameStats
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class GameDetailCompanionDetailTest {
@@ -78,4 +79,41 @@ class GameDetailCompanionDetailTest {
             game.toCompanionDetail()
         )
     }
+
+    @Test
+    fun `an app whose cover is its cached icon publishes its package for the app treatment`() {
+        val app = appDetail(isRommGame = true, coverPath = "/cache/argosy_images/android/icons/appicon_5.png")
+
+        assertEquals("com.example.port", app.toCompanionDetail().appPackageName)
+    }
+
+    @Test
+    fun `an app that RomM gave real box art publishes no package and keeps the game treatment`() {
+        val app = appDetail(isRommGame = true, coverPath = "/cache/argosy_images/android/covers/cover_5.jpg")
+
+        assertNull(app.toCompanionDetail().appPackageName)
+    }
+
+    private fun appDetail(isRommGame: Boolean, coverPath: String) = GameEntity(
+        id = 5,
+        platformId = 1,
+        platformSlug = "android",
+        title = "Port",
+        sortTitle = "Port",
+        localPath = null,
+        rommId = null,
+        igdbId = null,
+        source = GameSource.ANDROID_APP
+    ).toGameDetailUi(
+        art = null,
+        screenshotRows = emptyList(),
+        platformName = "Android",
+        emulatorName = null,
+        canPlay = true
+    ).copy(
+        coverPath = coverPath,
+        isRommGame = isRommGame,
+        isAndroidApp = true,
+        packageName = "com.example.port"
+    )
 }

@@ -1,5 +1,8 @@
 package com.nendo.argosy.ui.dualscreen
 
+import androidx.compose.ui.graphics.Color
+import com.nendo.argosy.data.cache.ImageCacheManager
+
 /**
  * What the showcase screen draws for the focused item of any destination: its name, a line of
  * context, artwork and facts.
@@ -23,8 +26,23 @@ data class CompanionDetail(
     val box3dUrl: String? = null,
     val logoUrl: String? = null,
     val stats: CompanionGameStats? = null,
-    val gameId: Long? = null
+    val gameId: Long? = null,
+    /**
+     * Set for an Android app with no real box art; the showcase then draws its icon on a wash of
+     * [accentColors].
+     */
+    val appPackageName: String? = null,
+    val accentColors: Pair<Color, Color>? = null
 )
+
+internal fun showcaseAppPackage(
+    isAndroidApp: Boolean,
+    isRommGame: Boolean,
+    packageName: String?,
+    coverPath: String?
+): String? = packageName.takeIf {
+    isAndroidApp && (!isRommGame || coverPath == null || ImageCacheManager.isAppIconPath(coverPath))
+}
 
 /**
  * A focused game's values, kept typed so the presentation style decides which appear and the
@@ -44,7 +62,8 @@ data class CompanionGameStats(
     val status: String? = null,
     val achievementCount: Int = 0,
     val earnedAchievementCount: Int = 0,
-    val friends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList()
+    val friends: List<com.nendo.argosy.data.social.FriendActivity> = emptyList(),
+    val lastPlayedAt: Long? = null
 )
 
 data class CompanionFact(
