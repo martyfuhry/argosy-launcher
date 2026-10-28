@@ -62,6 +62,17 @@ class HomeCompanionDetailTest {
     }
 
     @Test
+    fun `a sideloaded app whose cover is a user override or a store graphic keeps the game treatment`() {
+        val detail = item(
+            isAndroidApp = true,
+            coverPath = "/cache/argosy_images/android/covers/cover_override_7_abc.png",
+            packageName = PACKAGE
+        ).toCompanionDetail()
+
+        assertNull(detail.appPackageName)
+    }
+
+    @Test
     fun `a RomM app whose cover is only its cached icon gets the app treatment`() {
         val detail = item(
             isAndroidApp = true,

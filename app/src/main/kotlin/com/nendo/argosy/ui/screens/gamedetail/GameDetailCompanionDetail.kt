@@ -21,7 +21,7 @@ fun GameDetailUi.toCompanionDetail(
         spineUrl = boxSpinePath,
         backUrl = boxBackPath,
         gameId = id,
-        appPackageName = showcaseAppPackage(isAndroidApp, isRommGame, packageName, coverPath),
+        appPackageName = showcaseAppPackage(isAndroidApp, packageName, coverPath),
         accentColors = accentColors,
         stats = CompanionGameStats(
             developer = developer,

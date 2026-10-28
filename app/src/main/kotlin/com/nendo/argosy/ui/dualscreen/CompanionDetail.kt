@@ -35,14 +35,8 @@ data class CompanionDetail(
     val accentColors: Pair<Color, Color>? = null
 )
 
-internal fun showcaseAppPackage(
-    isAndroidApp: Boolean,
-    isRommGame: Boolean,
-    packageName: String?,
-    coverPath: String?
-): String? = packageName.takeIf {
-    isAndroidApp && (!isRommGame || coverPath == null || ImageCacheManager.isAppIconPath(coverPath))
-}
+internal fun showcaseAppPackage(isAndroidApp: Boolean, packageName: String?, coverPath: String?): String? =
+    packageName.takeIf { isAndroidApp && (coverPath == null || ImageCacheManager.isAppIconPath(coverPath)) }
 
 /**
  * A focused game's values, kept typed so the presentation style decides which appear and the

@@ -113,6 +113,13 @@ class GameDetailCompanionDetailTest {
         assertNull(app.toCompanionDetail().appPackageName)
     }
 
+    @Test
+    fun `a sideloaded app with a store graphic for its cover publishes no package`() {
+        val app = appDetail(isRommGame = false, coverPath = "/cache/argosy_images/android/covers/cover_g5_feature.jpg")
+
+        assertNull(app.toCompanionDetail().appPackageName)
+    }
+
     private fun appDetail(isRommGame: Boolean, coverPath: String, lastPlayed: Instant? = null) = GameEntity(
         id = 5,
         platformId = 1,
