@@ -161,6 +161,33 @@ class LibraryListNavigationTest {
         assertEquals(coloured, published.last())
     }
 
+    @Test
+    fun `a republish while a colour wait is pending cancels the earlier wait`() = runTest(dispatcher) {
+        val manager = mockk<DualScreenManager>(relaxed = true)
+        DualScreenManagerHolder.instance = manager
+        val viewModel = loaded(LibraryLayout.LIST)
+        viewModel.setInitialSourceFilter(SourceFilter.ALL)
+        advanceUntilIdle()
+        val gameId = viewModel.uiState.value.focusedGame!!.id
+        val flat = CompanionDetail(title = "alpha", gameId = gameId)
+        val coloured = flat.copy(accentColors = Color.Red to Color.Blue)
+        val arrived = CompletableDeferred<Unit>()
+        val published = mutableListOf<CompanionDetail?>()
+        every { manager.setCompanionDetail(any(), captureNullable(published)) } just Runs
+        coEvery { showcaseSource.gameDetail(gameId, any()) } coAnswers { if (arrived.isCompleted) coloured else flat }
+        coEvery { showcaseSource.backfillLogo(gameId) } returns false
+        coEvery { showcaseSource.awaitGradient(gameId) } coAnswers { arrived.await() }
+
+        viewModel.republishCompanionDetail()
+        advanceUntilIdle()
+        viewModel.republishCompanionDetail()
+        advanceUntilIdle()
+        arrived.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(1, published.count { it == coloured })
+    }
+
     private fun game(id: Long, title: String) = GameListItem(
         id = id,
         platformId = 7,

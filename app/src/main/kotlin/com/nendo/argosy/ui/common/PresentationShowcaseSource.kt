@@ -14,12 +14,14 @@ import com.nendo.argosy.ui.dualscreen.PresentationSlot
 import com.nendo.argosy.ui.screens.common.GameGradientRequest
 import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.home.toCompanionDetail
+import com.nendo.argosy.ui.theme.generated.ComponentDefaults
 import com.nendo.argosy.DualScreenManagerHolder
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -99,6 +101,8 @@ class PresentationShowcaseSource @Inject constructor(
      * published again.
      */
     suspend fun awaitGradient(gameId: Long) {
-        gradients.gradients.first { gameId in it }
+        withTimeoutOrNull(ComponentDefaults.GameShowcase.gradientWaitMs.toLong()) {
+            gradients.gradients.first { gameId in it }
+        }
     }
 }

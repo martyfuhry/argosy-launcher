@@ -50,6 +50,7 @@ object ComponentDefaults {
         const val appIconDp = 120
         const val appHaloAlpha = 0.45f
         const val appWashAlpha = 0.35f
+        const val gradientWaitMs = 10000
     }
 
     object BoxArt {
