@@ -118,8 +118,6 @@ import com.nendo.argosy.ui.theme.generated.MotionTokens
 import com.nendo.argosy.util.PlatformFilterLogic
 import kotlinx.coroutines.delay
 
-private const val WORDMARK = "ARGOSY"
-
 @Composable
 fun FirstRunScreen(
     onComplete: () -> Unit,
@@ -437,7 +435,7 @@ private fun StepBrand() {
         )
         Spacer(modifier = Modifier.width(Dimens.spacingSm))
         Text(
-            text = WORDMARK,
+            text = stringResource(R.string.firstrun_step_brand_wordmark),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.primary
         )
@@ -450,7 +448,7 @@ private fun WelcomeStep(isFocused: Boolean, onGetStarted: () -> Unit) {
     StepColumn {
         Spacer(modifier = Modifier.height(Dimens.spacingXl))
         Text(
-            text = WORDMARK,
+            text = stringResource(R.string.firstrun_welcome_wordmark),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.primary
         )
