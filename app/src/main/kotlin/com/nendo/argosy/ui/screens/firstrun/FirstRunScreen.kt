@@ -625,7 +625,7 @@ private fun RommLoginStep(
                             .then(
                                 if (focusedIndex == 0)
                                     Modifier
-                                        .border(2.dp, MaterialTheme.colorScheme.primary, inputShape)
+                                        .border(Dimens.borderMedium, MaterialTheme.colorScheme.primary, inputShape)
                                         .background(LocalArgosyTheme.current.focusAccent.copy(alpha = 0.15f), inputShape)
                                 else Modifier
                             )
@@ -775,7 +775,7 @@ private fun RommLoginStep(
                 if (pairingCode.isNotEmpty()) {
                     IconButton(
                         onClick = onClearPairingCode,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(Dimens.iconLg)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Clear,
