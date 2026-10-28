@@ -69,14 +69,16 @@ fun CompanionDetailScreen(
         detail.backdropUrl?.let { backdrop ->
             val isScreenshot = detail.backdropIsScreenshotOrArt
             val reduced = LocalMotionTier.current == MotionTier.Reduced
+            val backdropImage = rememberShowcaseBackdrop(
+                backdrop,
+                showcaseMotionDurations(reduced).backdropCrossfadeMs,
+                stackedScreenshot = isScreenshot
+            )
             AsyncImage(
-                model = rememberShowcaseBackdropRequest(
-                    backdrop,
-                    showcaseMotionDurations(reduced).backdropCrossfadeMs,
-                    stackedScreenshot = isScreenshot
-                ),
+                model = backdropImage.request,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                onSuccess = backdropImage.onSuccess,
                 modifier = Modifier.fillMaxSize()
             )
             Box(
