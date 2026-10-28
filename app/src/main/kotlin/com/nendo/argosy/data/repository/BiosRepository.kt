@@ -192,11 +192,12 @@ class BiosRepository @Inject constructor(
         platformSlug: String,
         firmware: List<RomMFirmware>
     ) = withContext(Dispatchers.IO) {
-        val available = firmware.filterNot { it.missingFromFs }
-        if (available.size != firmware.size) {
-            Logger.info(TAG, "Skipping ${firmware.size - available.size} firmware files missing from the server for $platformSlug")
+        val (missing, available) = firmware.partition { it.missingFromFs }
+        val heldWhileMissing = missing.filter { firmwareDao.getByRommId(it.id)?.localPath != null }.map { it.id }
+        if (missing.isNotEmpty()) {
+            Logger.info(TAG, "Skipping ${missing.size} firmware files missing from the server for $platformSlug, keeping ${heldWhileMissing.size} already downloaded")
         }
-        if (available.isEmpty()) {
+        if (available.isEmpty() && heldWhileMissing.isEmpty()) {
             Logger.info(TAG, "No firmware available for $platformSlug, clearing its entries")
             firmwareDao.deleteByPlatform(platformId)
             return@withContext
@@ -222,8 +223,8 @@ class BiosRepository @Inject constructor(
             )
         }
 
-        firmwareDao.upsertAll(entities)
-        firmwareDao.deleteRemovedFirmware(platformId, available.map { it.id })
+        if (entities.isNotEmpty()) firmwareDao.upsertAll(entities)
+        firmwareDao.deleteRemovedFirmware(platformId, available.map { it.id } + heldWhileMissing)
     }
 
     suspend fun downloadFirmware(

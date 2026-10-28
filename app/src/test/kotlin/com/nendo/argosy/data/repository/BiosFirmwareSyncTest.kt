@@ -122,4 +122,53 @@ class BiosFirmwareSyncTest {
         assertEquals("/bios/3ds/aes_keys.txt", rows.first { it.rommId == 11L }.localPath)
         assertNull(rows.first { it.rommId == 12L }.localPath)
     }
+
+    @Test
+    fun `a downloaded row flagged missing from the server filesystem is kept with its local path`() = runBlocking {
+        rows += row(10, 3, "firmware.bin", localPath = "/bios/3ds/firmware.bin")
+
+        repository.syncPlatformFirmware(
+            3,
+            "3ds",
+            listOf(remote(10, "firmware.bin", missing = true), remote(11, "aes_keys.txt"))
+        )
+
+        assertEquals(listOf(10L, 11L), rows.map { it.rommId }.sorted())
+        assertEquals("/bios/3ds/firmware.bin", rows.first { it.rommId == 10L }.localPath)
+    }
+
+    @Test
+    fun `a platform whose only firmware is missing keeps the downloaded rows`() = runBlocking {
+        rows += row(10, 3, "firmware.bin", localPath = "/bios/3ds/firmware.bin")
+        rows += row(11, 3, "aes_keys.txt")
+
+        repository.syncPlatformFirmware(
+            3,
+            "3ds",
+            listOf(remote(10, "firmware.bin", missing = true), remote(11, "aes_keys.txt", missing = true))
+        )
+
+        assertEquals(listOf(10L), rows.map { it.rommId })
+        assertEquals("/bios/3ds/firmware.bin", rows.single().localPath)
+    }
+
+    @Test
+    fun `a downloaded row the server no longer lists is pruned`() = runBlocking {
+        rows += row(10, 3, "firmware.bin", localPath = "/bios/3ds/firmware.bin")
+
+        repository.syncPlatformFirmware(3, "3ds", listOf(remote(11, "aes_keys.txt")))
+
+        assertEquals(listOf(11L), rows.map { it.rommId })
+    }
+
+    @Test
+    fun `pruning removed entries leaves another platform's rows untouched`() = runBlocking {
+        rows += row(10, 3, "firmware.bin")
+        rows += row(20, 1, "scph5501.bin", localPath = "/bios/psx/scph5501.bin")
+        rows += row(21, 1, "scph1001.bin")
+
+        repository.syncPlatformFirmware(3, "3ds", listOf(remote(10, "firmware.bin", missing = true)))
+
+        assertEquals(listOf(20L, 21L), rows.map { it.rommId }.sorted())
+    }
 }
