@@ -32,6 +32,7 @@ import com.nendo.argosy.data.storage.StorageAttributionRepository
 import com.nendo.argosy.data.storage.StorageCategory
 import com.nendo.argosy.data.sync.UnsentUserPropsByGame
 import com.nendo.argosy.data.sync.unsentUserPropsByGame
+import com.nendo.argosy.util.FileNames
 import com.nendo.argosy.util.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -1067,8 +1068,8 @@ class RomMLibrarySyncService @Inject constructor(
         val resolvedShortName = derivedNames?.second ?: platformDef?.shortName ?: normalizedName
         val entity = PlatformEntity(
             id = platformId,
-            slug = effectiveSlug,
-            fsSlug = remote.fsSlug,
+            slug = FileNames.sanitizeSlug(effectiveSlug),
+            fsSlug = remote.fsSlug?.let(FileNames::sanitizeSlug),
             name = normalizedName,
             shortName = resolvedShortName,
             romExtensions = romRules?.extensions?.joinToString(",") ?: "",
@@ -1145,7 +1146,7 @@ class RomMLibrarySyncService @Inject constructor(
 
     private suspend fun syncRom(rom: RomMRom, scope: SyncScope): Pair<Boolean, GameEntity> {
         val platformSlug = platformDao.getById(rom.platformId)?.slug
-            ?: PlatformDefinitions.resolveImportSlug(rom.platformSlug, rom.platformName)
+            ?: FileNames.sanitizeSlug(PlatformDefinitions.resolveImportSlug(rom.platformSlug, rom.platformName))
         val platformId = if (platformSlug == ANDROID_SLUG) LocalPlatformIds.ANDROID else rom.platformId
         val existing = gameDao.getByRommId(rom.id)
 

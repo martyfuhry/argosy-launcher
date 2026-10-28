@@ -51,6 +51,11 @@ object FileNames {
     private const val MAX_FOLDER_NAME = 200
 
     /**
+     * A platform slug folded as [sanitize] folds a name, with a blank slug returned unchanged.
+     */
+    fun sanitizeSlug(slug: String): String = if (slug.isBlank()) slug else sanitize(slug)
+
+    /**
      * An archive entry path with every segment folded. Empty, `.` and `..` segments are dropped,
      * so a crafted entry cannot climb out of the directory it is being extracted into.
      */
