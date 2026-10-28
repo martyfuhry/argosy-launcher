@@ -67,9 +67,15 @@ class PresentationFocus(
                 if (!isDescribing) return
                 dsm.releaseSlot(owner)
                 dsm.setCompanionDetail(owner, detail)
+                var shown = detail
                 if (source.backfillLogo(focus.gameId)) {
-                    val withLogo = source.gameDetail(focus.gameId)
-                    if (isDescribing) dsm.setCompanionDetail(owner, withLogo)
+                    shown = source.gameDetail(focus.gameId)
+                    if (isDescribing) dsm.setCompanionDetail(owner, shown)
+                }
+                if (shown != null && shown.accentColors == null) {
+                    source.awaitGradient(focus.gameId)
+                    val withColours = source.gameDetail(focus.gameId)
+                    if (isDescribing) dsm.setCompanionDetail(owner, withColours)
                 }
             }
             is PresentationTarget.GameSet -> {

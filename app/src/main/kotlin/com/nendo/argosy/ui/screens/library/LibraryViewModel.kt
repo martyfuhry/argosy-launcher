@@ -1008,10 +1008,16 @@ class LibraryViewModel @Inject constructor(
         val detail = gameId?.let { showcaseSource.gameDetail(it, friends) }
         if (!isDescribing) return
         dsm.setCompanionDetail(companionOwner, detail)
+        var shown = detail
         if (gameId != null && showcaseSource.backfillLogo(gameId)) {
-            val withLogo = showcaseSource.gameDetail(gameId, friends)
-            if (isDescribing) dsm.setCompanionDetail(companionOwner, withLogo)
+            shown = showcaseSource.gameDetail(gameId, friends)
+            if (isDescribing) dsm.setCompanionDetail(companionOwner, shown)
         }
+        if (gameId == null || shown == null || shown.accentColors != null) return
+        showcaseSource.awaitGradient(gameId)
+        val withColours = showcaseSource.gameDetail(gameId, friends)
+        if (!isDescribing || _uiState.value.focusedGame?.id != gameId) return
+        dsm.setCompanionDetail(companionOwner, withColours)
     }
 
     /**

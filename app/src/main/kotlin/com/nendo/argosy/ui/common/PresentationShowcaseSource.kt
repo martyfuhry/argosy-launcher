@@ -11,10 +11,15 @@ import com.nendo.argosy.data.social.FriendActivity
 import com.nendo.argosy.domain.model.PresentationLayout
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.PresentationSlot
+import com.nendo.argosy.ui.screens.common.GameGradientRequest
 import com.nendo.argosy.ui.screens.common.GradientExtractionDelegate
 import com.nendo.argosy.ui.screens.home.toCompanionDetail
 import com.nendo.argosy.DualScreenManagerHolder
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -34,6 +39,7 @@ class PresentationShowcaseSource @Inject constructor(
     private val romMRepository: RomMRepository,
     private val gradients: GradientExtractionDelegate
 ) {
+    private val extractionScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     suspend fun gameDetail(
         gameId: Long,
@@ -70,12 +76,29 @@ class PresentationShowcaseSource @Inject constructor(
     ): CompanionDetail {
         val platformName = platformRepository.getById(game.platformId)?.getDisplayName()
         val friends = game.igdbId?.let { friendsByIgdbId[it.toInt()] }.orEmpty()
+        val art = gameRepository.getArt(game.id)
+        val accent = gradients.gradientFor(game.id, art)
+        if (accent == null) {
+            gradients.extractForVisibleGames(
+                extractionScope,
+                listOf(GameGradientRequest(game.id, art.coverPath)),
+                focusedIndex = 0
+            )
+        }
         return game.toHomeGameUi(
             downloadStatus,
-            gameRepository.getArt(game.id),
+            art,
             gameRepository.getScreenshots(game.id).firstOrNull()?.sourceUrl,
             platformDisplayName = platformName,
-            gradientColors = gradients.getGradient(game.id)
+            gradientColors = accent
         ).toCompanionDetail(friends)
+    }
+
+    /**
+     * Suspends until the game's colours are held, so a detail first published without them can be
+     * published again.
+     */
+    suspend fun awaitGradient(gameId: Long) {
+        gradients.gradients.first { gameId in it }
     }
 }

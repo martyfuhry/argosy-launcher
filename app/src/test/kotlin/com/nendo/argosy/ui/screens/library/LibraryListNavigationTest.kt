@@ -1,12 +1,22 @@
 package com.nendo.argosy.ui.screens.library
 
+import androidx.compose.ui.graphics.Color
+import com.nendo.argosy.DualScreenManager
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.data.local.entity.GameListItem
 import com.nendo.argosy.data.model.GameSource
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.data.preferences.LibraryLayout
 import com.nendo.argosy.data.preferences.UserPreferences
+import com.nendo.argosy.ui.common.PresentationShowcaseSource
+import com.nendo.argosy.ui.dualscreen.CompanionDetail
+import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import java.time.Instant
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -36,6 +46,7 @@ class LibraryListNavigationTest {
         mockk<com.nendo.argosy.ui.screens.common.CollectionModalDelegate>(relaxed = true)
     private val gradientExtractionDelegate =
         mockk<com.nendo.argosy.ui.screens.common.GradientExtractionDelegate>(relaxed = true)
+    private val showcaseSource = mockk<PresentationShowcaseSource>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -59,7 +70,10 @@ class LibraryListNavigationTest {
     }
 
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() {
+        DualScreenManagerHolder.instance = null
+        Dispatchers.resetMain()
+    }
 
     private fun TestScope.loaded(layout: LibraryLayout): LibraryViewModel {
         every { preferences.userPreferences } returns flowOf(UserPreferences(libraryLayout = layout))
@@ -116,6 +130,35 @@ class LibraryListNavigationTest {
 
         assertEquals(1, viewModel.uiState.value.columnsCount)
         assertTrue(viewModel.uiState.value.isListLayout)
+    }
+
+    @Test
+    fun `an app focused without colours is published again once its colours arrive`() = runTest(dispatcher) {
+        val manager = mockk<DualScreenManager>(relaxed = true)
+        DualScreenManagerHolder.instance = manager
+        val viewModel = loaded(LibraryLayout.LIST)
+        viewModel.setInitialSourceFilter(SourceFilter.ALL)
+        advanceUntilIdle()
+        assertEquals(LibraryView.GAMES, viewModel.uiState.value.view)
+        val gameId = viewModel.uiState.value.focusedGame!!.id
+        val flat = CompanionDetail(title = "alpha", gameId = gameId)
+        val coloured = flat.copy(accentColors = Color.Red to Color.Blue)
+        val arrived = CompletableDeferred<Unit>()
+        val published = mutableListOf<CompanionDetail?>()
+        every { manager.setCompanionDetail(any(), captureNullable(published)) } just Runs
+        coEvery { showcaseSource.gameDetail(gameId, any()) } coAnswers { if (arrived.isCompleted) coloured else flat }
+        coEvery { showcaseSource.backfillLogo(gameId) } returns false
+        coEvery { showcaseSource.awaitGradient(gameId) } coAnswers { arrived.await() }
+
+        viewModel.republishCompanionDetail()
+        advanceUntilIdle()
+
+        assertEquals(listOf(flat), published.filterNotNull().distinct())
+
+        arrived.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(coloured, published.last())
     }
 
     private fun game(id: Long, title: String) = GameListItem(
@@ -184,7 +227,7 @@ class LibraryListNavigationTest {
         socialRepository = mockk(relaxed = true),
         saveListStatusRepository = mockk(relaxed = true),
         libraryDefaultPlatformMigration = mockk(relaxed = true),
-        showcaseSource = mockk(relaxed = true),
+        showcaseSource = showcaseSource,
         reorderPlatforms = mockk(relaxed = true),
         quickNavigation = mockk { io.mockk.every { enabled } returns MutableStateFlow(true) },
         launchProgressTracker = mockk { io.mockk.every { launchLive } returns MutableStateFlow(false) }
