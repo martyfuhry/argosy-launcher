@@ -142,11 +142,11 @@ class GameDaoSteamLauncherSqlTest {
         val retired = dao.getById(1)!!.copy(playCount = 8, saveId = "current-save")
         dao.update(retired)
 
-        dao.updateLocalPath(1, "/download/install", GameSource.STEAM, FileOrigin.STEAM_DOWNLOAD, retired.addedAt)
+        dao.updateLocalPath(1, "/download/install", GameSource.STEAM, FileOrigin.STEAM_DOWNLOAD)
         val completed = retired.copy(localPath = "/download/install", fileOrigin = FileOrigin.STEAM_DOWNLOAD)
         assertEquals(completed, dao.getById(1))
 
-        dao.updateLocalPath(1, null, completed.source, completed.fileOrigin, completed.addedAt)
+        dao.updateLocalPath(1, null, completed.source, completed.fileOrigin)
         assertEquals(completed.copy(localPath = null), dao.getById(1))
     }
 }
