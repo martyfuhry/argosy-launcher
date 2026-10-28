@@ -28,8 +28,9 @@ import com.nendo.argosy.domain.model.PresentationStyle
 import com.nendo.argosy.ui.theme.AspectRatioClass
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.LocalMotionTier
 import com.nendo.argosy.ui.theme.LocalUiScale
-import com.nendo.argosy.ui.common.stackedScreenshotBackdrop
+import com.nendo.argosy.ui.theme.MotionTier
 
 /**
  * The showcase screen while the driven screen is on Library or Media.
@@ -66,16 +67,14 @@ fun CompanionDetailScreen(
 
     Box(modifier = modifier.fillMaxSize().background(theme.surfaceBase)) {
         detail.backdropUrl?.let { backdrop ->
-            val model = com.nendo.argosy.ui.common.rememberFileImageModel(backdrop)
-            val context = androidx.compose.ui.platform.LocalContext.current
             val isScreenshot = detail.backdropIsScreenshotOrArt
+            val reduced = LocalMotionTier.current == MotionTier.Reduced
             AsyncImage(
-                model = androidx.compose.runtime.remember(model, isScreenshot) {
-                    coil.request.ImageRequest.Builder(context)
-                        .data(model)
-                        .apply { if (isScreenshot) stackedScreenshotBackdrop() }
-                        .build()
-                },
+                model = rememberShowcaseBackdropRequest(
+                    backdrop,
+                    showcaseMotionDurations(reduced).backdropCrossfadeMs,
+                    stackedScreenshot = isScreenshot
+                ),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
