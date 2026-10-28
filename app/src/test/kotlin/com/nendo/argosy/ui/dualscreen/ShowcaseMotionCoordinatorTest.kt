@@ -156,4 +156,86 @@ class ShowcaseMotionCoordinatorTest {
         runCurrent()
         assertEquals(ShowcaseMotionState(), coordinator.state.value)
     }
+
+    @Test
+    fun `a zero settle enters on the next tick`() = runTest {
+        val coordinator = ShowcaseMotionCoordinator(this, 0L)
+
+        coordinator.focus(1L)
+        runCurrent()
+
+        assertEquals(
+            ShowcaseMotionState(backgroundKey = 1L, contentKey = 1L, phase = ShowcaseMotionPhase.Entering),
+            coordinator.state.value
+        )
+    }
+
+    @Test
+    fun `a new game during the entrance keeps the old content key until the settle ends`() = runTest {
+        val coordinator = coordinator()
+        coordinator.focus(1L)
+        advanceTimeBy(settleMs)
+        runCurrent()
+
+        coordinator.focus(2L)
+
+        assertEquals(
+            ShowcaseMotionState(backgroundKey = 2L, contentKey = 1L, phase = ShowcaseMotionPhase.Settling),
+            coordinator.state.value
+        )
+        advanceTimeBy(settleMs)
+        runCurrent()
+        assertEquals(
+            ShowcaseMotionState(backgroundKey = 2L, contentKey = 2L, phase = ShowcaseMotionPhase.Entering),
+            coordinator.state.value
+        )
+    }
+
+    @Test
+    fun `returning to the shown game during the settle period re-enters it`() = runTest {
+        val coordinator = coordinator()
+        coordinator.focus(1L)
+        advanceTimeBy(settleMs)
+        runCurrent()
+        coordinator.entranceFinished(1L)
+
+        coordinator.focus(2L)
+        advanceTimeBy(settleMs / 2)
+        runCurrent()
+        coordinator.focus(1L)
+
+        assertEquals(
+            ShowcaseMotionState(backgroundKey = 1L, contentKey = 1L, phase = ShowcaseMotionPhase.Settling),
+            coordinator.state.value
+        )
+        advanceTimeBy(settleMs)
+        runCurrent()
+        assertEquals(
+            ShowcaseMotionState(backgroundKey = 1L, contentKey = 1L, phase = ShowcaseMotionPhase.Entering),
+            coordinator.state.value
+        )
+    }
+
+    @Test
+    fun `the unidentified key settles and enters like any other`() = runTest {
+        val coordinator = coordinator()
+        coordinator.focus(UNIDENTIFIED_GAME_KEY)
+        advanceTimeBy(settleMs)
+        runCurrent()
+        val entering = coordinator.state.value
+
+        coordinator.focus(UNIDENTIFIED_GAME_KEY)
+        advanceTimeBy(settleMs)
+        runCurrent()
+
+        assertEquals(
+            ShowcaseMotionState(
+                backgroundKey = UNIDENTIFIED_GAME_KEY,
+                contentKey = UNIDENTIFIED_GAME_KEY,
+                phase = ShowcaseMotionPhase.Entering
+            ),
+            entering
+        )
+        assertEquals(entering, coordinator.state.value)
+    }
 }
