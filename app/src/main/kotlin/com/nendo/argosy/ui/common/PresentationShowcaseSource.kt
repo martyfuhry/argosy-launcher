@@ -72,6 +72,14 @@ class PresentationShowcaseSource @Inject constructor(
             fallbackCount = gameIds.size
         )
 
+    suspend fun platformShowcase(platformId: Long, name: String): PresentationSlot.PlatformShowcase =
+        gameShowcase(
+            context = context,
+            name = name,
+            coverPaths = gameRepository.showcaseCovers(platformId, oneEntryPerGroup = true),
+            stats = gameRepository.statsByPlatform()[platformId]
+        )
+
     private suspend fun describe(
         game: GameEntity,
         friendsByIgdbId: Map<Int, List<FriendActivity>>

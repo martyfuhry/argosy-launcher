@@ -424,4 +424,11 @@
     <string name="home_grid_tile_ra_points_label">Points</string>
     <!-- Stat label beside how many achievements have been earned. Noun. -->
     <string name="home_grid_tile_ra_unlocks_label">Unlocks</string>
+
+    <!-- Title of the second-screen showcase for the favourite games, shown while the cursor rests
+         on the Favorites row's View All. Plural noun; counts games only. -->
+    <string name="home_view_all_showcase_favorites">Favorites</string>
+    <!-- Title of the second-screen showcase for every game that can be played now, shown while the
+         cursor rests on the Continue row's View All. Adjective used as a noun. -->
+    <string name="home_view_all_showcase_playable">Playable</string>
 </resources>

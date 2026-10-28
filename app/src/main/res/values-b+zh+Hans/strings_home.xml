@@ -181,4 +181,7 @@
 
     <string name="home_grid_tile_ra_points_label">点数</string>
     <string name="home_grid_tile_ra_unlocks_label">成就</string>
+
+    <string name="home_view_all_showcase_favorites">收藏</string>
+    <string name="home_view_all_showcase_playable">可玩</string>
 </resources>

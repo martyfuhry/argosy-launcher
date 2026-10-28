@@ -189,4 +189,7 @@
 
     <string name="home_grid_tile_ra_points_label">Puntos</string>
     <string name="home_grid_tile_ra_unlocks_label">Logros</string>
+
+    <string name="home_view_all_showcase_favorites">Favoritos</string>
+    <string name="home_view_all_showcase_playable">Jugables</string>
 </resources>

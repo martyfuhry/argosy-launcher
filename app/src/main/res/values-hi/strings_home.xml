@@ -185,4 +185,7 @@
 
     <string name="home_grid_tile_ra_points_label">अंक</string>
     <string name="home_grid_tile_ra_unlocks_label">उपलब्धियाँ</string>
+
+    <string name="home_view_all_showcase_favorites">पसंदीदा</string>
+    <string name="home_view_all_showcase_playable">खेलने योग्य</string>
 </resources>
