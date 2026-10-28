@@ -109,5 +109,5 @@ private const val SWITCH_SLUG = "switch"
 internal fun resolveAddedAt(serverCreatedAt: String?, now: Instant): Instant =
     serverCreatedAt?.let(::parseTimestamp)?.let(Instant::ofEpochMilli) ?: now
 
-internal fun reconcileAddedAt(existing: Instant, serverCreatedAt: String?): Instant =
-    minOf(existing, resolveAddedAt(serverCreatedAt, existing))
+internal fun reconcileAddedAt(existing: Instant, serverCreatedAt: String?, downloaded: Boolean = false): Instant =
+    if (downloaded) existing else minOf(existing, resolveAddedAt(serverCreatedAt, existing))

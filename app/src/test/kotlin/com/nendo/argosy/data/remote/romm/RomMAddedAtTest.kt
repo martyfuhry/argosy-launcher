@@ -65,4 +65,11 @@ class RomMAddedAtTest {
 
         assertEquals(Instant.parse("2026-06-03T13:25:25Z"), reconcileAddedAt(adoptedAt, "2026-06-03T13:25:25"))
     }
+
+    @Test
+    fun `a downloaded row keeps its download time over an earlier server creation time`() {
+        val downloadedAt = now.minus(Duration.ofHours(2))
+
+        assertEquals(downloadedAt, reconcileAddedAt(downloadedAt, "2026-08-23T12:00:00Z", downloaded = true))
+    }
 }

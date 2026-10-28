@@ -1250,7 +1250,13 @@ class RomMLibrarySyncService @Inject constructor(
             playCount = localDataSource?.playCount ?: 0,
             playTimeMinutes = localDataSource?.playTimeMinutes ?: 0,
             lastPlayed = localDataSource?.lastPlayed,
-            addedAt = localDataSource?.let { reconcileAddedAt(it.addedAt, rom.createdAt) }
+            addedAt = localDataSource?.let {
+                reconcileAddedAt(
+                    it.addedAt,
+                    rom.createdAt,
+                    downloaded = it.localPath != null && it.fileOrigin == FileOrigin.ROMM_DOWNLOAD
+                )
+            }
                 ?: resolveAddedAt(rom.createdAt, Instant.now()),
             achievementCount = localDataSource?.achievementCount ?: 0,
             earnedAchievementCount = localDataSource?.earnedAchievementCount ?: 0,
