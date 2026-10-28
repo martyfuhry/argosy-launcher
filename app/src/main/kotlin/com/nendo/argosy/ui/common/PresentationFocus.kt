@@ -15,6 +15,7 @@ sealed interface PresentationTarget {
         override fun equals(other: Any?): Boolean = other is GameSet && other.key == key && other.name == name
         override fun hashCode(): Int = 31 * key.hashCode() + name.hashCode()
     }
+    data class Platform(val platformId: Long, val name: String) : PresentationTarget
 }
 
 /**
@@ -74,6 +75,12 @@ class PresentationFocus(
             }
             is PresentationTarget.GameSet -> {
                 val showcase = source.collectionShowcase(focus.name, focus.gameIds())
+                if (!isDescribing) return
+                dsm.setCompanionDetail(owner, null)
+                dsm.presentSlot(owner, showcase)
+            }
+            is PresentationTarget.Platform -> {
+                val showcase = source.platformShowcase(focus.platformId, focus.name)
                 if (!isDescribing) return
                 dsm.setCompanionDetail(owner, null)
                 dsm.presentSlot(owner, showcase)

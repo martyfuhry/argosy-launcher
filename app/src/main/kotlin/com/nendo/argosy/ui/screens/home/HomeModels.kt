@@ -580,6 +580,13 @@ data class HomeUiState(
     val focusedItem: HomeRowItem?
         get() = currentItems.getOrNull(focusedGameIndex)
 
+    val focusedViewAll: HomeRowItem.ViewAll?
+        get() = if (layoutKind == com.nendo.argosy.domain.model.HomeLayoutKind.CUSTOM_GRID) {
+            null
+        } else {
+            focusedItem as? HomeRowItem.ViewAll
+        }
+
     /**
      * The game under the cursor, whichever layout is showing. Everything downstream reads this one
      * accessor - background art, the info panel, favourites, details, the ambient LED - so a curated

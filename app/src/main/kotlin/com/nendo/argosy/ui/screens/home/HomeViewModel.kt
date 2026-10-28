@@ -8,6 +8,7 @@ import com.nendo.argosy.R
 import com.nendo.argosy.ui.components.APP_BAR_DRAWER_INDEX
 import com.nendo.argosy.ui.components.InputButton
 import com.nendo.argosy.data.local.entity.CollectionType
+import com.nendo.argosy.data.model.SourceFilter
 import com.nendo.argosy.data.repository.CustomGridShapeStore
 import com.nendo.argosy.data.repository.GameRepository
 import com.nendo.argosy.data.preferences.BoxArtBorderStyle
@@ -32,6 +33,8 @@ import com.nendo.argosy.ui.ModalResetSignal
 import com.nendo.argosy.hardware.AmbientLedContext
 import com.nendo.argosy.hardware.AmbientLedManager
 import com.nendo.argosy.ui.common.GridDirection
+import com.nendo.argosy.ui.common.PresentationFocus
+import com.nendo.argosy.ui.common.PresentationTarget
 import com.nendo.argosy.ui.common.GridFocusNavigator
 import com.nendo.argosy.ui.common.groundGameId
 import com.nendo.argosy.ui.common.toGridStatus
@@ -179,6 +182,8 @@ class HomeViewModel @Inject constructor(
     private val companionOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home", this)
     private val tileShowcaseOwner = com.nendo.argosy.ui.dualscreen.SlotOwner.of("home.tile", this)
     private var previousTileSlot: com.nendo.argosy.ui.dualscreen.PresentationSlot? = null
+    private val viewAllPresentation =
+        PresentationFocus("home.viewall", this, showcaseSource, viewModelScope)
     private var isDescribing = false
 
     private val _uiState = MutableStateFlow(restoreInitialState())
@@ -530,6 +535,7 @@ class HomeViewModel @Inject constructor(
             _uiState.collect { state ->
                 val focusedGame = state.focusedGame
                 publishTileShowcase(state)
+                viewAllPresentation.show(viewAllTarget(state.focusedViewAll))
                 val friends = state.friendsFor(focusedGame)
                 val sameGame = focusedGame?.id == previousGameId
                 if (focusedGame == previousGame && friends == previousFriends) return@collect
@@ -565,6 +571,22 @@ class HomeViewModel @Inject constructor(
                 refreshCurrentRowInternal(anchorGameId = change.refocusTarget(_uiState.value.focusedGame?.id))
             }
             .launchIn(viewModelScope)
+    }
+
+    private fun viewAllTarget(item: HomeRowItem.ViewAll?): PresentationTarget = when {
+        item == null -> PresentationTarget.Nothing
+        item.platformId != null -> PresentationTarget.Platform(item.platformId, item.platformName.orEmpty())
+        else -> when (SourceFilter.fromString(item.sourceFilter)) {
+            SourceFilter.FAVORITES -> PresentationTarget.GameSet(
+                "home.viewall:favorites",
+                context.getString(R.string.home_view_all_showcase_favorites)
+            ) { gameRepository.favoriteIds() }
+            SourceFilter.PLAYABLE -> PresentationTarget.GameSet(
+                "home.viewall:playable",
+                context.getString(R.string.home_view_all_showcase_playable)
+            ) { gameRepository.observePlayableList().first().map { it.id } }
+            else -> PresentationTarget.Nothing
+        }
     }
 
     private fun publishTileShowcase(state: HomeUiState) {
@@ -698,11 +720,13 @@ class HomeViewModel @Inject constructor(
         isDescribing = true
         publishCompanionDetail(_uiState.value.focusedGame)
         publishTileShowcase(_uiState.value)
+        viewAllPresentation.startDescribing()
     }
 
     fun clearCompanionDetail() {
         isDescribing = false
         previousTileSlot = null
+        viewAllPresentation.stopDescribing()
         DualScreenManagerHolder.instance?.let {
             it.setCompanionDetail(companionOwner, null)
             it.releaseSlot(tileShowcaseOwner)
