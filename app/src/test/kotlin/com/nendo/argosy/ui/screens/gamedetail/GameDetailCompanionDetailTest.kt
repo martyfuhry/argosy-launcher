@@ -1,12 +1,15 @@
 package com.nendo.argosy.ui.screens.gamedetail
 
+import androidx.compose.ui.graphics.Color
 import com.nendo.argosy.core.game.AchievementUi
 import com.nendo.argosy.data.local.entity.GameEntity
 import com.nendo.argosy.data.model.GameSource
 import com.nendo.argosy.ui.dualscreen.CompanionDetail
 import com.nendo.argosy.ui.dualscreen.CompanionGameStats
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
 
 class GameDetailCompanionDetailTest {
     @Test
@@ -77,5 +80,67 @@ class GameDetailCompanionDetailTest {
             ),
             game.toCompanionDetail()
         )
+        assertNull(game.toCompanionDetail().accentColors)
+        assertNull(game.toCompanionDetail().stats?.lastPlayedAt)
     }
+
+    @Test
+    fun `an app whose cover is its cached icon publishes its package for the app treatment`() {
+        val app = appDetail(isRommGame = true, coverPath = "/cache/argosy_images/android/icons/appicon_5.png")
+
+        assertEquals("com.example.port", app.toCompanionDetail().appPackageName)
+    }
+
+    @Test
+    fun `an app publishes its accent colours and last played time for the wash and the stats`() {
+        val accent = Color.Red to Color.Blue
+        val app = appDetail(
+            isRommGame = false,
+            coverPath = "/cache/argosy_images/android/icons/appicon_5.png",
+            lastPlayed = Instant.ofEpochMilli(1_700_000_000_000)
+        )
+
+        val detail = app.toCompanionDetail(accentColors = accent)
+
+        assertEquals(accent, detail.accentColors)
+        assertEquals(1_700_000_000_000, detail.stats?.lastPlayedAt)
+    }
+
+    @Test
+    fun `an app that RomM gave real box art publishes no package and keeps the game treatment`() {
+        val app = appDetail(isRommGame = true, coverPath = "/cache/argosy_images/android/covers/cover_5.jpg")
+
+        assertNull(app.toCompanionDetail().appPackageName)
+    }
+
+    @Test
+    fun `a sideloaded app with a store graphic for its cover publishes no package`() {
+        val app = appDetail(isRommGame = false, coverPath = "/cache/argosy_images/android/covers/cover_g5_feature.jpg")
+
+        assertNull(app.toCompanionDetail().appPackageName)
+    }
+
+    private fun appDetail(isRommGame: Boolean, coverPath: String, lastPlayed: Instant? = null) = GameEntity(
+        id = 5,
+        platformId = 1,
+        platformSlug = "android",
+        title = "Port",
+        sortTitle = "Port",
+        localPath = null,
+        rommId = null,
+        igdbId = null,
+        source = GameSource.ANDROID_APP,
+        lastPlayed = lastPlayed
+    ).toGameDetailUi(
+        art = null,
+        screenshotRows = emptyList(),
+        platformName = "Android",
+        emulatorName = null,
+        canPlay = true
+    ).copy(
+        coverPath = coverPath,
+        isRommGame = isRommGame,
+        isAndroidApp = true,
+        packageName = "com.example.port"
+    )
 }

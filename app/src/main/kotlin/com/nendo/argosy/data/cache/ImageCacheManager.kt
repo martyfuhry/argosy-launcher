@@ -238,6 +238,9 @@ class ImageCacheManager @Inject constructor(
         private const val SWEEP_RECENT_FILE_GRACE_MS = 10 * 60 * 1000L
         private const val ART_PATH_CHUNK = 900
         private const val ART_MODEL_RELOAD_INTERVAL_MS = 1_000L
+        private const val APP_ICON_PREFIX = "appicon_"
+
+        fun isAppIconPath(path: String): Boolean = path.substringAfterLast('/').startsWith(APP_ICON_PREFIX)
     }
 
     private fun ensureNoMedia(dir: File) {
@@ -1950,7 +1953,7 @@ class ImageCacheManager @Inject constructor(
 
     private suspend fun processAppIconRequest(request: AppIconCacheRequest) {
         val slug = resolveGamePlatformSlug(request.gameId)
-        val fileName = "appicon_${request.packageName.hashCode()}.png"
+        val fileName = "$APP_ICON_PREFIX${request.packageName.hashCode()}.png"
         val cachedFile = File(platformDir(slug, "icons"), fileName)
 
         if (cachedFile.exists()) {
@@ -2010,7 +2013,7 @@ class ImageCacheManager @Inject constructor(
     suspend fun cacheAppIconSync(packageName: String): String? {
         return withContext(Dispatchers.IO) {
             val iconDir = platformDir("android", "icons")
-            val fileName = "appicon_${packageName.hashCode()}.png"
+            val fileName = "$APP_ICON_PREFIX${packageName.hashCode()}.png"
             val cachedFile = File(iconDir, fileName)
 
             if (cachedFile.exists()) {
@@ -2290,7 +2293,7 @@ class ImageCacheManager @Inject constructor(
             fileName.startsWith("logo_") -> {
                 File(logosDir(), fileName)
             }
-            fileName.startsWith("appicon_") -> {
+            fileName.startsWith(APP_ICON_PREFIX) -> {
                 File(platformDir("android", "icons"), fileName)
             }
             else -> null

@@ -171,6 +171,16 @@ class GradientExtractionDelegate @Inject constructor(
 
     fun getGradient(gameId: Long): Pair<Color, Color>? = games.flow.value[gameId]
 
+    /**
+     * The game's colours for the current preset, from the sampled pair or from the pair saved on
+     * its art.
+     */
+    fun gradientFor(gameId: Long, art: ResolvedGameArt): Pair<Color, Color>? =
+        games.flow.value[gameId]
+            ?: art.gradientColors
+                ?.let { gradientColorExtractor.deserializeAllPresets(it) }
+                ?.get(currentPreset)
+
     fun hasGradient(gameId: Long): Boolean = games.has(gameId)
 
     fun getMediaGradient(itemId: String): Pair<Color, Color>? = media.flow.value[itemId]

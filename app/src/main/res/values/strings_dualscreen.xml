@@ -996,4 +996,7 @@
     <!-- Right side of that card: how long the main story takes, e.g. "Main story 13h". -->
     <string name="dual_showcase_journey_main">Main story %1$s</string>
     <string name="dual_showcase_completionist">Completionist %1$s</string>
+    <!-- On the presentation screen, when an Android app was last opened. %1$s is a relative time such
+         as "3 days ago", "Yesterday" or a date such as "Mar 4". -->
+    <string name="dual_showcase_last_played">Last played %1$s</string>
 </resources>

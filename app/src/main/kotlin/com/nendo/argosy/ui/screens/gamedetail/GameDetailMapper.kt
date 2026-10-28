@@ -74,6 +74,7 @@ fun GameEntity.toGameDetailUi(
         canPlay = canPlay,
         isMultiDisc = isMultiDisc,
         lastPlayedDiscId = lastPlayedDiscId,
+        lastPlayedAt = lastPlayed?.toEpochMilli(),
         isRetroArchEmulator = isRetroArch,
         isBuiltInEmulator = isBuiltIn,
         hasMultipleCores = hasMultipleCores,

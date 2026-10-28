@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sell
@@ -212,7 +213,9 @@ private fun GameShowcaseContent(
       }) {
         val gutter = maxWidth * GUTTER_SHARE
         Box(Modifier.fillMaxSize().frostedBackdropSource(backdrop).background(theme.surfaceBase)) {
-            (detail.backdropUrl ?: detail.artUrl)?.let { background ->
+            if (detail.appPackageName != null && !detail.backdropIsScreenshotOrArt) {
+                ShowcaseAppWash(detail.accentColors, durations.backdropCrossfadeMs)
+            } else (detail.backdropUrl ?: detail.artUrl)?.let { background ->
                 val isScreenshot = detail.backdropIsScreenshotOrArt && background == detail.backdropUrl
                 val backdropImage = rememberShowcaseBackdrop(
                     background,
@@ -383,15 +386,21 @@ private fun LogoShowcase(detail: CompanionDetail, gutter: Dp, coverLayer: Modifi
                         .fillMaxHeight(LOGO_HEIGHT_SHARE)
                 )
             } else {
-                Text(
-                    text = detail.title,
-                    style = MaterialTheme.typography.displayLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = theme.textPrimary,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacingLg)
+                ) {
+                    ShowcaseAppIcon(detail)
+                    Text(
+                        text = detail.title,
+                        style = MaterialTheme.typography.displayLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = theme.textPrimary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -464,11 +473,18 @@ internal fun GameHero(
             } else coverMaxHeight
             val cover: @Composable () -> Unit = {
                 if (style.art != PresentationArt.TITLE) {
+                    val isApp = detail.appPackageName != null
                     Box(
                         Modifier.width(coverWidth).height(coverHeight).then(coverLayer),
-                        contentAlignment = Alignment.CenterStart
+                        contentAlignment = if (isApp) Alignment.Center else Alignment.CenterStart
                     ) {
-                        ShowcaseCover(detail, style.art, coverHeight, coverWidth, interactiveCover)
+                        if (isApp) {
+                            ShowcaseAppIcon(detail, Modifier.fillMaxSize()) {
+                                ShowcaseTitleCover(detail.title, Modifier.size(coverWidth, coverHeight))
+                            }
+                        } else {
+                            ShowcaseCover(detail, style.art, coverHeight, coverWidth, interactiveCover)
+                        }
                     }
                 }
             }
@@ -510,7 +526,8 @@ private fun GameHeroMetadata(
     val journey = rememberJourney(detail.stats, style)
     val items = detail.stats?.let { showcaseRailItems(it, style, journeyShown = journey != null) }.orEmpty()
     val developer = items.firstOrNull { it.first == PresentationStat.DEVELOPER }?.second?.text
-    val progressDetails = detail.stats?.let { showcaseProgressDetails(it, style) }.orEmpty()
+    val lastPlayed = showcaseAppLastPlayed(detail, style)?.let { RailItem(Icons.Default.History, null, it) }
+    val progressDetails = detail.stats?.let { showcaseProgressDetails(it, style) }.orEmpty() + listOfNotNull(lastPlayed)
     val rows = remember(detail.stats == null, detail.facts, items, progressDetails) {
         if (detail.stats == null) {
             listOf(RailGroup.FACTS to detail.facts.map { RailItem(null, null, it.value) })
@@ -529,7 +546,7 @@ private fun GameHeroMetadata(
                 ShowcaseTitle(detail = detail)
                 developer?.let {
                     Text(text = it, style = MaterialTheme.typography.titleMedium, color = theme.textDim)
-                }
+                } ?: ShowcaseAppPackageLine(detail, style)
             }
             val friendsAfterRatings = friends.isNotEmpty() && rows.any { it.first == RailGroup.RATINGS }
             rows.forEachIndexed { index, row ->
@@ -578,6 +595,7 @@ private fun JournalShowcase(
             .then(textLayer),
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
     ) {
+        ShowcaseAppIcon(detail)
         detail.subtitle?.let { ShowcaseSubtitle(it, detail.platformSlug) }
         Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)) {
             Text(
@@ -596,14 +614,14 @@ private fun JournalShowcase(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-            }
+            } ?: ShowcaseAppPackageLine(detail, style)
         }
         if (factRow.isNotEmpty()) {
             ShowcaseRailRow(factRow, textStyle = MaterialTheme.typography.titleSmall, textColor = theme.textDim)
         }
         Box(modifier = Modifier.weight(1f))
         if (ratings.isNotEmpty()) ShowcaseRailRow(ratings)
-        stats?.let { JournalJourneyCard(stats = it, style = style) }
+        stats?.let { JournalJourneyCard(stats = it, style = style, lastPlayed = showcaseAppLastPlayed(detail, style)) }
         if (friends.isNotEmpty()) {
             FriendsActivityBadge(friends = friends, textColor = theme.textPrimary)
         }
@@ -611,7 +629,7 @@ private fun JournalShowcase(
 }
 
 @Composable
-private fun JournalJourneyCard(stats: CompanionGameStats, style: PresentationStyle) {
+private fun JournalJourneyCard(stats: CompanionGameStats, style: PresentationStyle, lastPlayed: String?) {
     val theme = LocalArgosyTheme.current
     val context = LocalContext.current
     val played = stats.playTimeMinutes.takeIf { it > 0 && style.shows(PresentationStat.PLAY_TIME) }
@@ -625,7 +643,8 @@ private fun JournalJourneyCard(stats: CompanionGameStats, style: PresentationSty
     }
     val achievements = stats.takeIf { style.shows(PresentationStat.ACHIEVEMENTS) && it.achievementCount > 0 }
     val progressDetails = showcaseProgressDetails(stats, style)
-    if (played == null && mainStoryLabel == null && achievements == null && progressDetails.isEmpty()) return
+    val noFacts = played == null && mainStoryLabel == null && lastPlayed == null
+    if (noFacts && achievements == null && progressDetails.isEmpty()) return
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -650,7 +669,7 @@ private fun JournalJourneyCard(stats: CompanionGameStats, style: PresentationSty
             }
         }
         fraction?.let { ShowcaseTrack(fraction = it, color = theme.focusAccent) }
-        if (played != null || mainStoryLabel != null) {
+        if (!noFacts) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = played?.let { stringResource(R.string.dual_showcase_played, it) }.orEmpty(),
@@ -658,9 +677,9 @@ private fun JournalJourneyCard(stats: CompanionGameStats, style: PresentationSty
                     color = theme.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
-                mainStoryLabel?.let {
+                (mainStoryLabel?.let { stringResource(R.string.dual_showcase_journey_main, it) } ?: lastPlayed)?.let {
                     Text(
-                        text = stringResource(R.string.dual_showcase_journey_main, it),
+                        text = it,
                         style = MaterialTheme.typography.titleSmall,
                         color = theme.textDim
                     )

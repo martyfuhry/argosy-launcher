@@ -505,6 +505,7 @@ class LibraryViewModel @Inject constructor(
     private val companionOwner = SlotOwner.of("library", this)
     private val platformShowcaseOwner = SlotOwner.of("library.platforms", this)
     private var isDescribing = false
+    private var companionJob: Job? = null
 
     private val _uiState = MutableStateFlow(LibraryUiState())
     val uiState: StateFlow<LibraryUiState> = _uiState.asStateFlow()
@@ -864,7 +865,10 @@ class LibraryViewModel @Inject constructor(
             _uiState
                 .map { if (it.view == LibraryView.PLATFORM_GRID) null else it.focusedGame?.id }
                 .distinctUntilChanged()
-                .collectLatest { publishCompanionDetail(it) }
+                .collectLatest {
+                    companionJob?.cancel()
+                    publishCompanionDetail(it)
+                }
         }
 
         _uiState
@@ -997,7 +1001,8 @@ class LibraryViewModel @Inject constructor(
         if (state.view == LibraryView.PLATFORM_GRID) {
             viewModelScope.launch { publishPlatformShowcase(state.focusedPlatformCell) }
         } else {
-            viewModelScope.launch { publishCompanionDetail(state.focusedGame?.id) }
+            companionJob?.cancel()
+            companionJob = viewModelScope.launch { publishCompanionDetail(state.focusedGame?.id) }
         }
     }
 
@@ -1008,10 +1013,16 @@ class LibraryViewModel @Inject constructor(
         val detail = gameId?.let { showcaseSource.gameDetail(it, friends) }
         if (!isDescribing) return
         dsm.setCompanionDetail(companionOwner, detail)
+        var shown = detail
         if (gameId != null && showcaseSource.backfillLogo(gameId)) {
-            val withLogo = showcaseSource.gameDetail(gameId, friends)
-            if (isDescribing) dsm.setCompanionDetail(companionOwner, withLogo)
+            shown = showcaseSource.gameDetail(gameId, friends)
+            if (isDescribing) dsm.setCompanionDetail(companionOwner, shown)
         }
+        if (gameId == null || shown == null || shown.accentColors != null) return
+        showcaseSource.awaitGradient(gameId)
+        val withColours = showcaseSource.gameDetail(gameId, friends)
+        if (!isDescribing || _uiState.value.focusedGame?.id != gameId) return
+        dsm.setCompanionDetail(companionOwner, withColours)
     }
 
     /**
@@ -1019,6 +1030,7 @@ class LibraryViewModel @Inject constructor(
      */
     fun clearCompanionDetail() {
         isDescribing = false
+        companionJob?.cancel()
         val dsm = DualScreenManagerHolder.instance ?: return
         dsm.setCompanionDetail(companionOwner, null)
         dsm.releaseSlot(platformShowcaseOwner)
