@@ -966,7 +966,7 @@ private fun RommSuccessStep(
     isFocused: Boolean,
     onContinue: () -> Unit
 ) {
-    StepColumn {
+    StepColumn(verticalArrangement = Arrangement.Center) {
         Icon(
             Icons.Default.Check,
             contentDescription = null,
