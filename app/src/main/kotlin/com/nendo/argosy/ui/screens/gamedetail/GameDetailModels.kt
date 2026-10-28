@@ -96,6 +96,7 @@ data class GameDetailUi(
     val canPlay: Boolean,
     val isMultiDisc: Boolean = false,
     val lastPlayedDiscId: Long? = null,
+    val lastPlayedAt: Long? = null,
     val isRetroArchEmulator: Boolean = false,
     val isBuiltInEmulator: Boolean = false,
     val hasMultipleCores: Boolean = false,

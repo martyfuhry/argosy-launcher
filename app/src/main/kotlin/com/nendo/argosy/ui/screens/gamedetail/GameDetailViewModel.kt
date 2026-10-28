@@ -253,7 +253,9 @@ class GameDetailViewModel @Inject constructor(
         modalResetSignal.signal.onEach { resetAllModals() }.launchIn(viewModelScope)
 
         viewModelScope.launch {
-            _uiState.map { state -> state.game?.toCompanionDetail(state.friendsActivity) }
+            combine(_uiState, gradientExtractionDelegate.gradients) { state, gradients ->
+                state.game?.let { it.toCompanionDetail(state.friendsActivity, gradients[it.id]) }
+            }
                 .distinctUntilChanged()
                 .collect { publishCompanionDetail(it) }
         }
@@ -708,6 +710,11 @@ class GameDetailViewModel @Inject constructor(
 
             val isHiddenForOwner = gameRepository.isGameHidden(gameId)
             val art = gameRepository.getArt(gameId)
+            gradientExtractionDelegate.extractForVisibleGames(
+                viewModelScope,
+                listOf(com.nendo.argosy.ui.screens.common.GameGradientRequest(gameId, art.coverPath)),
+                focusedIndex = 0
+            )
             val screenshotRows = gameRepository.getScreenshots(gameId)
 
             val isPrivate = game.igdbId != null &&
@@ -2508,7 +2515,11 @@ class GameDetailViewModel @Inject constructor(
         isDescribing = true
         heldForTimeline = false
         val state = _uiState.value
-        publishCompanionDetail(state.game?.toCompanionDetail(state.friendsActivity))
+        publishCompanionDetail(
+            state.game?.let {
+                it.toCompanionDetail(state.friendsActivity, gradientExtractionDelegate.getGradient(it.id))
+            }
+        )
     }
 
     /**
