@@ -13,6 +13,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +35,7 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -57,7 +59,8 @@ fun PairingCodeInput(
     onCodeChange: (String) -> Unit,
     isFocused: Boolean,
     focusRequester: FocusRequester,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onImeAction: (() -> Unit)? = null
 ) {
     val shape = RoundedCornerShape(Dimens.radiusSm)
     val focusAccent = LocalArgosyTheme.current.focusAccent
@@ -94,8 +97,10 @@ fun PairingCodeInput(
         },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,
-            capitalization = KeyboardCapitalization.Characters
+            capitalization = KeyboardCapitalization.Characters,
+            imeAction = if (onImeAction != null) ImeAction.Go else ImeAction.Default
         ),
+        keyboardActions = KeyboardActions(onGo = { onImeAction?.invoke() }),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         modifier = modifier
             .bringIntoViewRequester(bringIntoViewRequester)
