@@ -36,6 +36,19 @@ object ComponentDefaults {
         const val titleOverscanRatio = 0.2f
     }
 
+    object GameShowcase {
+        const val backdropCrossfadeMs = 380
+        const val enterMs = 320
+        const val coverDelayMs = 60
+        const val textDelayMs = 120
+        const val exitMs = 120
+        const val coverDriftDp = 8
+        const val textRiseDp = 12
+        const val floatTravelDp = 6
+        const val floatSlideMs = 2400
+        const val floatHoldMs = 1600
+    }
+
     object BoxArt {
         val shape = BoxArtShape.STANDARD
         val cornerRadius = BoxArtCornerRadius.MEDIUM
