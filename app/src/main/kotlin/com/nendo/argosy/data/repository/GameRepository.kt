@@ -824,6 +824,8 @@ class GameRepository @Inject constructor(
     suspend fun getFavorites(): List<GameEntity> =
         hydrateByIds(gameDao.getFavoriteIds(hiddenOwnerId()))
 
+    suspend fun favoriteIds(): List<Long> = gameDao.getFavoriteIds(hiddenOwnerId())
+
     suspend fun getRandomGame(): GameEntity? = gameDao.getRandomGame(hiddenOwnerId())
 
     /**

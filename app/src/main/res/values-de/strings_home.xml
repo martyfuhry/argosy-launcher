@@ -185,4 +185,7 @@
 
     <string name="home_grid_tile_ra_points_label">Punkte</string>
     <string name="home_grid_tile_ra_unlocks_label">Freischaltungen</string>
+
+    <string name="home_view_all_showcase_favorites">Favoriten</string>
+    <string name="home_view_all_showcase_playable">Spielbar</string>
 </resources>
