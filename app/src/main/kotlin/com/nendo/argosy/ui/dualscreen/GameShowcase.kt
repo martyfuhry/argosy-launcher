@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -139,12 +140,15 @@ fun GameShowcase(
     val reduced = LocalMotionTier.current == MotionTier.Reduced
     val durations = remember(reduced) { showcaseMotionDurations(reduced) }
     val scope = rememberCoroutineScope()
-    val coordinator = remember(scope) { ShowcaseMotionCoordinator(scope, Motion.transitionDebounceMs) }
+    val coordinator = remember(scope) {
+        ShowcaseMotionCoordinator(scope, if (reduced) 0L else Motion.transitionDebounceMs)
+    }
     val key = liveDetail.gameId ?: UNIDENTIFIED_GAME_KEY
     LaunchedEffect(key) { coordinator.focus(key) }
     val motion by coordinator.state.collectAsState()
-    var heldDetail by remember { mutableStateOf<CompanionDetail?>(null) }
-    if (motion.contentKey == key) heldDetail = liveDetail
+    val last = remember { arrayOfNulls<CompanionDetail>(1) }
+    val heldDetail = if (motion.contentKey == key) liveDetail else last[0]
+    SideEffect { last[0] = heldDetail }
     GameShowcaseContent(
         detail = liveDetail,
         heldDetail = heldDetail,
@@ -194,6 +198,14 @@ private fun GameShowcaseContent(
     }
     var viewportOrigin by remember { mutableStateOf(Offset.Zero) }
     var titleBounds by remember { mutableStateOf(Rect.Zero) }
+    val cinematicText = if (heldDetail != null && style.layout == PresentationLayout.CINEMATIC) {
+        rememberShowcaseLayer(
+            motion, durations, durations.textDelayMs, durations.textRiseDp,
+            horizontal = false, onFinished = onEntranceFinished
+        )
+    } else {
+        null
+    }
     CompositionLocalProvider(LocalFrostedBackdrop provides backdrop) {
       BoxWithConstraints(modifier = modifier.fillMaxSize().clipToBounds().onGloballyPositioned {
           viewportOrigin = it.positionInRoot()
@@ -202,14 +214,16 @@ private fun GameShowcaseContent(
         Box(Modifier.fillMaxSize().frostedBackdropSource(backdrop).background(theme.surfaceBase)) {
             (detail.backdropUrl ?: detail.artUrl)?.let { background ->
                 val isScreenshot = detail.backdropIsScreenshotOrArt && background == detail.backdropUrl
+                val backdropImage = rememberShowcaseBackdrop(
+                    background,
+                    durations.backdropCrossfadeMs,
+                    stackedScreenshot = isScreenshot
+                )
                 AsyncImage(
-                    model = rememberShowcaseBackdropRequest(
-                        background,
-                        durations.backdropCrossfadeMs,
-                        stackedScreenshot = isScreenshot
-                    ),
+                    model = backdropImage.request,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
+                    onSuccess = backdropImage.onSuccess,
                     modifier = Modifier
                         .fillMaxSize()
                         .then(if (backgroundBlurRadius > 0.dp) Modifier.blur(backgroundBlurRadius) else Modifier)
@@ -221,6 +235,7 @@ private fun GameShowcaseContent(
                 val strength = style.scrimStrength / DEFAULT_STRENGTH
                 Box(Modifier.fillMaxSize().drawBehind {
                     val bounds = titleBounds.translate(-viewportOrigin)
+                    val textAlpha = cinematicText?.alpha ?: 0f
                     if (bounds.width > 0f && bounds.height > 0f && strength > 0f) {
                         val radii = presentationTitleRadii(
                             size.width, size.height, bounds.width, bounds.height,
@@ -231,10 +246,10 @@ private fun GameShowcaseContent(
                                 alpha = presentationScrimAlpha(
                                     ComponentDefaults.Presentation.titleCenterAlpha,
                                     strength
-                                )
+                                ) * textAlpha
                             ),
                             ComponentDefaults.Presentation.titleMidRatio to color.copy(
-                                alpha = presentationScrimAlpha(ComponentDefaults.Presentation.titleMidAlpha, strength)
+                                alpha = presentationScrimAlpha(ComponentDefaults.Presentation.titleMidAlpha, strength) * textAlpha
                             ),
                             1f to color.copy(alpha = 0f),
                             center = bounds.center,
@@ -253,10 +268,10 @@ private fun GameShowcaseContent(
                 PresentationLayout.LOGO -> LogoShowcase(
                     detail = heldDetail,
                     gutter = gutter,
-                    coverLayer = Modifier.showcaseLayer(
+                    coverLayer = rememberShowcaseLayer(
                         motion, durations, durations.coverDelayMs, durations.coverDriftDp,
                         horizontal = false, onFinished = onEntranceFinished
-                    ),
+                    ).modifier,
                     floatLayer = Modifier.showcaseFloat(motion, durations)
                 )
                 PresentationLayout.CINEMATIC -> CinematicShowcase(
@@ -266,13 +281,10 @@ private fun GameShowcaseContent(
                     viewportWidth = maxWidth,
                     viewportHeight = maxHeight,
                     onTitleBoundsChanged = { titleBounds = it },
-                    coverLayer = Modifier.showcaseLayer(
+                    coverLayer = rememberShowcaseLayer(
                         motion, durations, durations.coverDelayMs, durations.coverDriftDp, horizontal = true
-                    ),
-                    textLayer = Modifier.showcaseLayer(
-                        motion, durations, durations.textDelayMs, durations.textRiseDp,
-                        horizontal = false, onFinished = onEntranceFinished
-                    )
+                    ).modifier,
+                    textLayer = cinematicText?.modifier ?: Modifier
                 )
                 PresentationLayout.JOURNAL -> JournalShowcase(
                     detail = heldDetail,
@@ -281,10 +293,10 @@ private fun GameShowcaseContent(
                     gutter = gutter,
                     bottom = contentBottom,
                     columnWidth = maxWidth * JOURNAL_COLUMN_WIDTH_SHARE,
-                    textLayer = Modifier.showcaseLayer(
+                    textLayer = rememberShowcaseLayer(
                         motion, durations, durations.textDelayMs, durations.textRiseDp,
                         horizontal = false, onFinished = onEntranceFinished
-                    )
+                    ).modifier
                 )
             }
         }

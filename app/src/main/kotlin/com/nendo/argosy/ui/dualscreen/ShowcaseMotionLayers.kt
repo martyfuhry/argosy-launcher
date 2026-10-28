@@ -9,14 +9,19 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImagePainter
+import coil.memory.MemoryCache
 import coil.request.ImageRequest
+import coil.transition.Transition
 import com.nendo.argosy.ui.common.AlwaysCrossfadeFactory
 import com.nendo.argosy.ui.common.rememberFileImageModel
 import com.nendo.argosy.ui.common.stackedScreenshotBackdrop
@@ -25,32 +30,49 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+internal class ShowcaseBackdrop(
+    val request: ImageRequest,
+    val onSuccess: (AsyncImagePainter.State.Success) -> Unit
+)
+
 @Composable
-internal fun rememberShowcaseBackdropRequest(
+internal fun rememberShowcaseBackdrop(
     path: String,
     crossfadeMs: Int,
     stackedScreenshot: Boolean
-): ImageRequest {
+): ShowcaseBackdrop {
     val context = LocalContext.current
     val model = rememberFileImageModel(path)
-    return remember(model, crossfadeMs, stackedScreenshot) {
+    val lastKey = remember { mutableStateOf<MemoryCache.Key?>(null) }
+    val request = remember(model, crossfadeMs, stackedScreenshot) {
         ImageRequest.Builder(context)
             .data(model)
+            .placeholderMemoryCacheKey(Snapshot.withoutReadObservation { lastKey.value })
             .apply { if (stackedScreenshot) stackedScreenshotBackdrop() }
-            .apply { if (crossfadeMs > 0) transitionFactory(AlwaysCrossfadeFactory(crossfadeMs)) }
+            .transitionFactory(if (crossfadeMs > 0) AlwaysCrossfadeFactory(crossfadeMs) else Transition.Factory.NONE)
             .build()
+    }
+    return remember(request) {
+        ShowcaseBackdrop(request) { lastKey.value = it.result.memoryCacheKey }
     }
 }
 
+internal class ShowcaseLayer(
+    val modifier: Modifier,
+    private val fade: Animatable<Float, AnimationVector1D>
+) {
+    val alpha: Float get() = fade.value
+}
+
 @Composable
-internal fun Modifier.showcaseLayer(
+internal fun rememberShowcaseLayer(
     motion: ShowcaseMotionState,
     durations: ShowcaseMotionDurations,
     delayMs: Int,
     distanceDp: Int,
     horizontal: Boolean,
     onFinished: ((Long?) -> Unit)? = null
-): Modifier {
+): ShowcaseLayer {
     val distancePx = with(LocalDensity.current) { distanceDp.dp.toPx() }
     val startOffset = if (horizontal) -distancePx else distancePx
     val fade = remember { Animatable(if (motion.phase == ShowcaseMotionPhase.AtRest) 1f else 0f) }
@@ -79,9 +101,12 @@ internal fun Modifier.showcaseLayer(
             }
         }
     }
-    return graphicsLayer {
-        alpha = fade.value
-        if (horizontal) translationX = drift.value else translationY = drift.value
+    return remember(fade, drift, horizontal) {
+        val modifier = Modifier.graphicsLayer {
+            alpha = fade.value
+            if (horizontal) translationX = drift.value else translationY = drift.value
+        }
+        ShowcaseLayer(modifier, fade)
     }
 }
 
