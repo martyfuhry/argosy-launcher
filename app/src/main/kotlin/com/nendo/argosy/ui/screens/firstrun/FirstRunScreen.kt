@@ -114,6 +114,8 @@ import androidx.compose.ui.graphics.Color
 import com.nendo.argosy.ui.primitives.ActionButton
 import com.nendo.argosy.ui.theme.Dimens
 import com.nendo.argosy.ui.theme.LocalArgosyTheme
+import com.nendo.argosy.ui.theme.LocalMotionTier
+import com.nendo.argosy.ui.theme.MotionTier
 import com.nendo.argosy.ui.theme.generated.MotionTokens
 import com.nendo.argosy.util.PlatformFilterLogic
 import kotlinx.coroutines.delay
@@ -526,21 +528,26 @@ private fun RommLoginStep(
     var wasUrlFocused by remember { mutableStateOf(false) }
 
     val compact = WindowInsets.isImeVisible && focusedIndex in 0..2
+    val roomMs = if (LocalMotionTier.current == MotionTier.Reduced) 0 else MotionTokens.Tween.drawerMs
+    val roomEnter = remember(roomMs) { roomEnterVertical(roomMs) }
+    val roomExit = remember(roomMs) { roomExitVertical(roomMs) }
+    val roomEnterSide = remember(roomMs) { roomEnterHorizontal(roomMs) }
+    val roomExitSide = remember(roomMs) { roomExitHorizontal(roomMs) }
     val actionGroupRequester = remember { BringIntoViewRequester() }
     val fieldWidthFraction by animateFloatAsState(
         targetValue = if (compact) 1f else 0.8f,
-        animationSpec = roomTween(),
+        animationSpec = roomTween(roomMs),
         label = "romm_field_width"
     )
     val actionGap by animateDpAsState(
         targetValue = if (compact) Dimens.spacingSm else Dimens.spacingLg,
-        animationSpec = roomTween(),
+        animationSpec = roomTween(roomMs),
         label = "romm_action_gap"
     )
 
     LaunchedEffect(compact, error) {
         if (compact) {
-            delay(MotionTokens.Tween.drawerMs.toLong())
+            delay(roomMs.toLong())
             actionGroupRequester.bringIntoView()
         }
     }
@@ -569,7 +576,7 @@ private fun RommLoginStep(
         }
         val canContinue = !isConnecting && url.isNotBlank()
         StepColumn(verticalArrangement = Arrangement.Center) {
-            AnimatedVisibility(visible = !compact, enter = RoomEnterVertical, exit = RoomExitVertical) {
+            AnimatedVisibility(visible = !compact, enter = roomEnter, exit = roomExit) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -632,8 +639,8 @@ private fun RommLoginStep(
                     )
                     AnimatedVisibility(
                         visible = compact,
-                        enter = RoomEnterHorizontal,
-                        exit = RoomExitHorizontal
+                        enter = roomEnterSide,
+                        exit = roomExitSide
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Spacer(modifier = Modifier.width(Dimens.spacingSm))
@@ -668,7 +675,7 @@ private fun RommLoginStep(
                 }
             }
 
-            AnimatedVisibility(visible = !compact, enter = RoomEnterVertical, exit = RoomExitVertical) {
+            AnimatedVisibility(visible = !compact, enter = roomEnter, exit = roomExit) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
@@ -722,7 +729,7 @@ private fun RommLoginStep(
 
     val canConnect = !isConnecting && codeComplete
     StepColumn(verticalArrangement = Arrangement.Center) {
-        AnimatedVisibility(visible = !compact, enter = RoomEnterVertical, exit = RoomExitVertical) {
+        AnimatedVisibility(visible = !compact, enter = roomEnter, exit = roomExit) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
@@ -820,7 +827,7 @@ private fun RommLoginStep(
             }
         }
 
-        AnimatedVisibility(visible = !compact, enter = RoomEnterVertical, exit = RoomExitVertical) {
+        AnimatedVisibility(visible = !compact, enter = roomEnter, exit = roomExit) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
@@ -851,12 +858,12 @@ private fun RommLoginStep(
     }
 }
 
-private fun <T> roomTween() = tween<T>(durationMillis = MotionTokens.Tween.drawerMs)
+private fun <T> roomTween(ms: Int) = tween<T>(durationMillis = ms)
 
-private val RoomEnterVertical = fadeIn(animationSpec = roomTween()) + expandVertically(animationSpec = roomTween())
-private val RoomExitVertical = fadeOut(animationSpec = roomTween()) + shrinkVertically(animationSpec = roomTween())
-private val RoomEnterHorizontal = fadeIn(animationSpec = roomTween()) + expandHorizontally(animationSpec = roomTween())
-private val RoomExitHorizontal = fadeOut(animationSpec = roomTween()) + shrinkHorizontally(animationSpec = roomTween())
+private fun roomEnterVertical(ms: Int) = fadeIn(animationSpec = roomTween(ms)) + expandVertically(animationSpec = roomTween(ms))
+private fun roomExitVertical(ms: Int) = fadeOut(animationSpec = roomTween(ms)) + shrinkVertically(animationSpec = roomTween(ms))
+private fun roomEnterHorizontal(ms: Int) = fadeIn(animationSpec = roomTween(ms)) + expandHorizontally(animationSpec = roomTween(ms))
+private fun roomExitHorizontal(ms: Int) = fadeOut(animationSpec = roomTween(ms)) + shrinkHorizontally(animationSpec = roomTween(ms))
 
 @Composable
 private fun DevicePairingStep(
