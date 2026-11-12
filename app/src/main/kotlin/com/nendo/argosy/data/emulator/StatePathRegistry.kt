@@ -407,6 +407,15 @@ object StatePathRegistry {
             ),
             maxSlots = 10
         ),
+        "minarch_link" to StatePathConfig(
+            emulatorId = "minarch_link",
+            defaultPaths = listOf("{extStorage}/MinarchLink/States/GBA"),
+            slotPattern = StateSlotPattern.SuffixNumber(
+                extension = "state",
+                autoSlotSuffix = "auto"
+            ),
+            maxSlots = 10
+        ),
         "pizza_boy_gb" to StatePathConfig(
             emulatorId = "pizza_boy_gb",
             defaultPaths = listOf(
