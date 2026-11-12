@@ -824,6 +824,12 @@ object EmulatorRegistry {
             downloadUrl = "https://play.google.com/store/apps/details?id=com.pixelrespawn.linkboy"
         ),
         EmulatorDef(
+            id = "minarch_link",
+            packageName = "farm.fuhry.minarch",
+            displayName = "Minarch Link",
+            supportedPlatforms = setOf("gba")
+        ),
+        EmulatorDef(
             id = "super_zsnes",
             packageName = "com.zsnes.superzsnes",
             displayName = "SUPER ZSNES",
@@ -1299,7 +1305,7 @@ object EmulatorRegistry {
         "wiiu" to listOf("cemu", "cemu_dualscreen"),
         "switch" to listOf("eden", "eden_duo", "lemon", "citron", "sudachi", "ryujinx", "yuzu", "strato", "skyline"),
         "switch2" to listOf("eden_nx2"),
-        "gba" to listOf(BUILTIN_ID, "pizza_boy_gba_pro", "pizza_boy_gba", "linkboy", "retroarch", "retroarch_64", "retroarch_32", "pokedaisy"),
+        "gba" to listOf(BUILTIN_ID, "pizza_boy_gba_pro", "pizza_boy_gba", "linkboy", "retroarch", "retroarch_64", "retroarch_32", "pokedaisy", "minarch_link"),
         "gb" to listOf(BUILTIN_ID, "pizza_boy_gb_pro", "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32", "pokedaisy"),
         "gbc" to listOf(BUILTIN_ID, "pizza_boy_gb_pro", "pizza_boy_gb", "linkboy", "retroarch", "retroarch_64", "retroarch_32", "pokedaisy"),
         "nes" to listOf(BUILTIN_ID, "retroarch", "retroarch_64", "retroarch_32"),
