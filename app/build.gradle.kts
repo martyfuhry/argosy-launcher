@@ -105,6 +105,12 @@ android {
             isPseudoLocalesEnabled = true
             buildConfigField("String", "SOCIAL_API_URL", "\"https://api.argosy.dev/\"")
         }
+        create("fast") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {
