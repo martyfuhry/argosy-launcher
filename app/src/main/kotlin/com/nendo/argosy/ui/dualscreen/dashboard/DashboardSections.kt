@@ -683,10 +683,6 @@ private fun DashboardContent.achievementFraction(): Float =
 
 private fun now(): Long = android.os.SystemClock.elapsedRealtime()
 
-/**
- * Runs [onExpired] when the elapsed-realtime deadline [until] passes, so a prompt armed until then
- * stops showing as armed without waiting for anything else to recompose. A deadline of 0 does nothing.
- */
 @Composable
 internal fun ClearAt(until: Long, onExpired: () -> Unit) {
     LaunchedEffect(until) {
