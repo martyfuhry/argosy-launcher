@@ -10,6 +10,9 @@ import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
 import androidx.core.os.bundleOf
+import com.nendo.argosy.DualScreenManager
+import com.nendo.argosy.DualScreenManagerHolder
+import com.nendo.argosy.ui.dualscreen.dashboard.SessionControls
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.PlaySessionTracker
@@ -40,9 +43,36 @@ class SlotHostService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val messenger = Messenger(Handler(Looper.getMainLooper()) { message -> receive(message) })
 
+    private val dashboard = SlotDashboardBridge(
+        dashboard = object : SlotDashboardBridge.Dashboard {
+            override var quickActions: DualScreenManager.SessionQuickActions?
+                get() = DualScreenManagerHolder.instance?.sessionQuickActions
+                set(value) {
+                    DualScreenManagerHolder.instance?.sessionQuickActions = value
+                }
+
+            override fun publish(controls: SessionControls) {
+                DualScreenManagerHolder.instance?.updateSessionControls(controls)
+            }
+        },
+        ownerSlot = ::ownerSlot,
+        send = { slotIndex, command, stateSlot, savedAtMillis ->
+            send(
+                slotIndex,
+                SlotProtocol.DASHBOARD_COMMAND,
+                Bundle().also { SlotDashboardWire.writeCommand(command, stateSlot, savedAtMillis, it) }
+            )
+        }
+    )
+
     override fun onCreate() {
         super.onCreate()
-        scope.launch { tracker.activeSession.collect { pushSessionState() } }
+        scope.launch {
+            tracker.activeSession.collect {
+                pushSessionState()
+                dashboard.refresh()
+            }
+        }
         scope.launch {
             tracker.saveWrites.collect {
                 ownerSlot()?.let { send(it, SlotProtocol.SAVE_WRITTEN_PUSH, Bundle()) }
@@ -53,6 +83,7 @@ class SlotHostService : Service() {
     override fun onBind(intent: Intent?): IBinder = messenger.binder
 
     override fun onDestroy() {
+        dashboard.detach()
         scope.cancel()
         super.onDestroy()
     }
@@ -77,6 +108,7 @@ class SlotHostService : Service() {
                     onNotice = { notice -> send(slotIndex, SlotProtocol.NOTICE, notice.toBundle()) }
                 )
                 if (owns(slotIndex)) tracker.onBuiltInGameResumed()
+                dashboard.refresh(slotIndex)
             }
             SlotProtocol.PAUSED -> {
                 ResumedGameRouter.release(resumedOwner(slotIndex))
@@ -103,8 +135,11 @@ class SlotHostService : Service() {
                 )
                 registry.slots.value[slotIndex]?.let { forgetFrame(it.taskId) }
                 registry.remove(slotIndex)
+                dashboard.forget(slotIndex)
             }
             SlotProtocol.SHOW_RESUME -> showResume(slotIndex, data.getInt(SlotProtocol.KEY_DISPLAY_ID))
+            SlotProtocol.DASHBOARD_ACTIONS -> dashboard.offer(slotIndex, data.getBoolean(SlotProtocol.KEY_AVAILABLE))
+            SlotProtocol.DASHBOARD_CONTROLS -> dashboard.publish(slotIndex, SlotDashboardWire.readControls(data))
             else -> return false
         }
         return true
@@ -138,6 +173,7 @@ class SlotHostService : Service() {
             if (registry.slots.value[slot.slotIndex]?.pid == slot.pid) {
                 registry.remove(slot.slotIndex)
                 ResumedGameRouter.release(resumedOwner(slot.slotIndex))
+                dashboard.forget(slot.slotIndex)
                 registry.reportDied(slot)
             }
             endBuiltInSessionIfOwned(tracker, slot.gameId, skipSaveSync = false)

@@ -546,7 +546,6 @@ open class LibretroActivity : ComponentActivity() {
         com.nendo.argosy.DualScreenManagerHolder.instance?.let { dsm ->
             dsm.emulatorKeyDispatcher = { event -> dispatchKeyEvent(event) }
             dsm.emulatorMotionDispatcher = { event -> dispatchGenericMotionEvent(event) }
-            dsm.sessionQuickActions = createSessionQuickActions()
             dsm.sessionRefocus = {
                 @Suppress("DEPRECATION")
                 val options = com.nendo.argosy.ui.screens.common.GameLaunchOptions
@@ -561,6 +560,7 @@ open class LibretroActivity : ComponentActivity() {
                 )
             }
         }
+        sessionLink.offerDashboard(createSessionQuickActions())
 
         netplay = LibretroNetplayCoordinator(
             activity = this,
@@ -627,9 +627,7 @@ open class LibretroActivity : ComponentActivity() {
         perGameControlsEnabled = game?.perGameControlsEnabled == true
 
         initializeSaveState(savesDir, statesDir, activeSaveChannel)
-        if (hardcoreMode) {
-            com.nendo.argosy.DualScreenManagerHolder.instance?.sessionQuickActions = null
-        }
+        if (hardcoreMode) sessionLink.offerDashboard(null)
         val globalSettings = kotlinx.coroutines.runBlocking {
             preferencesRepository.getBuiltinEmulatorSettings().first()
         }
@@ -967,7 +965,6 @@ open class LibretroActivity : ComponentActivity() {
 
     private fun publishSessionControls() {
         if (!::saveStateManager.isInitialized) return
-        val dsm = com.nendo.argosy.DualScreenManagerHolder.instance ?: return
         val quickStates = saveStateManager.getQuickRingInfoList().map { slot ->
             com.nendo.argosy.ui.dualscreen.dashboard.DashboardQuickState(
                 slotNumber = slot.slotNumber,
@@ -975,7 +972,7 @@ open class LibretroActivity : ComponentActivity() {
                 screenshotPath = slot.screenshotFile?.absolutePath
             )
         }
-        dsm.updateSessionControls(
+        sessionLink.publishDashboard(
             com.nendo.argosy.ui.dualscreen.dashboard.SessionControls(
                 quickStates = quickStates,
                 cheatsAvailable = !hardcoreMode && PlatformWeightRegistry.supportsCheats(platformSlug),
@@ -4412,10 +4409,10 @@ open class LibretroActivity : ComponentActivity() {
         com.nendo.argosy.DualScreenManagerHolder.instance?.let { dsm ->
             dsm.emulatorKeyDispatcher = null
             dsm.emulatorMotionDispatcher = null
-            dsm.sessionQuickActions = null
             dsm.sessionRefocus = null
             dsm.unregisterLiveMoveHost(liveMoveHost)
         }
+        sessionLink.offerDashboard(null)
         if (::netplay.isInitialized) netplay.shutdown()
         if (::achievementBridge.isInitialized) achievementBridge.destroy()
         if (isFinishing) {

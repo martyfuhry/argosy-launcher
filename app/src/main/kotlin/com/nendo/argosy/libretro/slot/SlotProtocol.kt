@@ -12,6 +12,8 @@ internal object SlotProtocol {
     const val CACHE_FOR_QUIT = 7
     const val END_SESSION = 8
     const val SHOW_RESUME = 9
+    const val DASHBOARD_ACTIONS = 10
+    const val DASHBOARD_CONTROLS = 11
 
     const val SESSION_STATE = 101
     const val SAVE_WRITTEN_PUSH = 102
@@ -20,6 +22,7 @@ internal object SlotProtocol {
     const val GUIDE_KEY = 105
     const val NOTICE = 106
     const val RESUME_CLOSED = 107
+    const val DASHBOARD_COMMAND = 108
 
     const val KEY_SLOT = "slot"
     const val KEY_PID = "pid"
@@ -39,6 +42,19 @@ internal object SlotProtocol {
     const val KEY_PRESSED = "pressed"
     const val KEY_DISPLAY_ID = "displayId"
     const val KEY_SHOWN = "shown"
+    const val KEY_AVAILABLE = "available"
+    const val KEY_COMMAND = "command"
+    const val KEY_STATE_SLOT = "stateSlot"
+    const val KEY_SAVED_AT = "savedAt"
+    const val KEY_STATE_SLOTS = "stateSlots"
+    const val KEY_STATE_TIMES = "stateTimes"
+    const val KEY_STATE_SHOTS = "stateShots"
+    const val KEY_CHEATS = "cheats"
+    const val KEY_SETTINGS = "settings"
+    const val KEY_SCREENSHOT = "screenshot"
+    const val KEY_DISC_SWAP = "discSwap"
+    const val KEY_STATES = "states"
+    const val KEY_ACHIEVEMENTS = "achievements"
 
     const val NONE = -1L
 

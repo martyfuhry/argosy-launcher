@@ -1,6 +1,9 @@
 package com.nendo.argosy.libretro.slot
 
+import com.nendo.argosy.DualScreenManager
+import com.nendo.argosy.DualScreenManagerHolder
 import com.nendo.argosy.core.notification.ResolvedNotice
+import com.nendo.argosy.ui.dualscreen.dashboard.SessionControls
 import com.nendo.argosy.data.emulator.EmulatorRegistry
 import com.nendo.argosy.data.emulator.LaunchOrigin
 import com.nendo.argosy.data.emulator.PlaySessionTracker
@@ -51,6 +54,14 @@ interface GameSessionLink {
      */
     fun showResumeOverlay(displayId: Int, onClosed: (shown: Boolean) -> Unit)
 
+    /**
+     * Offers [actions] to the second-screen dashboard while this game holds the session; null
+     * withdraws the offer and leaves another game's actions in place.
+     */
+    fun offerDashboard(actions: DualScreenManager.SessionQuickActions?)
+
+    fun publishDashboard(controls: SessionControls)
+
     fun release()
 }
 
@@ -66,6 +77,9 @@ class LocalGameSessionLink(
         tracker.activeSession.map { it?.startTime }.stateIn(scope, SharingStarted.Eagerly, tracker.activeSession.value?.startTime)
 
     override val saveWrites: Flow<Unit> = tracker.saveWrites
+
+    @Volatile private var dashboardActions: DualScreenManager.SessionQuickActions? = null
+    @Volatile private var dashboardControls: SessionControls? = null
 
     override fun startSession(request: SessionStartRequest) {
         tracker.startSession(
@@ -85,6 +99,7 @@ class LocalGameSessionLink(
     override fun onResumed() {
         ResumedGameRouter.claim(this, onGuideKey, onNotice)
         tracker.onBuiltInGameResumed()
+        reclaimDashboard()
     }
 
     override fun onPaused() {
@@ -103,6 +118,29 @@ class LocalGameSessionLink(
 
     override fun showResumeOverlay(displayId: Int, onClosed: (shown: Boolean) -> Unit) {
         if (!resumeOverlay().show(displayId) { onClosed(true) }) onClosed(false)
+    }
+
+    override fun offerDashboard(actions: DualScreenManager.SessionQuickActions?) {
+        val previous = dashboardActions
+        dashboardActions = actions
+        val dsm = DualScreenManagerHolder.instance ?: return
+        when {
+            actions != null -> dsm.sessionQuickActions = actions
+            previous != null && dsm.sessionQuickActions === previous -> dsm.sessionQuickActions = null
+        }
+    }
+
+    override fun publishDashboard(controls: SessionControls) {
+        dashboardControls = controls
+        DualScreenManagerHolder.instance?.updateSessionControls(controls)
+    }
+
+    private fun reclaimDashboard() {
+        val actions = dashboardActions ?: return
+        val dsm = DualScreenManagerHolder.instance ?: return
+        if (dsm.sessionQuickActions === actions) return
+        dsm.sessionQuickActions = actions
+        dashboardControls?.let(dsm::updateSessionControls)
     }
 
     override fun release() = ResumedGameRouter.release(this)

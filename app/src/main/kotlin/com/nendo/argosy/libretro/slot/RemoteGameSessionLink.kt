@@ -12,6 +12,8 @@ import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
 import androidx.core.os.bundleOf
+import com.nendo.argosy.DualScreenManager
+import com.nendo.argosy.ui.dualscreen.dashboard.SessionControls
 import com.nendo.argosy.core.notification.ResolvedNotice
 import com.nendo.argosy.libretro.slot.SlotProtocol.optionalLong
 import com.nendo.argosy.util.Logger
@@ -46,6 +48,7 @@ class RemoteGameSessionLink(
     private var host: Messenger? = null
     private var bound = false
     private var resumeOverlayClosed: ((Boolean) -> Unit)? = null
+    @Volatile private var dashboardActions: DualScreenManager.SessionQuickActions? = null
 
     private val _sessionStart = MutableStateFlow<Instant?>(null)
     override val sessionStart: StateFlow<Instant?> = _sessionStart.asStateFlow()
@@ -152,6 +155,14 @@ class RemoteGameSessionLink(
         send(SlotProtocol.SHOW_RESUME, bundleOf(SlotProtocol.KEY_DISPLAY_ID to displayId))
     }
 
+    override fun offerDashboard(actions: DualScreenManager.SessionQuickActions?) {
+        dashboardActions = actions
+        send(SlotProtocol.DASHBOARD_ACTIONS, bundleOf(SlotProtocol.KEY_AVAILABLE to (actions != null)))
+    }
+
+    override fun publishDashboard(controls: SessionControls) =
+        send(SlotProtocol.DASHBOARD_CONTROLS, Bundle().also { SlotDashboardWire.writeControls(controls, it) })
+
     private fun finishResumeOverlay(shown: Boolean) {
         val callback = resumeOverlayClosed ?: return
         resumeOverlayClosed = null
@@ -198,6 +209,7 @@ class RemoteGameSessionLink(
             SlotProtocol.GUIDE_KEY -> onGuideKey(data.getBoolean(SlotProtocol.KEY_PRESSED))
             SlotProtocol.NOTICE -> ResolvedNotice.fromBundle(data)?.let(onNotice)
             SlotProtocol.RESUME_CLOSED -> finishResumeOverlay(data.getBoolean(SlotProtocol.KEY_SHOWN))
+            SlotProtocol.DASHBOARD_COMMAND -> dashboardActions?.let { SlotDashboardWire.runCommand(data, it) }
             else -> return false
         }
         return true
