@@ -931,6 +931,31 @@ class DualScreenManager(
         _sessionControls.value = controls
     }
 
+    private var externalStatesJob: Job? = null
+
+    private fun watchExternalStates(gameId: Long) {
+        externalStatesJob?.cancel()
+        externalStatesJob = null
+        if (!com.nendo.argosy.data.emulator.MinarchLinkStates.isMinarchLink(sessionStateStore.getEmulatorPackage())) return
+        externalStatesJob = activityIndependentScope.launch(Dispatchers.IO) {
+            val romPath = companionLookup(gameId) { gameDao.getById(gameId) }?.localPath ?: return@launch
+            @Suppress("DEPRECATION")
+            val storageRoot = android.os.Environment.getExternalStorageDirectory()
+            com.nendo.argosy.ui.dualscreen.dashboard.minarchLinkSessionControls(
+                storageRoot = storageRoot,
+                romFileName = java.io.File(romPath).name
+            ).collect { controls ->
+                if (companionSessionGameId != gameId || !_swappedIsGameActive.value) return@collect
+                if (_sessionControls.value != controls) _sessionControls.value = controls
+            }
+        }
+    }
+
+    private fun stopWatchingExternalStates() {
+        externalStatesJob?.cancel()
+        externalStatesJob = null
+    }
+
     private val dashboardScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Main.immediate)
 
     val dashboardReader = com.nendo.argosy.ui.screens.gamedetail.components.DocumentReaderController(
@@ -2229,9 +2254,11 @@ class DualScreenManager(
                 }
                 refreshDashboardDocumentProgress()
             }
+            watchExternalStates(gameId)
             eachCompanion { it.onSessionStarted(gameId, isHardcore, channelName) }
         } else {
             rederiveRolesFromLayout()
+            stopWatchingExternalStates()
             if (!_swappedIsGameActive.value) return
             emulatorDisplayId = null
             _swappedIsGameActive.value = false

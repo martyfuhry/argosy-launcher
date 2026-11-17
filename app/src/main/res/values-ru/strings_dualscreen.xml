@@ -30,6 +30,11 @@
     <string name="dual_dashboard_state_tap_to_load">Нажмите, чтобы загрузить</string>
     <string name="dual_dashboard_state_just_now">Только что</string>
     <string name="dual_dashboard_state_latest">Новое</string>
+    <string name="dual_dashboard_external_states_title">Сохранения состояния</string>
+    <string name="dual_dashboard_external_states_empty">Сохранений состояния пока нет. Сохраните его в меню игры.</string>
+    <string name="dual_dashboard_external_states_load_hint">Загрузите состояние в меню игры.</string>
+    <string name="dual_dashboard_external_states_recent_hint">Загрузка в меню игры</string>
+    <string name="dual_dashboard_external_state_slot_time">Слот %1$d · %2$s</string>
     <string name="dual_dashboard_total_play">всего %1$s</string>
     <string name="dual_dashboard_session_play">%1$s за этот сеанс</string>
     <string name="dual_dashboard_manual_resume">Продолжить со страницы %1$d</string>

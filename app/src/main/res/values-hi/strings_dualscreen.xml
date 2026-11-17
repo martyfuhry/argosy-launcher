@@ -34,6 +34,11 @@
     <string name="dual_dashboard_state_tap_to_load">लोड करने के लिए टैप करें</string>
     <string name="dual_dashboard_state_just_now">अभी-अभी</string>
     <string name="dual_dashboard_state_latest">नवीनतम</string>
+    <string name="dual_dashboard_external_states_title">सेव स्टेट</string>
+    <string name="dual_dashboard_external_states_empty">अभी कोई सेव स्टेट नहीं। गेम के मेनू से एक सेव करें।</string>
+    <string name="dual_dashboard_external_states_load_hint">गेम के मेनू से स्टेट लोड करें।</string>
+    <string name="dual_dashboard_external_states_recent_hint">गेम के मेनू से लोड करें</string>
+    <string name="dual_dashboard_external_state_slot_time">स्लॉट %1$d · %2$s</string>
     <string name="dual_dashboard_total_play">कुल %1$s</string>
     <string name="dual_dashboard_session_play">इस सत्र में %1$s</string>
     <string name="dual_dashboard_manual_resume">पेज %1$d से जारी रखें</string>

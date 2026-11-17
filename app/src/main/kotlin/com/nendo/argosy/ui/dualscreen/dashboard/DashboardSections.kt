@@ -104,12 +104,17 @@ private fun StackedSession(content: DashboardContent, showsCover: Boolean) {
 internal fun StatesSection(content: DashboardContent, wide: Boolean) {
     val theme = LocalArgosyTheme.current
     val edge = if (wide) Dimens.spacingXl else Dimens.spacingLg
+    val external = content.controls.externalStates
     Column(
         modifier = Modifier.fillMaxSize().padding(start = edge, end = edge, top = edge),
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingMd)
     ) {
         Text(
-            text = stringResource(R.string.dual_dashboard_states_title),
+            text = if (external) {
+                stringResource(R.string.dual_dashboard_external_states_title)
+            } else {
+                stringResource(R.string.dual_dashboard_states_title)
+            },
             style = MaterialTheme.typography.headlineSmall,
             color = theme.textPrimary
         )
@@ -117,11 +122,22 @@ internal fun StatesSection(content: DashboardContent, wide: Boolean) {
         val states = content.controls.quickStates
         if (states.isEmpty()) {
             Text(
-                text = stringResource(R.string.dual_dashboard_states_empty),
+                text = if (external) {
+                    stringResource(R.string.dual_dashboard_external_states_empty)
+                } else {
+                    stringResource(R.string.dual_dashboard_states_empty)
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = theme.textDim
             )
             return@Column
+        }
+        if (external) {
+            Text(
+                text = stringResource(R.string.dual_dashboard_external_states_load_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = theme.textDim
+            )
         }
         var armed by remember { mutableStateOf(ArmedState()) }
         ClearAt(armed.until) { armed = ArmedState() }
@@ -141,12 +157,16 @@ internal fun StatesSection(content: DashboardContent, wide: Boolean) {
                 StateTile(
                     quickState = quickState,
                     armed = armed.isArmed(quickState.slotNumber),
-                    onTap = {
-                        if (armed.isArmed(quickState.slotNumber)) {
-                            armed = ArmedState()
-                            content.actions.onLoadState(quickState)
-                        } else {
-                            armed = ArmedState(quickState.slotNumber, now() + CONFIRM_WINDOW_MS)
+                    onTap = if (external) {
+                        null
+                    } else {
+                        {
+                            if (armed.isArmed(quickState.slotNumber)) {
+                                armed = ArmedState()
+                                content.actions.onLoadState(quickState)
+                            } else {
+                                armed = ArmedState(quickState.slotNumber, now() + CONFIRM_WINDOW_MS)
+                            }
                         }
                     }
                 )
@@ -335,6 +355,7 @@ private fun RecentStates(content: DashboardContent) {
     val recent = content.controls.quickStates.take(RECENT_STATE_COUNT)
     if (recent.isEmpty()) return
     val theme = LocalArgosyTheme.current
+    val external = content.controls.externalStates
     var armed by remember { mutableStateOf(ArmedState()) }
     ClearAt(armed.until) { armed = ArmedState() }
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacingSm)) {
@@ -346,7 +367,11 @@ private fun RecentStates(content: DashboardContent) {
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = stringResource(R.string.dual_dashboard_states_tap_twice),
+                text = if (external) {
+                    stringResource(R.string.dual_dashboard_external_states_recent_hint)
+                } else {
+                    stringResource(R.string.dual_dashboard_states_tap_twice)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = theme.textDim
             )
@@ -359,12 +384,16 @@ private fun RecentStates(content: DashboardContent) {
                         armed = armed.isArmed(quickState.slotNumber),
                         latest = quickState == recent.first(),
                         modifier = Modifier.weight(1f),
-                        onTap = {
-                            if (armed.isArmed(quickState.slotNumber)) {
-                                armed = ArmedState()
-                                content.actions.onLoadState(quickState)
-                            } else {
-                                armed = ArmedState(quickState.slotNumber, now() + CONFIRM_WINDOW_MS)
+                        onTap = if (external) {
+                            null
+                        } else {
+                            {
+                                if (armed.isArmed(quickState.slotNumber)) {
+                                    armed = ArmedState()
+                                    content.actions.onLoadState(quickState)
+                                } else {
+                                    armed = ArmedState(quickState.slotNumber, now() + CONFIRM_WINDOW_MS)
+                                }
                             }
                         }
                     )
@@ -398,7 +427,7 @@ private fun ScreenshotButton(content: DashboardContent, modifier: Modifier) {
 private fun StateTile(
     quickState: DashboardQuickState,
     armed: Boolean,
-    onTap: () -> Unit,
+    onTap: (() -> Unit)?,
     modifier: Modifier = Modifier,
     latest: Boolean = false
 ) {
@@ -415,7 +444,7 @@ private fun StateTile(
         }
     }
     Column(
-        modifier = modifier.touchOnly(onTap),
+        modifier = if (onTap != null) modifier.touchOnly(onTap) else modifier,
         verticalArrangement = Arrangement.spacedBy(Dimens.spacingXs)
     ) {
         Box(
@@ -464,17 +493,20 @@ private fun StateTile(
             }
         }
         val nowMillis = System.currentTimeMillis()
+        val savedAt = if (nowMillis - quickState.savedAtMillis < DateUtils.MINUTE_IN_MILLIS) {
+            stringResource(R.string.dual_dashboard_state_just_now)
+        } else {
+            DateUtils.getRelativeTimeSpanString(
+                quickState.savedAtMillis,
+                nowMillis,
+                DateUtils.MINUTE_IN_MILLIS,
+                DateUtils.FORMAT_ABBREV_RELATIVE
+            ).toString()
+        }
         Text(
-            text = if (nowMillis - quickState.savedAtMillis < DateUtils.MINUTE_IN_MILLIS) {
-                stringResource(R.string.dual_dashboard_state_just_now)
-            } else {
-                DateUtils.getRelativeTimeSpanString(
-                    quickState.savedAtMillis,
-                    nowMillis,
-                    DateUtils.MINUTE_IN_MILLIS,
-                    DateUtils.FORMAT_ABBREV_RELATIVE
-                ).toString()
-            },
+            text = quickState.menuSlot?.let {
+                stringResource(R.string.dual_dashboard_external_state_slot_time, it, savedAt)
+            } ?: savedAt,
             style = MaterialTheme.typography.labelSmall,
             color = theme.textDim,
             maxLines = 1

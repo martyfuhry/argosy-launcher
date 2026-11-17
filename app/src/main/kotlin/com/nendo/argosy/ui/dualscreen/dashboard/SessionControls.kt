@@ -6,7 +6,8 @@ import com.nendo.argosy.hardware.CompanionInGameState
 data class DashboardQuickState(
     val slotNumber: Int,
     val savedAtMillis: Long,
-    val screenshotPath: String?
+    val screenshotPath: String?,
+    val menuSlot: Int? = null
 )
 
 /**
@@ -14,6 +15,8 @@ data class DashboardQuickState(
  * quick states are the rolling quick-save ring, newest first. The disc row exists only for a game
  * that publishes it. [statesAvailable] and [achievementsAvailable] are false for a game that has
  * no save states or no achievements at all, such as a stream on a container without them.
+ * [externalStates] marks states read from an external emulator's own folder: listed by slot,
+ * never saved or loaded from the dashboard.
  */
 data class SessionControls(
     val quickStates: List<DashboardQuickState> = emptyList(),
@@ -22,11 +25,12 @@ data class SessionControls(
     val screenshotAvailable: Boolean = true,
     val discSwapAvailable: Boolean = false,
     val statesAvailable: Boolean = true,
-    val achievementsAvailable: Boolean = true
+    val achievementsAvailable: Boolean = true,
+    val externalStates: Boolean = false
 )
 
 fun SessionControls.offersStates(state: CompanionInGameState): Boolean =
-    statesAvailable && state.quickActionsAvailable && !state.isHardcore
+    statesAvailable && (state.quickActionsAvailable || externalStates) && !state.isHardcore
 
 fun SessionControls.achievementTotal(state: CompanionInGameState, achievements: List<AchievementUi>): Int = when {
     !achievementsAvailable -> 0
