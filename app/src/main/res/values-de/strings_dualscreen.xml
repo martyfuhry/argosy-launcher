@@ -34,11 +34,13 @@
     <string name="dual_dashboard_state_tap_to_load">Tippen zum Laden</string>
     <string name="dual_dashboard_state_just_now">Gerade eben</string>
     <string name="dual_dashboard_state_latest">Neuester</string>
-    <string name="dual_dashboard_external_states_title">Speicherstände</string>
-    <string name="dual_dashboard_external_states_empty">Noch keine Speicherstände. Speichere einen im Spielmenü.</string>
-    <string name="dual_dashboard_external_states_load_hint">Lade einen Speicherstand im Spielmenü.</string>
-    <string name="dual_dashboard_external_states_recent_hint">Laden im Spielmenü</string>
     <string name="dual_dashboard_external_state_slot_time">Platz %1$d · %2$s</string>
+    <string name="dual_dashboard_minarch_state_saved">Spielstand gespeichert</string>
+    <string name="dual_dashboard_minarch_state_loaded">Spielstand geladen</string>
+    <string name="dual_dashboard_minarch_save_failed">Spielstand konnte nicht gespeichert werden</string>
+    <string name="dual_dashboard_minarch_load_failed">Spielstand konnte nicht geladen werden</string>
+    <string name="dual_dashboard_minarch_load_linked">Während der Verbindung kann kein Spielstand geladen werden</string>
+    <string name="dual_dashboard_minarch_no_answer">Noch keine Antwort von Minarch Link</string>
     <string name="dual_dashboard_total_play">%1$s gesamt</string>
     <string name="dual_dashboard_session_play">%1$s in dieser Sitzung</string>
     <string name="dual_dashboard_manual_resume">Weiter auf Seite %1$d</string>

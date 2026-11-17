@@ -83,16 +83,20 @@
     <string name="dual_dashboard_state_just_now">Agora mesmo</string>
     <!-- Tag on the newest quick state's thumbnail. Adjective. Keep very short. -->
     <string name="dual_dashboard_state_latest">Mais recente</string>
-    <!-- Heading of the screen listing the save states an external emulator keeps in its own folder. Noun phrase; "State" means save state. -->
-    <string name="dual_dashboard_external_states_title">Estados salvos</string>
-    <!-- Body of that screen before the emulator has any save state for this game. Statement plus instruction. -->
-    <string name="dual_dashboard_external_states_empty">Nenhum estado salvo ainda. Salve um pelo menu do jogo.</string>
-    <!-- Line above those states: they cannot be loaded from this screen. Instruction addressed to the user. -->
-    <string name="dual_dashboard_external_states_load_hint">Carregue um estado pelo menu do jogo.</string>
-    <!-- Hint beside the row of the newest external save states on the overview. Instruction; keep short. -->
-    <string name="dual_dashboard_external_states_recent_hint">Carregue pelo menu do jogo</string>
     <!-- Caption under an external save state's thumbnail. %1$d is the emulator's menu slot, %2$s its age such as "5 min. ago". -->
     <string name="dual_dashboard_external_state_slot_time">Slot %1$d · %2$s</string>
+    <!-- Notice after the dashboard's Save State wrote a save state in Minarch Link. "State" means save state. -->
+    <string name="dual_dashboard_minarch_state_saved">Estado salvo</string>
+    <!-- Notice after the dashboard loaded a save state in Minarch Link. "State" means save state. -->
+    <string name="dual_dashboard_minarch_state_loaded">Estado carregado</string>
+    <!-- Notice when Minarch Link could not write the save state the dashboard asked for. -->
+    <string name="dual_dashboard_minarch_save_failed">Não foi possível salvar o estado</string>
+    <!-- Notice when Minarch Link could not load the save state the dashboard asked for. -->
+    <string name="dual_dashboard_minarch_load_failed">Não foi possível carregar o estado</string>
+    <!-- Notice when Minarch Link refused a load because the game is link-playing with another device. -->
+    <string name="dual_dashboard_minarch_load_linked">Não é possível carregar um estado durante o link</string>
+    <!-- Notice when Minarch Link has not answered a save or load yet, e.g. its menu is open or it is an older version. -->
+    <string name="dual_dashboard_minarch_no_answer">O Minarch Link ainda não respondeu</string>
     <!-- Total play time beside the save status. %1$s is a duration such as "12h 4m". -->
     <string name="dual_dashboard_total_play">%1$s no total</string>
     <string name="dual_dashboard_session_play">%1$s nesta sessão</string>

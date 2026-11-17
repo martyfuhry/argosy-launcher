@@ -34,11 +34,13 @@
     <string name="dual_dashboard_state_tap_to_load">Toca para cargar</string>
     <string name="dual_dashboard_state_just_now">Ahora mismo</string>
     <string name="dual_dashboard_state_latest">Reciente</string>
-    <string name="dual_dashboard_external_states_title">Estados guardados</string>
-    <string name="dual_dashboard_external_states_empty">Aún no hay estados guardados. Guarda uno desde el menú del juego.</string>
-    <string name="dual_dashboard_external_states_load_hint">Carga un estado desde el menú del juego.</string>
-    <string name="dual_dashboard_external_states_recent_hint">Carga desde el menú del juego</string>
     <string name="dual_dashboard_external_state_slot_time">Ranura %1$d · %2$s</string>
+    <string name="dual_dashboard_minarch_state_saved">Estado guardado</string>
+    <string name="dual_dashboard_minarch_state_loaded">Estado cargado</string>
+    <string name="dual_dashboard_minarch_save_failed">No se pudo guardar el estado</string>
+    <string name="dual_dashboard_minarch_load_failed">No se pudo cargar el estado</string>
+    <string name="dual_dashboard_minarch_load_linked">No se puede cargar un estado durante el enlace</string>
+    <string name="dual_dashboard_minarch_no_answer">Minarch Link aún no ha respondido</string>
     <string name="dual_dashboard_total_play">%1$s en total</string>
     <string name="dual_dashboard_session_play">%1$s en esta sesión</string>
     <string name="dual_dashboard_manual_resume">Continuar en la página %1$d</string>

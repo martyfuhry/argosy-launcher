@@ -29,11 +29,13 @@
     <string name="dual_dashboard_state_tap_to_load">点击读取</string>
     <string name="dual_dashboard_state_just_now">刚刚</string>
     <string name="dual_dashboard_state_latest">最新</string>
-    <string name="dual_dashboard_external_states_title">即时存档</string>
-    <string name="dual_dashboard_external_states_empty">还没有即时存档。请在游戏菜单中保存。</string>
-    <string name="dual_dashboard_external_states_load_hint">请在游戏菜单中读取存档。</string>
-    <string name="dual_dashboard_external_states_recent_hint">在游戏菜单中读取</string>
     <string name="dual_dashboard_external_state_slot_time">栏位 %1$d · %2$s</string>
+    <string name="dual_dashboard_minarch_state_saved">即时存档已保存</string>
+    <string name="dual_dashboard_minarch_state_loaded">即时存档已读取</string>
+    <string name="dual_dashboard_minarch_save_failed">无法保存即时存档</string>
+    <string name="dual_dashboard_minarch_load_failed">无法读取即时存档</string>
+    <string name="dual_dashboard_minarch_load_linked">联机时无法读取即时存档</string>
+    <string name="dual_dashboard_minarch_no_answer">Minarch Link 尚未响应</string>
     <string name="dual_dashboard_total_play">共 %1$s</string>
     <string name="dual_dashboard_session_play">本次 %1$s</string>
     <string name="dual_dashboard_manual_resume">从第 %1$d 页继续</string>

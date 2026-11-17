@@ -29,11 +29,13 @@
     <string name="dual_dashboard_state_tap_to_load">點一下讀取</string>
     <string name="dual_dashboard_state_just_now">剛剛</string>
     <string name="dual_dashboard_state_latest">最新</string>
-    <string name="dual_dashboard_external_states_title">即時存檔</string>
-    <string name="dual_dashboard_external_states_empty">還沒有即時存檔。請在遊戲選單中儲存。</string>
-    <string name="dual_dashboard_external_states_load_hint">請在遊戲選單中讀取存檔。</string>
-    <string name="dual_dashboard_external_states_recent_hint">在遊戲選單中讀取</string>
     <string name="dual_dashboard_external_state_slot_time">欄位 %1$d · %2$s</string>
+    <string name="dual_dashboard_minarch_state_saved">即時存檔已儲存</string>
+    <string name="dual_dashboard_minarch_state_loaded">即時存檔已讀取</string>
+    <string name="dual_dashboard_minarch_save_failed">無法儲存即時存檔</string>
+    <string name="dual_dashboard_minarch_load_failed">無法讀取即時存檔</string>
+    <string name="dual_dashboard_minarch_load_linked">連線時無法讀取即時存檔</string>
+    <string name="dual_dashboard_minarch_no_answer">Minarch Link 尚未回應</string>
     <string name="dual_dashboard_total_play">共 %1$s</string>
     <string name="dual_dashboard_session_play">本次 %1$s</string>
     <string name="dual_dashboard_manual_resume">從第 %1$d 頁繼續</string>

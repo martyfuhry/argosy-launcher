@@ -34,11 +34,13 @@
     <string name="dual_dashboard_state_tap_to_load">Touchez pour charger</string>
     <string name="dual_dashboard_state_just_now">À l\'instant</string>
     <string name="dual_dashboard_state_latest">Récent</string>
-    <string name="dual_dashboard_external_states_title">Sauvegardes d\'état</string>
-    <string name="dual_dashboard_external_states_empty">Aucune sauvegarde d\'état pour l\'instant. Créez-en une depuis le menu du jeu.</string>
-    <string name="dual_dashboard_external_states_load_hint">Chargez un état depuis le menu du jeu.</string>
-    <string name="dual_dashboard_external_states_recent_hint">Chargez depuis le menu du jeu</string>
     <string name="dual_dashboard_external_state_slot_time">Emplacement %1$d · %2$s</string>
+    <string name="dual_dashboard_minarch_state_saved">État sauvegardé</string>
+    <string name="dual_dashboard_minarch_state_loaded">État chargé</string>
+    <string name="dual_dashboard_minarch_save_failed">Impossible de sauvegarder l\'état</string>
+    <string name="dual_dashboard_minarch_load_failed">Impossible de charger l\'état</string>
+    <string name="dual_dashboard_minarch_load_linked">Impossible de charger un état pendant la liaison</string>
+    <string name="dual_dashboard_minarch_no_answer">Minarch Link n\'a pas encore répondu</string>
     <string name="dual_dashboard_total_play">%1$s au total</string>
     <string name="dual_dashboard_session_play">%1$s cette session</string>
     <string name="dual_dashboard_manual_resume">Reprendre à la page %1$d</string>

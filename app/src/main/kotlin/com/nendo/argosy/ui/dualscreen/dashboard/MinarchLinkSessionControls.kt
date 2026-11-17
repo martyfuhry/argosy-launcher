@@ -27,6 +27,5 @@ internal fun minarchLinkSessionControlsOf(states: List<MinarchLinkState>): Sessi
             menuSlot = MinarchLinkStates.menuSlotLabel(it.slotNumber)
         )
     },
-    screenshotAvailable = false,
-    externalStates = true
+    screenshotAvailable = false
 )

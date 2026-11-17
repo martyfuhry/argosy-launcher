@@ -15,8 +15,8 @@ data class DashboardQuickState(
  * quick states are the rolling quick-save ring, newest first. The disc row exists only for a game
  * that publishes it. [statesAvailable] and [achievementsAvailable] are false for a game that has
  * no save states or no achievements at all, such as a stream on a container without them.
- * [externalStates] marks states read from an external emulator's own folder: listed by slot,
- * never saved or loaded from the dashboard.
+ * A quick state with a [DashboardQuickState.menuSlot] is an external emulator's menu slot,
+ * captioned by that slot's number.
  */
 data class SessionControls(
     val quickStates: List<DashboardQuickState> = emptyList(),
@@ -25,12 +25,11 @@ data class SessionControls(
     val screenshotAvailable: Boolean = true,
     val discSwapAvailable: Boolean = false,
     val statesAvailable: Boolean = true,
-    val achievementsAvailable: Boolean = true,
-    val externalStates: Boolean = false
+    val achievementsAvailable: Boolean = true
 )
 
 fun SessionControls.offersStates(state: CompanionInGameState): Boolean =
-    statesAvailable && (state.quickActionsAvailable || externalStates) && !state.isHardcore
+    statesAvailable && state.quickActionsAvailable && !state.isHardcore
 
 fun SessionControls.achievementTotal(state: CompanionInGameState, achievements: List<AchievementUi>): Int = when {
     !achievementsAvailable -> 0

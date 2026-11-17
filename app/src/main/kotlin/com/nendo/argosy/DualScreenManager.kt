@@ -901,6 +901,10 @@ class DualScreenManager(
             it.quit()
             return
         }
+        quitExternalGame()
+    }
+
+    private fun quitExternalGame() {
         if (!_swappedCompanionState.value.externalEmulator) return
         val gameDisplay = emulatorDisplayId ?: return
         val roles = displayAffinityHelper.getRoleDisplayIds(_isRolesSwapped.value) ?: return
@@ -932,11 +936,21 @@ class DualScreenManager(
     }
 
     private var externalStatesJob: Job? = null
+    private var minarchLinkActions: com.nendo.argosy.hardware.MinarchLinkSessionActions? = null
 
     private fun watchExternalStates(gameId: Long) {
-        externalStatesJob?.cancel()
-        externalStatesJob = null
+        stopWatchingExternalStates()
         if (!com.nendo.argosy.data.emulator.MinarchLinkStates.isMinarchLink(sessionStateStore.getEmulatorPackage())) return
+        val actions = com.nendo.argosy.hardware.MinarchLinkSessionActions(
+            context = appContext,
+            scope = dashboardScope,
+            notificationManager = notificationManager,
+            savedAtBySlot = { _sessionControls.value.quickStates.associate { it.slotNumber to it.savedAtMillis } },
+            onQuit = ::quitExternalGame
+        )
+        actions.start()
+        minarchLinkActions = actions
+        sessionQuickActions = actions
         externalStatesJob = activityIndependentScope.launch(Dispatchers.IO) {
             val romPath = companionLookup(gameId) { gameDao.getById(gameId) }?.localPath ?: return@launch
             @Suppress("DEPRECATION")
@@ -954,6 +968,10 @@ class DualScreenManager(
     private fun stopWatchingExternalStates() {
         externalStatesJob?.cancel()
         externalStatesJob = null
+        val actions = minarchLinkActions ?: return
+        minarchLinkActions = null
+        actions.stop()
+        if (sessionQuickActions === actions) sessionQuickActions = null
     }
 
     private val dashboardScope = CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Main.immediate)
